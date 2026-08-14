@@ -101,6 +101,17 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getDefaultTimezone';
     }
 
+    public function isTimezoneSupportRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.isTimezoneSupportEnabled';
+    }
+
+    public function isWebsitesCountToDisplayRequest(): bool
+    {
+        return $this->module === 'API'
+            && $this->method === 'SitesManager.getNumWebsitesToDisplayPerPage';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(

@@ -40,6 +40,7 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(['HTTP_X_FORWARDED_FOR'], $configuration->proxyClientHeaders());
         $this->assertSame(['10.0.0.1'], $configuration->proxyIps());
         $this->assertTrue($configuration->proxyIpReadLastInList());
+        $this->assertSame(21, $configuration->websitesCountToDisplay());
     }
 
     public function test_rejects_unsafe_table_prefix(): void
@@ -73,6 +74,8 @@ class InstallationConfigTest extends TestCase
             login_allowlist_ip[] = "10.0.0.0/8"
             proxy_client_headers[] = "HTTP_X_FORWARDED_FOR"
             proxy_ips[] = "10.0.0.1"
+            autocomplete_min_sites = 9
+            site_selector_max_sites = 21
             INI;
 
         $this->assertNotFalse(file_put_contents($path, $content));

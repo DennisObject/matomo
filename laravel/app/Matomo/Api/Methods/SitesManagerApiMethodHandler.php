@@ -9,6 +9,7 @@ use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\SiteRepository;
+use App\Matomo\Sites\SiteRuntimeSettings;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use LogicException;
@@ -62,6 +63,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private ApiResponseFactory $responses,
         private SiteRepository $sites,
         private OptionRepository $options,
+        private SiteRuntimeSettings $runtime,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -72,6 +74,8 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isSiteGroupsRequest()
             || $request->isDefaultCurrencyRequest()
             || $request->isDefaultTimezoneRequest()
+            || $request->isTimezoneSupportRequest()
+            || $request->isWebsitesCountToDisplayRequest()
             || $this->globalOption($request) !== null;
     }
 
@@ -131,6 +135,23 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             return $this->responses->scalar(
                 $request,
                 $this->optionOrDefault(self::DEFAULT_CURRENCY_OPTION, 'USD'),
+            );
+        }
+
+        if ($request->isTimezoneSupportRequest() || $request->isWebsitesCountToDisplayRequest()) {
+            if (! $this->authorizer->hasSomeViewAccess($request->authentication)) {
+                return $this->responses->error(
+                    $request,
+                    'You must have view access to at least one website.',
+                    401,
+                );
+            }
+
+            return $this->responses->scalar(
+                $request,
+                $request->isTimezoneSupportRequest()
+                    ? $this->runtime->timezoneSupportEnabled()
+                    : $this->runtime->websitesCountToDisplay(),
             );
         }
 
