@@ -28,6 +28,11 @@ abstract class TestCase extends BaseTestCase
             {
                 return [];
             }
+
+            public function groups(): array
+            {
+                return [];
+            }
         });
     }
 }

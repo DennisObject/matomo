@@ -13,6 +13,62 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    #[DataProvider('siteGroupFormats')]
+    public function test_site_groups_require_superuser_and_keep_string_list_formats(
+        string $format,
+        string $contentType,
+        string $content,
+    ): void {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())->method('groups')->willReturn(['a,b', 'a"b']);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesGroups'.
+            '&convertToUnicode=0&token_auth=root-token&format='.$format,
+        )->assertOk()
+            ->assertHeader('Content-Type', $contentType)
+            ->assertContent($content);
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string}>
+     */
+    public static function siteGroupFormats(): iterable
+    {
+        yield 'JSON' => ['json', 'application/json; charset=utf-8', '["a,b","a\\"b"]'];
+        yield 'XML' => [
+            'xml',
+            'text/xml; charset=utf-8',
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>\n".
+                "\t<row>a,b</row>\n\t<row>a&quot;b</row>\n</result>",
+        ];
+        yield 'CSV' => ['csv', 'application/vnd.ms-excel', "\"a,b\"\n\"a\"\"b\""];
+        yield 'TSV' => ['tsv', 'application/vnd.ms-excel', "\"a,b\"\n\"a\"\"b\""];
+        yield 'console' => [
+            'console',
+            'text/plain; charset=utf-8',
+            "- 1 ['0' => 'a,b'] [] [idsubtable = ]<br />\n".
+                "- 2 ['0' => 'a\"b'] [] [idsubtable = ]<br />\n",
+        ];
+    }
+
+    public function test_site_groups_reject_a_non_superuser_before_the_site_store(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('groups');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get('/index.php?module=API&method=SitesManager.getSitesGroups&format=json&token_auth=view-token')
+            ->assertUnauthorized();
+    }
+
     public function test_at_least_view_site_ids_pass_the_safe_login_restriction(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

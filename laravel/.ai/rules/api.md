@@ -16,3 +16,5 @@ Put each plugin's migrated API methods in its own `ApiMethodHandler`. Register t
 
 ## Keep data access behind a contract
 Put existing Matomo table reads in a small repository. Inject the repository contract into API handlers and use the shared `MatomoDatabase` connection so table prefixes and install settings stay central.
+
+Quote commas, double quotes, and line breaks in single-column CSV and TSV lists exactly as Matomo does. Do not assume every list contains only numeric IDs.

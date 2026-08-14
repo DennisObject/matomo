@@ -25,13 +25,17 @@ class DatabaseSiteRepositoryTest extends TestCase
         $connection = $databases->connection('matomo_sites_test');
         $connection->getSchemaBuilder()->create('site', function (Blueprint $table): void {
             $table->unsignedInteger('idsite')->primary();
+            $table->string('group')->default('');
         });
         $connection->table('site')->insert([
-            ['idsite' => 3],
-            ['idsite' => 8],
+            ['idsite' => 3, 'group' => ' Main '],
+            ['idsite' => 8, 'group' => 'a,b'],
         ]);
 
-        $this->assertSame([3, 8], (new DatabaseSiteRepository($connection))->allIds());
+        $sites = new DatabaseSiteRepository($connection);
+
+        $this->assertSame([3, 8], $sites->allIds());
+        $this->assertSame(['Main', 'a,b'], $sites->groups());
     }
 
     public function test_returns_an_empty_list_before_the_site_table_exists(): void
