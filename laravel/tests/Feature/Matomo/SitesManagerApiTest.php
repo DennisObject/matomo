@@ -15,6 +15,46 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_ip_range_returns_bounds_without_authentication(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasSomeViewAccess');
+        $authorizer->expects($this->never())->method('hasSuperUserAccess');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getIpsForRange'.
+            '&ipRange=192.168.1.0%2F24&format=json',
+        )->assertOk()
+            ->assertExactJson(['192.168.1.0', '192.168.1.255']);
+    }
+
+    public function test_invalid_ip_range_keeps_the_false_scalar_response(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasSomeViewAccess');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getIpsForRange&ipRange=invalid&format=json',
+        )->assertOk()
+            ->assertContent('{"value":false}');
+    }
+
+    public function test_ip_range_rejects_a_missing_parameter(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasSomeViewAccess');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get('/index.php?module=API&method=SitesManager.getIpsForRange&format=json')
+            ->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "Please specify a value for 'ipRange'.",
+            ]);
+    }
+
     public function test_site_ids_from_timezones_parse_lists_and_require_superuser(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

@@ -13,6 +13,7 @@ use App\Matomo\Sites\SiteRuntimeSettings;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use LogicException;
+use Matomo\Network\IPUtils;
 
 final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 {
@@ -79,6 +80,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isSiteUrlsRequest()
             || $request->isUniqueSiteTimezonesRequest()
             || $request->isSiteIdsFromTimezonesRequest()
+            || $request->isIpRangeRequest()
             || $this->globalOption($request) !== null;
     }
 
@@ -197,6 +199,19 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
                 $request,
                 $this->sites->idsInTimezones($request->timezones ?? []),
             );
+        }
+
+        if ($request->isIpRangeRequest()) {
+            $range = IPUtils::getIPRangeBounds($request->ipRange ?? '');
+
+            if ($range === null) {
+                return $this->responses->scalar($request, false);
+            }
+
+            return $this->responses->values($request, [
+                IPUtils::binaryToStringIP($range[0]),
+                IPUtils::binaryToStringIP($range[1]),
+            ]);
         }
 
         $globalOption = $this->globalOption($request);

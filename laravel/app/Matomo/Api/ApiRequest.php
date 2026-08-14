@@ -25,6 +25,7 @@ final readonly class ApiRequest
         public ?int $idSite,
         /** @var list<string>|null */
         public ?array $timezones,
+        public ?string $ipRange,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -47,6 +48,7 @@ final readonly class ApiRequest
             restrictSitesToLogin: self::safeNullableStringInput($request, '_restrictSitesToLogin'),
             idSite: null,
             timezones: null,
+            ipRange: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -133,6 +135,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getSitesIdFromTimezones';
     }
 
+    public function isIpRangeRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getIpsForRange';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -159,6 +166,7 @@ final readonly class ApiRequest
             restrictSitesToLogin: self::nullableStringInput($request, '_restrictSitesToLogin'),
             idSite: self::siteId($request, $module, $method),
             timezones: self::timezones($request, $module, $method),
+            ipRange: self::ipRange($request, $module, $method),
             authentication: $authentication,
         );
     }
@@ -210,6 +218,21 @@ final readonly class ApiRequest
         }
 
         return array_values(array_unique($timezones));
+    }
+
+    private static function ipRange(Request $request, string $module, string $method): ?string
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.getIpsForRange') {
+            return null;
+        }
+
+        $value = self::nullableStringInput($request, 'ipRange');
+
+        if ($value === null) {
+            throw new MissingApiParameter('ipRange');
+        }
+
+        return $value;
     }
 
     private static function authentication(Request $request): ApiAuthentication
