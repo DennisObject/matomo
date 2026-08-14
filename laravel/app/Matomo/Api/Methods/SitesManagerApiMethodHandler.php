@@ -8,6 +8,7 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Options\OptionRepository;
+use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use Illuminate\Http\Request;
@@ -65,6 +66,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private SiteRepository $sites,
         private OptionRepository $options,
         private SiteRuntimeSettings $runtime,
+        private CurrencyProvider $currencies,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -74,6 +76,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isViewableSiteIdsRequest()
             || $request->isSiteGroupsRequest()
             || $request->isDefaultCurrencyRequest()
+            || $request->isCurrencySymbolsRequest()
             || $request->isDefaultTimezoneRequest()
             || $request->isTimezoneSupportRequest()
             || $request->isWebsitesCountToDisplayRequest()
@@ -90,6 +93,10 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
     {
         if (! $this->supports($request)) {
             throw new LogicException('The SitesManager API handler does not support this method.');
+        }
+
+        if ($request->isCurrencySymbolsRequest()) {
+            return $this->responses->row($request, $this->currencies->symbols());
         }
 
         $role = $request->siteAccessRole();

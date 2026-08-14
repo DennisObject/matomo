@@ -8,6 +8,7 @@ use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
+use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -20,6 +21,13 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         $this->app->instance(ClientIpResolver::class, new ClientIpResolver([], [], true));
+        $this->app->instance(CurrencyProvider::class, new class implements CurrencyProvider
+        {
+            public function symbols(): array
+            {
+                return [];
+            }
+        });
         $this->app->instance(OptionRepository::class, new class implements OptionRepository
         {
             public function value(string $name): ?string

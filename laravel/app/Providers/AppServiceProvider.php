@@ -19,7 +19,9 @@ use App\Matomo\Plugins\PluginState;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\ReportingApiIpAllowlist;
+use App\Matomo\Sites\ConfiguredCurrencyProvider;
 use App\Matomo\Sites\ConfiguredSiteRuntimeSettings;
+use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\DatabaseSiteRepository;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
@@ -95,6 +97,18 @@ class AppServiceProvider extends ServiceProvider
             fn (Application $application): SiteRuntimeSettings => new ConfiguredSiteRuntimeSettings(
                 $application->make(InstallationConfig::class),
             ),
+        );
+
+        $this->app->singleton(
+            CurrencyProvider::class,
+            function (Application $application): CurrencyProvider {
+                $currencies = require base_path('../core/Intl/Data/Resources/currencies.php');
+
+                return new ConfiguredCurrencyProvider(
+                    currencies: is_array($currencies) ? $currencies : [],
+                    customCurrencies: $application->make(InstallationConfig::class)->customCurrencies(),
+                );
+            },
         );
 
         $this->app->singleton(

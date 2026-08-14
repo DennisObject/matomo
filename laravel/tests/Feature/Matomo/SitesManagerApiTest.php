@@ -8,6 +8,7 @@ use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Options\OptionRepository;
+use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -15,6 +16,22 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_currency_symbols_are_public_and_keep_custom_codes(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasSomeViewAccess');
+        $currencies = $this->createMock(CurrencyProvider::class);
+        $currencies->expects($this->once())
+            ->method('symbols')
+            ->willReturn(['USD' => '$', 'BTC' => 'BTC']);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(CurrencyProvider::class, $currencies);
+
+        $this->get('/index.php?module=API&method=SitesManager.getCurrencySymbols&format=json')
+            ->assertOk()
+            ->assertExactJson(['USD' => '$', 'BTC' => 'BTC']);
+    }
+
     public function test_excluded_referrers_merge_global_and_site_values(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

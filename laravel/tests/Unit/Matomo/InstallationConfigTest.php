@@ -42,6 +42,7 @@ class InstallationConfigTest extends TestCase
         $this->assertTrue($configuration->proxyIpReadLastInList());
         $this->assertSame(21, $configuration->websitesCountToDisplay());
         $this->assertSame(['CoreHome', 'SitesManager'], $configuration->activatedPlugins());
+        $this->assertSame(['BTC' => 'Bitcoin'], $configuration->customCurrencies());
     }
 
     public function test_rejects_unsafe_table_prefix(): void
@@ -77,6 +78,7 @@ class InstallationConfigTest extends TestCase
             proxy_ips[] = "10.0.0.1"
             autocomplete_min_sites = 9
             site_selector_max_sites = 21
+            currencies[BTC] = "Bitcoin"
 
             [Plugins]
             Plugins[] = "CoreHome"

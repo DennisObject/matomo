@@ -29,6 +29,8 @@ final readonly class InstallationConfig
         private int $websitesCountToDisplay,
         /** @var list<string> */
         private array $activatedPlugins,
+        /** @var array<string, string> */
+        private array $customCurrencies,
     ) {}
 
     public static function fromFile(string $path): self
@@ -93,6 +95,7 @@ final readonly class InstallationConfig
                 self::positiveInteger($general, 'autocomplete_min_sites', 5),
             ),
             activatedPlugins: self::stringList($plugins, 'Plugins'),
+            customCurrencies: self::stringMap($general, 'currencies'),
         );
     }
 
@@ -169,6 +172,14 @@ final readonly class InstallationConfig
     public function activatedPlugins(): array
     {
         return $this->activatedPlugins;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function customCurrencies(): array
+    {
+        return $this->customCurrencies;
     }
 
     /**
@@ -291,6 +302,29 @@ final readonly class InstallationConfig
             $value,
             is_string(...),
         ));
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     * @return array<string, string>
+     */
+    private static function stringMap(array $values, string $key): array
+    {
+        $value = $values[$key] ?? [];
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $map = [];
+
+        foreach ($value as $name => $item) {
+            if (is_string($name) && is_scalar($item)) {
+                $map[$name] = (string) $item;
+            }
+        }
+
+        return $map;
     }
 
     /**
