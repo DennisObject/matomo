@@ -74,6 +74,24 @@ final class ApiResponseFactory
         };
     }
 
+    /**
+     * @param  array<string, array<string, string>>  $values
+     */
+    public function structured(ApiRequest $request, array $values): Response
+    {
+        return match ($request->format) {
+            'json' => $this->jsonStructured($request, $values),
+            'original' => $this->originalStructured($request, $values),
+            'xml' => $this->xmlStructured($values),
+            'console', 'csv', 'html', 'rss', 'tsv' => $this->error(
+                $request,
+                $this->nestedArrayFormatError($values),
+                500,
+            ),
+            default => throw new LogicException('The API response format is not supported.'),
+        };
+    }
+
     public function error(ApiRequest $request, string $message, int $status): Response
     {
         return match ($request->format) {
@@ -180,6 +198,83 @@ final class ApiResponseFactory
             200,
             'text/xml; charset=utf-8',
         );
+    }
+
+    /**
+     * @param  array<string, array<string, string>>  $values
+     */
+    private function xmlStructured(array $values): Response
+    {
+        if ($values === []) {
+            return $this->response(
+                "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result />",
+                200,
+                'text/xml; charset=utf-8',
+            );
+        }
+
+        return $this->response(
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>\n".
+                $this->xmlArray($values, "\t").'</result>',
+            200,
+            'text/xml; charset=utf-8',
+        );
+    }
+
+    /**
+     * @param  array<string, array<string, string>|string>  $values
+     */
+    private function xmlArray(array $values, string $indent): string
+    {
+        $xml = '';
+
+        foreach ($values as $key => $value) {
+            [$prefix, $suffix] = $this->xmlArrayTags($key);
+
+            if (is_array($value)) {
+                $xml .= $indent.$prefix."\n";
+                $xml .= $this->xmlArray($value, $indent."\t");
+                $xml .= $indent.$suffix."\n";
+
+                continue;
+            }
+
+            $xml .= $indent.$prefix.$this->escape($value).$suffix."\n";
+        }
+
+        return $xml;
+    }
+
+    /**
+     * @return array{string, string}
+     */
+    private function xmlArrayTags(string $key): array
+    {
+        if (str_contains($key, '=')) {
+            [$attribute, $value] = explode('=', $key, 2);
+
+            return [
+                '<row '.$attribute.'="'.$this->escape($value).'">',
+                '</row>',
+            ];
+        }
+
+        if (! $this->validXmlArrayTag($key)) {
+            return ['<row key="'.$this->escape($key).'">', '</row>'];
+        }
+
+        return ["<{$key}>", "</{$key}>"];
+    }
+
+    private function validXmlArrayTag(string $key): bool
+    {
+        $invalidCharacters = "!\"#$%&'()*+,\\/;<=>?@[\\]\\\\^`{|}~";
+        $invalidStartCharacters = $invalidCharacters.'\\-.0123456789';
+
+        return preg_match(
+            "/^[^{$invalidStartCharacters}][^{$invalidCharacters}]*$/D",
+            $key,
+        ) === 1;
     }
 
     private function xmlError(string $message, int $status): Response
@@ -502,6 +597,18 @@ final class ApiResponseFactory
         );
     }
 
+    /**
+     * @param  array<string, array<string, string>>  $values
+     */
+    private function originalStructured(ApiRequest $request, array $values): Response
+    {
+        return $this->response(
+            $request->serialize ? serialize($values) : var_export($values, true),
+            200,
+            'text/plain; charset=utf-8',
+        );
+    }
+
     private function originalError(ApiRequest $request, string $message, int $status): Response
     {
         $content = $request->serialize
@@ -621,8 +728,27 @@ final class ApiResponseFactory
      */
     private function json(ApiRequest $request, array $payload, int $status): Response
     {
-        $json = json_encode($payload, JSON_THROW_ON_ERROR);
+        return $this->jsonEncoded($request, json_encode($payload, JSON_THROW_ON_ERROR), $status);
+    }
 
+    /**
+     * @param  list<array<string, bool|int|string>>  $rows
+     */
+    private function jsonRows(ApiRequest $request, array $rows): Response
+    {
+        return $this->jsonEncoded($request, json_encode($rows, JSON_THROW_ON_ERROR), 200);
+    }
+
+    /**
+     * @param  array<string, array<string, string>>  $values
+     */
+    private function jsonStructured(ApiRequest $request, array $values): Response
+    {
+        return $this->jsonEncoded($request, json_encode($values, JSON_THROW_ON_ERROR), 200);
+    }
+
+    private function jsonEncoded(ApiRequest $request, string $json, int $status): Response
+    {
         if ($request->callback !== null && preg_match('/^[0-9a-zA-Z_.]*$/D', $request->callback) === 1) {
             return $this->response(
                 $request->callback.'('.$json.')',
@@ -635,21 +761,22 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string>>  $rows
+     * @param  array<string, array<string, string>>  $values
      */
-    private function jsonRows(ApiRequest $request, array $rows): Response
+    private function nestedArrayFormatError(array $values): string
     {
-        $json = json_encode($rows, JSON_THROW_ON_ERROR);
+        $key = array_key_first($values);
 
-        if ($request->callback !== null && preg_match('/^[0-9a-zA-Z_.]*$/D', $request->callback) === 1) {
-            return $this->response(
-                $request->callback.'('.$json.')',
-                200,
-                'application/javascript; charset=utf-8',
-            );
+        if ($key === null) {
+            return 'Data structure returned is not convertible in the requested format.';
         }
 
-        return $this->response($json, 200, 'application/json; charset=utf-8');
+        $row = substr(var_export($values[$key], true), 0, 500);
+
+        return 'Data structure returned is not convertible in the requested format: '.
+            "Only integer keys supported for array columns on base level. Unsupported string '{$key}' ".
+            "found for row '{$row}'. Try to call this method with the parameters ".
+            "'&format=original&serialize=1'; you will get the original php data structure serialized.";
     }
 
     private function scalarText(bool|int|string $value, bool $emptyFalse): string

@@ -158,9 +158,14 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             TimezoneProvider::class,
-            fn (Application $application): TimezoneProvider => new LocalizedTimezoneProvider(
-                $application->make(MatomoTranslator::class),
-            ),
+            function (Application $application): TimezoneProvider {
+                $countries = require base_path('../core/Intl/Data/Resources/countries.php');
+
+                return new LocalizedTimezoneProvider(
+                    translator: $application->make(MatomoTranslator::class),
+                    countries: is_array($countries) ? $countries : [],
+                );
+            },
         );
 
         $this->app->singleton(

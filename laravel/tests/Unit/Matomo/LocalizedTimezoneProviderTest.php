@@ -18,6 +18,8 @@ class LocalizedTimezoneProviderTest extends TestCase
             {
                 $translation = [
                     'SitesManager_Format_Utc' => 'UTC%s',
+                    'Intl_Continent_asi' => 'Asia',
+                    'Intl_Continent_amn' => 'North America',
                     'Intl_Country_JP' => 'Japan',
                     'Intl_Country_US' => 'United States',
                     'Intl_Timezone_America_NewYork' => 'New York',
@@ -26,7 +28,10 @@ class LocalizedTimezoneProviderTest extends TestCase
                 return $arguments === [] ? $translation : vsprintf($translation, $arguments);
             }
         };
-        $timezones = new LocalizedTimezoneProvider($translator);
+        $timezones = new LocalizedTimezoneProvider($translator, [
+            'jp' => 'asi',
+            'us' => 'amn',
+        ]);
 
         $this->assertSame('UTC+1:30', $timezones->name('UTC+1.5', 'en'));
         $this->assertSame('Japan', $timezones->name('Asia/Tokyo', 'en', 'JP', false));
@@ -39,5 +44,13 @@ class LocalizedTimezoneProviderTest extends TestCase
             $timezones->name('Area/Missing_City', 'en', 'US', true),
         );
         $this->assertSame('Some City', $timezones->name('Invalid/Some_City', 'en'));
+
+        $groups = $timezones->all('en', true);
+
+        $this->assertSame(['Asia', 'North America', 'UTC'], array_keys($groups));
+        $this->assertSame('Japan', $groups['Asia']['Asia/Tokyo']);
+        $this->assertSame('United States - New York', $groups['North America']['America/New_York']);
+        $this->assertSame('UTC+5:45', $groups['UTC']['UTC+5.75']);
+        $this->assertSame(['UTC'], array_keys($timezones->all('en', false)));
     }
 }

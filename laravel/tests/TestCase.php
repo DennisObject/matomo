@@ -46,6 +46,11 @@ abstract class TestCase extends BaseTestCase
         });
         $this->app->instance(TimezoneProvider::class, new class implements TimezoneProvider
         {
+            public function all(string $language, bool $timezoneSupportEnabled): array
+            {
+                return [];
+            }
+
             public function name(
                 string $timezone,
                 string $language,
