@@ -9,6 +9,7 @@ use App\Matomo\Api\Methods\ContentsApiMethodHandler;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
 use App\Matomo\Api\Methods\CustomJsTrackerApiMethodHandler;
 use App\Matomo\Api\Methods\DevicePluginsApiMethodHandler;
+use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
@@ -30,6 +31,8 @@ use App\Matomo\Localization\JsonMatomoTranslator;
 use App\Matomo\Localization\LanguagePreferenceRepository;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Localization\MatomoTranslator;
+use App\Matomo\Login\BruteForceUnblocker;
+use App\Matomo\Login\DatabaseBruteForceUnblocker;
 use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\ConfiguredPluginState;
@@ -330,6 +333,20 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            BruteForceUnblocker::class,
+            function (Application $application): BruteForceUnblocker {
+                $installation = $application->make(InstallationConfig::class);
+
+                return new DatabaseBruteForceUnblocker(
+                    connection: $application->make(MatomoDatabase::class)->connection(),
+                    configuredMaxAttempts: $installation->configuredLoginMaxAllowedRetries(),
+                    configuredTimeRange: $installation->configuredLoginAllowedRetriesTimeRange(),
+                    configuredAllowlist: $installation->configuredLoginBruteForceAllowlist(),
+                );
+            },
+        );
+
+        $this->app->singleton(
             ClientIpResolver::class,
             function (Application $application): ClientIpResolver {
                 $installation = $application->make(InstallationConfig::class);
@@ -373,6 +390,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ContentsApiMethodHandler::class),
                 $application->make(CustomJsTrackerApiMethodHandler::class),
                 $application->make(ProfessionalServicesApiMethodHandler::class),
+                $application->make(LoginApiMethodHandler::class),
             ]),
         );
     }

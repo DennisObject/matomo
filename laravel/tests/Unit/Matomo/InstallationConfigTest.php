@@ -60,6 +60,9 @@ class InstallationConfigTest extends TestCase
         $this->assertFalse($configuration->uniqueVisitorsEnabled('year'));
         $this->assertTrue($configuration->reportingPeriodEnabled('range'));
         $this->assertTrue($configuration->anonymousSegmentsEnabled());
+        $this->assertSame(12, $configuration->configuredLoginMaxAllowedRetries());
+        $this->assertSame(45, $configuration->configuredLoginAllowedRetriesTimeRange());
+        $this->assertSame(['10.1.*.*'], $configuration->configuredLoginBruteForceAllowlist());
     }
 
     public function test_loads_reporting_overrides(): void
@@ -94,7 +97,7 @@ class InstallationConfigTest extends TestCase
         string $secureTokens = '0',
         string $extraGeneral = '',
     ): string {
-        $path = tempnam(sys_get_temp_dir(), 'matomo-config-');
+        $path = tempnam('/dev/shm', 'matomo-config-');
         $this->assertIsString($path);
         $this->temporaryFiles[] = $path;
         $content = <<<INI
@@ -139,6 +142,11 @@ class InstallationConfigTest extends TestCase
             [Languages]
             Languages[] = "en"
             Languages[] = "fr"
+
+            [Login]
+            maxAllowedRetries = 12
+            allowedRetriesTimeRange = 45
+            whitelisteBruteForceIps[] = "10.1.*.*"
 
             [proxy]
             host = "proxy.example"

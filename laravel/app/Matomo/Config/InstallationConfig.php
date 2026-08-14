@@ -50,6 +50,10 @@ final readonly class InstallationConfig
         /** @var list<string> */
         private array $enabledReportingPeriods,
         private bool $anonymousSegmentsEnabled,
+        private ?int $configuredLoginMaxAllowedRetries,
+        private ?int $configuredLoginAllowedRetriesTimeRange,
+        /** @var list<string>|null */
+        private ?array $configuredLoginBruteForceAllowlist,
     ) {}
 
     public static function fromFile(string $path): self
@@ -70,6 +74,7 @@ final readonly class InstallationConfig
         $cnilPolicy = $configuration['CnilPolicy'] ?? [];
         $sitesManager = $configuration['SitesManager'] ?? [];
         $languages = $configuration['Languages'] ?? [];
+        $login = $configuration['Login'] ?? [];
         $proxy = $configuration['proxy'] ?? [];
 
         if (! is_array($database)
@@ -78,6 +83,7 @@ final readonly class InstallationConfig
             || ! is_array($cnilPolicy)
             || ! is_array($sitesManager)
             || ! is_array($languages)
+            || ! is_array($login)
             || ! is_array($proxy)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
@@ -148,6 +154,15 @@ final readonly class InstallationConfig
                 $general,
                 'anonymous_user_enable_use_segments_API',
                 true,
+            ),
+            configuredLoginMaxAllowedRetries: self::nullablePositiveInteger($login, 'maxAllowedRetries'),
+            configuredLoginAllowedRetriesTimeRange: self::nullablePositiveInteger(
+                $login,
+                'allowedRetriesTimeRange',
+            ),
+            configuredLoginBruteForceAllowlist: self::nullableStringList(
+                $login,
+                'whitelisteBruteForceIps',
             ),
         );
     }
@@ -310,6 +325,22 @@ final readonly class InstallationConfig
     public function anonymousSegmentsEnabled(): bool
     {
         return $this->anonymousSegmentsEnabled;
+    }
+
+    public function configuredLoginMaxAllowedRetries(): ?int
+    {
+        return $this->configuredLoginMaxAllowedRetries;
+    }
+
+    public function configuredLoginAllowedRetriesTimeRange(): ?int
+    {
+        return $this->configuredLoginAllowedRetriesTimeRange;
+    }
+
+    /** @return list<string>|null */
+    public function configuredLoginBruteForceAllowlist(): ?array
+    {
+        return $this->configuredLoginBruteForceAllowlist;
     }
 
     /**
@@ -549,5 +580,17 @@ final readonly class InstallationConfig
         $value = self::string($values, $key, (string) $default);
 
         return preg_match('/^[1-9]\d*$/D', $value) === 1 ? (int) $value : $default;
+    }
+
+    /** @param array<string, mixed> $values */
+    private static function nullablePositiveInteger(array $values, string $key): ?int
+    {
+        if (! array_key_exists($key, $values)) {
+            return null;
+        }
+
+        $value = self::string($values, $key);
+
+        return preg_match('/^[1-9]\d*$/D', $value) === 1 ? (int) $value : null;
     }
 }
