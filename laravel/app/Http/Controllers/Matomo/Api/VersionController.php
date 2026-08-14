@@ -10,6 +10,7 @@ use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Api\Exceptions\ConflictingAuthenticationParameters;
 use App\Matomo\Api\Exceptions\InvalidApiParameter;
 use App\Matomo\Authentication\VersionAccessAuthorizer;
+use App\Matomo\Security\ReportingApiIpAllowlist;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Piwik\Version;
@@ -19,6 +20,7 @@ class VersionController extends Controller
     public function __construct(
         private readonly VersionAccessAuthorizer $authorizer,
         private readonly ApiResponseFactory $responses,
+        private readonly ReportingApiIpAllowlist $ipAllowlist,
     ) {}
 
     public function __invoke(Request $request): Response
@@ -30,6 +32,16 @@ class VersionController extends Controller
                 ApiRequest::withoutAuthentication($request),
                 $invalidApiRequest->getMessage(),
                 400,
+            );
+        }
+
+        $deniedClientIp = $this->ipAllowlist->deniedClientIp($request);
+
+        if ($deniedClientIp !== null) {
+            return $this->responses->error(
+                $apiRequest,
+                "You cannot use this Matomo as your IP {$deniedClientIp} is not allowed.",
+                401,
             );
         }
 
