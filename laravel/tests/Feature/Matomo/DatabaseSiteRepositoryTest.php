@@ -79,6 +79,12 @@ class DatabaseSiteRepositoryTest extends TestCase
         $this->assertSame('owner', $details['creator_login']);
         $this->assertSame([], $sites->details(99));
         $this->assertSame([3, 8], array_keys($sites->allDetails()));
+        $this->assertSame([3, 8], array_column($sites->detailsForIds([8, 3]), 'idsite'));
+        $this->assertSame([3], array_column($sites->detailsForIds([3, 8], 'Exam'), 'idsite'));
+        $this->assertSame([8], array_column($sites->detailsForIds([3, 8], 'other.test'), 'idsite'));
+        $this->assertSame([3], array_column($sites->detailsForIds([3, 8], '3'), 'idsite'));
+        $this->assertSame([3], array_column($sites->detailsForIds([3, 8], null, 1), 'idsite'));
+        $this->assertSame([], $sites->detailsForIds([]));
         $this->assertSame([3], array_column($sites->detailsInGroup(' Main '), 'idsite'));
         $this->assertSame([], $sites->detailsInGroup('missing'));
         $this->assertSame(['Main', 'a,b'], $sites->groups());
@@ -87,6 +93,10 @@ class DatabaseSiteRepositoryTest extends TestCase
             'https://www.example.test',
             'https://example.test/docs',
         ], $sites->urls(3));
+        $this->assertSame([
+            3 => ['https://www.example.test', 'https://example.test/docs'],
+        ], $sites->aliasUrlsForIds([3, 8]));
+        $this->assertSame([], $sites->aliasUrlsForIds([]));
         $this->assertSame(['Europe/Paris', 'UTC'], $sites->timezones());
         $this->assertSame([3], $sites->idsInTimezones(['Europe/Paris', 'Pacific/Auckland']));
         $this->assertSame([], $sites->idsInTimezones([]));

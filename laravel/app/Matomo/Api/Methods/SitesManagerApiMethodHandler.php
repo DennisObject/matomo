@@ -7,6 +7,7 @@ namespace App\Matomo\Api\Methods;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\CurrencyProvider;
@@ -85,6 +86,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isViewableSiteIdsRequest()
             || $request->isSiteGroupsRequest()
             || $request->isSitesFromGroupRequest()
+            || $request->isAdminSitesRequest()
             || $request->isDefaultCurrencyRequest()
             || $request->isCurrencySymbolsRequest()
             || $request->isCurrencyListRequest()
@@ -209,6 +211,51 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
                 fn (array $site): array => $this->siteDetails->present($site, $language, true),
                 $this->sites->detailsInGroup($request->siteGroup ?? ''),
             );
+
+            return $this->responses->rows($request, $sites);
+        }
+
+        if ($request->isAdminSitesRequest()) {
+            $idSites = array_values(array_diff(
+                $this->authorizer->siteIdsWithRole($request->authentication, SiteAccessRole::Admin),
+                $request->sitesToExclude,
+            ));
+
+            if ($idSites === []) {
+                return $this->responses->rows($request, []);
+            }
+
+            $siteRecords = $this->sites->detailsForIds(
+                $idSites,
+                $request->sitePattern,
+                $request->siteLimit,
+            );
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+            $includeCreator = $this->authorizer->hasSuperUserAccess($request->authentication);
+            $aliasUrls = $request->fetchAliasUrls
+                ? $this->sites->aliasUrlsForIds(array_map(
+                    static fn (array $site): int => (int) ($site['idsite'] ?? 0),
+                    $siteRecords,
+                ))
+                : [];
+            $sites = [];
+
+            foreach ($siteRecords as $site) {
+                $site = $this->siteDetails->present($site, $language, $includeCreator);
+
+                if ($request->fetchAliasUrls) {
+                    $idSite = $site['idsite'] ?? null;
+                    $mainUrl = $site['main_url'] ?? null;
+                    $sites[] = [...$site, 'alias_urls' => [
+                        ...(is_string($mainUrl) ? [$mainUrl] : []),
+                        ...((is_int($idSite) || is_string($idSite)) ? ($aliasUrls[(int) $idSite] ?? []) : []),
+                    ]];
+
+                    continue;
+                }
+
+                $sites[] = $site;
+            }
 
             return $this->responses->rows($request, $sites);
         }

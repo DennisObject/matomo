@@ -21,6 +21,104 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_admin_sites_apply_filters_and_fetch_alias_urls_in_bulk(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::Admin)
+            ->willReturn([1, 2, 3]);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('detailsForIds')
+            ->with([1, 3], 'docs', 2)
+            ->willReturn([
+                ['idsite' => 1, 'name' => 'Docs', 'main_url' => 'https://docs.test'],
+                ['idsite' => 3, 'name' => 'API Docs', 'main_url' => 'https://api.test'],
+            ]);
+        $sites->expects($this->once())
+            ->method('aliasUrlsForIds')
+            ->with([1, 3])
+            ->willReturn([
+                1 => ['https://www.docs.test'],
+                3 => ['https://www.api.test'],
+            ]);
+        $presenter = $this->createMock(SiteDetailsPresenter::class);
+        $presenter->expects($this->exactly(2))
+            ->method('present')
+            ->willReturnCallback(function (array $site, string $language, bool $includeCreator): array {
+                $this->assertSame('fr', $language);
+                $this->assertFalse($includeCreator);
+
+                return [...$site, 'currency_name' => 'euro'];
+            });
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(SiteDetailsPresenter::class, $presenter);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithAdminAccess'.
+            '&fetchAliasUrls=1&pattern=docs&limit=2&sitesToExclude=2'.
+            '&format=json&token_auth=admin-token',
+        )->assertOk()
+            ->assertExactJson([
+                [
+                    'idsite' => 1,
+                    'name' => 'Docs',
+                    'main_url' => 'https://docs.test',
+                    'currency_name' => 'euro',
+                    'alias_urls' => ['https://docs.test', 'https://www.docs.test'],
+                ],
+                [
+                    'idsite' => 3,
+                    'name' => 'API Docs',
+                    'main_url' => 'https://api.test',
+                    'currency_name' => 'euro',
+                    'alias_urls' => ['https://api.test', 'https://www.api.test'],
+                ],
+            ]);
+    }
+
+    public function test_admin_sites_return_an_empty_list_without_admin_access(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::Admin)
+            ->willReturn([]);
+        $authorizer->expects($this->never())->method('hasSuperUserAccess');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('detailsForIds');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithAdminAccess'.
+            '&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([]);
+    }
+
+    public function test_admin_sites_reject_invalid_site_exclusions_before_authorization(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('siteIdsWithRole');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithAdminAccess'.
+            '&sitesToExclude%5B0%5D=invalid&format=json',
+        )->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => 'The API parameter [sitesToExclude] must be a scalar value.',
+            ]);
+    }
+
     public function test_sites_from_group_trim_the_group_and_require_superuser(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

@@ -32,6 +32,11 @@ final readonly class ApiRequest
         public ?string $countryCode,
         public ?bool $multipleTimezonesInCountry,
         public ?string $siteGroup,
+        public bool $fetchAliasUrls,
+        public ?string $sitePattern,
+        public ?int $siteLimit,
+        /** @var list<int> */
+        public array $sitesToExclude,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -61,6 +66,10 @@ final readonly class ApiRequest
             countryCode: null,
             multipleTimezonesInCountry: null,
             siteGroup: null,
+            fetchAliasUrls: false,
+            sitePattern: null,
+            siteLimit: null,
+            sitesToExclude: [],
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -119,6 +128,11 @@ final readonly class ApiRequest
     public function isSitesFromGroupRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getSitesFromGroup';
+    }
+
+    public function isAdminSitesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSitesWithAdminAccess';
     }
 
     public function isDefaultCurrencyRequest(): bool
@@ -253,6 +267,10 @@ final readonly class ApiRequest
             countryCode: self::timezoneCountryCode($request, $module, $method),
             multipleTimezonesInCountry: self::multipleTimezonesInCountry($request, $module, $method),
             siteGroup: self::siteGroup($request, $module, $method),
+            fetchAliasUrls: self::fetchAliasUrls($request, $module, $method),
+            sitePattern: self::sitePattern($request, $module, $method),
+            siteLimit: self::siteLimit($request, $module, $method),
+            sitesToExclude: self::sitesToExclude($request, $module, $method),
             authentication: $authentication,
         );
     }
@@ -409,6 +427,75 @@ final readonly class ApiRequest
         return $module === 'API' && $method === 'SitesManager.getSitesFromGroup'
             ? trim(self::stringInput($request, 'group'))
             : null;
+    }
+
+    private static function fetchAliasUrls(Request $request, string $module, string $method): bool
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.getSitesWithAdminAccess') {
+            return false;
+        }
+
+        return self::booleanFromArray($request->query->all(), 'fetchAliasUrls')
+            ?? self::booleanFromArray($request->request->all(), 'fetchAliasUrls')
+            ?? false;
+    }
+
+    private static function sitePattern(Request $request, string $module, string $method): ?string
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.getSitesWithAdminAccess') {
+            return null;
+        }
+
+        return self::nullableStringInput($request, 'pattern');
+    }
+
+    private static function siteLimit(Request $request, string $module, string $method): ?int
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.getSitesWithAdminAccess') {
+            return null;
+        }
+
+        $value = self::nullableStringInput($request, 'limit');
+
+        if ($value === null || $value === '' || (string) (int) $value !== $value || (int) $value < 1) {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private static function sitesToExclude(Request $request, string $module, string $method): array
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.getSitesWithAdminAccess') {
+            return [];
+        }
+
+        $query = $request->query->all();
+        $post = $request->request->all();
+
+        if (array_key_exists('sitesToExclude', $query)) {
+            $value = $query['sitesToExclude'];
+        } elseif (array_key_exists('sitesToExclude', $post)) {
+            $value = $post['sitesToExclude'];
+        } else {
+            return [];
+        }
+
+        $values = is_array($value) ? $value : explode(',', (string) $value);
+        $siteIds = [];
+
+        foreach ($values as $siteId) {
+            if (! is_scalar($siteId) || (string) (int) $siteId !== (string) $siteId) {
+                throw new InvalidApiParameter('sitesToExclude');
+            }
+
+            $siteIds[] = (int) $siteId;
+        }
+
+        return array_values(array_unique($siteIds));
     }
 
     private static function authentication(Request $request): ApiAuthentication

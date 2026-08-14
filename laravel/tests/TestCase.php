@@ -118,6 +118,11 @@ abstract class TestCase extends BaseTestCase
                 return [];
             }
 
+            public function detailsForIds(array $idSites, ?string $pattern = null, ?int $limit = null): array
+            {
+                return [];
+            }
+
             public function detailsInGroup(string $group): array
             {
                 return [];
@@ -129,6 +134,11 @@ abstract class TestCase extends BaseTestCase
             }
 
             public function urls(int $idSite): array
+            {
+                return [];
+            }
+
+            public function aliasUrlsForIds(array $idSites): array
             {
                 return [];
             }
