@@ -120,6 +120,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getSiteUrlsFromId';
     }
 
+    public function isUniqueSiteTimezonesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getUniqueSiteTimezones';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(

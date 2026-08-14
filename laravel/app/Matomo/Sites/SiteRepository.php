@@ -20,4 +20,9 @@ interface SiteRepository
      * @return list<string>
      */
     public function urls(int $idSite): array;
+
+    /**
+     * @return list<string>
+     */
+    public function timezones(): array;
 }

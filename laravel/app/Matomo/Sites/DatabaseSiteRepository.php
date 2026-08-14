@@ -57,4 +57,16 @@ final readonly class DatabaseSiteRepository implements SiteRepository
             ...$aliases,
         ]);
     }
+
+    public function timezones(): array
+    {
+        return array_values(
+            $this->connection
+                ->table('site')
+                ->distinct()
+                ->pluck('timezone')
+                ->filter(static fn (mixed $timezone): bool => is_string($timezone))
+                ->all(),
+        );
+    }
 }
