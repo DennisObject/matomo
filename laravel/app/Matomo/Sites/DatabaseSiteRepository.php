@@ -42,10 +42,30 @@ final readonly class DatabaseSiteRepository implements SiteRepository
             ->where('idsite', $idSite)
             ->first();
 
-        if (! $record instanceof stdClass) {
-            return [];
+        return $record instanceof stdClass ? $this->normalizeDetails($record) : [];
+    }
+
+    public function allDetails(): array
+    {
+        $sites = [];
+
+        foreach ($this->connection->table('site')->orderBy('idsite')->get() as $record) {
+            $site = $this->normalizeDetails($record);
+            $idSite = $site['idsite'] ?? null;
+
+            if (is_int($idSite)) {
+                $sites[$idSite] = $site;
+            }
         }
 
+        return $sites;
+    }
+
+    /**
+     * @return array<string, int|string|null>
+     */
+    private function normalizeDetails(stdClass $record): array
+    {
         $site = [];
 
         foreach (get_object_vars($record) as $name => $value) {

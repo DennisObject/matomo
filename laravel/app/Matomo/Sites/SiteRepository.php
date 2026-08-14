@@ -17,6 +17,11 @@ interface SiteRepository
     public function details(int $idSite): array;
 
     /**
+     * @return array<int, array<string, int|string|null>>
+     */
+    public function allDetails(): array;
+
+    /**
      * @return list<string>
      */
     public function groups(): array;

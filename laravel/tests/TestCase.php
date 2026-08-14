@@ -113,6 +113,11 @@ abstract class TestCase extends BaseTestCase
                 return [];
             }
 
+            public function allDetails(): array
+            {
+                return [];
+            }
+
             public function groups(): array
             {
                 return [];

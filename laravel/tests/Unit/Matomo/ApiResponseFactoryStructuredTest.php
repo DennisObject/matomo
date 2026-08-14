@@ -11,6 +11,27 @@ use PHPUnit\Framework\TestCase;
 
 class ApiResponseFactoryStructuredTest extends TestCase
 {
+    public function test_keeps_site_ids_as_keys_in_json_and_xml(): void
+    {
+        $rows = [
+            1 => ['idsite' => 1, 'name' => 'One'],
+            3 => ['idsite' => 3, 'name' => 'Three'],
+        ];
+        $responses = new ApiResponseFactory;
+
+        $this->assertSame(
+            '{"1":{"idsite":1,"name":"One"},"3":{"idsite":3,"name":"Three"}}',
+            $responses->keyedRows($this->request('json'), $rows)->getContent(),
+        );
+        $this->assertSame(
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>\n".
+            "\t<row key=\"1\">\n\t\t<idsite>1</idsite>\n\t\t<name>One</name>\n\t</row>\n".
+            "\t<row key=\"3\">\n\t\t<idsite>3</idsite>\n\t\t<name>Three</name>\n\t</row>\n".
+            '</result>',
+            $responses->keyedRows($this->request('xml'), $rows)->getContent(),
+        );
+    }
+
     public function test_keeps_null_and_boolean_site_fields_in_legacy_formats(): void
     {
         $values = [

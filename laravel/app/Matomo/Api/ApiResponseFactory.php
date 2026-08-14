@@ -58,7 +58,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string>>  $rows
+     * @param  list<array<string, bool|int|string|null>>  $rows
      */
     public function rows(ApiRequest $request, array $rows): Response
     {
@@ -70,6 +70,23 @@ final class ApiResponseFactory
             'original' => $this->originalRows($request, $rows),
             'rss' => $this->rssScalarError(),
             'xml' => $this->xmlRows($rows),
+            default => throw new LogicException('The API response format is not supported.'),
+        };
+    }
+
+    /**
+     * @param  array<int, array<string, bool|int|string|null>>  $rows
+     */
+    public function keyedRows(ApiRequest $request, array $rows): Response
+    {
+        return match ($request->format) {
+            'console' => $this->consoleRows($request, array_values($rows)),
+            'csv', 'tsv' => $this->spreadsheetRows($request, array_values($rows)),
+            'html' => $this->htmlRows(array_values($rows)),
+            'json' => $this->jsonStructured($request, $rows),
+            'original' => $this->originalStructured($request, $rows),
+            'rss' => $this->rssScalarError(),
+            'xml' => $this->xmlStructured($rows),
             default => throw new LogicException('The API response format is not supported.'),
         };
     }
@@ -167,7 +184,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string>>  $rows
+     * @param  list<array<string, bool|int|string|null>>  $rows
      */
     private function xmlRows(array $rows): Response
     {
@@ -202,7 +219,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, array<string, string>>  $values
+     * @param  array<array-key, array<string, bool|int|string|null>>  $values
      */
     private function xmlStructured(array $values): Response
     {
@@ -223,14 +240,14 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, array<string, string>|string>  $values
+     * @param  array<array-key, array<array-key, bool|int|string|null>|bool|int|string|null>  $values
      */
     private function xmlArray(array $values, string $indent): string
     {
         $xml = '';
 
         foreach ($values as $key => $value) {
-            [$prefix, $suffix] = $this->xmlArrayTags($key);
+            [$prefix, $suffix, $empty] = $this->xmlArrayTags((string) $key);
 
             if (is_array($value)) {
                 $xml .= $indent.$prefix."\n";
@@ -240,14 +257,17 @@ final class ApiResponseFactory
                 continue;
             }
 
-            $xml .= $indent.$prefix.$this->escape($value).$suffix."\n";
+            $value = $this->scalarText($value, false);
+            $xml .= $value === ''
+                ? $indent.$empty."\n"
+                : $indent.$prefix.$this->escape($value).$suffix."\n";
         }
 
         return $xml;
     }
 
     /**
-     * @return array{string, string}
+     * @return array{string, string, string}
      */
     private function xmlArrayTags(string $key): array
     {
@@ -257,14 +277,19 @@ final class ApiResponseFactory
             return [
                 '<row '.$attribute.'="'.$this->escape($value).'">',
                 '</row>',
+                '<row '.$attribute.'="'.$this->escape($value).'">',
             ];
         }
 
         if (! $this->validXmlArrayTag($key)) {
-            return ['<row key="'.$this->escape($key).'">', '</row>'];
+            return [
+                '<row key="'.$this->escape($key).'">',
+                '</row>',
+                '<row key="'.$this->escape($key).'"/>',
+            ];
         }
 
-        return ["<{$key}>", "</{$key}>"];
+        return ["<{$key}>", "</{$key}>", "<{$key} />"];
     }
 
     private function validXmlArrayTag(string $key): bool
@@ -354,7 +379,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string>>  $rows
+     * @param  list<array<string, bool|int|string|null>>  $rows
      */
     private function spreadsheetRows(ApiRequest $request, array $rows): Response
     {
@@ -518,7 +543,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string>>  $rows
+     * @param  list<array<string, bool|int|string|null>>  $rows
      */
     private function htmlRows(array $rows): Response
     {
@@ -590,7 +615,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string>>  $rows
+     * @param  list<array<string, bool|int|string|null>>  $rows
      */
     private function originalRows(ApiRequest $request, array $rows): Response
     {
@@ -602,7 +627,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, array<string, string>>  $values
+     * @param  array<array-key, array<string, bool|int|string|null>>  $values
      */
     private function originalStructured(ApiRequest $request, array $values): Response
     {
@@ -683,7 +708,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string>>  $rows
+     * @param  list<array<string, bool|int|string|null>>  $rows
      */
     private function consoleRows(ApiRequest $request, array $rows): Response
     {
@@ -736,7 +761,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string>>  $rows
+     * @param  list<array<string, bool|int|string|null>>  $rows
      */
     private function jsonRows(ApiRequest $request, array $rows): Response
     {
@@ -744,7 +769,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, array<string, string>>  $values
+     * @param  array<array-key, array<string, bool|int|string|null>>  $values
      */
     private function jsonStructured(ApiRequest $request, array $values): Response
     {
@@ -797,7 +822,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string>>  $rows
+     * @param  list<array<string, bool|int|string|null>>  $rows
      * @return list<string>
      */
     private function rowColumns(array $rows): array
