@@ -294,6 +294,11 @@ final readonly class ApiRequest
             && in_array($this->method, self::VISITS_SUMMARY_METHODS, true);
     }
 
+    public function isVisitFrequencyRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'VisitFrequency.get';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -651,7 +656,9 @@ final readonly class ApiRequest
         string $module,
         string $method,
     ): ?VisitsSummaryRequest {
-        if ($module !== 'API' || ! in_array($method, self::VISITS_SUMMARY_METHODS, true)) {
+        if ($module !== 'API'
+            || (! in_array($method, self::VISITS_SUMMARY_METHODS, true)
+                && $method !== 'VisitFrequency.get')) {
             return null;
         }
 
