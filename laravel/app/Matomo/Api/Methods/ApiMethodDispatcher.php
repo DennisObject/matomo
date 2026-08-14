@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Matomo\Api\Methods;
 
 use App\Matomo\Api\ApiRequest;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use LogicException;
 
@@ -20,9 +21,9 @@ final readonly class ApiMethodDispatcher
         return $this->handler($request) !== null;
     }
 
-    public function dispatch(ApiRequest $request): Response
+    public function dispatch(ApiRequest $request, Request $httpRequest): Response
     {
-        return $this->handler($request)?->handle($request)
+        return $this->handler($request)?->handle($request, $httpRequest)
             ?? throw new LogicException('The API method has not moved to Laravel yet.');
     }
 

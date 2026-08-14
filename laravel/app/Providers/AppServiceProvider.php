@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
+use App\Matomo\Api\Methods\CoreApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
-use App\Matomo\Api\Methods\VersionApiMethodHandler;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
@@ -85,16 +85,25 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            ClientIpResolver::class,
+            function (Application $application): ClientIpResolver {
+                $installation = $application->make(InstallationConfig::class);
+
+                return new ClientIpResolver(
+                    proxyHeaders: $installation->proxyClientHeaders(),
+                    proxyIps: $installation->proxyIps(),
+                    readLastProxyIp: $installation->proxyIpReadLastInList(),
+                );
+            },
+        );
+
+        $this->app->singleton(
             ReportingApiIpAllowlist::class,
             function (Application $application): ReportingApiIpAllowlist {
                 $installation = $application->make(InstallationConfig::class);
 
                 return new ConfiguredReportingApiIpAllowlist(
-                    clientIps: new ClientIpResolver(
-                        proxyHeaders: $installation->proxyClientHeaders(),
-                        proxyIps: $installation->proxyIps(),
-                        readLastProxyIp: $installation->proxyIpReadLastInList(),
-                    ),
+                    clientIps: $application->make(ClientIpResolver::class),
                     cache: $application->make(CacheRepository::class),
                     allowlistedIps: $installation->loginAllowlistIps(),
                     appliesToReportingApi: $installation->loginAllowlistAppliesToReportingApi(),
@@ -105,7 +114,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             ApiMethodDispatcher::class,
             fn (Application $application): ApiMethodDispatcher => new ApiMethodDispatcher([
-                $application->make(VersionApiMethodHandler::class),
+                $application->make(CoreApiMethodHandler::class),
                 $application->make(SitesManagerApiMethodHandler::class),
             ]),
         );

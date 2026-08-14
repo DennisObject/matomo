@@ -56,6 +56,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'API.getPhpVersion';
     }
 
+    public function isClientIpRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'API.getIpFromHeader';
+    }
+
     public function siteAccessRole(): ?SiteAccessRole
     {
         if ($this->module !== 'API') {
