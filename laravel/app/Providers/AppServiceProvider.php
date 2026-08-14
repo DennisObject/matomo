@@ -13,6 +13,7 @@ use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\ServiceProvider;
@@ -55,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
                         sessionLifetime: $installation->sessionLifetime(),
                         idleTimeout: $installation->sessionIdleTimeout(),
                     ),
+                    events: $application->make(Dispatcher::class),
                 );
             },
         );

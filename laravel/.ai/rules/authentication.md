@@ -14,3 +14,6 @@ When `force_api_session=1`, validate the `MATOMO_SESSID` database session before
 
 ## Enforce the reporting API IP allowlist first
 Resolve the client IP with Matomo's configured proxy headers and proxy ranges. When the reporting API allowlist is active, reject a non-matching IP before method dispatch or authentication reads user data.
+
+## Keep site access extensible
+Load core roles from the existing access and site tables. Dispatch `UserSiteAccessLoaded` for regular users before returning permissions so migrated plugins can add or remove site access without changing core auth code.

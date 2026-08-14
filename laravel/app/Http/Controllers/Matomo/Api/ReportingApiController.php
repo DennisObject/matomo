@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Piwik\Version;
 
-class VersionController extends Controller
+class ReportingApiController extends Controller
 {
     public function __construct(
         private readonly ApiAccessAuthorizer $authorizer,
@@ -45,7 +45,11 @@ class VersionController extends Controller
             );
         }
 
-        if (! $apiRequest->isVersionRequest() && ! $apiRequest->isPhpVersionRequest()) {
+        if (
+            ! $apiRequest->isVersionRequest()
+            && ! $apiRequest->isPhpVersionRequest()
+            && ! $apiRequest->isAdminSiteIdsRequest()
+        ) {
             return $this->responses->error($apiRequest, 'This API method has not moved to Laravel yet.', 501);
         }
 
@@ -70,6 +74,13 @@ class VersionController extends Controller
                 'versionId' => PHP_VERSION_ID,
                 'extra' => PHP_EXTRA_VERSION,
             ]);
+        }
+
+        if ($apiRequest->isAdminSiteIdsRequest()) {
+            return $this->responses->values(
+                $apiRequest,
+                $this->authorizer->siteIdsWithAdminAccess($apiRequest->authentication),
+            );
         }
 
         if (! $this->authorizer->hasSomeViewAccess($apiRequest->authentication)) {

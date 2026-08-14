@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Matomo\Authentication;
 
+use App\Matomo\Authentication\Events\UserSiteAccessLoaded;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
 use stdClass;
@@ -17,6 +19,7 @@ final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
         private string $salt,
         private bool $onlyAllowSecureTokens,
         private ?DatabaseSessionAuthenticator $sessions = null,
+        private ?Dispatcher $events = null,
     ) {}
 
     public function hasSomeViewAccess(ApiAuthentication $authentication): bool
@@ -31,17 +34,33 @@ final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
             return true;
         }
 
-        return $this->connection
-            ->table('access as access')
-            ->join('site as site', 'access.idsite', '=', 'site.idsite')
-            ->where('access.login', $user['login'])
-            ->whereIn('access.access', ['view', 'write', 'admin'])
-            ->exists();
+        $siteIdsByAccess = $this->siteIdsByAccess($user['login']);
+
+        return ($siteIdsByAccess['view'] ?? []) !== []
+            || ($siteIdsByAccess['write'] ?? []) !== []
+            || ($siteIdsByAccess['admin'] ?? []) !== [];
     }
 
     public function hasSuperUserAccess(ApiAuthentication $authentication): bool
     {
         return $this->authenticatedUser($authentication)['isSuperUser'] ?? false;
+    }
+
+    public function siteIdsWithAdminAccess(ApiAuthentication $authentication): array
+    {
+        $user = $this->authenticatedUser($authentication);
+
+        if ($user === null) {
+            return [];
+        }
+
+        if ($user['isSuperUser']) {
+            return $this->integerList(
+                $this->connection->table('site')->pluck('idsite')->all(),
+            );
+        }
+
+        return $this->integerList($this->siteIdsByAccess($user['login'])['admin'] ?? []);
     }
 
     /**
@@ -135,5 +154,54 @@ final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
             'login' => $login,
             'isSuperUser' => (int) $superUserAccess === 1,
         ];
+    }
+
+    /**
+     * @return array<string, list<int>>
+     */
+    private function siteIdsByAccess(string $login): array
+    {
+        $siteIdsByAccess = [
+            'view' => [],
+            'write' => [],
+            'admin' => [],
+        ];
+        $records = $this->connection
+            ->table('access as access')
+            ->join('site as site', 'access.idsite', '=', 'site.idsite')
+            ->select(['access.access', 'site.idsite'])
+            ->where('access.login', $login)
+            ->get();
+
+        foreach ($records as $record) {
+            $access = $record->access ?? null;
+            $idSite = $record->idsite ?? null;
+
+            if (is_string($access) && isset($siteIdsByAccess[$access]) && (is_int($idSite) || is_string($idSite))) {
+                $siteIdsByAccess[$access][] = (int) $idSite;
+            }
+        }
+
+        $event = new UserSiteAccessLoaded($login, $siteIdsByAccess);
+        $this->events?->dispatch($event);
+
+        return $event->siteIdsByAccess;
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $values
+     * @return list<int>
+     */
+    private function integerList(array $values): array
+    {
+        $integers = [];
+
+        foreach ($values as $value) {
+            if (is_int($value) || is_string($value)) {
+                $integers[] = (int) $value;
+            }
+        }
+
+        return array_values(array_unique($integers));
     }
 }

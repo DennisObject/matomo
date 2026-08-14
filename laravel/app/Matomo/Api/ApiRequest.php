@@ -53,6 +53,12 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'API.getPhpVersion';
     }
 
+    public function isAdminSiteIdsRequest(): bool
+    {
+        return $this->module === 'API'
+            && $this->method === 'SitesManager.getSitesIdWithAdminAccess';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
