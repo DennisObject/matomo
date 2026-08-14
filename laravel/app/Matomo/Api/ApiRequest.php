@@ -15,6 +15,9 @@ final readonly class ApiRequest
         public string $method,
         public string $format,
         public ?string $callback,
+        public bool $serialize,
+        public bool $convertToUnicode,
+        public bool $showMetadata,
         #[\SensitiveParameter]
         public ?string $token,
         public bool $tokenIsSecure,
@@ -35,6 +38,9 @@ final readonly class ApiRequest
             format: strtolower(self::safeStringInput($request, 'format', 'xml')),
             callback: self::safeNullableStringInput($request, 'callback')
                 ?? self::safeNullableStringInput($request, 'jsoncallback'),
+            serialize: self::booleanInput($request, 'serialize', false),
+            convertToUnicode: self::booleanInput($request, 'convertToUnicode', true),
+            showMetadata: self::booleanInput($request, 'showMetadata', true),
             token: null,
             tokenIsSecure: false,
         );
@@ -48,7 +54,11 @@ final readonly class ApiRequest
 
     public function hasSupportedFormat(): bool
     {
-        return in_array($this->format, ['json', 'xml'], true);
+        return in_array(
+            $this->format,
+            ['console', 'csv', 'html', 'json', 'original', 'rss', 'tsv', 'xml'],
+            true,
+        );
     }
 
     private static function make(Request $request, ?string $token, bool $tokenIsSecure): self
@@ -59,6 +69,9 @@ final readonly class ApiRequest
             format: strtolower(self::stringInput($request, 'format', 'xml')),
             callback: self::nullableStringInput($request, 'callback')
                 ?? self::nullableStringInput($request, 'jsoncallback'),
+            serialize: self::booleanInput($request, 'serialize', false),
+            convertToUnicode: self::booleanInput($request, 'convertToUnicode', true),
+            showMetadata: self::booleanInput($request, 'showMetadata', true),
             token: $token,
             tokenIsSecure: $tokenIsSecure,
         );
@@ -136,5 +149,16 @@ final readonly class ApiRequest
         $value = $request->query->all()[$key] ?? $request->request->all()[$key] ?? null;
 
         return is_scalar($value) ? str_replace("\0", '', (string) $value) : null;
+    }
+
+    private static function booleanInput(Request $request, string $key, bool $default): bool
+    {
+        $value = self::safeNullableStringInput($request, $key);
+
+        return match (strtolower($value ?? '')) {
+            '1', 'true' => true,
+            '0', 'false' => false,
+            default => $default,
+        };
     }
 }
