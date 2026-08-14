@@ -6,9 +6,18 @@ namespace App\Matomo\Sites;
 
 use Exception;
 use Illuminate\Database\ConnectionInterface;
+use stdClass;
 
 final readonly class DatabaseSiteRepository implements SiteRepository
 {
+    private const array INTEGER_PROPERTIES = [
+        'idsite',
+        'ecommerce',
+        'sitesearch',
+        'exclude_unknown_urls',
+        'keep_url_fragment',
+    ];
+
     public function __construct(private ConnectionInterface $connection) {}
 
     public function allIds(): array
@@ -24,6 +33,31 @@ final readonly class DatabaseSiteRepository implements SiteRepository
         } catch (Exception) {
             return [];
         }
+    }
+
+    public function details(int $idSite): array
+    {
+        $record = $this->connection
+            ->table('site')
+            ->where('idsite', $idSite)
+            ->first();
+
+        if (! $record instanceof stdClass) {
+            return [];
+        }
+
+        $site = [];
+
+        foreach (get_object_vars($record) as $name => $value) {
+            if (in_array($name, self::INTEGER_PROPERTIES, true)
+                && (is_bool($value) || is_int($value) || is_string($value))) {
+                $site[$name] = (int) $value;
+            } elseif (is_int($value) || is_string($value) || $value === null) {
+                $site[$name] = $value;
+            }
+        }
+
+        return $site;
     }
 
     public function groups(): array

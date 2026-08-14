@@ -10,9 +10,15 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
 use stdClass;
+use WeakMap;
 
 final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
 {
+    /**
+     * @var WeakMap<ApiAuthentication, array{user: array{login: string, isSuperUser: bool}|null}>
+     */
+    private WeakMap $authenticatedUsers;
+
     public function __construct(
         private ConnectionInterface $connection,
         #[\SensitiveParameter]
@@ -20,7 +26,9 @@ final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
         private bool $onlyAllowSecureTokens,
         private ?DatabaseSessionAuthenticator $sessions = null,
         private ?Dispatcher $events = null,
-    ) {}
+    ) {
+        $this->authenticatedUsers = new WeakMap;
+    }
 
     public function authenticatedLogin(ApiAuthentication $authentication): ?string
     {
@@ -137,15 +145,24 @@ final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
      */
     private function authenticatedUser(ApiAuthentication $authentication): ?array
     {
+        if (isset($this->authenticatedUsers[$authentication])) {
+            return $this->authenticatedUsers[$authentication]['user'];
+        }
+
         $user = $this->sessions?->authenticate($authentication);
 
         if ($user !== null) {
+            $this->authenticatedUsers[$authentication] = ['user' => $user];
+
             return $user;
         }
 
-        return in_array($authentication->token, [null, '', 'anonymous'], true)
+        $user = in_array($authentication->token, [null, '', 'anonymous'], true)
             ? $this->findUser('anonymous')
             : $this->authenticateToken($authentication->token, $authentication->tokenIsSecure);
+        $this->authenticatedUsers[$authentication] = ['user' => $user];
+
+        return $user;
     }
 
     /**

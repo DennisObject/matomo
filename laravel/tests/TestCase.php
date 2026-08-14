@@ -12,6 +12,7 @@ use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
+use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
@@ -60,6 +61,13 @@ abstract class TestCase extends BaseTestCase
                 return $timezone;
             }
         });
+        $this->app->instance(SiteDetailsPresenter::class, new class implements SiteDetailsPresenter
+        {
+            public function present(array $site, string $language, bool $includeCreator): array
+            {
+                return $site;
+            }
+        });
         $this->app->instance(QueryParameterExclusionPolicy::class, new class implements QueryParameterExclusionPolicy
         {
             public function type(?int $idSite = null): string
@@ -96,6 +104,11 @@ abstract class TestCase extends BaseTestCase
         $this->app->instance(SiteRepository::class, new class implements SiteRepository
         {
             public function allIds(): array
+            {
+                return [];
+            }
+
+            public function details(int $idSite): array
             {
                 return [];
             }

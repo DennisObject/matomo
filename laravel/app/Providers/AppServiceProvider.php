@@ -32,8 +32,10 @@ use App\Matomo\Sites\ConfiguredQueryParameterExclusionPolicy;
 use App\Matomo\Sites\ConfiguredSiteRuntimeSettings;
 use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\DatabaseSiteRepository;
+use App\Matomo\Sites\LocalizedSiteDetailsPresenter;
 use App\Matomo\Sites\LocalizedTimezoneProvider;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
+use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
@@ -166,6 +168,14 @@ class AppServiceProvider extends ServiceProvider
                     countries: is_array($countries) ? $countries : [],
                 );
             },
+        );
+
+        $this->app->singleton(
+            SiteDetailsPresenter::class,
+            fn (Application $application): SiteDetailsPresenter => new LocalizedSiteDetailsPresenter(
+                timezones: $application->make(TimezoneProvider::class),
+                translator: $application->make(MatomoTranslator::class),
+            ),
         );
 
         $this->app->singleton(

@@ -155,6 +155,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getSiteUrlsFromId';
     }
 
+    public function isSiteDetailsRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSiteFromId';
+    }
+
     public function isExcludedReferrersRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getExcludedReferrers';
@@ -244,6 +249,7 @@ final readonly class ApiRequest
         $requiredMethods = [
             'SitesManager.getExcludedQueryParameters',
             'SitesManager.getExcludedReferrers',
+            'SitesManager.getSiteFromId',
             'SitesManager.getSiteUrlsFromId',
         ];
         $optionalMethods = [

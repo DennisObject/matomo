@@ -24,7 +24,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, int|string>  $values
+     * @param  array<string, bool|int|string|null>  $values
      */
     public function row(ApiRequest $request, array $values): Response
     {
@@ -120,16 +120,17 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, int|string>  $values
+     * @param  array<string, bool|int|string|null>  $values
      */
     private function xmlRow(array $values): Response
     {
         $columns = '';
 
         foreach ($values as $name => $value) {
+            $value = $this->scalarText($value, false);
             $columns .= $value === ''
                 ? "\n\t\t<{$name} />"
-                : "\n\t\t<{$name}>{$this->escape((string) $value)}</{$name}>";
+                : "\n\t\t<{$name}>{$this->escape($value)}</{$name}>";
         }
 
         return $this->response(
@@ -302,7 +303,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, int|string>  $values
+     * @param  array<string, bool|int|string|null>  $values
      */
     private function spreadsheetRow(ApiRequest $request, array $values): Response
     {
@@ -312,7 +313,10 @@ final class ApiResponseFactory
             array_keys($values),
         ));
         $row = implode($delimiter, array_map(
-            fn (int|string $value): string => $this->spreadsheetCell((string) $value, $delimiter),
+            fn (bool|int|string|null $value): string => $this->spreadsheetCell(
+                $this->scalarText($value, false),
+                $delimiter,
+            ),
             array_values($values),
         ));
         $content = $header."\n".$row;
@@ -448,7 +452,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, int|string>  $values
+     * @param  array<string, bool|int|string|null>  $values
      */
     private function htmlRow(array $values): Response
     {
@@ -457,7 +461,7 @@ final class ApiResponseFactory
 
         foreach ($values as $name => $value) {
             $headers .= "\n\t\t<th>{$this->escape($name)}</th>";
-            $cells .= "\n\t\t<td>{$this->escape((string) $value)}</td>";
+            $cells .= "\n\t\t<td>{$this->escape($this->scalarText($value, false))}</td>";
         }
 
         $content = <<<HTML
@@ -562,7 +566,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, int|string>  $values
+     * @param  array<string, bool|int|string|null>  $values
      */
     private function originalRow(ApiRequest $request, array $values): Response
     {
@@ -633,7 +637,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, int|string>  $values
+     * @param  array<string, bool|int|string|null>  $values
      */
     private function consoleRow(ApiRequest $request, array $values): Response
     {
@@ -641,9 +645,9 @@ final class ApiResponseFactory
 
         foreach ($values as $name => $value) {
             $escapedName = str_replace(['\\', "'"], ['\\\\', "\\'"], $name);
-            $renderedValue = is_int($value)
-                ? (string) $value
-                : "'".str_replace(['\\', "'"], ['\\\\', "\\'"], $value)."'";
+            $renderedValue = is_string($value)
+                ? "'".str_replace(['\\', "'"], ['\\\\', "\\'"], $value)."'"
+                : $this->scalarText($value, true);
             $columns[] = "'{$escapedName}' => {$renderedValue}";
         }
 
@@ -724,7 +728,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, bool|int|string>  $payload
+     * @param  array<string, bool|int|string|null>  $payload
      */
     private function json(ApiRequest $request, array $payload, int $status): Response
     {
@@ -779,8 +783,12 @@ final class ApiResponseFactory
             "'&format=original&serialize=1'; you will get the original php data structure serialized.";
     }
 
-    private function scalarText(bool|int|string $value, bool $emptyFalse): string
+    private function scalarText(bool|int|string|null $value, bool $emptyFalse): string
     {
+        if ($value === null) {
+            return '';
+        }
+
         if ($value === false) {
             return $emptyFalse ? '' : '0';
         }
