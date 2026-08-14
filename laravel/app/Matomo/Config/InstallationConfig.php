@@ -26,6 +26,7 @@ final readonly class InstallationConfig
         /** @var list<string> */
         private array $proxyIps,
         private bool $proxyIpReadLastInList,
+        private int $websitesCountToDisplay,
     ) {}
 
     public static function fromFile(string $path): self
@@ -84,6 +85,10 @@ final readonly class InstallationConfig
             proxyClientHeaders: self::stringList($general, 'proxy_client_headers'),
             proxyIps: self::stringList($general, 'proxy_ips'),
             proxyIpReadLastInList: self::boolean($general, 'proxy_ip_read_last_in_list', true),
+            websitesCountToDisplay: max(
+                self::positiveInteger($general, 'site_selector_max_sites', 15),
+                self::positiveInteger($general, 'autocomplete_min_sites', 5),
+            ),
         );
     }
 
@@ -147,6 +152,11 @@ final readonly class InstallationConfig
     public function proxyIpReadLastInList(): bool
     {
         return $this->proxyIpReadLastInList;
+    }
+
+    public function websitesCountToDisplay(): int
+    {
+        return $this->websitesCountToDisplay;
     }
 
     /**

@@ -9,11 +9,35 @@ use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\SiteRepository;
+use App\Matomo\Sites\SiteRuntimeSettings;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_runtime_site_settings_keep_view_access_and_scalar_types(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->exactly(2))->method('hasSomeViewAccess')->willReturn(true);
+        $runtime = $this->createMock(SiteRuntimeSettings::class);
+        $runtime->expects($this->once())->method('timezoneSupportEnabled')->willReturn(false);
+        $runtime->expects($this->once())->method('websitesCountToDisplay')->willReturn(42);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRuntimeSettings::class, $runtime);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.isTimezoneSupportEnabled'.
+            '&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertContent('{"value":false}');
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getNumWebsitesToDisplayPerPage'.
+            '&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertContent('{"value":42}');
+    }
+
     public function test_default_timezone_is_public_and_uses_the_legacy_fallback(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

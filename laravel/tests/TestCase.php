@@ -8,6 +8,7 @@ use App\Matomo\Options\OptionRepository;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Sites\SiteRepository;
+use App\Matomo\Sites\SiteRuntimeSettings;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Request;
 
@@ -42,6 +43,18 @@ abstract class TestCase extends BaseTestCase
             public function groups(): array
             {
                 return [];
+            }
+        });
+        $this->app->instance(SiteRuntimeSettings::class, new class implements SiteRuntimeSettings
+        {
+            public function timezoneSupportEnabled(): bool
+            {
+                return true;
+            }
+
+            public function websitesCountToDisplay(): int
+            {
+                return 15;
             }
         });
     }

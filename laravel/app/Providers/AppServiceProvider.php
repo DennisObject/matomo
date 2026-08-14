@@ -17,8 +17,10 @@ use App\Matomo\Options\OptionRepository;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\ReportingApiIpAllowlist;
+use App\Matomo\Sites\ConfiguredSiteRuntimeSettings;
 use App\Matomo\Sites\DatabaseSiteRepository;
 use App\Matomo\Sites\SiteRepository;
+use App\Matomo\Sites\SiteRuntimeSettings;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -83,6 +85,13 @@ class AppServiceProvider extends ServiceProvider
             SiteRepository::class,
             fn (Application $application): SiteRepository => new DatabaseSiteRepository(
                 $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
+            SiteRuntimeSettings::class,
+            fn (Application $application): SiteRuntimeSettings => new ConfiguredSiteRuntimeSettings(
+                $application->make(InstallationConfig::class),
             ),
         );
 
