@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Matomo\Api\Methods\ApiMethodDispatcher;
+use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
+use App\Matomo\Api\Methods\VersionApiMethodHandler;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
@@ -77,6 +80,14 @@ class AppServiceProvider extends ServiceProvider
                     appliesToReportingApi: $installation->loginAllowlistAppliesToReportingApi(),
                 );
             },
+        );
+
+        $this->app->singleton(
+            ApiMethodDispatcher::class,
+            fn (Application $application): ApiMethodDispatcher => new ApiMethodDispatcher([
+                $application->make(VersionApiMethodHandler::class),
+                $application->make(SitesManagerApiMethodHandler::class),
+            ]),
         );
     }
 

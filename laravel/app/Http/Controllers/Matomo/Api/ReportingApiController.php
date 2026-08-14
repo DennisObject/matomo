@@ -9,16 +9,15 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Api\Exceptions\ConflictingAuthenticationParameters;
 use App\Matomo\Api\Exceptions\InvalidApiParameter;
-use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Piwik\Version;
 
 class ReportingApiController extends Controller
 {
     public function __construct(
-        private readonly ApiAccessAuthorizer $authorizer,
+        private readonly ApiMethodDispatcher $methods,
         private readonly ApiResponseFactory $responses,
         private readonly ReportingApiIpAllowlist $ipAllowlist,
     ) {}
@@ -45,11 +44,7 @@ class ReportingApiController extends Controller
             );
         }
 
-        if (
-            ! $apiRequest->isVersionRequest()
-            && ! $apiRequest->isPhpVersionRequest()
-            && ! $apiRequest->isAdminSiteIdsRequest()
-        ) {
+        if (! $this->methods->supports($apiRequest)) {
             return $this->responses->error($apiRequest, 'This API method has not moved to Laravel yet.', 501);
         }
 
@@ -57,40 +52,6 @@ class ReportingApiController extends Controller
             return $this->responses->error($apiRequest, 'This response format has not moved to Laravel yet.', 501);
         }
 
-        if ($apiRequest->isPhpVersionRequest()) {
-            if (! $this->authorizer->hasSuperUserAccess($apiRequest->authentication)) {
-                return $this->responses->error(
-                    $apiRequest,
-                    "You can't access this resource as it requires a 'superuser' access.",
-                    401,
-                );
-            }
-
-            return $this->responses->row($apiRequest, [
-                'version' => PHP_VERSION,
-                'major' => PHP_MAJOR_VERSION,
-                'minor' => PHP_MINOR_VERSION,
-                'release' => PHP_RELEASE_VERSION,
-                'versionId' => PHP_VERSION_ID,
-                'extra' => PHP_EXTRA_VERSION,
-            ]);
-        }
-
-        if ($apiRequest->isAdminSiteIdsRequest()) {
-            return $this->responses->values(
-                $apiRequest,
-                $this->authorizer->siteIdsWithAdminAccess($apiRequest->authentication),
-            );
-        }
-
-        if (! $this->authorizer->hasSomeViewAccess($apiRequest->authentication)) {
-            return $this->responses->error(
-                $apiRequest,
-                'You must have view access to at least one website.',
-                401,
-            );
-        }
-
-        return $this->responses->scalar($apiRequest, Version::VERSION);
+        return $this->methods->dispatch($apiRequest);
     }
 }
