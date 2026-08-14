@@ -14,6 +14,7 @@ use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
+use App\Matomo\Sites\TimezoneProvider;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Request;
 
@@ -41,6 +42,17 @@ abstract class TestCase extends BaseTestCase
             public function names(string $language): array
             {
                 return [];
+            }
+        });
+        $this->app->instance(TimezoneProvider::class, new class implements TimezoneProvider
+        {
+            public function name(
+                string $timezone,
+                string $language,
+                ?string $countryCode = null,
+                ?bool $multipleTimezonesInCountry = null,
+            ): string {
+                return $timezone;
             }
         });
         $this->app->instance(QueryParameterExclusionPolicy::class, new class implements QueryParameterExclusionPolicy

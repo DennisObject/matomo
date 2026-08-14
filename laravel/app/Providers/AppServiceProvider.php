@@ -32,9 +32,11 @@ use App\Matomo\Sites\ConfiguredQueryParameterExclusionPolicy;
 use App\Matomo\Sites\ConfiguredSiteRuntimeSettings;
 use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\DatabaseSiteRepository;
+use App\Matomo\Sites\LocalizedTimezoneProvider;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
+use App\Matomo\Sites\TimezoneProvider;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -152,6 +154,13 @@ class AppServiceProvider extends ServiceProvider
                     translator: $application->make(MatomoTranslator::class),
                 );
             },
+        );
+
+        $this->app->singleton(
+            TimezoneProvider::class,
+            fn (Application $application): TimezoneProvider => new LocalizedTimezoneProvider(
+                $application->make(MatomoTranslator::class),
+            ),
         );
 
         $this->app->singleton(

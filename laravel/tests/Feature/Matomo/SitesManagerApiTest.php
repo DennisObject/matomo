@@ -13,12 +13,52 @@ use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
+use App\Matomo\Sites\TimezoneProvider;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_timezone_name_is_public_and_keeps_optional_context(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasSomeViewAccess');
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $timezones = $this->createMock(TimezoneProvider::class);
+        $timezones->expects($this->once())
+            ->method('name')
+            ->with('America/New_York', 'fr', 'US', true)
+            ->willReturn('États-Unis - New York');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(TimezoneProvider::class, $timezones);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getTimezoneName'.
+            '&timezone=America%2FNew_York&countryCode=US'.
+            '&multipleTimezonesInCountry=1&format=json',
+        )->assertOk()
+            ->assertContent('{"value":"\\u00c9tats-Unis - New York"}');
+    }
+
+    public function test_timezone_name_requires_a_timezone(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $timezones = $this->createMock(TimezoneProvider::class);
+        $timezones->expects($this->never())->method('name');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(TimezoneProvider::class, $timezones);
+
+        $this->get('/index.php?module=API&method=SitesManager.getTimezoneName&format=json')
+            ->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "Please specify a value for 'timezone'.",
+            ]);
+    }
+
     public function test_currency_list_is_public_and_uses_the_resolved_language(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
