@@ -58,6 +58,11 @@ abstract class TestCase extends BaseTestCase
                 return [];
             }
 
+            public function excludedReferrers(int $idSite): ?string
+            {
+                return null;
+            }
+
             public function timezones(): array
             {
                 return [];

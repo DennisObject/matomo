@@ -78,6 +78,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isTimezoneSupportRequest()
             || $request->isWebsitesCountToDisplayRequest()
             || $request->isSiteUrlsRequest()
+            || $request->isExcludedReferrersRequest()
             || $request->isUniqueSiteTimezonesRequest()
             || $request->isSiteIdsFromTimezonesRequest()
             || $request->isIpRangeRequest()
@@ -173,6 +174,26 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             }
 
             return $this->responses->values($request, $this->sites->urls($idSite));
+        }
+
+        if ($request->isExcludedReferrersRequest()) {
+            $idSite = $request->idSite ?? throw new LogicException('The site ID was not parsed.');
+
+            if (! $this->authorizer->hasViewAccessToSite($request->authentication, $idSite)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires 'view' access for the website id = {$idSite}.",
+                    401,
+                );
+            }
+
+            $globalReferrers = $this->options->value('SitesManager_ExcludedReferrersGlobal') ?? '';
+            $siteReferrers = $this->sites->excludedReferrers($idSite) ?? '';
+
+            return $this->responses->values(
+                $request,
+                $this->commaSeparatedValues($globalReferrers.','.$siteReferrers),
+            );
         }
 
         if ($request->isUniqueSiteTimezonesRequest()) {
@@ -300,5 +321,16 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         }
 
         return $url;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function commaSeparatedValues(string $values): array
+    {
+        return array_values(array_unique(array_filter(
+            explode(',', $values),
+            static fn (string $value): bool => $value !== '',
+        )));
     }
 }

@@ -58,6 +58,16 @@ final readonly class DatabaseSiteRepository implements SiteRepository
         ]);
     }
 
+    public function excludedReferrers(int $idSite): ?string
+    {
+        $value = $this->connection
+            ->table('site')
+            ->where('idsite', $idSite)
+            ->value('excluded_referrers');
+
+        return is_string($value) ? $value : null;
+    }
+
     public function timezones(): array
     {
         return array_values(
