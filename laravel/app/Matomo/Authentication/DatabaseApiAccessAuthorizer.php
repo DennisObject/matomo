@@ -111,6 +111,21 @@ final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
         return $this->integerList($this->siteIdsByAccess($user['login'])[$role->value] ?? []);
     }
 
+    public function siteIdsWithMinimumRole(
+        ApiAuthentication $authentication,
+        SiteAccessRole $role,
+    ): array {
+        $user = $this->authenticatedUser($authentication);
+
+        if ($user === null) {
+            return [];
+        }
+
+        return $user['isSuperUser']
+            ? $this->allSiteIds()
+            : $this->siteIdsWithMinimumRoleForLogin($user['login'], $role);
+    }
+
     public function siteIdsWithAtLeastViewAccess(
         ApiAuthentication $authentication,
         ?string $restrictToLogin = null,
@@ -287,13 +302,26 @@ final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
      */
     private function siteIdsWithAtLeastViewAccessForLogin(string $login): array
     {
-        $siteIdsByAccess = $this->siteIdsByAccess($login);
+        return $this->siteIdsWithMinimumRoleForLogin($login, SiteAccessRole::View);
+    }
 
-        return $this->integerList([
-            ...($siteIdsByAccess['view'] ?? []),
-            ...($siteIdsByAccess['write'] ?? []),
-            ...($siteIdsByAccess['admin'] ?? []),
-        ]);
+    /**
+     * @return list<int>
+     */
+    private function siteIdsWithMinimumRoleForLogin(string $login, SiteAccessRole $role): array
+    {
+        $siteIdsByAccess = $this->siteIdsByAccess($login);
+        $siteIds = $siteIdsByAccess['admin'] ?? [];
+
+        if ($role !== SiteAccessRole::Admin) {
+            $siteIds = [...($siteIdsByAccess['write'] ?? []), ...$siteIds];
+        }
+
+        if ($role === SiteAccessRole::View) {
+            $siteIds = [...($siteIdsByAccess['view'] ?? []), ...$siteIds];
+        }
+
+        return $this->integerList($siteIds);
     }
 
     /**

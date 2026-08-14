@@ -87,6 +87,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isSiteGroupsRequest()
             || $request->isSitesFromGroupRequest()
             || $request->isAdminSitesRequest()
+            || $request->isMinimumAccessSitesRequest()
             || $request->isDefaultCurrencyRequest()
             || $request->isCurrencySymbolsRequest()
             || $request->isCurrencyListRequest()
@@ -256,6 +257,33 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
                 $sites[] = $site;
             }
+
+            return $this->responses->rows($request, $sites);
+        }
+
+        if ($request->isMinimumAccessSitesRequest()) {
+            $role = $request->minimumSiteAccessRole
+                ?? throw new LogicException('The minimum site access role was not parsed.');
+            $idSites = array_values(array_diff(
+                $this->authorizer->siteIdsWithMinimumRole($request->authentication, $role),
+                $request->sitesToExclude,
+            ));
+
+            if ($idSites === []) {
+                return $this->responses->rows($request, []);
+            }
+
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+            $includeCreator = $this->authorizer->hasSuperUserAccess($request->authentication);
+            $sites = array_map(
+                fn (array $site): array => $this->siteDetails->present($site, $language, $includeCreator),
+                $this->sites->detailsForIds(
+                    $idSites,
+                    $request->sitePattern,
+                    $request->siteLimit,
+                    $request->siteTypesToExclude,
+                ),
+            );
 
             return $this->responses->rows($request, $sites);
         }

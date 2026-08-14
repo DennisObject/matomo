@@ -62,8 +62,12 @@ final readonly class DatabaseSiteRepository implements SiteRepository
         return $sites;
     }
 
-    public function detailsForIds(array $idSites, ?string $pattern = null, ?int $limit = null): array
-    {
+    public function detailsForIds(
+        array $idSites,
+        ?string $pattern = null,
+        ?int $limit = null,
+        array $siteTypesToExclude = [],
+    ): array {
         if ($idSites === []) {
             return [];
         }
@@ -72,6 +76,10 @@ final readonly class DatabaseSiteRepository implements SiteRepository
             ->table('site as site')
             ->whereIn('site.idsite', $idSites)
             ->orderBy('site.idsite');
+
+        if ($siteTypesToExclude !== []) {
+            $query->whereNotIn('site.type', $siteTypesToExclude);
+        }
 
         if ($pattern !== null) {
             $query->where(function (Builder $query) use ($pattern): void {

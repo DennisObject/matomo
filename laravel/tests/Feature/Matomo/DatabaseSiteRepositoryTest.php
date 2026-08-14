@@ -32,6 +32,7 @@ class DatabaseSiteRepositoryTest extends TestCase
             $table->string('excluded_parameters')->default('');
             $table->string('name');
             $table->string('currency');
+            $table->string('type')->default('website');
             $table->boolean('ecommerce')->default(false);
             $table->string('creator_login')->nullable();
         });
@@ -49,6 +50,7 @@ class DatabaseSiteRepositoryTest extends TestCase
                 'excluded_parameters' => 'session,token',
                 'name' => 'Example',
                 'currency' => 'EUR',
+                'type' => 'website',
                 'ecommerce' => true,
                 'creator_login' => 'owner',
             ],
@@ -61,6 +63,7 @@ class DatabaseSiteRepositoryTest extends TestCase
                 'excluded_parameters' => '',
                 'name' => 'Other',
                 'currency' => 'USD',
+                'type' => 'intranet',
                 'ecommerce' => false,
                 'creator_login' => null,
             ],
@@ -84,6 +87,14 @@ class DatabaseSiteRepositoryTest extends TestCase
         $this->assertSame([8], array_column($sites->detailsForIds([3, 8], 'other.test'), 'idsite'));
         $this->assertSame([3], array_column($sites->detailsForIds([3, 8], '3'), 'idsite'));
         $this->assertSame([3], array_column($sites->detailsForIds([3, 8], null, 1), 'idsite'));
+        $this->assertSame(
+            [3],
+            array_column($sites->detailsForIds([3, 8], null, null, ['intranet']), 'idsite'),
+        );
+        $this->assertSame(
+            [8],
+            array_column($sites->detailsForIds([3, 8], 'Other', null, ['website']), 'idsite'),
+        );
         $this->assertSame([], $sites->detailsForIds([]));
         $this->assertSame([3], array_column($sites->detailsInGroup(' Main '), 'idsite'));
         $this->assertSame([], $sites->detailsInGroup('missing'));

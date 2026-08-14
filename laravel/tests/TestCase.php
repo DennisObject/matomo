@@ -118,8 +118,12 @@ abstract class TestCase extends BaseTestCase
                 return [];
             }
 
-            public function detailsForIds(array $idSites, ?string $pattern = null, ?int $limit = null): array
-            {
+            public function detailsForIds(
+                array $idSites,
+                ?string $pattern = null,
+                ?int $limit = null,
+                array $siteTypesToExclude = [],
+            ): array {
                 return [];
             }
 

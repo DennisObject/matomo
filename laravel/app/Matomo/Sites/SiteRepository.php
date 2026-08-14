@@ -23,9 +23,15 @@ interface SiteRepository
 
     /**
      * @param  list<int>  $idSites
+     * @param  list<string>  $siteTypesToExclude
      * @return list<array<string, int|string|null>>
      */
-    public function detailsForIds(array $idSites, ?string $pattern = null, ?int $limit = null): array;
+    public function detailsForIds(
+        array $idSites,
+        ?string $pattern = null,
+        ?int $limit = null,
+        array $siteTypesToExclude = [],
+    ): array;
 
     /**
      * @return list<array<string, int|string|null>>

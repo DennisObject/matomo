@@ -21,6 +21,124 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_minimum_access_sites_apply_role_and_site_filters(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithMinimumRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::Write)
+            ->willReturn([2, 4, 5]);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('detailsForIds')
+            ->with([2, 5], 'site', 2, ['intranet'])
+            ->willReturn([
+                ['idsite' => 2, 'name' => 'Second site'],
+                ['idsite' => 5, 'name' => 'Fifth site'],
+            ]);
+        $presenter = $this->createMock(SiteDetailsPresenter::class);
+        $presenter->expects($this->exactly(2))
+            ->method('present')
+            ->willReturnCallback(function (array $site, string $language, bool $includeCreator): array {
+                $this->assertSame('fr', $language);
+                $this->assertFalse($includeCreator);
+
+                return [...$site, 'currency_name' => 'euro'];
+            });
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(SiteDetailsPresenter::class, $presenter);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithMinimumAccess'.
+            '&permission=WRITE&pattern=site&limit=2&sitesToExclude=4'.
+            '&siteTypesToExclude%5B0%5D=intranet&format=json&token_auth=write-token',
+        )->assertOk()
+            ->assertExactJson([
+                ['idsite' => 2, 'name' => 'Second site', 'currency_name' => 'euro'],
+                ['idsite' => 5, 'name' => 'Fifth site', 'currency_name' => 'euro'],
+            ]);
+    }
+
+    public function test_minimum_access_sites_return_empty_before_reading_sites(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithMinimumRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::View)
+            ->willReturn([]);
+        $authorizer->expects($this->never())->method('hasSuperUserAccess');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('detailsForIds');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithMinimumAccess'.
+            '&permission=view&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([]);
+    }
+
+    public function test_minimum_access_sites_treat_zero_pattern_as_no_filter(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithMinimumRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::View)
+            ->willReturn([1]);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('detailsForIds')
+            ->with([1], null, null, [])
+            ->willReturn([['idsite' => 1, 'name' => 'First site']]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithMinimumAccess'.
+            '&permission=view&pattern=0&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([['idsite' => 1, 'name' => 'First site']]);
+    }
+
+    #[DataProvider('invalidMinimumAccessParameters')]
+    public function test_minimum_access_sites_reject_invalid_parameters(
+        string $parameters,
+        string $message,
+    ): void {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('siteIdsWithMinimumRole');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithMinimumAccess'.
+            "&{$parameters}&format=json",
+        )->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => $message,
+            ]);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function invalidMinimumAccessParameters(): iterable
+    {
+        yield 'missing permission' => ['', "Please specify a value for 'permission'."];
+        yield 'invalid permission' => ['permission=owner', 'Invalid permission provided'];
+        yield 'nested site type' => [
+            'permission=view&siteTypesToExclude%5B0%5D%5Btype%5D=intranet',
+            'The API parameter [siteTypesToExclude] must be a scalar value.',
+        ];
+    }
+
     public function test_admin_sites_apply_filters_and_fetch_alias_urls_in_bulk(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
