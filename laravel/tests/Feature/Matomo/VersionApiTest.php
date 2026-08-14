@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\VersionAccessAuthorizer;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Piwik\Version;
 use Tests\TestCase;
 
@@ -33,6 +34,101 @@ class VersionApiTest extends TestCase
             ->assertContent(
                 "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>".Version::VERSION.'</result>',
             );
+    }
+
+    #[DataProvider('legacyScalarFormats')]
+    public function test_legacy_scalar_formats_keep_exact_output(
+        string $parameters,
+        string $contentType,
+        string $content,
+        ?string $contentDisposition,
+    ): void {
+        $this->bindAuthorizer('token', false, true);
+
+        $response = $this->get(
+            '/index.php?module=API&method=API.getMatomoVersion&token_auth=token&'.$parameters,
+        )->assertOk()
+            ->assertHeader('Content-Type', $contentType)
+            ->assertContent($content);
+
+        if ($contentDisposition !== null) {
+            $response->assertHeader('Content-Disposition', $contentDisposition);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string, string|null}>
+     */
+    public static function legacyScalarFormats(): iterable
+    {
+        $version = Version::VERSION;
+        $unicodeSpreadsheet = "\xFF\xFE".mb_convert_encoding(
+            "value\n{$version}",
+            'UTF-16LE',
+            'UTF-8',
+        );
+        $spreadsheetDisposition = "attachment; filename*=UTF-8''Export";
+        $html = <<<HTML
+        <table id="API_getMatomoVersion" border="1">
+        <thead>
+        \t<tr>
+        \t\t<th>value</th>
+        \t</tr>
+        </thead>
+        <tbody>
+        \t<tr>
+        \t\t<td>{$version}</td>
+        \t</tr>
+        </tbody>
+        </table>
+
+        HTML;
+
+        yield 'CSV' => [
+            'format=csv',
+            'application/vnd.ms-excel',
+            $unicodeSpreadsheet,
+            $spreadsheetDisposition,
+        ];
+        yield 'TSV' => [
+            'format=tsv',
+            'application/vnd.ms-excel',
+            $unicodeSpreadsheet,
+            $spreadsheetDisposition,
+        ];
+        yield 'CSV without UTF-16 conversion' => [
+            'format=csv&convertToUnicode=0',
+            'application/vnd.ms-excel',
+            "value\n{$version}",
+            $spreadsheetDisposition,
+        ];
+        yield 'HTML' => ['format=html', 'text/html; charset=utf-8', $html, null];
+        yield 'original' => ['format=original', 'text/plain; charset=utf-8', $version, null];
+        yield 'serialized original' => [
+            'format=original&serialize=1',
+            'text/plain; charset=utf-8',
+            serialize($version),
+            null,
+        ];
+        yield 'console' => [
+            'format=console',
+            'text/plain; charset=utf-8',
+            "- 1 ['0' => '{$version}'] [] [idsubtable = ]<br />\n",
+            null,
+        ];
+        yield 'console without metadata' => [
+            'format=console&showMetadata=0',
+            'text/plain; charset=utf-8',
+            "- 1 ['0' => '{$version}']<br />\n",
+            null,
+        ];
+        yield 'RSS scalar error' => [
+            'format=rss',
+            'text/plain; charset=utf-8',
+            "Error: RSS feeds can be generated for one specific website &idSite=X.\n".
+                'Please specify only one idSite or consider using &format=XML instead.',
+            null,
+        ];
     }
 
     public function test_query_parameters_keep_priority_over_post_parameters(): void
