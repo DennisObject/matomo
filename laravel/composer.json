@@ -9,6 +9,7 @@
         "php": "^8.3",
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
+        "matomo/device-detector": "~6.0",
         "matomo/network": "^2.0"
     },
     "require-dev": {
