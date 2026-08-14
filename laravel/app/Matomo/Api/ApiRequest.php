@@ -68,6 +68,8 @@ final readonly class ApiRequest
 
     private const string CUSTOM_JS_TRACKER_METHOD = 'CustomJsTracker.doesIncludePluginTrackersAutomatically';
 
+    private const string PROFESSIONAL_SERVICES_METHOD = 'ProfessionalServices.dismissWidget';
+
     private function __construct(
         public string $module,
         public string $method,
@@ -84,6 +86,7 @@ final readonly class ApiRequest
         public ?string $pluginName,
         public ?string $siteUrl,
         public ?string $timezone,
+        public ?string $widgetName,
         public ?string $countryCode,
         public ?bool $multipleTimezonesInCountry,
         public ?string $siteGroup,
@@ -123,6 +126,7 @@ final readonly class ApiRequest
             pluginName: null,
             siteUrl: null,
             timezone: null,
+            widgetName: null,
             countryCode: null,
             multipleTimezonesInCountry: null,
             siteGroup: null,
@@ -394,6 +398,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === self::CUSTOM_JS_TRACKER_METHOD;
     }
 
+    public function isProfessionalServicesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === self::PROFESSIONAL_SERVICES_METHOD;
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -424,6 +433,7 @@ final readonly class ApiRequest
             pluginName: self::pluginName($request, $module, $method),
             siteUrl: self::siteUrl($request, $module, $method),
             timezone: self::timezone($request, $module, $method),
+            widgetName: self::widgetName($request, $module, $method),
             countryCode: self::timezoneCountryCode($request, $module, $method),
             multipleTimezonesInCountry: self::multipleTimezonesInCountry($request, $module, $method),
             siteGroup: self::siteGroup($request, $module, $method),
@@ -437,6 +447,21 @@ final readonly class ApiRequest
             visitsSummary: self::visitsSummary($request, $module, $method),
             authentication: $authentication,
         );
+    }
+
+    private static function widgetName(Request $request, string $module, string $method): ?string
+    {
+        if ($module !== 'API' || $method !== self::PROFESSIONAL_SERVICES_METHOD) {
+            return null;
+        }
+
+        $widgetName = self::nullableStringInput($request, 'widgetName');
+
+        if ($widgetName === null || $widgetName === '') {
+            throw new MissingApiParameter('widgetName');
+        }
+
+        return $widgetName;
     }
 
     private static function siteId(Request $request, string $module, string $method): ?int

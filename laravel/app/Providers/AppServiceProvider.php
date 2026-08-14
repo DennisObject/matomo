@@ -10,6 +10,7 @@ use App\Matomo\Api\Methods\CoreApiMethodHandler;
 use App\Matomo\Api\Methods\CustomJsTrackerApiMethodHandler;
 use App\Matomo\Api\Methods\DevicePluginsApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
+use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\UserIdApiMethodHandler;
@@ -35,6 +36,8 @@ use App\Matomo\Plugins\ConfiguredPluginState;
 use App\Matomo\Plugins\LocalTrackerFileAvailability;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\Plugins\TrackerFileAvailability;
+use App\Matomo\ProfessionalServices\DatabasePromoWidgetDismissalRepository;
+use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\CarbonReportingPeriodFactory;
 use App\Matomo\Reporting\ConfiguredReportingSettings;
@@ -320,6 +323,13 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            PromoWidgetDismissalRepository::class,
+            fn (Application $application): PromoWidgetDismissalRepository => new DatabasePromoWidgetDismissalRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
             ClientIpResolver::class,
             function (Application $application): ClientIpResolver {
                 $installation = $application->make(InstallationConfig::class);
@@ -362,6 +372,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),
                 $application->make(CustomJsTrackerApiMethodHandler::class),
+                $application->make(ProfessionalServicesApiMethodHandler::class),
             ]),
         );
     }
