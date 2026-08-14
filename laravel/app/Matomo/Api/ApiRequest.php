@@ -91,6 +91,7 @@ final readonly class ApiRequest
         public ?string $siteUrl,
         public ?string $timezone,
         public ?string $widgetName,
+        public ?string $tourChallengeId,
         public ?string $countryCode,
         public ?bool $multipleTimezonesInCountry,
         public ?string $siteGroup,
@@ -131,6 +132,7 @@ final readonly class ApiRequest
             siteUrl: null,
             timezone: null,
             widgetName: null,
+            tourChallengeId: null,
             countryCode: null,
             multipleTimezonesInCountry: null,
             siteGroup: null,
@@ -417,6 +419,12 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === self::AI_AGENTS_METHOD;
     }
 
+    public function isTourRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, ['Tour.getChallenges', 'Tour.getLevel', 'Tour.skipChallenge'], true);
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -448,6 +456,7 @@ final readonly class ApiRequest
             siteUrl: self::siteUrl($request, $module, $method),
             timezone: self::timezone($request, $module, $method),
             widgetName: self::widgetName($request, $module, $method),
+            tourChallengeId: self::tourChallengeId($request, $module, $method),
             countryCode: self::timezoneCountryCode($request, $module, $method),
             multipleTimezonesInCountry: self::multipleTimezonesInCountry($request, $module, $method),
             siteGroup: self::siteGroup($request, $module, $method),
@@ -478,6 +487,21 @@ final readonly class ApiRequest
         return $widgetName;
     }
 
+    private static function tourChallengeId(Request $request, string $module, string $method): ?string
+    {
+        if ($module !== 'API' || $method !== 'Tour.skipChallenge') {
+            return null;
+        }
+
+        $id = self::nullableStringInput($request, 'id');
+
+        if ($id === null || $id === '') {
+            throw new MissingApiParameter('id');
+        }
+
+        return $id;
+    }
+
     private static function siteId(Request $request, string $module, string $method): ?int
     {
         $requiredMethods = [
@@ -491,6 +515,9 @@ final readonly class ApiRequest
         $optionalMethods = [
             'SitesManager.getExcludedQueryParametersGlobal',
             'SitesManager.getExclusionTypeForQueryParams',
+            'Tour.getChallenges',
+            'Tour.getLevel',
+            'Tour.skipChallenge',
         ];
 
         if ($module !== 'API' || ! in_array($method, [
