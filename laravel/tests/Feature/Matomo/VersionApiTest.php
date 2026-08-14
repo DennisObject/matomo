@@ -300,6 +300,21 @@ class VersionApiTest extends TestCase
             ]);
     }
 
+    public function test_client_ip_uses_the_matomo_proxy_configuration(): void
+    {
+        $this->bindAuthorizer('token', false, true);
+        $this->app->instance(
+            ClientIpResolver::class,
+            new ClientIpResolver(['HTTP_X_FORWARDED_FOR'], ['10.0.0.0/8'], false),
+        );
+
+        $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.2'])
+            ->withHeader('X-Forwarded-For', '198.51.100.20, 10.0.0.1')
+            ->get('/index.php?module=API&method=API.getIpFromHeader&format=json&token_auth=token')
+            ->assertOk()
+            ->assertContent('{"value":"198.51.100.20"}');
+    }
+
     public function test_api_ip_allowlist_runs_before_authentication_and_allows_matching_ips(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

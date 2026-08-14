@@ -8,6 +8,7 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Sites\SiteRepository;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use LogicException;
 
@@ -27,7 +28,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isSiteGroupsRequest();
     }
 
-    public function handle(ApiRequest $request): Response
+    public function handle(ApiRequest $request, Request $httpRequest): Response
     {
         if (! $this->supports($request)) {
             throw new LogicException('The SitesManager API handler does not support this method.');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Sites\SiteRepository;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -15,6 +16,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        $this->app->instance(ClientIpResolver::class, new ClientIpResolver([], [], true));
         $this->app->instance(ReportingApiIpAllowlist::class, new class implements ReportingApiIpAllowlist
         {
             public function deniedClientIp(Request $request): ?string

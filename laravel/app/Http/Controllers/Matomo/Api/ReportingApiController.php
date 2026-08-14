@@ -52,6 +52,6 @@ class ReportingApiController extends Controller
             return $this->responses->error($apiRequest, 'This response format has not moved to Laravel yet.', 501);
         }
 
-        return $this->methods->dispatch($apiRequest);
+        return $this->methods->dispatch($apiRequest, $request);
     }
 }

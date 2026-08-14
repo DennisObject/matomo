@@ -7,23 +7,28 @@ namespace App\Matomo\Api\Methods;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Security\ClientIpResolver;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use LogicException;
 use Piwik\Version;
 
-final readonly class VersionApiMethodHandler implements ApiMethodHandler
+final readonly class CoreApiMethodHandler implements ApiMethodHandler
 {
     public function __construct(
         private ApiAccessAuthorizer $authorizer,
         private ApiResponseFactory $responses,
+        private ClientIpResolver $clientIps,
     ) {}
 
     public function supports(ApiRequest $request): bool
     {
-        return $request->isVersionRequest() || $request->isPhpVersionRequest();
+        return $request->isVersionRequest()
+            || $request->isPhpVersionRequest()
+            || $request->isClientIpRequest();
     }
 
-    public function handle(ApiRequest $request): Response
+    public function handle(ApiRequest $request, Request $httpRequest): Response
     {
         if (! $this->supports($request)) {
             throw new LogicException('The version API handler does not support this method.');
@@ -41,7 +46,10 @@ final readonly class VersionApiMethodHandler implements ApiMethodHandler
             );
         }
 
-        return $this->responses->scalar($request, Version::VERSION);
+        return $this->responses->scalar(
+            $request,
+            $request->isClientIpRequest() ? $this->clientIps->resolve($httpRequest) : Version::VERSION,
+        );
     }
 
     private function phpVersion(ApiRequest $request): Response

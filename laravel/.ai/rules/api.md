@@ -14,6 +14,8 @@ Scalar, row, and list responses must match Matomo for JSON, XML, CSV, TSV, HTML,
 ## Keep migrated methods isolated
 Put each plugin's migrated API methods in its own `ApiMethodHandler`. Register the handler in `ApiMethodDispatcher`; keep parsing, IP checks, and unsupported-method replies in the reporting API controller.
 
+Pass the source HTTP request to handlers that need transport data. Reuse the shared client IP resolver so proxy rules stay consistent.
+
 ## Keep data access behind a contract
 Put existing Matomo table reads in a small repository. Inject the repository contract into API handlers and use the shared `MatomoDatabase` connection so table prefixes and install settings stay central.
 
