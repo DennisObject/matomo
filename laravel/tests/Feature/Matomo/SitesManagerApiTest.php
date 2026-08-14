@@ -6,11 +6,48 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
+use App\Matomo\Sites\SiteRepository;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_all_site_ids_requires_superuser_and_reads_the_site_store(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('hasSuperUserAccess')
+            ->with($this->callback(
+                static fn (ApiAuthentication $authentication): bool => $authentication->token === 'root-token',
+            ))
+            ->willReturn(true);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())->method('allIds')->willReturn([3, 8]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get('/index.php?module=API&method=SitesManager.getAllSitesId&format=json&token_auth=root-token')
+            ->assertOk()
+            ->assertExactJson([3, 8]);
+    }
+
+    public function test_all_site_ids_rejects_a_non_superuser_before_the_site_store(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('allIds');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get('/index.php?module=API&method=SitesManager.getAllSitesId&format=json&token_auth=view-token')
+            ->assertUnauthorized()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "You can't access this resource as it requires a 'superuser' access.",
+            ]);
+    }
+
     #[DataProvider('siteIdFormats')]
     public function test_admin_site_ids_keep_exact_legacy_formats(
         string $parameters,
