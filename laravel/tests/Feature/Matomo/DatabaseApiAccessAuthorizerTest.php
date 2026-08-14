@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAuthentication;
-use App\Matomo\Authentication\DatabaseVersionAccessAuthorizer;
+use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Schema\Blueprint;
 use Tests\TestCase;
 
-class DatabaseVersionAccessAuthorizerTest extends TestCase
+class DatabaseApiAccessAuthorizerTest extends TestCase
 {
     private const string SALT = 'test-salt';
 
@@ -63,6 +63,7 @@ class DatabaseVersionAccessAuthorizerTest extends TestCase
         $tokenId = $this->addToken('viewer', 'view-token');
 
         $this->assertTrue($this->authorizer()->hasSomeViewAccess($this->authentication('view-token')));
+        $this->assertFalse($this->authorizer()->hasSuperUserAccess($this->authentication('view-token')));
         $this->assertNotNull(
             $this->connection->table('user_token_auth')->where('idusertokenauth', $tokenId)->value('last_used'),
         );
@@ -74,6 +75,7 @@ class DatabaseVersionAccessAuthorizerTest extends TestCase
         $this->addToken('root', 'root-token');
 
         $this->assertTrue($this->authorizer()->hasSomeViewAccess($this->authentication('root-token', true)));
+        $this->assertTrue($this->authorizer()->hasSuperUserAccess($this->authentication('root-token', true)));
     }
 
     public function test_secure_only_token_is_rejected_from_query_and_accepted_from_post(): void
@@ -116,9 +118,9 @@ class DatabaseVersionAccessAuthorizerTest extends TestCase
         $this->assertTrue($this->authorizer()->hasSomeViewAccess($this->authentication(null)));
     }
 
-    private function authorizer(bool $onlyAllowSecureTokens = false): DatabaseVersionAccessAuthorizer
+    private function authorizer(bool $onlyAllowSecureTokens = false): DatabaseApiAccessAuthorizer
     {
-        return new DatabaseVersionAccessAuthorizer(
+        return new DatabaseApiAccessAuthorizer(
             connection: $this->connection,
             salt: self::SALT,
             onlyAllowSecureTokens: $onlyAllowSecureTokens,

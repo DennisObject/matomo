@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
-use App\Matomo\Authentication\VersionAccessAuthorizer;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\ReportingApiIpAllowlist;
@@ -136,6 +136,136 @@ class VersionApiTest extends TestCase
         ];
     }
 
+    #[DataProvider('legacyPhpVersionFormats')]
+    public function test_php_version_requires_superuser_and_keeps_exact_output(
+        string $parameters,
+        string $contentType,
+        string $content,
+        ?string $contentDisposition,
+    ): void {
+        $this->bindSuperuserAuthorizer(true);
+
+        $response = $this->withHeader('Authorization', 'Bearer root-token')
+            ->get('/index.php?module=API&method=API.getPhpVersion&'.$parameters)
+            ->assertOk()
+            ->assertHeader('Content-Type', $contentType)
+            ->assertContent($content);
+
+        if ($contentDisposition !== null) {
+            $response->assertHeader('Content-Disposition', $contentDisposition);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string, string|null}>
+     */
+    public static function legacyPhpVersionFormats(): iterable
+    {
+        $values = self::phpVersionValues();
+        $spreadsheetDisposition = "attachment; filename*=UTF-8''Export";
+        $xmlExtra = $values['extra'] === '' ? '<extra />' : '<extra>'.$values['extra'].'</extra>';
+        $xml = <<<XML
+        <?xml version="1.0" encoding="utf-8" ?>
+        <result>
+        \t<row>
+        \t\t<version>{$values['version']}</version>
+        \t\t<major>{$values['major']}</major>
+        \t\t<minor>{$values['minor']}</minor>
+        \t\t<release>{$values['release']}</release>
+        \t\t<versionId>{$values['versionId']}</versionId>
+        \t\t{$xmlExtra}
+        \t</row>
+        </result>
+        XML;
+        $html = <<<HTML
+        <table border="1">
+        <thead>
+        \t<tr>
+        \t\t<th>version</th>
+        \t\t<th>major</th>
+        \t\t<th>minor</th>
+        \t\t<th>release</th>
+        \t\t<th>versionId</th>
+        \t\t<th>extra</th>
+        \t</tr>
+        </thead>
+        <tbody>
+        \t<tr>
+        \t\t<td>{$values['version']}</td>
+        \t\t<td>{$values['major']}</td>
+        \t\t<td>{$values['minor']}</td>
+        \t\t<td>{$values['release']}</td>
+        \t\t<td>{$values['versionId']}</td>
+        \t\t<td>{$values['extra']}</td>
+        \t</tr>
+        </tbody>
+        </table>
+
+        HTML;
+        $console = "- 1 ['version' => '{$values['version']}', 'major' => {$values['major']}, ".
+            "'minor' => {$values['minor']}, 'release' => {$values['release']}, ".
+            "'versionId' => {$values['versionId']}, 'extra' => '{$values['extra']}'] ".
+            "[] [idsubtable = ]<br />\n";
+
+        yield 'JSON' => [
+            'format=json',
+            'application/json; charset=utf-8',
+            json_encode($values, JSON_THROW_ON_ERROR),
+            null,
+        ];
+        yield 'XML' => ['format=xml', 'text/xml; charset=utf-8', $xml, null];
+        yield 'CSV' => [
+            'format=csv&convertToUnicode=0',
+            'application/vnd.ms-excel',
+            "version,major,minor,release,versionId,extra\n".
+                "{$values['version']},{$values['major']},{$values['minor']},".
+                "{$values['release']},{$values['versionId']},{$values['extra']}",
+            $spreadsheetDisposition,
+        ];
+        yield 'TSV' => [
+            'format=tsv&convertToUnicode=0',
+            'application/vnd.ms-excel',
+            "version\tmajor\tminor\trelease\tversionId\textra\n".
+                "{$values['version']}\t{$values['major']}\t{$values['minor']}\t".
+                "{$values['release']}\t{$values['versionId']}\t{$values['extra']}",
+            $spreadsheetDisposition,
+        ];
+        yield 'HTML' => ['format=html', 'text/html; charset=utf-8', $html, null];
+        yield 'original' => [
+            'format=original',
+            'text/plain; charset=utf-8',
+            var_export($values, true),
+            null,
+        ];
+        yield 'serialized original' => [
+            'format=original&serialize=1',
+            'text/plain; charset=utf-8',
+            serialize($values),
+            null,
+        ];
+        yield 'console' => ['format=console', 'text/plain; charset=utf-8', $console, null];
+        yield 'RSS array error' => [
+            'format=rss',
+            'text/plain; charset=utf-8',
+            "Error: RSS feeds can be generated for one specific website &idSite=X.\n".
+                'Please specify only one idSite or consider using &format=XML instead.',
+            null,
+        ];
+    }
+
+    public function test_php_version_rejects_a_non_superuser(): void
+    {
+        $this->bindSuperuserAuthorizer(false);
+
+        $this->withHeader('Authorization', 'Bearer view-token')
+            ->get('/index.php?module=API&method=API.getPhpVersion&format=json')
+            ->assertUnauthorized()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "You can't access this resource as it requires a 'superuser' access.",
+            ]);
+    }
+
     public function test_query_parameters_keep_priority_over_post_parameters(): void
     {
         $this->bindAuthorizer('post-token', true, true);
@@ -172,9 +302,9 @@ class VersionApiTest extends TestCase
 
     public function test_api_ip_allowlist_runs_before_authentication_and_allows_matching_ips(): void
     {
-        $authorizer = $this->createMock(VersionAccessAuthorizer::class);
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
         $authorizer->expects($this->once())->method('hasSomeViewAccess')->willReturn(true);
-        $this->app->instance(VersionAccessAuthorizer::class, $authorizer);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
         $this->app->instance(ReportingApiIpAllowlist::class, new ConfiguredReportingApiIpAllowlist(
             clientIps: new ClientIpResolver([], [], true),
             cache: $this->app->make(Repository::class),
@@ -198,7 +328,7 @@ class VersionApiTest extends TestCase
 
     public function test_jsonp_callback_is_strictly_validated(): void
     {
-        $authorizer = $this->createMock(VersionAccessAuthorizer::class);
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
         $authorizer->expects($this->exactly(2))
             ->method('hasSomeViewAccess')
             ->with($this->callback(
@@ -206,7 +336,7 @@ class VersionApiTest extends TestCase
                     && ! $authentication->tokenIsSecure,
             ))
             ->willReturn(true);
-        $this->app->instance(VersionAccessAuthorizer::class, $authorizer);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
 
         $this->get('/index.php?module=API&method=API.getMatomoVersion&format=json&token_auth=token&callback=app.callback')
             ->assertOk()
@@ -221,9 +351,9 @@ class VersionApiTest extends TestCase
 
     public function test_conflicting_tokens_are_rejected_before_authentication(): void
     {
-        $authorizer = $this->createMock(VersionAccessAuthorizer::class);
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
         $authorizer->expects($this->never())->method('hasSomeViewAccess');
-        $this->app->instance(VersionAccessAuthorizer::class, $authorizer);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
 
         $this->withHeader('Authorization', 'Bearer header-token')
             ->get('/index.php?module=API&method=API.getMatomoVersion&format=json&token_auth=query-token')
@@ -236,9 +366,9 @@ class VersionApiTest extends TestCase
 
     public function test_conflicting_session_flags_are_rejected_before_authentication(): void
     {
-        $authorizer = $this->createMock(VersionAccessAuthorizer::class);
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
         $authorizer->expects($this->never())->method('hasSomeViewAccess');
-        $this->app->instance(VersionAccessAuthorizer::class, $authorizer);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
 
         $this->post(
             '/index.php?module=API&method=API.getMatomoVersion&format=json&force_api_session=1',
@@ -255,7 +385,7 @@ class VersionApiTest extends TestCase
 
     public function test_post_session_credentials_reach_the_authorizer(): void
     {
-        $authorizer = $this->createMock(VersionAccessAuthorizer::class);
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
         $authorizer->expects($this->once())
             ->method('hasSomeViewAccess')
             ->with($this->callback(
@@ -265,7 +395,7 @@ class VersionApiTest extends TestCase
                     && $authentication->sessionId === 'session-id',
             ))
             ->willReturn(true);
-        $this->app->instance(VersionAccessAuthorizer::class, $authorizer);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
 
         $this->withUnencryptedCookie('MATOMO_SESSID', 'session-id')
             ->post('/index.php?module=API&method=API.getMatomoVersion&format=json', [
@@ -277,9 +407,9 @@ class VersionApiTest extends TestCase
 
     public function test_array_token_is_rejected_before_anonymous_access(): void
     {
-        $authorizer = $this->createMock(VersionAccessAuthorizer::class);
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
         $authorizer->expects($this->never())->method('hasSomeViewAccess');
-        $this->app->instance(VersionAccessAuthorizer::class, $authorizer);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
 
         $this->get('/index.php?module=API&method=API.getMatomoVersion&format=json&token_auth%5B0%5D=secret')
             ->assertBadRequest()
@@ -291,9 +421,9 @@ class VersionApiTest extends TestCase
 
     public function test_unmigrated_api_method_is_not_dispatched(): void
     {
-        $authorizer = $this->createMock(VersionAccessAuthorizer::class);
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
         $authorizer->expects($this->never())->method('hasSomeViewAccess');
-        $this->app->instance(VersionAccessAuthorizer::class, $authorizer);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
 
         $this->get('/index.php?module=API&method=SitesManager.getAllSites&format=json')
             ->assertStatus(501)
@@ -305,7 +435,7 @@ class VersionApiTest extends TestCase
 
     private function bindAuthorizer(string $token, bool $tokenIsSecure, bool $result): void
     {
-        $authorizer = $this->createMock(VersionAccessAuthorizer::class);
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
         $authorizer->expects($this->once())
             ->method('hasSomeViewAccess')
             ->with($this->callback(
@@ -313,6 +443,34 @@ class VersionApiTest extends TestCase
                     && $authentication->tokenIsSecure === $tokenIsSecure,
             ))
             ->willReturn($result);
-        $this->app->instance(VersionAccessAuthorizer::class, $authorizer);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+    }
+
+    private function bindSuperuserAuthorizer(bool $result): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('hasSuperUserAccess')
+            ->with($this->callback(
+                static fn (ApiAuthentication $authentication): bool => $authentication->token === 'root-token'
+                    || $authentication->token === 'view-token',
+            ))
+            ->willReturn($result);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+    }
+
+    /**
+     * @return array{version: string, major: int, minor: int, release: int, versionId: int, extra: string}
+     */
+    private static function phpVersionValues(): array
+    {
+        return [
+            'version' => PHP_VERSION,
+            'major' => PHP_MAJOR_VERSION,
+            'minor' => PHP_MINOR_VERSION,
+            'release' => PHP_RELEASE_VERSION,
+            'versionId' => PHP_VERSION_ID,
+            'extra' => PHP_EXTRA_VERSION,
+        ];
     }
 }

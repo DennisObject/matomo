@@ -23,6 +23,23 @@ final class ApiResponseFactory
         };
     }
 
+    /**
+     * @param  array<string, int|string>  $values
+     */
+    public function row(ApiRequest $request, array $values): Response
+    {
+        return match ($request->format) {
+            'console' => $this->consoleRow($request, $values),
+            'csv', 'tsv' => $this->spreadsheetRow($request, $values),
+            'html' => $this->htmlRow($values),
+            'json' => $this->json($request, $values, 200),
+            'original' => $this->originalRow($request, $values),
+            'rss' => $this->rssScalarError(),
+            'xml' => $this->xmlRow($values),
+            default => throw new LogicException('The API response format is not supported.'),
+        };
+    }
+
     public function error(ApiRequest $request, string $message, int $status): Response
     {
         return match ($request->format) {
@@ -43,6 +60,26 @@ final class ApiResponseFactory
     {
         return $this->response(
             "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>{$this->escape($value)}</result>",
+            200,
+            'text/xml; charset=utf-8',
+        );
+    }
+
+    /**
+     * @param  array<string, int|string>  $values
+     */
+    private function xmlRow(array $values): Response
+    {
+        $columns = '';
+
+        foreach ($values as $name => $value) {
+            $columns .= $value === ''
+                ? "\n\t\t<{$name} />"
+                : "\n\t\t<{$name}>{$this->escape((string) $value)}</{$name}>";
+        }
+
+        return $this->response(
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>\n\t<row>{$columns}\n\t</row>\n</result>",
             200,
             'text/xml; charset=utf-8',
         );
@@ -71,6 +108,41 @@ final class ApiResponseFactory
         );
     }
 
+    /**
+     * @param  array<string, int|string>  $values
+     */
+    private function spreadsheetRow(ApiRequest $request, array $values): Response
+    {
+        $delimiter = $request->format === 'csv' ? ',' : "\t";
+        $header = implode($delimiter, array_map(
+            fn (string $value): string => $this->spreadsheetCell($value, $delimiter),
+            array_keys($values),
+        ));
+        $row = implode($delimiter, array_map(
+            fn (int|string $value): string => $this->spreadsheetCell((string) $value, $delimiter),
+            array_values($values),
+        ));
+        $content = $header."\n".$row;
+
+        if ($request->convertToUnicode && function_exists('mb_convert_encoding')) {
+            $content = "\xFF\xFE".mb_convert_encoding($content, 'UTF-16LE', 'UTF-8');
+        }
+
+        return $this->response($content, 200, 'application/vnd.ms-excel')->header(
+            'Content-Disposition',
+            "attachment; filename*=UTF-8''Export",
+        );
+    }
+
+    private function spreadsheetCell(string $value, string $delimiter): string
+    {
+        if (! str_contains($value, $delimiter) && strpbrk($value, "\"\r\n") === false) {
+            return $value;
+        }
+
+        return '"'.str_replace('"', '""', $value).'"';
+    }
+
     private function html(ApiRequest $request, string $value): Response
     {
         $id = $this->escape(str_replace('.', '_', $request->method));
@@ -94,10 +166,52 @@ final class ApiResponseFactory
         return $this->response($content, 200, 'text/html; charset=utf-8');
     }
 
+    /**
+     * @param  array<string, int|string>  $values
+     */
+    private function htmlRow(array $values): Response
+    {
+        $headers = '';
+        $cells = '';
+
+        foreach ($values as $name => $value) {
+            $headers .= "\n\t\t<th>{$this->escape($name)}</th>";
+            $cells .= "\n\t\t<td>{$this->escape((string) $value)}</td>";
+        }
+
+        $content = <<<HTML
+        <table border="1">
+        <thead>
+        \t<tr>{$headers}
+        \t</tr>
+        </thead>
+        <tbody>
+        \t<tr>{$cells}
+        \t</tr>
+        </tbody>
+        </table>
+
+        HTML;
+
+        return $this->response($content, 200, 'text/html; charset=utf-8');
+    }
+
     private function original(ApiRequest $request, string $value): Response
     {
         return $this->response(
             $request->serialize ? serialize($value) : $value,
+            200,
+            'text/plain; charset=utf-8',
+        );
+    }
+
+    /**
+     * @param  array<string, int|string>  $values
+     */
+    private function originalRow(ApiRequest $request, array $values): Response
+    {
+        return $this->response(
+            $request->serialize ? serialize($values) : var_export($values, true),
             200,
             'text/plain; charset=utf-8',
         );
@@ -124,6 +238,30 @@ final class ApiResponseFactory
         );
     }
 
+    /**
+     * @param  array<string, int|string>  $values
+     */
+    private function consoleRow(ApiRequest $request, array $values): Response
+    {
+        $columns = [];
+
+        foreach ($values as $name => $value) {
+            $escapedName = str_replace(['\\', "'"], ['\\\\', "\\'"], $name);
+            $renderedValue = is_int($value)
+                ? (string) $value
+                : "'".str_replace(['\\', "'"], ['\\\\', "\\'"], $value)."'";
+            $columns[] = "'{$escapedName}' => {$renderedValue}";
+        }
+
+        $metadata = $request->showMetadata ? ' [] [idsubtable = ]' : '';
+
+        return $this->response(
+            '- 1 ['.implode(', ', $columns)."]{$metadata}<br />\n",
+            200,
+            'text/plain; charset=utf-8',
+        );
+    }
+
     private function rssScalarError(): Response
     {
         return $this->response(
@@ -140,7 +278,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, string>  $payload
+     * @param  array<string, int|string>  $payload
      */
     private function json(ApiRequest $request, array $payload, int $status): Response
     {

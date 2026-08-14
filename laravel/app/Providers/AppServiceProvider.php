@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
-use App\Matomo\Authentication\DatabaseVersionAccessAuthorizer;
-use App\Matomo\Authentication\VersionAccessAuthorizer;
 use App\Matomo\Config\InstallationConfig;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
@@ -36,8 +36,8 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(
-            VersionAccessAuthorizer::class,
-            function (Application $application): VersionAccessAuthorizer {
+            ApiAccessAuthorizer::class,
+            function (Application $application): ApiAccessAuthorizer {
                 $installation = $application->make(InstallationConfig::class);
                 $configuration = $application->make(Repository::class);
                 $databases = $application->make(DatabaseManager::class);
@@ -45,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
                 $configuration->set('database.connections.matomo', $installation->databaseConnection());
                 $databases->purge('matomo');
 
-                return new DatabaseVersionAccessAuthorizer(
+                return new DatabaseApiAccessAuthorizer(
                     connection: $databases->connection('matomo'),
                     salt: $installation->salt(),
                     onlyAllowSecureTokens: $installation->onlyAllowSecureTokens(),
