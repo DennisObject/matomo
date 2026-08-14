@@ -60,6 +60,12 @@ final readonly class ApiRequest
 
     private const string USER_ID_METHOD = 'UserId.getUsers';
 
+    /** @var list<string> */
+    private const array CONTENTS_METHODS = [
+        'Contents.getContentNames',
+        'Contents.getContentPieces',
+    ];
+
     private function __construct(
         public string $module,
         public string $method,
@@ -374,6 +380,11 @@ final readonly class ApiRequest
     public function isUserIdRequest(): bool
     {
         return $this->module === 'API' && $this->method === self::USER_ID_METHOD;
+    }
+
+    public function isContentsRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::CONTENTS_METHODS, true);
     }
 
     public function hasSupportedFormat(): bool
@@ -742,7 +753,8 @@ final readonly class ApiRequest
                 && ! in_array($method, self::RESOLUTION_METHODS, true)
                 && $method !== self::DEVICE_PLUGINS_METHOD
                 && $method !== self::PAGE_PERFORMANCE_METHOD
-                && $method !== self::USER_ID_METHOD)) {
+                && $method !== self::USER_ID_METHOD
+                && ! in_array($method, self::CONTENTS_METHODS, true))) {
             return null;
         }
 
@@ -783,7 +795,30 @@ final readonly class ApiRequest
             columns: self::reportColumnList($request, 'columns', true),
             showColumns: self::reportColumnList($request, 'showColumns') ?? [],
             hideColumns: self::reportColumnList($request, 'hideColumns') ?? [],
+            idSubtable: self::reportSubtableId($request, $method),
         );
+    }
+
+    private static function reportSubtableId(Request $request, string $method): ?int
+    {
+        if (! in_array($method, self::CONTENTS_METHODS, true)) {
+            return null;
+        }
+
+        $value = self::inputValue($request, 'idSubtable');
+
+        if (in_array($value, [null, '', false, 'false', '0'], true)) {
+            return null;
+        }
+
+        if (! is_scalar($value) || (string) (int) $value !== (string) $value || (int) $value < 1) {
+            throw new InvalidApiParameter(
+                'idSubtable',
+                "The parameter 'idSubtable' has an invalid value.",
+            );
+        }
+
+        return (int) $value;
     }
 
     /**

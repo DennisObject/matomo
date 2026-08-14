@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
+use App\Matomo\Api\Methods\ContentsApiMethodHandler;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
 use App\Matomo\Api\Methods\DevicePluginsApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
@@ -210,6 +211,7 @@ class AppServiceProvider extends ServiceProvider
                 base_path('../lang'),
                 base_path('../plugins/Intl/lang'),
                 base_path('../plugins/SitesManager/lang'),
+                base_path('../plugins/Contents/lang'),
             ]),
         );
 
@@ -347,6 +349,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(DevicePluginsApiMethodHandler::class),
                 $application->make(PagePerformanceApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
+                $application->make(ContentsApiMethodHandler::class),
             ]),
         );
     }
