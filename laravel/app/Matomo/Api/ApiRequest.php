@@ -6,6 +6,7 @@ namespace App\Matomo\Api;
 
 use App\Matomo\Api\Exceptions\ConflictingAuthenticationParameters;
 use App\Matomo\Api\Exceptions\InvalidApiParameter;
+use App\Matomo\Authentication\ApiAuthentication;
 use Illuminate\Http\Request;
 
 final readonly class ApiRequest
@@ -18,16 +19,12 @@ final readonly class ApiRequest
         public bool $serialize,
         public bool $convertToUnicode,
         public bool $showMetadata,
-        #[\SensitiveParameter]
-        public ?string $token,
-        public bool $tokenIsSecure,
+        public ApiAuthentication $authentication,
     ) {}
 
     public static function fromRequest(Request $request): self
     {
-        [$token, $tokenIsSecure] = self::authentication($request);
-
-        return self::make($request, $token, $tokenIsSecure);
+        return self::make($request, self::authentication($request));
     }
 
     public static function withoutAuthentication(Request $request): self
@@ -41,8 +38,7 @@ final readonly class ApiRequest
             serialize: self::booleanInput($request, 'serialize', false),
             convertToUnicode: self::booleanInput($request, 'convertToUnicode', true),
             showMetadata: self::booleanInput($request, 'showMetadata', true),
-            token: null,
-            tokenIsSecure: false,
+            authentication: new ApiAuthentication(null, false, false, null),
         );
     }
 
@@ -61,7 +57,7 @@ final readonly class ApiRequest
         );
     }
 
-    private static function make(Request $request, ?string $token, bool $tokenIsSecure): self
+    private static function make(Request $request, ApiAuthentication $authentication): self
     {
         return new self(
             module: self::stringInput($request, 'module'),
@@ -72,15 +68,11 @@ final readonly class ApiRequest
             serialize: self::booleanInput($request, 'serialize', false),
             convertToUnicode: self::booleanInput($request, 'convertToUnicode', true),
             showMetadata: self::booleanInput($request, 'showMetadata', true),
-            token: $token,
-            tokenIsSecure: $tokenIsSecure,
+            authentication: $authentication,
         );
     }
 
-    /**
-     * @return array{string|null, bool}
-     */
-    private static function authentication(Request $request): array
+    private static function authentication(Request $request): ApiAuthentication
     {
         $authorization = $request->headers->get('Authorization');
         $headerToken = is_string($authorization) && str_starts_with($authorization, 'Bearer ')
@@ -88,6 +80,8 @@ final readonly class ApiRequest
             : null;
         $postToken = self::stringFromArray($request->request->all(), 'token_auth');
         $queryToken = self::stringFromArray($request->query->all(), 'token_auth');
+        $postForceSession = self::booleanFromArray($request->request->all(), 'force_api_session');
+        $queryForceSession = self::booleanFromArray($request->query->all(), 'force_api_session');
 
         $providedTokens = array_filter(
             [$headerToken, $postToken, $queryToken],
@@ -98,15 +92,33 @@ final readonly class ApiRequest
             throw new ConflictingAuthenticationParameters;
         }
 
+        if (
+            $postForceSession !== null
+            && $queryForceSession !== null
+            && $postForceSession !== $queryForceSession
+        ) {
+            throw new ConflictingAuthenticationParameters;
+        }
+
         if ($headerToken !== null) {
-            return [$headerToken, true];
+            return new ApiAuthentication($headerToken, true, false, self::sessionId($request));
         }
 
         if ($postToken !== null && $postToken !== '') {
-            return [$postToken, true];
+            return new ApiAuthentication(
+                $postToken,
+                true,
+                $postForceSession ?? false,
+                self::sessionId($request),
+            );
         }
 
-        return [$queryToken, false];
+        return new ApiAuthentication(
+            $queryToken,
+            false,
+            $queryToken !== null && $queryToken !== '' && ($queryForceSession ?? false),
+            self::sessionId($request),
+        );
     }
 
     private static function stringInput(Request $request, string $key, string $default = ''): string
@@ -137,6 +149,35 @@ final readonly class ApiRequest
         }
 
         return str_replace("\0", '', (string) $value);
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     */
+    private static function booleanFromArray(array $input, string $key): ?bool
+    {
+        if (! array_key_exists($key, $input)) {
+            return null;
+        }
+
+        $value = $input[$key];
+
+        if (in_array($value, [true, 1, '1'], true) || (is_string($value) && strtolower($value) === 'true')) {
+            return true;
+        }
+
+        if (in_array($value, [false, 0, '0'], true) || (is_string($value) && strtolower($value) === 'false')) {
+            return false;
+        }
+
+        return false;
+    }
+
+    private static function sessionId(Request $request): ?string
+    {
+        $sessionId = $request->cookies->get('MATOMO_SESSID');
+
+        return is_string($sessionId) && $sessionId !== '' ? $sessionId : null;
     }
 
     private static function safeStringInput(Request $request, string $key, string $default = ''): string

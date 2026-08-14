@@ -33,6 +33,8 @@ class InstallationConfigTest extends TestCase
         $this->assertSame('matomo_', $configuration->databaseConnection()['prefix']);
         $this->assertSame('secret-salt', $configuration->salt());
         $this->assertTrue($configuration->onlyAllowSecureTokens());
+        $this->assertSame(1_209_600, $configuration->sessionLifetime());
+        $this->assertSame(3_600, $configuration->sessionIdleTimeout());
     }
 
     public function test_rejects_unsafe_table_prefix(): void

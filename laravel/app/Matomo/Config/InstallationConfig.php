@@ -16,6 +16,8 @@ final readonly class InstallationConfig
         #[\SensitiveParameter]
         private string $salt,
         private bool $onlyAllowSecureTokens,
+        private int $sessionLifetime,
+        private int $sessionIdleTimeout,
     ) {}
 
     public static function fromFile(string $path): self
@@ -59,6 +61,12 @@ final readonly class InstallationConfig
             databaseConnection: self::buildDatabaseConnection($database, $prefix),
             salt: $salt,
             onlyAllowSecureTokens: self::boolean($general, 'only_allow_secure_auth_tokens'),
+            sessionLifetime: self::positiveInteger($general, 'login_cookie_expire', 1_209_600),
+            sessionIdleTimeout: self::positiveInteger(
+                $general,
+                'login_session_not_remembered_idle_timeout',
+                3_600,
+            ),
         );
     }
 
@@ -78,6 +86,16 @@ final readonly class InstallationConfig
     public function onlyAllowSecureTokens(): bool
     {
         return $this->onlyAllowSecureTokens;
+    }
+
+    public function sessionLifetime(): int
+    {
+        return $this->sessionLifetime;
+    }
+
+    public function sessionIdleTimeout(): int
+    {
+        return $this->sessionIdleTimeout;
     }
 
     /**
@@ -178,5 +196,15 @@ final readonly class InstallationConfig
     private static function boolean(array $values, string $key): bool
     {
         return in_array(strtolower(self::string($values, $key, '0')), ['1', 'true', 'yes', 'on'], true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private static function positiveInteger(array $values, string $key, int $default): int
+    {
+        $value = self::string($values, $key, (string) $default);
+
+        return preg_match('/^[1-9]\d*$/D', $value) === 1 ? (int) $value : $default;
     }
 }
