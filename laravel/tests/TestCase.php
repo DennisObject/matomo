@@ -6,6 +6,7 @@ namespace Tests;
 
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
+use App\Matomo\Geolocation\CountryMetadataProvider;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Login\BruteForceUnblocker;
 use App\Matomo\Login\LoginAttemptGuard;
@@ -14,6 +15,7 @@ use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
+use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\ScreenResolutionPolicy;
 use App\Matomo\Reporting\SegmentHashResolver;
@@ -71,6 +73,33 @@ abstract class TestCase extends BaseTestCase
             public function resolve(Request $request, ApiAuthentication $authentication): string
             {
                 return 'en';
+            }
+        });
+        $this->app->instance(CountryMetadataProvider::class, new class implements CountryMetadataProvider
+        {
+            public function codes(): array
+            {
+                return [];
+            }
+
+            public function continentCode(string $countryCode): string
+            {
+                return 'unk';
+            }
+
+            public function countryName(string $countryCode, string $language): string
+            {
+                return $countryCode;
+            }
+
+            public function continentName(string $continentCode, string $language): string
+            {
+                return $continentCode;
+            }
+
+            public function flag(string $countryCode): string
+            {
+                return 'plugins/Morpheus/icons/dist/flags/xx.png';
             }
         });
         $this->app->instance(CurrencyProvider::class, new class implements CurrencyProvider
@@ -264,6 +293,18 @@ abstract class TestCase extends BaseTestCase
                 array $periods,
                 string $segmentHash,
                 array $metrics,
+            ): array {
+                return [];
+            }
+        });
+        $this->app->instance(NumericArchiveRepository::class, new class implements NumericArchiveRepository
+        {
+            public function pluginMetrics(
+                array $siteIds,
+                array $periods,
+                string $segmentHash,
+                array $metrics,
+                string $pluginName,
             ): array {
                 return [];
             }

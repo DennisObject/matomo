@@ -8,7 +8,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
 use stdClass;
 
-final readonly class DatabaseVisitsSummaryArchiveRepository implements VisitsSummaryArchiveRepository
+final readonly class DatabaseVisitsSummaryArchiveRepository implements NumericArchiveRepository, VisitsSummaryArchiveRepository
 {
     private const int DONE_PARTIAL = 5;
 
@@ -22,6 +22,16 @@ final readonly class DatabaseVisitsSummaryArchiveRepository implements VisitsSum
         array $periods,
         string $segmentHash,
         array $metrics,
+    ): array {
+        return $this->pluginMetrics($siteIds, $periods, $segmentHash, $metrics, 'VisitsSummary');
+    }
+
+    public function pluginMetrics(
+        array $siteIds,
+        array $periods,
+        string $segmentHash,
+        array $metrics,
+        string $pluginName,
     ): array {
         if ($siteIds === [] || $periods === [] || $metrics === []) {
             return [];
@@ -45,6 +55,7 @@ final readonly class DatabaseVisitsSummaryArchiveRepository implements VisitsSum
                 $siteIds,
                 array_values($tablePeriods),
                 $segmentHash,
+                $pluginName,
             );
 
             if ($archiveIds === []) {
@@ -107,8 +118,9 @@ final readonly class DatabaseVisitsSummaryArchiveRepository implements VisitsSum
         array $siteIds,
         array $periods,
         string $segmentHash,
+        string $pluginName,
     ): array {
-        $doneNames = ['done'.$segmentHash, 'done'.$segmentHash.'.VisitsSummary'];
+        $doneNames = ['done'.$segmentHash, 'done'.$segmentHash.'.'.$pluginName];
         $records = [];
 
         foreach (array_chunk($siteIds, 500) as $siteIdChunk) {

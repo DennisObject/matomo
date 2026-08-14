@@ -74,6 +74,14 @@ final readonly class ApiRequest
 
     private const string AI_AGENTS_METHOD = 'AIAgents.get';
 
+    /** @var list<string> */
+    private const array USER_COUNTRY_METHODS = [
+        'UserCountry.getCountry',
+        'UserCountry.getContinent',
+        'UserCountry.getCountryCodeMapping',
+        'UserCountry.getNumberOfDistinctCountries',
+    ];
+
     private function __construct(
         public string $module,
         public string $method,
@@ -430,6 +438,11 @@ final readonly class ApiRequest
     public function isTwoFactorAuthRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'TwoFactorAuth.resetTwoFactorAuth';
+    }
+
+    public function isUserCountryRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::USER_COUNTRY_METHODS, true);
     }
 
     public function hasSupportedFormat(): bool
@@ -857,7 +870,12 @@ final readonly class ApiRequest
                 && $method !== self::PAGE_PERFORMANCE_METHOD
                 && $method !== self::USER_ID_METHOD
                 && ! in_array($method, self::CONTENTS_METHODS, true)
-                && $method !== self::AI_AGENTS_METHOD)) {
+                && $method !== self::AI_AGENTS_METHOD
+                && ! in_array($method, [
+                    'UserCountry.getCountry',
+                    'UserCountry.getContinent',
+                    'UserCountry.getNumberOfDistinctCountries',
+                ], true))) {
             return null;
         }
 

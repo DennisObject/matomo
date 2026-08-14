@@ -17,6 +17,7 @@ use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\TourApiMethodHandler;
 use App\Matomo\Api\Methods\TwoFactorAuthApiMethodHandler;
+use App\Matomo\Api\Methods\UserCountryApiMethodHandler;
 use App\Matomo\Api\Methods\UserIdApiMethodHandler;
 use App\Matomo\Api\Methods\UserLanguageApiMethodHandler;
 use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
@@ -30,6 +31,8 @@ use App\Matomo\Authentication\DatabaseSessionAuthenticator;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Config\InstallationConfig;
 use App\Matomo\Database\MatomoDatabase;
+use App\Matomo\Geolocation\CountryMetadataProvider;
+use App\Matomo\Geolocation\LocalizedCountryMetadataProvider;
 use App\Matomo\Localization\ApiLanguageResolver;
 use App\Matomo\Localization\DatabaseLanguagePreferenceRepository;
 use App\Matomo\Localization\JsonMatomoTranslator;
@@ -57,6 +60,7 @@ use App\Matomo\Reporting\ConfiguredScreenResolutionPolicy;
 use App\Matomo\Reporting\DatabaseBlobArchiveRepository;
 use App\Matomo\Reporting\DatabaseSegmentHashResolver;
 use App\Matomo\Reporting\DatabaseVisitsSummaryArchiveRepository;
+use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Reporting\ReportingPeriodFactory;
 use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\ScreenResolutionPolicy;
@@ -191,6 +195,13 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            NumericArchiveRepository::class,
+            fn (Application $application): NumericArchiveRepository => new DatabaseVisitsSummaryArchiveRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
             BlobArchiveRepository::class,
             fn (Application $application): BlobArchiveRepository => new DatabaseBlobArchiveRepository(
                 $application->make(MatomoDatabase::class)->connection(),
@@ -239,6 +250,19 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             MatomoTranslator::class,
             fn (): MatomoTranslator => new JsonMatomoTranslator($this->translationDirectories()),
+        );
+
+        $this->app->singleton(
+            CountryMetadataProvider::class,
+            function (Application $application): CountryMetadataProvider {
+                $countries = require base_path('../core/Intl/Data/Resources/countries.php');
+
+                return new LocalizedCountryMetadataProvider(
+                    continentsByCountry: is_array($countries) ? $countries : [],
+                    flagDirectory: base_path('../plugins/Morpheus/icons/dist/flags'),
+                    translator: $application->make(MatomoTranslator::class),
+                );
+            },
         );
 
         $this->app->singleton(
@@ -440,6 +464,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(AiAgentsApiMethodHandler::class),
                 $application->make(TourApiMethodHandler::class),
                 $application->make(TwoFactorAuthApiMethodHandler::class),
+                $application->make(UserCountryApiMethodHandler::class),
             ]),
         );
     }
