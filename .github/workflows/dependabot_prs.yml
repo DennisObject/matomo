@@ -2,6 +2,10 @@ name: DependaBot PRs
 
 on:
   pull_request:
+    paths-ignore:
+      - 'laravel/**'
+      - '.codex/**'
+      - 'AGENTS.md'
 
 permissions:
   actions: read

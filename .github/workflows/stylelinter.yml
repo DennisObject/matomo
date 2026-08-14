@@ -1,6 +1,11 @@
 name: Stylelint
 
-on: pull_request
+on:
+  pull_request:
+    paths-ignore:
+      - 'laravel/**'
+      - '.codex/**'
+      - 'AGENTS.md'
 
 permissions:
   actions: none

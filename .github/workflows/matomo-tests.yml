@@ -5,10 +5,15 @@ name: Matomo Tests
 on:
   pull_request:
     types: [opened, synchronize]
+    paths-ignore: &laravel-only-paths
+      - 'laravel/**'
+      - '.codex/**'
+      - 'AGENTS.md'
   push:
     branches:
       - '**.x-dev'
       - 'next_release'
+    paths-ignore: *laravel-only-paths
   workflow_dispatch:
   workflow_call:
     inputs:

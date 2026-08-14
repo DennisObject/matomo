@@ -3,6 +3,10 @@ name: Build woff2 font file
 on:
   pull_request:
     types: [synchronize, opened]
+    paths-ignore:
+      - 'laravel/**'
+      - '.codex/**'
+      - 'AGENTS.md'
 
 permissions:
   actions: read
