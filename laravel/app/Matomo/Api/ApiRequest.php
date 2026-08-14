@@ -161,6 +161,11 @@ final readonly class ApiRequest
             && $this->method === 'SitesManager.getMessagesToWarnOnSiteRemoval';
     }
 
+    public function isPatternMatchSitesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getPatternMatchSites';
+    }
+
     public function isDefaultCurrencyRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getDefaultCurrency';
@@ -477,6 +482,10 @@ final readonly class ApiRequest
 
         $pattern = self::nullableStringInput($request, 'pattern');
 
+        if ($method === 'SitesManager.getPatternMatchSites' && $pattern === null) {
+            throw new MissingApiParameter('pattern');
+        }
+
         if ($method === 'SitesManager.getSitesWithMinimumAccess' && ($pattern === '' || $pattern === '0')) {
             return null;
         }
@@ -591,6 +600,7 @@ final readonly class ApiRequest
         return $module === 'API' && in_array($method, [
             'SitesManager.getSitesWithAdminAccess',
             'SitesManager.getSitesWithMinimumAccess',
+            'SitesManager.getPatternMatchSites',
         ], true);
     }
 

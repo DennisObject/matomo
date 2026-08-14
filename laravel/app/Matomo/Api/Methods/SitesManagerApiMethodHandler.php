@@ -94,6 +94,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isViewSitesRequest()
             || $request->isAtLeastViewSitesRequest()
             || $request->isSiteRemovalWarningsRequest()
+            || $request->isPatternMatchSitesRequest()
             || $request->isDefaultCurrencyRequest()
             || $request->isCurrencySymbolsRequest()
             || $request->isCurrencyListRequest()
@@ -348,6 +349,30 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             $this->events->dispatch($event);
 
             return $this->responses->values($request, $event->messages);
+        }
+
+        if ($request->isPatternMatchSitesRequest()) {
+            $idSites = array_values(array_diff(
+                $this->authorizer->siteIdsWithAtLeastViewAccess($request->authentication),
+                $request->sitesToExclude,
+            ));
+
+            if ($idSites === []) {
+                return $this->responses->rows($request, []);
+            }
+
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+            $includeCreator = $this->authorizer->hasSuperUserAccess($request->authentication);
+            $sites = array_map(
+                fn (array $site): array => $this->siteDetails->present($site, $language, $includeCreator),
+                $this->sites->detailsForIds(
+                    $idSites,
+                    $request->sitePattern ?? throw new LogicException('The site pattern was not parsed.'),
+                    $request->siteLimit,
+                ),
+            );
+
+            return $this->responses->rows($request, $sites);
         }
 
         $role = $request->siteAccessRole();

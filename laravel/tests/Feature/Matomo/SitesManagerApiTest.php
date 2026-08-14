@@ -23,6 +23,81 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_pattern_match_sites_apply_view_access_exclusions_and_limit(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithAtLeastViewAccess')
+            ->with($this->isInstanceOf(ApiAuthentication::class))
+            ->willReturn([1, 2, 3]);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('detailsForIds')
+            ->with([1, 3], 'docs', 2)
+            ->willReturn([
+                ['idsite' => 1, 'name' => 'Docs'],
+                ['idsite' => 3, 'name' => 'API Docs'],
+            ]);
+        $presenter = $this->createMock(SiteDetailsPresenter::class);
+        $presenter->expects($this->exactly(2))
+            ->method('present')
+            ->willReturnCallback(function (array $site, string $language, bool $includeCreator): array {
+                $this->assertSame('fr', $language);
+                $this->assertFalse($includeCreator);
+
+                return [...$site, 'currency_name' => 'euro'];
+            });
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(SiteDetailsPresenter::class, $presenter);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getPatternMatchSites'.
+            '&pattern=docs&limit=2&sitesToExclude=2&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([
+                ['idsite' => 1, 'name' => 'Docs', 'currency_name' => 'euro'],
+                ['idsite' => 3, 'name' => 'API Docs', 'currency_name' => 'euro'],
+            ]);
+    }
+
+    public function test_pattern_match_sites_return_empty_without_view_access(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithAtLeastViewAccess')
+            ->willReturn([]);
+        $authorizer->expects($this->never())->method('hasSuperUserAccess');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('detailsForIds');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getPatternMatchSites'.
+            '&pattern=docs&format=json&token_auth=invalid-token',
+        )->assertOk()
+            ->assertExactJson([]);
+    }
+
+    public function test_pattern_match_sites_require_pattern_before_authorization(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('siteIdsWithAtLeastViewAccess');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get('/index.php?module=API&method=SitesManager.getPatternMatchSites&format=json')
+            ->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "Please specify a value for 'pattern'.",
+            ]);
+    }
+
     public function test_site_removal_warnings_collect_plugin_messages_for_superusers(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
