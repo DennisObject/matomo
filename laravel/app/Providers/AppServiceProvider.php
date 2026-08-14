@@ -12,6 +12,8 @@ use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
 use App\Matomo\Config\InstallationConfig;
 use App\Matomo\Database\MatomoDatabase;
+use App\Matomo\Options\DatabaseOptionRepository;
+use App\Matomo\Options\OptionRepository;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\ReportingApiIpAllowlist;
@@ -80,6 +82,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             SiteRepository::class,
             fn (Application $application): SiteRepository => new DatabaseSiteRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
+            OptionRepository::class,
+            fn (Application $application): OptionRepository => new DatabaseOptionRepository(
                 $application->make(MatomoDatabase::class)->connection(),
             ),
         );

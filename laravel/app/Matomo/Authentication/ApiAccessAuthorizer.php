@@ -8,6 +8,8 @@ interface ApiAccessAuthorizer
 {
     public function hasSomeViewAccess(ApiAuthentication $authentication): bool;
 
+    public function hasSomeAdminAccess(ApiAuthentication $authentication): bool;
+
     public function hasSuperUserAccess(ApiAuthentication $authentication): bool;
 
     /**

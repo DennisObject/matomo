@@ -7,12 +7,67 @@ namespace Tests\Feature\Matomo;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\SiteAccessRole;
+use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\SiteRepository;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_default_timezone_is_public_and_uses_the_legacy_fallback(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasSomeViewAccess');
+        $authorizer->expects($this->never())->method('hasSomeAdminAccess');
+        $options = $this->createMock(OptionRepository::class);
+        $options->expects($this->once())
+            ->method('value')
+            ->with('SitesManager_DefaultTimezone')
+            ->willReturn(null);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(OptionRepository::class, $options);
+
+        $this->get('/index.php?module=API&method=SitesManager.getDefaultTimezone&format=json')
+            ->assertOk()
+            ->assertContent('{"value":"UTC"}');
+    }
+
+    public function test_default_currency_requires_some_admin_access(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSomeAdminAccess')->willReturn(true);
+        $options = $this->createMock(OptionRepository::class);
+        $options->expects($this->once())
+            ->method('value')
+            ->with('SitesManager_DefaultCurrency')
+            ->willReturn('EUR');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(OptionRepository::class, $options);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getDefaultCurrency&format=json&token_auth=admin-token',
+        )->assertOk()
+            ->assertContent('{"value":"EUR"}');
+    }
+
+    public function test_default_currency_rejects_view_access_before_reading_the_option(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSomeAdminAccess')->willReturn(false);
+        $options = $this->createMock(OptionRepository::class);
+        $options->expects($this->never())->method('value');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(OptionRepository::class, $options);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getDefaultCurrency&format=json&token_auth=view-token',
+        )->assertUnauthorized()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "You can't access this resource as it requires admin access for at least one website.",
+            ]);
+    }
+
     #[DataProvider('siteGroupFormats')]
     public function test_site_groups_require_superuser_and_keep_string_list_formats(
         string $format,

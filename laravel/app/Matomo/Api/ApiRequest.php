@@ -91,6 +91,16 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getSitesGroups';
     }
 
+    public function isDefaultCurrencyRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getDefaultCurrency';
+    }
+
+    public function isDefaultTimezoneRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getDefaultTimezone';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
