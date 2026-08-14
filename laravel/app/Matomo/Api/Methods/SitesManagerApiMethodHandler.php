@@ -9,6 +9,7 @@ use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\CurrencyProvider;
+use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use Illuminate\Http\Request;
@@ -67,6 +68,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private OptionRepository $options,
         private SiteRuntimeSettings $runtime,
         private CurrencyProvider $currencies,
+        private QueryParameterExclusionPolicy $queryParameterExclusions,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -82,6 +84,9 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isWebsitesCountToDisplayRequest()
             || $request->isSiteUrlsRequest()
             || $request->isExcludedReferrersRequest()
+            || $request->isExcludedQueryParametersRequest()
+            || $request->isGlobalExcludedQueryParametersRequest()
+            || $request->isQueryParameterExclusionTypeRequest()
             || $request->isUniqueSiteTimezonesRequest()
             || $request->isSiteIdsFromTimezonesRequest()
             || $request->isIpRangeRequest()
@@ -200,6 +205,44 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             return $this->responses->values(
                 $request,
                 $this->commaSeparatedValues($globalReferrers.','.$siteReferrers),
+            );
+        }
+
+        if ($request->isExcludedQueryParametersRequest()) {
+            $idSite = $request->idSite ?? throw new LogicException('The site ID was not parsed.');
+
+            if (! $this->authorizer->hasViewAccessToSite($request->authentication, $idSite)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires 'view' access for the website id = {$idSite}.",
+                    401,
+                );
+            }
+
+            $siteParameters = $this->sites->excludedParameters($idSite) ?? '';
+            $globalParameters = $this->queryParameterExclusions->parameters($idSite);
+
+            return $this->responses->values(
+                $request,
+                $this->commaSeparatedValues($siteParameters.','.$globalParameters),
+            );
+        }
+
+        if ($request->isGlobalExcludedQueryParametersRequest()
+            || $request->isQueryParameterExclusionTypeRequest()) {
+            if (! $this->authorizer->hasSomeViewAccess($request->authentication)) {
+                return $this->responses->error(
+                    $request,
+                    'You must have view access to at least one website.',
+                    401,
+                );
+            }
+
+            return $this->responses->scalar(
+                $request,
+                $request->isQueryParameterExclusionTypeRequest()
+                    ? $this->queryParameterExclusions->type($request->idSite)
+                    : $this->queryParameterExclusions->parameters($request->idSite),
             );
         }
 

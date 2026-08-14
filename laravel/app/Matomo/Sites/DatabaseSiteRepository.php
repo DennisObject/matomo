@@ -68,6 +68,16 @@ final readonly class DatabaseSiteRepository implements SiteRepository
         return is_string($value) ? $value : null;
     }
 
+    public function excludedParameters(int $idSite): ?string
+    {
+        $value = $this->connection
+            ->table('site')
+            ->where('idsite', $idSite)
+            ->value('excluded_parameters');
+
+        return is_string($value) ? $value : null;
+    }
+
     public function timezones(): array
     {
         return array_values(

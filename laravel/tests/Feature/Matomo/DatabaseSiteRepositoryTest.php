@@ -29,6 +29,7 @@ class DatabaseSiteRepositoryTest extends TestCase
             $table->string('main_url');
             $table->string('timezone');
             $table->string('excluded_referrers')->default('');
+            $table->string('excluded_parameters')->default('');
         });
         $connection->getSchemaBuilder()->create('site_url', function (Blueprint $table): void {
             $table->unsignedInteger('idsite');
@@ -41,6 +42,7 @@ class DatabaseSiteRepositoryTest extends TestCase
                 'main_url' => 'https://example.test',
                 'timezone' => 'Europe/Paris',
                 'excluded_referrers' => 'site.test,shared.test',
+                'excluded_parameters' => 'session,token',
             ],
             [
                 'idsite' => 8,
@@ -48,6 +50,7 @@ class DatabaseSiteRepositoryTest extends TestCase
                 'main_url' => 'https://other.test',
                 'timezone' => 'UTC',
                 'excluded_referrers' => '',
+                'excluded_parameters' => '',
             ],
         ]);
         $connection->table('site_url')->insert([
@@ -74,6 +77,8 @@ class DatabaseSiteRepositoryTest extends TestCase
         $this->assertSame([], $sites->idsForUrls(['https://www.example.test'], [8]));
         $this->assertSame('site.test,shared.test', $sites->excludedReferrers(3));
         $this->assertNull($sites->excludedReferrers(99));
+        $this->assertSame('session,token', $sites->excludedParameters(3));
+        $this->assertNull($sites->excludedParameters(99));
     }
 
     public function test_returns_an_empty_list_before_the_site_table_exists(): void

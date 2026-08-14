@@ -9,6 +9,7 @@ use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\CurrencyProvider;
+use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -16,6 +17,68 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_excluded_query_parameters_merge_site_and_policy_values(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('hasViewAccessToSite')
+            ->with($this->isInstanceOf(ApiAuthentication::class), 7)
+            ->willReturn(true);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('excludedParameters')
+            ->with(7)
+            ->willReturn('session,email');
+        $policy = $this->createMock(QueryParameterExclusionPolicy::class);
+        $policy->expects($this->once())
+            ->method('parameters')
+            ->with(7)
+            ->willReturn('email,password');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(QueryParameterExclusionPolicy::class, $policy);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getExcludedQueryParameters'.
+            '&idSite=7&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson(['session', 'email', 'password']);
+    }
+
+    public function test_query_parameter_exclusion_type_keeps_optional_site_scope(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSomeViewAccess')->willReturn(true);
+        $policy = $this->createMock(QueryParameterExclusionPolicy::class);
+        $policy->expects($this->once())
+            ->method('type')
+            ->with(7)
+            ->willReturn('matomo_recommended_pii');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(QueryParameterExclusionPolicy::class, $policy);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getExclusionTypeForQueryParams'.
+            '&idSite=7&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertContent('{"value":"matomo_recommended_pii"}');
+    }
+
+    public function test_global_query_parameter_exclusions_require_view_access(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSomeViewAccess')->willReturn(false);
+        $policy = $this->createMock(QueryParameterExclusionPolicy::class);
+        $policy->expects($this->never())->method('parameters');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(QueryParameterExclusionPolicy::class, $policy);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getExcludedQueryParametersGlobal'.
+            '&format=json&token_auth=other-token',
+        )->assertUnauthorized();
+    }
+
     public function test_currency_symbols_are_public_and_keep_custom_codes(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
