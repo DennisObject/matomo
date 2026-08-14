@@ -17,3 +17,5 @@ Resolve the client IP with Matomo's configured proxy headers and proxy ranges. W
 
 ## Keep site access extensible
 Load core roles from the existing access and site tables. Dispatch `UserSiteAccessLoaded` for regular users before returning permissions so migrated plugins can add or remove site access without changing core auth code.
+
+Keep view-only, write-only, and admin site ID lists separate. Superusers receive every site for the admin role and an empty list for the view-only and write-only roles, matching Matomo's access contract.

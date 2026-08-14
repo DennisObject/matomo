@@ -21,7 +21,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
     public function supports(ApiRequest $request): bool
     {
-        return $request->isAdminSiteIdsRequest() || $request->isAllSiteIdsRequest();
+        return $request->siteAccessRole() !== null || $request->isAllSiteIdsRequest();
     }
 
     public function handle(ApiRequest $request): Response
@@ -30,10 +30,12 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             throw new LogicException('The SitesManager API handler does not support this method.');
         }
 
-        if ($request->isAdminSiteIdsRequest()) {
+        $role = $request->siteAccessRole();
+
+        if ($role !== null) {
             return $this->responses->values(
                 $request,
-                $this->authorizer->siteIdsWithAdminAccess($request->authentication),
+                $this->authorizer->siteIdsWithRole($request->authentication, $role),
             );
         }
 

@@ -7,6 +7,7 @@ namespace App\Matomo\Api;
 use App\Matomo\Api\Exceptions\ConflictingAuthenticationParameters;
 use App\Matomo\Api\Exceptions\InvalidApiParameter;
 use App\Matomo\Authentication\ApiAuthentication;
+use App\Matomo\Authentication\SiteAccessRole;
 use Illuminate\Http\Request;
 
 final readonly class ApiRequest
@@ -53,10 +54,18 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'API.getPhpVersion';
     }
 
-    public function isAdminSiteIdsRequest(): bool
+    public function siteAccessRole(): ?SiteAccessRole
     {
-        return $this->module === 'API'
-            && $this->method === 'SitesManager.getSitesIdWithAdminAccess';
+        if ($this->module !== 'API') {
+            return null;
+        }
+
+        return match ($this->method) {
+            'SitesManager.getSitesIdWithViewAccess' => SiteAccessRole::View,
+            'SitesManager.getSitesIdWithWriteAccess' => SiteAccessRole::Write,
+            'SitesManager.getSitesIdWithAdminAccess' => SiteAccessRole::Admin,
+            default => null,
+        };
     }
 
     public function isAllSiteIdsRequest(): bool
