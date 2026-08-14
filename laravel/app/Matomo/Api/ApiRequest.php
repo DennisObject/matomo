@@ -31,6 +31,7 @@ final readonly class ApiRequest
         public ?string $timezone,
         public ?string $countryCode,
         public ?bool $multipleTimezonesInCountry,
+        public ?string $siteGroup,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -59,6 +60,7 @@ final readonly class ApiRequest
             timezone: null,
             countryCode: null,
             multipleTimezonesInCountry: null,
+            siteGroup: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -112,6 +114,11 @@ final readonly class ApiRequest
     public function isSiteGroupsRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getSitesGroups';
+    }
+
+    public function isSitesFromGroupRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSitesFromGroup';
     }
 
     public function isDefaultCurrencyRequest(): bool
@@ -245,6 +252,7 @@ final readonly class ApiRequest
             timezone: self::timezone($request, $module, $method),
             countryCode: self::timezoneCountryCode($request, $module, $method),
             multipleTimezonesInCountry: self::multipleTimezonesInCountry($request, $module, $method),
+            siteGroup: self::siteGroup($request, $module, $method),
             authentication: $authentication,
         );
     }
@@ -394,6 +402,13 @@ final readonly class ApiRequest
 
         return self::booleanFromArray($request->query->all(), 'multipleTimezonesInCountry')
             ?? self::booleanFromArray($request->request->all(), 'multipleTimezonesInCountry');
+    }
+
+    private static function siteGroup(Request $request, string $module, string $method): ?string
+    {
+        return $module === 'API' && $method === 'SitesManager.getSitesFromGroup'
+            ? trim(self::stringInput($request, 'group'))
+            : null;
     }
 
     private static function authentication(Request $request): ApiAuthentication

@@ -22,6 +22,11 @@ interface SiteRepository
     public function allDetails(): array;
 
     /**
+     * @return list<array<string, int|string|null>>
+     */
+    public function detailsInGroup(string $group): array;
+
+    /**
      * @return list<string>
      */
     public function groups(): array;

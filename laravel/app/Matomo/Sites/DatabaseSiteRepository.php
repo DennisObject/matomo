@@ -61,6 +61,17 @@ final readonly class DatabaseSiteRepository implements SiteRepository
         return $sites;
     }
 
+    public function detailsInGroup(string $group): array
+    {
+        $sites = [];
+
+        foreach ($this->connection->table('site')->where('group', $group)->get() as $record) {
+            $sites[] = $this->normalizeDetails($record);
+        }
+
+        return $sites;
+    }
+
     /**
      * @return array<string, int|string|null>
      */

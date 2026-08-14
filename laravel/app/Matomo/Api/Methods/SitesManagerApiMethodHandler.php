@@ -84,6 +84,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isAllSitesRequest()
             || $request->isViewableSiteIdsRequest()
             || $request->isSiteGroupsRequest()
+            || $request->isSitesFromGroupRequest()
             || $request->isDefaultCurrencyRequest()
             || $request->isCurrencySymbolsRequest()
             || $request->isCurrencyListRequest()
@@ -192,6 +193,24 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             }
 
             return $this->responses->keyedRows($request, $sites);
+        }
+
+        if ($request->isSitesFromGroupRequest()) {
+            if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires a 'superuser' access.",
+                    401,
+                );
+            }
+
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+            $sites = array_map(
+                fn (array $site): array => $this->siteDetails->present($site, $language, true),
+                $this->sites->detailsInGroup($request->siteGroup ?? ''),
+            );
+
+            return $this->responses->rows($request, $sites);
         }
 
         $role = $request->siteAccessRole();
