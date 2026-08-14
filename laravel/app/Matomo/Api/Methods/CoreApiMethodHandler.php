@@ -7,6 +7,7 @@ namespace App\Matomo\Api\Methods;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Plugins\PluginState;
 use App\Matomo\Security\ClientIpResolver;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -19,13 +20,15 @@ final readonly class CoreApiMethodHandler implements ApiMethodHandler
         private ApiAccessAuthorizer $authorizer,
         private ApiResponseFactory $responses,
         private ClientIpResolver $clientIps,
+        private PluginState $plugins,
     ) {}
 
     public function supports(ApiRequest $request): bool
     {
         return $request->isVersionRequest()
             || $request->isPhpVersionRequest()
-            || $request->isClientIpRequest();
+            || $request->isClientIpRequest()
+            || $request->isPluginActivatedRequest();
     }
 
     public function handle(ApiRequest $request, Request $httpRequest): Response
@@ -48,7 +51,11 @@ final readonly class CoreApiMethodHandler implements ApiMethodHandler
 
         return $this->responses->scalar(
             $request,
-            $request->isClientIpRequest() ? $this->clientIps->resolve($httpRequest) : Version::VERSION,
+            match (true) {
+                $request->isClientIpRequest() => $this->clientIps->resolve($httpRequest),
+                $request->isPluginActivatedRequest() => $this->plugins->isActivated($request->pluginName ?? ''),
+                default => Version::VERSION,
+            },
         );
     }
 

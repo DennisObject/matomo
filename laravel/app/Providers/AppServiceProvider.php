@@ -14,6 +14,8 @@ use App\Matomo\Config\InstallationConfig;
 use App\Matomo\Database\MatomoDatabase;
 use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Options\OptionRepository;
+use App\Matomo\Plugins\ConfiguredPluginState;
+use App\Matomo\Plugins\PluginState;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\ReportingApiIpAllowlist;
@@ -99,6 +101,13 @@ class AppServiceProvider extends ServiceProvider
             OptionRepository::class,
             fn (Application $application): OptionRepository => new DatabaseOptionRepository(
                 $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
+            PluginState::class,
+            fn (Application $application): PluginState => new ConfiguredPluginState(
+                $application->make(InstallationConfig::class),
             ),
         );
 

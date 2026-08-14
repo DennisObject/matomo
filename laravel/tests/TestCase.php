@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests;
 
 use App\Matomo\Options\OptionRepository;
+use App\Matomo\Plugins\PluginState;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Sites\SiteRepository;
@@ -24,6 +25,13 @@ abstract class TestCase extends BaseTestCase
             public function value(string $name): ?string
             {
                 return null;
+            }
+        });
+        $this->app->instance(PluginState::class, new class implements PluginState
+        {
+            public function isActivated(string $pluginName): bool
+            {
+                return false;
             }
         });
         $this->app->instance(ReportingApiIpAllowlist::class, new class implements ReportingApiIpAllowlist

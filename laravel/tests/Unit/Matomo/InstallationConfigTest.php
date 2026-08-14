@@ -41,6 +41,7 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(['10.0.0.1'], $configuration->proxyIps());
         $this->assertTrue($configuration->proxyIpReadLastInList());
         $this->assertSame(21, $configuration->websitesCountToDisplay());
+        $this->assertSame(['CoreHome', 'SitesManager'], $configuration->activatedPlugins());
     }
 
     public function test_rejects_unsafe_table_prefix(): void
@@ -76,6 +77,10 @@ class InstallationConfigTest extends TestCase
             proxy_ips[] = "10.0.0.1"
             autocomplete_min_sites = 9
             site_selector_max_sites = 21
+
+            [Plugins]
+            Plugins[] = "CoreHome"
+            Plugins[] = "SitesManager"
             INI;
 
         $this->assertNotFalse(file_put_contents($path, $content));
