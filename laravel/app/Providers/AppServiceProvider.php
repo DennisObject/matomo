@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Api\Methods\ContentsApiMethodHandler;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
+use App\Matomo\Api\Methods\CustomJsTrackerApiMethodHandler;
 use App\Matomo\Api\Methods\DevicePluginsApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
@@ -31,7 +32,9 @@ use App\Matomo\Localization\MatomoTranslator;
 use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\ConfiguredPluginState;
+use App\Matomo\Plugins\LocalTrackerFileAvailability;
 use App\Matomo\Plugins\PluginState;
+use App\Matomo\Plugins\TrackerFileAvailability;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\CarbonReportingPeriodFactory;
 use App\Matomo\Reporting\ConfiguredReportingSettings;
@@ -309,6 +312,14 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            TrackerFileAvailability::class,
+            fn (): TrackerFileAvailability => new LocalTrackerFileAvailability(
+                base_path('../js/piwik.min.js'),
+                base_path('../matomo.js'),
+            ),
+        );
+
+        $this->app->singleton(
             ClientIpResolver::class,
             function (Application $application): ClientIpResolver {
                 $installation = $application->make(InstallationConfig::class);
@@ -350,6 +361,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(PagePerformanceApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),
+                $application->make(CustomJsTrackerApiMethodHandler::class),
             ]),
         );
     }
