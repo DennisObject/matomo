@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 75 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 76 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Not ported |
@@ -67,12 +67,13 @@ Handled reporting API method names:
 - `CustomJsTracker`: `doesIncludePluginTrackersAutomatically` in every supported response format.
 - `ProfessionalServices`: `dismissWidget` in every supported response format.
 - `Login`: `unblockBruteForceIPs` in every supported response format.
+- `AIAgents`: `get` in every supported response format, including suffixed column filtering.
 
 Reporting API module matrix:
 
 | Module | Legacy methods | Laravel handled | Remaining methods |
 | --- | ---: | ---: | ---: |
-| `AIAgents` | 1 | 0 | 1 |
+| `AIAgents` | 1 | 1 | 0 |
 | `AIProviders` | 4 | 0 | 4 |
 | `API` | 19 | 6 | 13 |
 | `Actions` | 18 | 0 | 18 |
@@ -123,7 +124,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **75** | **314** |
+| **Total** | **389** | **76** | **313** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
