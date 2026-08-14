@@ -86,4 +86,35 @@ final readonly class DatabaseSiteRepository implements SiteRepository
                 ->all(),
         );
     }
+
+    public function idsForUrls(array $urls, array $allowedSiteIds): array
+    {
+        if ($urls === [] || $allowedSiteIds === []) {
+            return [];
+        }
+
+        $aliases = $this->connection
+            ->table('site_url')
+            ->select('idsite')
+            ->whereIn('url', $urls)
+            ->whereIn('idsite', $allowedSiteIds);
+        $records = $this->connection
+            ->table('site')
+            ->select('idsite')
+            ->whereIn('main_url', $urls)
+            ->whereIn('idsite', $allowedSiteIds)
+            ->union($aliases)
+            ->get();
+        $siteIds = [];
+
+        foreach ($records as $record) {
+            $idSite = $record->idsite ?? null;
+
+            if (is_int($idSite) || is_string($idSite)) {
+                $siteIds[] = ['idsite' => (string) $idSite];
+            }
+        }
+
+        return $siteIds;
+    }
 }

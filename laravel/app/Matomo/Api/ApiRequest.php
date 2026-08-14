@@ -27,6 +27,7 @@ final readonly class ApiRequest
         public ?array $timezones,
         public ?string $ipRange,
         public ?string $pluginName,
+        public ?string $siteUrl,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -51,6 +52,7 @@ final readonly class ApiRequest
             timezones: null,
             ipRange: null,
             pluginName: null,
+            siteUrl: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -147,6 +149,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'API.isPluginActivated';
     }
 
+    public function isSiteIdFromUrlRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSitesIdFromSiteUrl';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -175,6 +182,7 @@ final readonly class ApiRequest
             timezones: self::timezones($request, $module, $method),
             ipRange: self::ipRange($request, $module, $method),
             pluginName: self::pluginName($request, $module, $method),
+            siteUrl: self::siteUrl($request, $module, $method),
             authentication: $authentication,
         );
     }
@@ -253,6 +261,21 @@ final readonly class ApiRequest
 
         if ($value === null) {
             throw new MissingApiParameter('pluginName');
+        }
+
+        return $value;
+    }
+
+    private static function siteUrl(Request $request, string $module, string $method): ?string
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.getSitesIdFromSiteUrl') {
+            return null;
+        }
+
+        $value = self::nullableStringInput($request, 'url');
+
+        if ($value === null) {
+            throw new MissingApiParameter('url');
         }
 
         return $value;

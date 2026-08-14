@@ -81,6 +81,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isUniqueSiteTimezonesRequest()
             || $request->isSiteIdsFromTimezonesRequest()
             || $request->isIpRangeRequest()
+            || $request->isSiteIdFromUrlRequest()
             || $this->globalOption($request) !== null;
     }
 
@@ -214,6 +215,26 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             ]);
         }
 
+        if ($request->isSiteIdFromUrlRequest()) {
+            $url = $this->withoutTrailingSlash($request->siteUrl ?? '');
+            $host = str_replace(['www.', 'http://', 'https://'], '', $url);
+            $urls = [
+                $url,
+                "http://{$host}",
+                "http://www.{$host}",
+                "https://{$host}",
+                "https://www.{$host}",
+            ];
+            $allowedSiteIds = $this->authorizer->siteIdsWithAtLeastViewAccess(
+                $request->authentication,
+            );
+
+            return $this->responses->rows(
+                $request,
+                $this->sites->idsForUrls($urls, $allowedSiteIds),
+            );
+        }
+
         $globalOption = $this->globalOption($request);
 
         if ($globalOption !== null) {
@@ -270,5 +291,14 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         }
 
         return self::GLOBAL_OPTIONS[$request->method] ?? null;
+    }
+
+    private function withoutTrailingSlash(string $url): string
+    {
+        if (strlen($url) > 5 && str_ends_with($url, '/')) {
+            return substr($url, 0, -1);
+        }
+
+        return $url;
     }
 }

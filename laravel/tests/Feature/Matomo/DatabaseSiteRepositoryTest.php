@@ -64,6 +64,11 @@ class DatabaseSiteRepositoryTest extends TestCase
         $this->assertSame(['Europe/Paris', 'UTC'], $sites->timezones());
         $this->assertSame([3], $sites->idsInTimezones(['Europe/Paris', 'Pacific/Auckland']));
         $this->assertSame([], $sites->idsInTimezones([]));
+        $this->assertSame(
+            [['idsite' => '3']],
+            $sites->idsForUrls(['https://www.example.test'], [3, 8]),
+        );
+        $this->assertSame([], $sites->idsForUrls(['https://www.example.test'], [8]));
     }
 
     public function test_returns_an_empty_list_before_the_site_table_exists(): void

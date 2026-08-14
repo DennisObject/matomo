@@ -15,6 +15,50 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_site_id_from_url_normalizes_urls_and_limits_access(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithAtLeastViewAccess')
+            ->willReturn([2, 3]);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('idsForUrls')
+            ->with(
+                [
+                    'https://www.example.test',
+                    'http://example.test',
+                    'http://www.example.test',
+                    'https://example.test',
+                    'https://www.example.test',
+                ],
+                [2, 3],
+            )
+            ->willReturn([['idsite' => '3']]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesIdFromSiteUrl'.
+            '&url=https%3A%2F%2Fwww.example.test%2F&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([['idsite' => '3']]);
+    }
+
+    public function test_site_id_from_url_rejects_a_missing_url(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('siteIdsWithAtLeastViewAccess');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get('/index.php?module=API&method=SitesManager.getSitesIdFromSiteUrl&format=json')
+            ->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "Please specify a value for 'url'.",
+            ]);
+    }
+
     public function test_ip_range_returns_bounds_without_authentication(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

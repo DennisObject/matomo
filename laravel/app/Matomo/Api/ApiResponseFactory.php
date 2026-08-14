@@ -57,6 +57,23 @@ final class ApiResponseFactory
         };
     }
 
+    /**
+     * @param  list<array<string, bool|int|string>>  $rows
+     */
+    public function rows(ApiRequest $request, array $rows): Response
+    {
+        return match ($request->format) {
+            'console' => $this->consoleRows($request, $rows),
+            'csv', 'tsv' => $this->spreadsheetRows($request, $rows),
+            'html' => $this->htmlRows($rows),
+            'json' => $this->jsonRows($request, $rows),
+            'original' => $this->originalRows($request, $rows),
+            'rss' => $this->rssScalarError(),
+            'xml' => $this->xmlRows($rows),
+            default => throw new LogicException('The API response format is not supported.'),
+        };
+    }
+
     public function error(ApiRequest $request, string $message, int $status): Response
     {
         return match ($request->format) {
@@ -130,6 +147,41 @@ final class ApiResponseFactory
         );
     }
 
+    /**
+     * @param  list<array<string, bool|int|string>>  $rows
+     */
+    private function xmlRows(array $rows): Response
+    {
+        if ($rows === []) {
+            return $this->response(
+                "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result />",
+                200,
+                'text/xml; charset=utf-8',
+            );
+        }
+
+        $content = '';
+
+        foreach ($rows as $row) {
+            $content .= "\n\t<row>";
+
+            foreach ($row as $name => $value) {
+                $value = $this->scalarText($value, false);
+                $content .= $value === ''
+                    ? "\n\t\t<{$name} />"
+                    : "\n\t\t<{$name}>{$this->escape($value)}</{$name}>";
+            }
+
+            $content .= "\n\t</row>";
+        }
+
+        return $this->response(
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>{$content}\n</result>",
+            200,
+            'text/xml; charset=utf-8',
+        );
+    }
+
     private function xmlError(string $message, int $status): Response
     {
         return $this->response(
@@ -191,6 +243,44 @@ final class ApiResponseFactory
                 fn (int|string $value): string => $this->spreadsheetCell((string) $value, ','),
                 $values,
             ));
+
+        if ($request->convertToUnicode && function_exists('mb_convert_encoding')) {
+            $content = "\xFF\xFE".mb_convert_encoding($content, 'UTF-16LE', 'UTF-8');
+        }
+
+        return $this->response($content, 200, 'application/vnd.ms-excel')->header(
+            'Content-Disposition',
+            "attachment; filename*=UTF-8''Export",
+        );
+    }
+
+    /**
+     * @param  list<array<string, bool|int|string>>  $rows
+     */
+    private function spreadsheetRows(ApiRequest $request, array $rows): Response
+    {
+        if ($rows === []) {
+            $content = 'No data available';
+        } else {
+            $delimiter = $request->format === 'csv' ? ',' : "\t";
+            $columns = $this->rowColumns($rows);
+            $lines = [implode($delimiter, array_map(
+                fn (string $column): string => $this->spreadsheetCell($column, $delimiter),
+                $columns,
+            ))];
+
+            foreach ($rows as $row) {
+                $lines[] = implode($delimiter, array_map(
+                    fn (string $column): string => $this->spreadsheetCell(
+                        $this->scalarText($row[$column] ?? '', false),
+                        $delimiter,
+                    ),
+                    $columns,
+                ));
+            }
+
+            $content = implode("\n", $lines);
+        }
 
         if ($request->convertToUnicode && function_exists('mb_convert_encoding')) {
             $content = "\xFF\xFE".mb_convert_encoding($content, 'UTF-16LE', 'UTF-8');
@@ -328,6 +418,45 @@ final class ApiResponseFactory
         return $this->response($content, 200, 'text/html; charset=utf-8');
     }
 
+    /**
+     * @param  list<array<string, bool|int|string>>  $rows
+     */
+    private function htmlRows(array $rows): Response
+    {
+        $headers = '';
+        $body = '';
+        $columns = $this->rowColumns($rows);
+
+        foreach ($columns as $column) {
+            $headers .= "\n\t\t<th>{$this->escape($column)}</th>";
+        }
+
+        foreach ($rows as $row) {
+            $body .= "\n\t<tr>";
+
+            foreach ($columns as $column) {
+                $value = $this->scalarText($row[$column] ?? '', false);
+                $body .= "\n\t\t<td>{$this->escape($value)}</td>";
+            }
+
+            $body .= "\n\t</tr>";
+        }
+
+        $content = <<<HTML
+        <table border="1">
+        <thead>
+        \t<tr>{$headers}
+        \t</tr>
+        </thead>
+        <tbody>{$body}
+        </tbody>
+        </table>
+
+        HTML;
+
+        return $this->response($content, 200, 'text/html; charset=utf-8');
+    }
+
     private function original(ApiRequest $request, bool|int|string $value): Response
     {
         return $this->response(
@@ -356,6 +485,18 @@ final class ApiResponseFactory
     {
         return $this->response(
             $request->serialize ? serialize($values) : var_export($values, true),
+            200,
+            'text/plain; charset=utf-8',
+        );
+    }
+
+    /**
+     * @param  list<array<string, bool|int|string>>  $rows
+     */
+    private function originalRows(ApiRequest $request, array $rows): Response
+    {
+        return $this->response(
+            $request->serialize ? serialize($rows) : var_export($rows, true),
             200,
             'text/plain; charset=utf-8',
         );
@@ -430,6 +571,36 @@ final class ApiResponseFactory
         return $this->response($rows, 200, 'text/plain; charset=utf-8');
     }
 
+    /**
+     * @param  list<array<string, bool|int|string>>  $rows
+     */
+    private function consoleRows(ApiRequest $request, array $rows): Response
+    {
+        if ($rows === []) {
+            return $this->response("Empty table<br />\n", 200, 'text/plain; charset=utf-8');
+        }
+
+        $output = '';
+        $metadata = $request->showMetadata ? ' [] [idsubtable = ]' : '';
+
+        foreach ($rows as $index => $row) {
+            $columns = [];
+
+            foreach ($row as $name => $value) {
+                $name = str_replace(['\\', "'"], ['\\\\', "\\'"], $name);
+                $value = is_string($value)
+                    ? "'".str_replace(['\\', "'"], ['\\\\', "\\'"], $value)."'"
+                    : $this->scalarText($value, true);
+                $columns[] = "'{$name}' => {$value}";
+            }
+
+            $number = $index + 1;
+            $output .= "- {$number} [".implode(', ', $columns)."]{$metadata}<br />\n";
+        }
+
+        return $this->response($output, 200, 'text/plain; charset=utf-8');
+    }
+
     private function rssScalarError(): Response
     {
         return $this->response(
@@ -463,6 +634,24 @@ final class ApiResponseFactory
         return $this->response($json, $status, 'application/json; charset=utf-8');
     }
 
+    /**
+     * @param  list<array<string, bool|int|string>>  $rows
+     */
+    private function jsonRows(ApiRequest $request, array $rows): Response
+    {
+        $json = json_encode($rows, JSON_THROW_ON_ERROR);
+
+        if ($request->callback !== null && preg_match('/^[0-9a-zA-Z_.]*$/D', $request->callback) === 1) {
+            return $this->response(
+                $request->callback.'('.$json.')',
+                200,
+                'application/javascript; charset=utf-8',
+            );
+        }
+
+        return $this->response($json, 200, 'application/json; charset=utf-8');
+    }
+
     private function scalarText(bool|int|string $value, bool $emptyFalse): string
     {
         if ($value === false) {
@@ -470,6 +659,25 @@ final class ApiResponseFactory
         }
 
         return (string) $value;
+    }
+
+    /**
+     * @param  list<array<string, bool|int|string>>  $rows
+     * @return list<string>
+     */
+    private function rowColumns(array $rows): array
+    {
+        $columns = [];
+
+        foreach ($rows as $row) {
+            foreach (array_keys($row) as $column) {
+                if (! in_array($column, $columns, true)) {
+                    $columns[] = $column;
+                }
+            }
+        }
+
+        return $columns;
     }
 
     /**
