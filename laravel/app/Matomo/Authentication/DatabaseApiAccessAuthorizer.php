@@ -22,6 +22,11 @@ final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
         private ?Dispatcher $events = null,
     ) {}
 
+    public function authenticatedLogin(ApiAuthentication $authentication): ?string
+    {
+        return $this->authenticatedUser($authentication)['login'] ?? null;
+    }
+
     public function hasSomeViewAccess(ApiAuthentication $authentication): bool
     {
         $user = $this->authenticatedUser($authentication);

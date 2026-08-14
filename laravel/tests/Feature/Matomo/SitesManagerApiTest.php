@@ -7,16 +7,47 @@ namespace Tests\Feature\Matomo;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\SiteAccessRole;
+use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
+use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_currency_list_is_public_and_uses_the_resolved_language(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasSomeViewAccess');
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())
+            ->method('resolve')
+            ->with(
+                $this->isInstanceOf(Request::class),
+                $this->isInstanceOf(ApiAuthentication::class),
+            )
+            ->willReturn('fr');
+        $currencies = $this->createMock(CurrencyProvider::class);
+        $currencies->expects($this->once())
+            ->method('names')
+            ->with('fr')
+            ->willReturn([
+                'EUR' => 'Euro (€)',
+                'USD' => 'Dollar américain ($)',
+            ]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(CurrencyProvider::class, $currencies);
+
+        $this->get('/index.php?module=API&method=SitesManager.getCurrencyList&format=json')
+            ->assertOk()
+            ->assertContent('{"EUR":"Euro (\\u20ac)","USD":"Dollar am\\u00e9ricain ($)"}');
+    }
+
     public function test_excluded_query_parameters_merge_site_and_policy_values(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

@@ -46,6 +46,9 @@ class InstallationConfigTest extends TestCase
         $this->assertTrue($configuration->configuredCnilPolicy());
         $this->assertFalse($configuration->configuredFilterPiiEnforcement());
         $this->assertSame(['email', 'password'], $configuration->commonPiiParameters());
+        $this->assertSame('fr', $configuration->defaultLanguage());
+        $this->assertSame('language_cookie', $configuration->languageCookieName());
+        $this->assertSame(['en', 'fr'], $configuration->availableLanguages());
     }
 
     public function test_rejects_unsafe_table_prefix(): void
@@ -82,6 +85,8 @@ class InstallationConfigTest extends TestCase
             autocomplete_min_sites = 9
             site_selector_max_sites = 21
             currencies[BTC] = "Bitcoin"
+            default_language = "fr"
+            language_cookie_name = "language_cookie"
 
             [Plugins]
             Plugins[] = "CoreHome"
@@ -94,6 +99,10 @@ class InstallationConfigTest extends TestCase
             FilterPIIParameters_policy_enforced = 0
             CommonPIIParams[] = "email"
             CommonPIIParams[] = "password"
+
+            [Languages]
+            Languages[] = "en"
+            Languages[] = "fr"
             INI;
 
         $this->assertNotFalse(file_put_contents($path, $content));

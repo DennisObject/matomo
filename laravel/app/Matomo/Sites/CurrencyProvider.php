@@ -10,4 +10,9 @@ interface CurrencyProvider
      * @return array<string, string>
      */
     public function symbols(): array;
+
+    /**
+     * @return array<string, string>
+     */
+    public function names(string $language): array;
 }

@@ -6,6 +6,8 @@ namespace App\Matomo\Authentication;
 
 interface ApiAccessAuthorizer
 {
+    public function authenticatedLogin(ApiAuthentication $authentication): ?string;
+
     public function hasSomeViewAccess(ApiAuthentication $authentication): bool;
 
     public function hasSomeAdminAccess(ApiAuthentication $authentication): bool;

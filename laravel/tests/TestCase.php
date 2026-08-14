@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use App\Matomo\Authentication\ApiAuthentication;
+use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\Security\ClientIpResolver;
@@ -22,9 +24,21 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         $this->app->instance(ClientIpResolver::class, new ClientIpResolver([], [], true));
+        $this->app->instance(LanguageResolver::class, new class implements LanguageResolver
+        {
+            public function resolve(Request $request, ApiAuthentication $authentication): string
+            {
+                return 'en';
+            }
+        });
         $this->app->instance(CurrencyProvider::class, new class implements CurrencyProvider
         {
             public function symbols(): array
+            {
+                return [];
+            }
+
+            public function names(string $language): array
             {
                 return [];
             }

@@ -12,6 +12,12 @@ use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
 use App\Matomo\Config\InstallationConfig;
 use App\Matomo\Database\MatomoDatabase;
+use App\Matomo\Localization\ApiLanguageResolver;
+use App\Matomo\Localization\DatabaseLanguagePreferenceRepository;
+use App\Matomo\Localization\JsonMatomoTranslator;
+use App\Matomo\Localization\LanguagePreferenceRepository;
+use App\Matomo\Localization\LanguageResolver;
+use App\Matomo\Localization\MatomoTranslator;
 use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\ConfiguredPluginState;
@@ -104,6 +110,38 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            MatomoTranslator::class,
+            fn (): MatomoTranslator => new JsonMatomoTranslator([
+                base_path('../lang'),
+                base_path('../plugins/Intl/lang'),
+                base_path('../plugins/SitesManager/lang'),
+            ]),
+        );
+
+        $this->app->singleton(
+            LanguagePreferenceRepository::class,
+            fn (Application $application): LanguagePreferenceRepository => new DatabaseLanguagePreferenceRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
+            LanguageResolver::class,
+            function (Application $application): LanguageResolver {
+                $installation = $application->make(InstallationConfig::class);
+
+                return new ApiLanguageResolver(
+                    authorizer: $application->make(ApiAccessAuthorizer::class),
+                    preferences: $application->make(LanguagePreferenceRepository::class),
+                    availableLanguages: $this->availableLanguages($installation),
+                    defaultLanguage: $installation->defaultLanguage(),
+                    cookieName: $installation->languageCookieName(),
+                    salt: $installation->salt(),
+                );
+            },
+        );
+
+        $this->app->singleton(
             CurrencyProvider::class,
             function (Application $application): CurrencyProvider {
                 $currencies = require base_path('../core/Intl/Data/Resources/currencies.php');
@@ -111,6 +149,7 @@ class AppServiceProvider extends ServiceProvider
                 return new ConfiguredCurrencyProvider(
                     currencies: is_array($currencies) ? $currencies : [],
                     customCurrencies: $application->make(InstallationConfig::class)->customCurrencies(),
+                    translator: $application->make(MatomoTranslator::class),
                 );
             },
         );
@@ -212,6 +251,49 @@ class AppServiceProvider extends ServiceProvider
 
         return array_values(array_filter(
             $configuration['SitesManager']['CommonPIIParams'],
+            is_string(...),
+        ));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function availableLanguages(InstallationConfig $installation): array
+    {
+        $configured = $installation->availableLanguages() ?? $this->defaultAvailableLanguages();
+        $paths = glob(base_path('../lang/*.json'));
+
+        if (! is_array($paths)) {
+            throw new RuntimeException('The Matomo language directory is not readable.');
+        }
+
+        $installed = array_map(
+            static fn (string $path): string => pathinfo($path, PATHINFO_FILENAME),
+            $paths,
+        );
+
+        return array_values(array_intersect($installed, $configured));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function defaultAvailableLanguages(): array
+    {
+        $configuration = parse_ini_file(
+            base_path('../config/global.ini.php'),
+            true,
+            INI_SCANNER_RAW,
+        );
+
+        if (! is_array($configuration)
+            || ! is_array($configuration['Languages'] ?? null)
+            || ! is_array($configuration['Languages']['Languages'] ?? null)) {
+            throw new RuntimeException('The Matomo language list is invalid.');
+        }
+
+        return array_values(array_filter(
+            $configuration['Languages']['Languages'],
             is_string(...),
         ));
     }

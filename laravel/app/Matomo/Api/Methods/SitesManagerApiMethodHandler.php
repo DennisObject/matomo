@@ -7,6 +7,7 @@ namespace App\Matomo\Api\Methods;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
@@ -69,6 +70,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private SiteRuntimeSettings $runtime,
         private CurrencyProvider $currencies,
         private QueryParameterExclusionPolicy $queryParameterExclusions,
+        private LanguageResolver $languages,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -79,6 +81,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isSiteGroupsRequest()
             || $request->isDefaultCurrencyRequest()
             || $request->isCurrencySymbolsRequest()
+            || $request->isCurrencyListRequest()
             || $request->isDefaultTimezoneRequest()
             || $request->isTimezoneSupportRequest()
             || $request->isWebsitesCountToDisplayRequest()
@@ -102,6 +105,12 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
         if ($request->isCurrencySymbolsRequest()) {
             return $this->responses->row($request, $this->currencies->symbols());
+        }
+
+        if ($request->isCurrencyListRequest()) {
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+
+            return $this->responses->row($request, $this->currencies->names($language));
         }
 
         $role = $request->siteAccessRole();
