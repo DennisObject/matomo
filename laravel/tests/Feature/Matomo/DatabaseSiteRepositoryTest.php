@@ -30,6 +30,10 @@ class DatabaseSiteRepositoryTest extends TestCase
             $table->string('timezone');
             $table->string('excluded_referrers')->default('');
             $table->string('excluded_parameters')->default('');
+            $table->string('name');
+            $table->string('currency');
+            $table->boolean('ecommerce')->default(false);
+            $table->string('creator_login')->nullable();
         });
         $connection->getSchemaBuilder()->create('site_url', function (Blueprint $table): void {
             $table->unsignedInteger('idsite');
@@ -43,6 +47,10 @@ class DatabaseSiteRepositoryTest extends TestCase
                 'timezone' => 'Europe/Paris',
                 'excluded_referrers' => 'site.test,shared.test',
                 'excluded_parameters' => 'session,token',
+                'name' => 'Example',
+                'currency' => 'EUR',
+                'ecommerce' => true,
+                'creator_login' => 'owner',
             ],
             [
                 'idsite' => 8,
@@ -51,6 +59,10 @@ class DatabaseSiteRepositoryTest extends TestCase
                 'timezone' => 'UTC',
                 'excluded_referrers' => '',
                 'excluded_parameters' => '',
+                'name' => 'Other',
+                'currency' => 'USD',
+                'ecommerce' => false,
+                'creator_login' => null,
             ],
         ]);
         $connection->table('site_url')->insert([
@@ -61,6 +73,11 @@ class DatabaseSiteRepositoryTest extends TestCase
         $sites = new DatabaseSiteRepository($connection);
 
         $this->assertSame([3, 8], $sites->allIds());
+        $details = $sites->details(3);
+        $this->assertSame(3, $details['idsite']);
+        $this->assertSame(1, $details['ecommerce']);
+        $this->assertSame('owner', $details['creator_login']);
+        $this->assertSame([], $sites->details(99));
         $this->assertSame(['Main', 'a,b'], $sites->groups());
         $this->assertSame([
             'https://example.test',

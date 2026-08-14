@@ -59,17 +59,20 @@ class DatabaseApiAccessAuthorizerTest extends TestCase
         });
     }
 
-    public function test_valid_view_token_is_authorized_and_records_use(): void
+    public function test_valid_view_token_is_cached_for_the_request_and_records_use(): void
     {
         $this->addUser('viewer');
         $this->addSiteAccess('viewer', 'view');
         $tokenId = $this->addToken('viewer', 'view-token');
+        $authorizer = $this->authorizer();
+        $authentication = $this->authentication('view-token');
 
-        $this->assertSame('viewer', $this->authorizer()->authenticatedLogin(
-            $this->authentication('view-token'),
-        ));
-        $this->assertTrue($this->authorizer()->hasSomeViewAccess($this->authentication('view-token')));
-        $this->assertFalse($this->authorizer()->hasSuperUserAccess($this->authentication('view-token')));
+        $this->assertSame('viewer', $authorizer->authenticatedLogin($authentication));
+        $this->connection->table('user_token_auth')
+            ->where('idusertokenauth', $tokenId)
+            ->update(['password' => 'revoked-during-request']);
+        $this->assertTrue($authorizer->hasSomeViewAccess($authentication));
+        $this->assertFalse($authorizer->hasSuperUserAccess($authentication));
         $this->assertNotNull(
             $this->connection->table('user_token_auth')->where('idusertokenauth', $tokenId)->value('last_used'),
         );

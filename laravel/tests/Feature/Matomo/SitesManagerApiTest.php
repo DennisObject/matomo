@@ -11,6 +11,7 @@ use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
+use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
@@ -20,6 +21,60 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_site_details_require_view_access_and_hide_regular_user_creator(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('hasViewAccessToSite')
+            ->with($this->isInstanceOf(ApiAuthentication::class), 7)
+            ->willReturn(true);
+        $authorizer->expects($this->once())
+            ->method('hasSuperUserAccess')
+            ->willReturn(false);
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('details')
+            ->with(7)
+            ->willReturn([
+                'idsite' => 7,
+                'name' => 'Docs',
+                'timezone' => 'Europe/Paris',
+                'currency' => 'EUR',
+                'creator_login' => 'owner',
+            ]);
+        $presenter = $this->createMock(SiteDetailsPresenter::class);
+        $presenter->expects($this->once())
+            ->method('present')
+            ->with($this->isType('array'), 'fr', false)
+            ->willReturn([
+                'idsite' => 7,
+                'name' => 'Docs',
+                'timezone' => 'Europe/Paris',
+                'currency' => 'EUR',
+                'timezone_name' => 'France',
+                'currency_name' => 'euro',
+            ]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(SiteDetailsPresenter::class, $presenter);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSiteFromId'.
+            '&idSite=7&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([
+                'idsite' => 7,
+                'name' => 'Docs',
+                'timezone' => 'Europe/Paris',
+                'currency' => 'EUR',
+                'timezone_name' => 'France',
+                'currency_name' => 'euro',
+            ]);
+    }
+
     public function test_timezone_list_is_public_and_uses_runtime_support(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

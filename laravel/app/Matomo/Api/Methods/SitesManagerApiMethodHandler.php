@@ -11,6 +11,7 @@ use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
+use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
@@ -73,6 +74,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private QueryParameterExclusionPolicy $queryParameterExclusions,
         private LanguageResolver $languages,
         private TimezoneProvider $timezones,
+        private SiteDetailsPresenter $siteDetails,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -90,6 +92,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isTimezoneSupportRequest()
             || $request->isWebsitesCountToDisplayRequest()
             || $request->isSiteUrlsRequest()
+            || $request->isSiteDetailsRequest()
             || $request->isExcludedReferrersRequest()
             || $request->isExcludedQueryParametersRequest()
             || $request->isGlobalExcludedQueryParametersRequest()
@@ -137,6 +140,37 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             return $this->responses->structured(
                 $request,
                 $this->timezones->all($language, $this->runtime->timezoneSupportEnabled()),
+            );
+        }
+
+        if ($request->isSiteDetailsRequest()) {
+            $idSite = $request->idSite ?? throw new LogicException('The site ID was not parsed.');
+
+            if (! $this->authorizer->hasViewAccessToSite($request->authentication, $idSite)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires 'view' access for the website id = {$idSite}.",
+                    401,
+                );
+            }
+
+            $site = $this->sites->details($idSite);
+
+            if ($site === []) {
+                return $this->responses->error(
+                    $request,
+                    "An unexpected website was found in the request: website id was set to '{$idSite}' .",
+                    500,
+                );
+            }
+
+            return $this->responses->row(
+                $request,
+                $this->siteDetails->present(
+                    $site,
+                    $this->languages->resolve($httpRequest, $request->authentication),
+                    $this->authorizer->hasSuperUserAccess($request->authentication),
+                ),
             );
         }
 
