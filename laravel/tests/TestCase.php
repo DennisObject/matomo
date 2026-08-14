@@ -54,6 +54,11 @@ abstract class TestCase extends BaseTestCase
             {
                 return [];
             }
+
+            public function idsInTimezones(array $timezones): array
+            {
+                return [];
+            }
         });
         $this->app->instance(SiteRuntimeSettings::class, new class implements SiteRuntimeSettings
         {

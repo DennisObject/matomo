@@ -23,6 +23,8 @@ final readonly class ApiRequest
         public bool $showMetadata,
         public ?string $restrictSitesToLogin,
         public ?int $idSite,
+        /** @var list<string>|null */
+        public ?array $timezones,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -44,6 +46,7 @@ final readonly class ApiRequest
             showMetadata: self::booleanInput($request, 'showMetadata', true),
             restrictSitesToLogin: self::safeNullableStringInput($request, '_restrictSitesToLogin'),
             idSite: null,
+            timezones: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -125,6 +128,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getUniqueSiteTimezones';
     }
 
+    public function isSiteIdsFromTimezonesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSitesIdFromTimezones';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -150,6 +158,7 @@ final readonly class ApiRequest
             showMetadata: self::booleanInput($request, 'showMetadata', true),
             restrictSitesToLogin: self::nullableStringInput($request, '_restrictSitesToLogin'),
             idSite: self::siteId($request, $module, $method),
+            timezones: self::timezones($request, $module, $method),
             authentication: $authentication,
         );
     }
@@ -167,6 +176,40 @@ final readonly class ApiRequest
         }
 
         return (int) $value;
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    private static function timezones(Request $request, string $module, string $method): ?array
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.getSitesIdFromTimezones') {
+            return null;
+        }
+
+        $query = $request->query->all();
+        $post = $request->request->all();
+
+        if (array_key_exists('timezones', $query)) {
+            $value = $query['timezones'];
+        } elseif (array_key_exists('timezones', $post)) {
+            $value = $post['timezones'];
+        } else {
+            throw new MissingApiParameter('timezones');
+        }
+
+        $values = is_array($value) ? $value : explode(',', (string) $value);
+        $timezones = [];
+
+        foreach ($values as $timezone) {
+            if (! is_scalar($timezone)) {
+                throw new InvalidApiParameter('timezones');
+            }
+
+            $timezones[] = str_replace("\0", '', (string) $timezone);
+        }
+
+        return array_values(array_unique($timezones));
     }
 
     private static function authentication(Request $request): ApiAuthentication

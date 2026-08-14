@@ -15,6 +15,39 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_site_ids_from_timezones_parse_lists_and_require_superuser(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('idsInTimezones')
+            ->with(['UTC+10', 'Pacific/Auckland'])
+            ->willReturn([2, 3, 4]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesIdFromTimezones'.
+            '&timezones=UTC%2B10,Pacific%2FAuckland,UTC%2B10&format=json&token_auth=root-token',
+        )->assertOk()
+            ->assertExactJson([2, 3, 4]);
+    }
+
+    public function test_site_ids_from_timezones_reject_a_missing_list(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasSuperUserAccess');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get('/index.php?module=API&method=SitesManager.getSitesIdFromTimezones&format=json')
+            ->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "Please specify a value for 'timezones'.",
+            ]);
+    }
+
     public function test_unique_site_timezones_require_superuser_access(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

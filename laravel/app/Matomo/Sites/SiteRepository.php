@@ -25,4 +25,10 @@ interface SiteRepository
      * @return list<string>
      */
     public function timezones(): array;
+
+    /**
+     * @param  list<string>  $timezones
+     * @return list<int>
+     */
+    public function idsInTimezones(array $timezones): array;
 }
