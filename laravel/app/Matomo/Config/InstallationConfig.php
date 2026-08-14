@@ -27,6 +27,8 @@ final readonly class InstallationConfig
         private array $proxyIps,
         private bool $proxyIpReadLastInList,
         private int $websitesCountToDisplay,
+        /** @var list<string> */
+        private array $activatedPlugins,
     ) {}
 
     public static function fromFile(string $path): self
@@ -43,8 +45,9 @@ final readonly class InstallationConfig
 
         $database = $configuration['database'] ?? null;
         $general = $configuration['General'] ?? [];
+        $plugins = $configuration['Plugins'] ?? [];
 
-        if (! is_array($database) || ! is_array($general)) {
+        if (! is_array($database) || ! is_array($general) || ! is_array($plugins)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
 
@@ -89,6 +92,7 @@ final readonly class InstallationConfig
                 self::positiveInteger($general, 'site_selector_max_sites', 15),
                 self::positiveInteger($general, 'autocomplete_min_sites', 5),
             ),
+            activatedPlugins: self::stringList($plugins, 'Plugins'),
         );
     }
 
@@ -157,6 +161,14 @@ final readonly class InstallationConfig
     public function websitesCountToDisplay(): int
     {
         return $this->websitesCountToDisplay;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function activatedPlugins(): array
+    {
+        return $this->activatedPlugins;
     }
 
     /**

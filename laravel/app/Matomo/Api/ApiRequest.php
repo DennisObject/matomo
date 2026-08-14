@@ -26,6 +26,7 @@ final readonly class ApiRequest
         /** @var list<string>|null */
         public ?array $timezones,
         public ?string $ipRange,
+        public ?string $pluginName,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -49,6 +50,7 @@ final readonly class ApiRequest
             idSite: null,
             timezones: null,
             ipRange: null,
+            pluginName: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -140,6 +142,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getIpsForRange';
     }
 
+    public function isPluginActivatedRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'API.isPluginActivated';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -167,6 +174,7 @@ final readonly class ApiRequest
             idSite: self::siteId($request, $module, $method),
             timezones: self::timezones($request, $module, $method),
             ipRange: self::ipRange($request, $module, $method),
+            pluginName: self::pluginName($request, $module, $method),
             authentication: $authentication,
         );
     }
@@ -230,6 +238,21 @@ final readonly class ApiRequest
 
         if ($value === null) {
             throw new MissingApiParameter('ipRange');
+        }
+
+        return $value;
+    }
+
+    private static function pluginName(Request $request, string $module, string $method): ?string
+    {
+        if ($module !== 'API' || $method !== 'API.isPluginActivated') {
+            return null;
+        }
+
+        $value = self::nullableStringInput($request, 'pluginName');
+
+        if ($value === null) {
+            throw new MissingApiParameter('pluginName');
         }
 
         return $value;

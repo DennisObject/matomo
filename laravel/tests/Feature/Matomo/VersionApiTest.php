@@ -8,6 +8,7 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
+use App\Matomo\Plugins\PluginState;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\ReportingApiIpAllowlist;
@@ -19,6 +20,34 @@ use Tests\TestCase;
 
 class VersionApiTest extends TestCase
 {
+    public function test_plugin_activation_uses_configured_plugins_and_view_access(): void
+    {
+        $this->bindAuthorizer('token', false, true);
+        $plugins = $this->createMock(PluginState::class);
+        $plugins->expects($this->once())->method('isActivated')->with('SitesManager')->willReturn(true);
+        $this->app->instance(PluginState::class, $plugins);
+
+        $this->get(
+            '/index.php?module=API&method=API.isPluginActivated'.
+            '&pluginName=SitesManager&format=json&token_auth=token',
+        )->assertOk()
+            ->assertContent('{"value":true}');
+    }
+
+    public function test_plugin_activation_rejects_a_missing_plugin_name(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasSomeViewAccess');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get('/index.php?module=API&method=API.isPluginActivated&format=json')
+            ->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "Please specify a value for 'pluginName'.",
+            ]);
+    }
+
     public function test_json_version_request_keeps_the_query_api_contract(): void
     {
         $this->bindAuthorizer('secret-token', true, true);
