@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 69 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 70 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Not ported |
@@ -62,6 +62,7 @@ Handled reporting API method names:
 - `Resolution`: both API methods in every supported response format, including compliance-policy filtering.
 - `DevicePlugins`: `getPlugin` in every supported response format.
 - `PagePerformance`: `get` in every supported response format.
+- `UserId`: `getUsers` in every supported response format.
 
 Reporting API module matrix:
 
@@ -111,14 +112,14 @@ Reporting API module matrix:
 | `Transitions` | 5 | 0 | 5 |
 | `TwoFactorAuth` | 1 | 0 | 1 |
 | `UserCountry` | 8 | 0 | 8 |
-| `UserId` | 1 | 0 | 1 |
+| `UserId` | 1 | 1 | 0 |
 | `UserLanguage` | 2 | 2 | 0 |
 | `UsersManager` | 33 | 0 | 33 |
 | `VisitFrequency` | 1 | 1 | 0 |
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **69** | **320** |
+| **Total** | **389** | **70** | **319** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
