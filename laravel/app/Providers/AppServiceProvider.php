@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
 use App\Matomo\Api\Methods\DevicePluginsApiMethodHandler;
+use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\UserLanguageApiMethodHandler;
@@ -343,6 +344,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(UserLanguageApiMethodHandler::class),
                 $application->make(ResolutionApiMethodHandler::class),
                 $application->make(DevicePluginsApiMethodHandler::class),
+                $application->make(PagePerformanceApiMethodHandler::class),
             ]),
         );
     }
