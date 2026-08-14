@@ -150,6 +150,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getSitesWithViewAccess';
     }
 
+    public function isAtLeastViewSitesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSitesWithAtLeastViewAccess';
+    }
+
     public function isDefaultCurrencyRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getDefaultCurrency';
@@ -474,7 +479,7 @@ final readonly class ApiRequest
 
     private static function siteLimit(Request $request, string $module, string $method): ?int
     {
-        if (! self::supportsSiteListFilters($module, $method)) {
+        if (! self::supportsSiteLimit($module, $method)) {
             return null;
         }
 
@@ -580,6 +585,12 @@ final readonly class ApiRequest
             'SitesManager.getSitesWithAdminAccess',
             'SitesManager.getSitesWithMinimumAccess',
         ], true);
+    }
+
+    private static function supportsSiteLimit(string $module, string $method): bool
+    {
+        return self::supportsSiteListFilters($module, $method)
+            || ($module === 'API' && $method === 'SitesManager.getSitesWithAtLeastViewAccess');
     }
 
     private static function authentication(Request $request): ApiAuthentication

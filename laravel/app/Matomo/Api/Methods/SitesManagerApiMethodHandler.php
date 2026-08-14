@@ -89,6 +89,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isAdminSitesRequest()
             || $request->isMinimumAccessSitesRequest()
             || $request->isViewSitesRequest()
+            || $request->isAtLeastViewSitesRequest()
             || $request->isDefaultCurrencyRequest()
             || $request->isCurrencySymbolsRequest()
             || $request->isCurrencyListRequest()
@@ -303,6 +304,26 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             $sites = array_map(
                 fn (array $site): array => $this->siteDetails->present($site, $language, false),
                 $this->sites->detailsForIds($idSites),
+            );
+
+            return $this->responses->rows($request, $sites);
+        }
+
+        if ($request->isAtLeastViewSitesRequest()) {
+            $idSites = $this->authorizer->siteIdsWithAtLeastViewAccess(
+                $request->authentication,
+                $request->restrictSitesToLogin,
+            );
+
+            if ($idSites === []) {
+                return $this->responses->rows($request, []);
+            }
+
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+            $includeCreator = $this->authorizer->hasSuperUserAccess($request->authentication);
+            $sites = array_map(
+                fn (array $site): array => $this->siteDetails->present($site, $language, $includeCreator),
+                $this->sites->detailsForIds($idSites, null, $request->siteLimit),
             );
 
             return $this->responses->rows($request, $sites);

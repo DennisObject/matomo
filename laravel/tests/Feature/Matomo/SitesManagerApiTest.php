@@ -21,6 +21,68 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_at_least_view_sites_apply_restricted_login_and_limit(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithAtLeastViewAccess')
+            ->with($this->isInstanceOf(ApiAuthentication::class), 'alice')
+            ->willReturn([1, 2, 3]);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('detailsForIds')
+            ->with([1, 2, 3], null, 2)
+            ->willReturn([
+                ['idsite' => 1, 'name' => 'First site'],
+                ['idsite' => 2, 'name' => 'Second site'],
+            ]);
+        $presenter = $this->createMock(SiteDetailsPresenter::class);
+        $presenter->expects($this->exactly(2))
+            ->method('present')
+            ->willReturnCallback(function (array $site, string $language, bool $includeCreator): array {
+                $this->assertSame('fr', $language);
+                $this->assertTrue($includeCreator);
+
+                return [...$site, 'creator_login' => 'root'];
+            });
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(SiteDetailsPresenter::class, $presenter);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithAtLeastViewAccess'.
+            '&_restrictSitesToLogin=alice&limit=2&format=json&token_auth=root-token',
+        )->assertOk()
+            ->assertExactJson([
+                ['idsite' => 1, 'name' => 'First site', 'creator_login' => 'root'],
+                ['idsite' => 2, 'name' => 'Second site', 'creator_login' => 'root'],
+            ]);
+    }
+
+    public function test_at_least_view_sites_return_empty_without_access(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithAtLeastViewAccess')
+            ->with($this->isInstanceOf(ApiAuthentication::class), null)
+            ->willReturn([]);
+        $authorizer->expects($this->never())->method('hasSuperUserAccess');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('detailsForIds');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithAtLeastViewAccess'.
+            '&format=json&token_auth=invalid-token',
+        )->assertOk()
+            ->assertExactJson([]);
+    }
+
     public function test_view_sites_return_only_exact_view_access_with_legacy_presentation(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
