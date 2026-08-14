@@ -6,24 +6,20 @@ namespace App\Matomo\Login;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\ConnectionInterface;
-use JsonException;
 use Matomo\Network\IP;
 
 final readonly class DatabaseBruteForceUnblocker implements BruteForceUnblocker
 {
     public function __construct(
         private ConnectionInterface $connection,
-        private ?int $configuredMaxAttempts,
-        private ?int $configuredTimeRange,
-        /** @var list<string>|null */
-        private ?array $configuredAllowlist,
+        private BruteForceSettings $settings,
     ) {}
 
     public function unblockCurrentlyBlocked(): int
     {
-        $maxAttempts = $this->configuredMaxAttempts ?? $this->integerSetting('maxAllowedRetries', 20);
-        $timeRange = $this->configuredTimeRange ?? $this->integerSetting('allowedRetriesTimeRange', 60);
-        $allowlist = $this->configuredAllowlist ?? $this->listSetting('whitelisteBruteForceIps');
+        $maxAttempts = $this->settings->maxAttempts();
+        $timeRange = $this->settings->timeRangeMinutes();
+        $allowlist = $this->settings->allowlist();
         $startTime = CarbonImmutable::now('UTC')->subMinutes($timeRange)->format('Y-m-d H:i:s');
 
         return $this->connection->transaction(function () use ($maxAttempts, $allowlist, $startTime): int {
@@ -50,41 +46,6 @@ final readonly class DatabaseBruteForceUnblocker implements BruteForceUnblocker
                 ->where('attempted_at', '>', $startTime)
                 ->delete();
         });
-    }
-
-    private function integerSetting(string $name, int $default): int
-    {
-        $value = $this->setting($name);
-
-        return is_numeric($value) && (int) $value > 0 ? (int) $value : $default;
-    }
-
-    /** @return list<string> */
-    private function listSetting(string $name): array
-    {
-        $value = $this->setting($name);
-
-        if (! is_string($value)) {
-            return [];
-        }
-
-        try {
-            $decoded = json_decode($value, true, flags: JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            return [];
-        }
-
-        return is_array($decoded) ? array_values(array_filter($decoded, is_string(...))) : [];
-    }
-
-    private function setting(string $name): mixed
-    {
-        return $this->connection
-            ->table('plugin_setting')
-            ->where('plugin_name', 'Login')
-            ->where('user_login', '')
-            ->where('setting_name', $name)
-            ->value('setting_value');
     }
 
     /** @param list<string> $allowlist */

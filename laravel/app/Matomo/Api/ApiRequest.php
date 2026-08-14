@@ -105,6 +105,7 @@ final readonly class ApiRequest
         /** @var list<string> */
         public array $siteTypesToExclude,
         public ?VisitsSummaryRequest $visitsSummary,
+        public ?TwoFactorAuthRequest $twoFactorAuth,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -144,6 +145,7 @@ final readonly class ApiRequest
             minimumSiteAccessRole: null,
             siteTypesToExclude: [],
             visitsSummary: null,
+            twoFactorAuth: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -425,6 +427,11 @@ final readonly class ApiRequest
             && in_array($this->method, ['Tour.getChallenges', 'Tour.getLevel', 'Tour.skipChallenge'], true);
     }
 
+    public function isTwoFactorAuthRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'TwoFactorAuth.resetTwoFactorAuth';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -468,6 +475,7 @@ final readonly class ApiRequest
             minimumSiteAccessRole: self::minimumSiteAccessRole($request, $module, $method),
             siteTypesToExclude: self::siteTypesToExclude($request, $module, $method),
             visitsSummary: self::visitsSummary($request, $module, $method),
+            twoFactorAuth: self::twoFactorAuth($request, $module, $method),
             authentication: $authentication,
         );
     }
@@ -500,6 +508,27 @@ final readonly class ApiRequest
         }
 
         return $id;
+    }
+
+    private static function twoFactorAuth(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?TwoFactorAuthRequest {
+        if ($module !== 'API' || $method !== 'TwoFactorAuth.resetTwoFactorAuth') {
+            return null;
+        }
+
+        $userLogin = self::nullableStringInput($request, 'userLogin');
+
+        if ($userLogin === null || $userLogin === '') {
+            throw new MissingApiParameter('userLogin');
+        }
+
+        return new TwoFactorAuthRequest(
+            userLogin: $userLogin,
+            passwordConfirmation: self::stringInput($request, 'passwordConfirmation'),
+        );
     }
 
     private static function siteId(Request $request, string $module, string $method): ?int

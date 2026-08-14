@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\Login\DatabaseBruteForceSettings;
 use App\Matomo\Login\DatabaseBruteForceUnblocker;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\DatabaseManager;
@@ -54,9 +55,12 @@ class DatabaseBruteForceUnblockerTest extends TestCase
         ]);
         $unblocker = new DatabaseBruteForceUnblocker(
             $connection,
-            configuredMaxAttempts: 2,
-            configuredTimeRange: 60,
-            configuredAllowlist: ['10.0.0.2'],
+            new DatabaseBruteForceSettings(
+                $connection,
+                configuredMaxAttempts: 2,
+                configuredTimeRange: 60,
+                configuredAllowlist: ['10.0.0.2'],
+            ),
         );
 
         try {

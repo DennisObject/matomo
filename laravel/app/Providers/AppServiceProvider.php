@@ -16,6 +16,7 @@ use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\TourApiMethodHandler;
+use App\Matomo\Api\Methods\TwoFactorAuthApiMethodHandler;
 use App\Matomo\Api\Methods\UserIdApiMethodHandler;
 use App\Matomo\Api\Methods\UserLanguageApiMethodHandler;
 use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
@@ -24,7 +25,9 @@ use App\Matomo\Api\Methods\VisitsSummaryApiMethodHandler;
 use App\Matomo\Api\Methods\VisitTimeApiMethodHandler;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
+use App\Matomo\Authentication\DatabasePasswordConfirmationVerifier;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
+use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Config\InstallationConfig;
 use App\Matomo\Database\MatomoDatabase;
 use App\Matomo\Localization\ApiLanguageResolver;
@@ -33,8 +36,12 @@ use App\Matomo\Localization\JsonMatomoTranslator;
 use App\Matomo\Localization\LanguagePreferenceRepository;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Localization\MatomoTranslator;
+use App\Matomo\Login\BruteForceSettings;
 use App\Matomo\Login\BruteForceUnblocker;
+use App\Matomo\Login\DatabaseBruteForceSettings;
 use App\Matomo\Login\DatabaseBruteForceUnblocker;
+use App\Matomo\Login\DatabaseLoginAttemptGuard;
+use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\ConfiguredPluginState;
@@ -79,6 +86,8 @@ use App\Matomo\Tour\ConfiguredTourSettings;
 use App\Matomo\Tour\DatabaseTourDataRepository;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
+use App\Matomo\TwoFactorAuth\DatabaseTwoFactorAuthenticationResetter;
+use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -139,6 +148,13 @@ class AppServiceProvider extends ServiceProvider
                     events: $application->make(Dispatcher::class),
                 );
             },
+        );
+
+        $this->app->singleton(
+            PasswordConfirmationVerifier::class,
+            fn (Application $application): PasswordConfirmationVerifier => new DatabasePasswordConfirmationVerifier(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
         );
 
         $this->app->singleton(
@@ -334,17 +350,31 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
-            BruteForceUnblocker::class,
-            function (Application $application): BruteForceUnblocker {
+            BruteForceSettings::class,
+            function (Application $application): BruteForceSettings {
                 $installation = $application->make(InstallationConfig::class);
 
-                return new DatabaseBruteForceUnblocker(
+                return new DatabaseBruteForceSettings(
                     connection: $application->make(MatomoDatabase::class)->connection(),
                     configuredMaxAttempts: $installation->configuredLoginMaxAllowedRetries(),
                     configuredTimeRange: $installation->configuredLoginAllowedRetriesTimeRange(),
                     configuredAllowlist: $installation->configuredLoginBruteForceAllowlist(),
                 );
             },
+        );
+        $this->app->singleton(
+            BruteForceUnblocker::class,
+            fn (Application $application): BruteForceUnblocker => new DatabaseBruteForceUnblocker(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                settings: $application->make(BruteForceSettings::class),
+            ),
+        );
+        $this->app->singleton(
+            LoginAttemptGuard::class,
+            fn (Application $application): LoginAttemptGuard => new DatabaseLoginAttemptGuard(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                settings: $application->make(BruteForceSettings::class),
+            ),
         );
 
         $this->app->singleton(
@@ -354,6 +384,13 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(TourSettings::class, ConfiguredTourSettings::class);
+        $this->app->singleton(
+            TwoFactorAuthenticationResetter::class,
+            fn (Application $application): TwoFactorAuthenticationResetter => new DatabaseTwoFactorAuthenticationResetter(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                events: $application->make(Dispatcher::class),
+            ),
+        );
 
         $this->app->singleton(
             ClientIpResolver::class,
@@ -402,6 +439,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(LoginApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),
                 $application->make(TourApiMethodHandler::class),
+                $application->make(TwoFactorAuthApiMethodHandler::class),
             ]),
         );
     }
