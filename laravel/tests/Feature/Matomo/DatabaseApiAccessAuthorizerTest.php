@@ -81,6 +81,23 @@ class DatabaseApiAccessAuthorizerTest extends TestCase
         $this->assertTrue($this->authorizer()->hasSuperUserAccess($this->authentication('root-token', true)));
     }
 
+    public function test_some_admin_access_requires_an_admin_role_or_superuser(): void
+    {
+        $this->addUser('viewer');
+        $this->addSiteAccess('viewer', 'view');
+        $this->addToken('viewer', 'view-token');
+        $this->addUser('admin');
+        $this->addSiteAccess('admin', 'admin');
+        $this->addToken('admin', 'admin-token');
+        $this->addUser('root', true);
+        $this->addToken('root', 'root-token');
+        $authorizer = $this->authorizer();
+
+        $this->assertFalse($authorizer->hasSomeAdminAccess($this->authentication('view-token', true)));
+        $this->assertTrue($authorizer->hasSomeAdminAccess($this->authentication('admin-token', true)));
+        $this->assertTrue($authorizer->hasSomeAdminAccess($this->authentication('root-token', true)));
+    }
+
     public function test_secure_only_token_is_rejected_from_query_and_accepted_from_post(): void
     {
         $this->addUser('viewer');
