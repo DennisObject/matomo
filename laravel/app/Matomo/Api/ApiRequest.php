@@ -35,6 +35,7 @@ final readonly class ApiRequest
         public bool $fetchAliasUrls,
         public ?string $sitePattern,
         public ?int $siteLimit,
+        public ?int $siteContentTimeout,
         /** @var list<int> */
         public array $sitesToExclude,
         public ?SiteAccessRole $minimumSiteAccessRole,
@@ -72,6 +73,7 @@ final readonly class ApiRequest
             fetchAliasUrls: false,
             sitePattern: null,
             siteLimit: null,
+            siteContentTimeout: null,
             sitesToExclude: [],
             minimumSiteAccessRole: null,
             siteTypesToExclude: [],
@@ -164,6 +166,11 @@ final readonly class ApiRequest
     public function isPatternMatchSitesRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getPatternMatchSites';
+    }
+
+    public function isConsentManagerDetectionRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.detectConsentManager';
     }
 
     public function isDefaultCurrencyRequest(): bool
@@ -301,6 +308,7 @@ final readonly class ApiRequest
             fetchAliasUrls: self::fetchAliasUrls($request, $module, $method),
             sitePattern: self::sitePattern($request, $module, $method),
             siteLimit: self::siteLimit($request, $module, $method),
+            siteContentTimeout: self::siteContentTimeout($request, $module, $method),
             sitesToExclude: self::sitesToExclude($request, $module, $method),
             minimumSiteAccessRole: self::minimumSiteAccessRole($request, $module, $method),
             siteTypesToExclude: self::siteTypesToExclude($request, $module, $method),
@@ -316,6 +324,7 @@ final readonly class ApiRequest
             'SitesManager.getMessagesToWarnOnSiteRemoval',
             'SitesManager.getSiteFromId',
             'SitesManager.getSiteUrlsFromId',
+            'SitesManager.detectConsentManager',
         ];
         $optionalMethods = [
             'SitesManager.getExcludedQueryParametersGlobal',
@@ -506,6 +515,25 @@ final readonly class ApiRequest
         }
 
         return (int) $value;
+    }
+
+    private static function siteContentTimeout(Request $request, string $module, string $method): ?int
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.detectConsentManager') {
+            return null;
+        }
+
+        $value = self::nullableStringInput($request, 'timeOut');
+
+        if ($value === null || $value === '') {
+            return 60;
+        }
+
+        if ((string) (int) $value !== $value) {
+            throw new InvalidApiParameter('timeOut');
+        }
+
+        return max(1, min((int) $value, 60));
     }
 
     /**

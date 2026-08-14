@@ -9,6 +9,32 @@ use LogicException;
 
 final class ApiResponseFactory
 {
+    public function success(ApiRequest $request, string $message = 'ok'): Response
+    {
+        return match ($request->format) {
+            'console', 'rss' => $this->response(
+                'Success:'.$message,
+                200,
+                $request->format === 'rss' ? 'text/xml; charset=utf-8' : 'text/plain; charset=utf-8',
+            ),
+            'csv', 'tsv' => $this->response(
+                $request->format === 'csv' ? "message\n{$message}" : "message\t{$message}",
+                200,
+                'application/vnd.ms-excel',
+            )->header('Content-Disposition', 'attachment; filename=piwik-report-export.csv'),
+            'html' => $this->response("<!-- Success: {$message} -->", 200, 'text/html; charset=utf-8'),
+            'json' => $this->json($request, ['result' => 'success', 'message' => $message], 200),
+            'original' => $this->response('1', 200, 'text/plain; charset=utf-8'),
+            'xml' => $this->response(
+                "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>\n\t<success message=\"".
+                    $this->escape($message)."\" />\n</result>",
+                200,
+                'text/xml; charset=utf-8',
+            ),
+            default => throw new LogicException('The API response format is not supported.'),
+        };
+    }
+
     public function scalar(ApiRequest $request, bool|int|string $value): Response
     {
         return match ($request->format) {

@@ -111,14 +111,19 @@ class ApiResponseFactoryStructuredTest extends TestCase
         $this->assertSame(
             "idsite,name,alias_urls_0,alias_urls_1\n".
             '7,Docs,https://docs.test,https://www.docs.test',
-            $responses->rows($this->request('csv', false), $rows)->getContent(),
+            $responses->rows(
+                ApiRequest::fromRequest(Request::create(
+                    '/index.php?format=csv&convertToUnicode=0',
+                )),
+                $rows,
+            )->getContent(),
         );
     }
 
-    private function request(string $format, bool $convertToUnicode = true): ApiRequest
+    private function request(string $format): ApiRequest
     {
         return ApiRequest::fromRequest(Request::create(
-            "/index.php?format={$format}&convertToUnicode=".(int) $convertToUnicode,
+            "/index.php?format={$format}",
         ));
     }
 }

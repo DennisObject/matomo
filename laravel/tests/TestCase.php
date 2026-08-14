@@ -10,6 +10,7 @@ use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
+use App\Matomo\Sites\ConsentManagerDetector;
 use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
@@ -43,6 +44,13 @@ abstract class TestCase extends BaseTestCase
             public function names(string $language): array
             {
                 return [];
+            }
+        });
+        $this->app->instance(ConsentManagerDetector::class, new class implements ConsentManagerDetector
+        {
+            public function detect(string $url, int $timeout): ?array
+            {
+                return null;
             }
         });
         $this->app->instance(TimezoneProvider::class, new class implements TimezoneProvider
@@ -111,6 +119,11 @@ abstract class TestCase extends BaseTestCase
             public function details(int $idSite): array
             {
                 return [];
+            }
+
+            public function mainUrl(int $idSite): ?string
+            {
+                return null;
             }
 
             public function allDetails(): array

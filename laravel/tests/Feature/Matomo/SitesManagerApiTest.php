@@ -9,6 +9,7 @@ use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
+use App\Matomo\Sites\ConsentManagerDetector;
 use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\Events\SiteRemovalWarningsCollecting;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
@@ -23,6 +24,144 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_consent_manager_detection_uses_the_stored_site_url(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('hasViewAccessToSite')
+            ->with($this->isInstanceOf(ApiAuthentication::class), 7)
+            ->willReturn(true);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())->method('mainUrl')->with(7)->willReturn('https://site.example/');
+        $detector = $this->createMock(ConsentManagerDetector::class);
+        $detector->expects($this->once())
+            ->method('detect')
+            ->with('https://site.example/', 60)
+            ->willReturn([
+                'name' => 'Cookiebot',
+                'url' => 'https://matomo.org/faq/how-to/using-cookiebot-consent-manager-with-matomo',
+                'isConnected' => true,
+            ]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(ConsentManagerDetector::class, $detector);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.detectConsentManager'.
+            '&idSite=7&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([
+                'name' => 'Cookiebot',
+                'url' => 'https://matomo.org/faq/how-to/using-cookiebot-consent-manager-with-matomo',
+                'isConnected' => true,
+            ]);
+    }
+
+    #[DataProvider('consentManagerTimeouts')]
+    public function test_consent_manager_detection_clamps_the_timeout(string $value, int $expected): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasViewAccessToSite')->willReturn(true);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())->method('mainUrl')->with(7)->willReturn('https://site.example/');
+        $detector = $this->createMock(ConsentManagerDetector::class);
+        $detector->expects($this->once())
+            ->method('detect')
+            ->with('https://site.example/', $expected)
+            ->willReturn(null);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(ConsentManagerDetector::class, $detector);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.detectConsentManager'.
+            "&idSite=7&timeOut={$value}&format=json&token_auth=view-token",
+        )->assertOk()
+            ->assertExactJson(['result' => 'success', 'message' => 'ok']);
+    }
+
+    /**
+     * @return iterable<string, array{string, int}>
+     */
+    public static function consentManagerTimeouts(): iterable
+    {
+        yield 'upper bound' => ['99999', 60];
+        yield 'mid range' => ['30', 30];
+        yield 'zero' => ['0', 1];
+        yield 'negative' => ['-100', 1];
+    }
+
+    public function test_consent_manager_detection_returns_success_without_a_site_url(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasViewAccessToSite')->willReturn(true);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())->method('mainUrl')->with(7)->willReturn(null);
+        $detector = $this->createMock(ConsentManagerDetector::class);
+        $detector->expects($this->never())->method('detect');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(ConsentManagerDetector::class, $detector);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.detectConsentManager'.
+            '&idSite=7&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson(['result' => 'success', 'message' => 'ok']);
+    }
+
+    public function test_consent_manager_detection_checks_view_access_before_reading_the_site(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasViewAccessToSite')->willReturn(false);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('mainUrl');
+        $detector = $this->createMock(ConsentManagerDetector::class);
+        $detector->expects($this->never())->method('detect');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(ConsentManagerDetector::class, $detector);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.detectConsentManager'.
+            '&idSite=7&format=json&token_auth=invalid-token',
+        )->assertUnauthorized()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "You can't access this resource as it requires 'view' access for the website id = 7.",
+            ]);
+    }
+
+    public function test_consent_manager_detection_requires_a_site_id_before_authorization(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasViewAccessToSite');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get('/index.php?module=API&method=SitesManager.detectConsentManager&format=json')
+            ->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "Please specify a value for 'idSite'.",
+            ]);
+    }
+
+    public function test_consent_manager_detection_rejects_an_invalid_timeout_before_authorization(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasViewAccessToSite');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.detectConsentManager'.
+            '&idSite=7&timeOut=slow&format=json',
+        )->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => 'The API parameter [timeOut] must be a scalar value.',
+            ]);
+    }
+
     public function test_pattern_match_sites_apply_view_access_exclusions_and_limit(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

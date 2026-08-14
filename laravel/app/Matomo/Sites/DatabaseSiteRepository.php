@@ -46,6 +46,16 @@ final readonly class DatabaseSiteRepository implements SiteRepository
         return $record instanceof stdClass ? $this->normalizeDetails($record) : [];
     }
 
+    public function mainUrl(int $idSite): ?string
+    {
+        $url = $this->connection
+            ->table('site')
+            ->where('idsite', $idSite)
+            ->value('main_url');
+
+        return is_string($url) && $url !== '' ? $url : null;
+    }
+
     public function allDetails(): array
     {
         $sites = [];

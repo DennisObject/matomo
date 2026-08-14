@@ -16,6 +16,8 @@ interface SiteRepository
      */
     public function details(int $idSite): array;
 
+    public function mainUrl(int $idSite): ?string;
+
     /**
      * @return array<int, array<string, int|string|null>>
      */

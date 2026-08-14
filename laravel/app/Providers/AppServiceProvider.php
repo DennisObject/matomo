@@ -24,14 +24,17 @@ use App\Matomo\Plugins\ConfiguredPluginState;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
+use App\Matomo\Security\EgressHostResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Settings\DatabasePolicySettingRepository;
 use App\Matomo\Settings\PolicySettingRepository;
 use App\Matomo\Sites\ConfiguredCurrencyProvider;
 use App\Matomo\Sites\ConfiguredQueryParameterExclusionPolicy;
 use App\Matomo\Sites\ConfiguredSiteRuntimeSettings;
+use App\Matomo\Sites\ConsentManagerDetector;
 use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\DatabaseSiteRepository;
+use App\Matomo\Sites\HttpConsentManagerDetector;
 use App\Matomo\Sites\LocalizedSiteDetailsPresenter;
 use App\Matomo\Sites\LocalizedTimezoneProvider;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
@@ -44,7 +47,9 @@ use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\ServiceProvider;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 class AppServiceProvider extends ServiceProvider
@@ -104,6 +109,30 @@ class AppServiceProvider extends ServiceProvider
             fn (Application $application): SiteRepository => new DatabaseSiteRepository(
                 $application->make(MatomoDatabase::class)->connection(),
             ),
+        );
+
+        $this->app->singleton(
+            EgressHostResolver::class,
+            fn (Application $application): EgressHostResolver => new EgressHostResolver(
+                $application->make(InstallationConfig::class)->allowedPrivateEgressRanges(),
+            ),
+        );
+
+        $this->app->singleton(
+            ConsentManagerDetector::class,
+            function (Application $application): ConsentManagerDetector {
+                $installation = $application->make(InstallationConfig::class);
+
+                return new HttpConsentManagerDetector(
+                    http: $application->make(HttpFactory::class),
+                    cache: $application->make(CacheRepository::class),
+                    logger: $application->make(LoggerInterface::class),
+                    hosts: $application->make(EgressHostResolver::class),
+                    internetFeaturesEnabled: $installation->internetFeaturesEnabled(),
+                    outboundProxyHost: $installation->outboundProxyHost(),
+                    outboundProxyExcludedHosts: $installation->outboundProxyExcludedHosts(),
+                );
+            },
         );
 
         $this->app->singleton(

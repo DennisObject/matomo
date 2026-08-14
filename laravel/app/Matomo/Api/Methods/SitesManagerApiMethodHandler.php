@@ -10,6 +10,7 @@ use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
+use App\Matomo\Sites\ConsentManagerDetector;
 use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\Events\SiteRemovalWarningsCollecting;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
@@ -79,6 +80,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private LanguageResolver $languages,
         private TimezoneProvider $timezones,
         private SiteDetailsPresenter $siteDetails,
+        private ConsentManagerDetector $consentManagers,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -95,6 +97,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isAtLeastViewSitesRequest()
             || $request->isSiteRemovalWarningsRequest()
             || $request->isPatternMatchSitesRequest()
+            || $request->isConsentManagerDetectionRequest()
             || $request->isDefaultCurrencyRequest()
             || $request->isCurrencySymbolsRequest()
             || $request->isCurrencyListRequest()
@@ -373,6 +376,31 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             );
 
             return $this->responses->rows($request, $sites);
+        }
+
+        if ($request->isConsentManagerDetectionRequest()) {
+            $idSite = $request->idSite ?? throw new LogicException('The site ID was not parsed.');
+
+            if (! $this->authorizer->hasViewAccessToSite($request->authentication, $idSite)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires 'view' access for the website id = {$idSite}.",
+                    401,
+                );
+            }
+
+            $url = $this->sites->mainUrl($idSite);
+            $result = $url === null
+                ? null
+                : $this->consentManagers->detect(
+                    $url,
+                    $request->siteContentTimeout
+                        ?? throw new LogicException('The site content timeout was not parsed.'),
+                );
+
+            return $result === null
+                ? $this->responses->success($request)
+                : $this->responses->row($request, $result);
         }
 
         $role = $request->siteAccessRole();
