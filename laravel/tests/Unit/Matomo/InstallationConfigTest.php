@@ -35,6 +35,11 @@ class InstallationConfigTest extends TestCase
         $this->assertTrue($configuration->onlyAllowSecureTokens());
         $this->assertSame(1_209_600, $configuration->sessionLifetime());
         $this->assertSame(3_600, $configuration->sessionIdleTimeout());
+        $this->assertSame(['10.0.0.0/8'], $configuration->loginAllowlistIps());
+        $this->assertTrue($configuration->loginAllowlistAppliesToReportingApi());
+        $this->assertSame(['HTTP_X_FORWARDED_FOR'], $configuration->proxyClientHeaders());
+        $this->assertSame(['10.0.0.1'], $configuration->proxyIps());
+        $this->assertTrue($configuration->proxyIpReadLastInList());
     }
 
     public function test_rejects_unsafe_table_prefix(): void
@@ -65,6 +70,9 @@ class InstallationConfigTest extends TestCase
             [General]
             salt = "secret-salt"
             only_allow_secure_auth_tokens = {$secureTokens}
+            login_allowlist_ip[] = "10.0.0.0/8"
+            proxy_client_headers[] = "HTTP_X_FORWARDED_FOR"
+            proxy_ips[] = "10.0.0.1"
             INI;
 
         $this->assertNotFalse(file_put_contents($path, $content));

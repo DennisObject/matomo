@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "18d3d848bc30876ffce1ad0f5bc34a1c",
+    "content-hash": "70de2a6d1559490eaf55f41ddefbd09e",
     "packages": [
         {
             "name": "brick/math",
@@ -2031,6 +2031,42 @@
                 }
             ],
             "time": "2026-03-08T20:05:35+00:00"
+        },
+        {
+            "name": "matomo/network",
+            "version": "2.0.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/matomo-org/component-network.git",
+                "reference": "49407377fb4755cb1eb987ca827951bed732374e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/matomo-org/component-network/zipball/49407377fb4755cb1eb987ca827951bed732374e",
+                "reference": "49407377fb4755cb1eb987ca827951bed732374e",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^8 || ^9 || ^10 || ^11 || ^12"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Matomo\\Network\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-3.0"
+            ],
+            "support": {
+                "issues": "https://github.com/matomo-org/component-network/issues",
+                "source": "https://github.com/matomo-org/component-network/tree/2.0.3"
+            },
+            "time": "2026-04-17T10:12:27+00:00"
         },
         {
             "name": "monolog/monolog",

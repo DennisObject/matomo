@@ -18,6 +18,14 @@ final readonly class InstallationConfig
         private bool $onlyAllowSecureTokens,
         private int $sessionLifetime,
         private int $sessionIdleTimeout,
+        /** @var list<string> */
+        private array $loginAllowlistIps,
+        private bool $loginAllowlistAppliesToReportingApi,
+        /** @var list<string> */
+        private array $proxyClientHeaders,
+        /** @var list<string> */
+        private array $proxyIps,
+        private bool $proxyIpReadLastInList,
     ) {}
 
     public static function fromFile(string $path): self
@@ -67,6 +75,15 @@ final readonly class InstallationConfig
                 'login_session_not_remembered_idle_timeout',
                 3_600,
             ),
+            loginAllowlistIps: self::parseLoginAllowlistIps($general),
+            loginAllowlistAppliesToReportingApi: self::boolean(
+                $general,
+                'login_allowlist_apply_to_reporting_api_requests',
+                true,
+            ) || self::boolean($general, 'login_whitelist_apply_to_reporting_api_requests'),
+            proxyClientHeaders: self::stringList($general, 'proxy_client_headers'),
+            proxyIps: self::stringList($general, 'proxy_ips'),
+            proxyIpReadLastInList: self::boolean($general, 'proxy_ip_read_last_in_list', true),
         );
     }
 
@@ -96,6 +113,40 @@ final readonly class InstallationConfig
     public function sessionIdleTimeout(): int
     {
         return $this->sessionIdleTimeout;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function loginAllowlistIps(): array
+    {
+        return $this->loginAllowlistIps;
+    }
+
+    public function loginAllowlistAppliesToReportingApi(): bool
+    {
+        return $this->loginAllowlistAppliesToReportingApi;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function proxyClientHeaders(): array
+    {
+        return $this->proxyClientHeaders;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function proxyIps(): array
+    {
+        return $this->proxyIps;
+    }
+
+    public function proxyIpReadLastInList(): bool
+    {
+        return $this->proxyIpReadLastInList;
     }
 
     /**
@@ -193,9 +244,44 @@ final readonly class InstallationConfig
     /**
      * @param  array<string, mixed>  $values
      */
-    private static function boolean(array $values, string $key): bool
+    private static function boolean(array $values, string $key, bool $default = false): bool
     {
-        return in_array(strtolower(self::string($values, $key, '0')), ['1', 'true', 'yes', 'on'], true);
+        return in_array(
+            strtolower(self::string($values, $key, $default ? '1' : '0')),
+            ['1', 'true', 'yes', 'on'],
+            true,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     * @return list<string>
+     */
+    private static function stringList(array $values, string $key): array
+    {
+        $value = $values[$key] ?? [];
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $value,
+            is_string(...),
+        ));
+    }
+
+    /**
+     * @param  array<string, mixed>  $general
+     * @return list<string>
+     */
+    private static function parseLoginAllowlistIps(array $general): array
+    {
+        $allowlist = self::stringList($general, 'login_allowlist_ip');
+
+        return $allowlist !== []
+            ? $allowlist
+            : self::stringList($general, 'login_whitelist_ip');
     }
 
     /**

@@ -6,6 +6,10 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\VersionAccessAuthorizer;
+use App\Matomo\Security\ClientIpResolver;
+use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
+use App\Matomo\Security\ReportingApiIpAllowlist;
+use Illuminate\Contracts\Cache\Repository;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Piwik\Version;
 use Tests\TestCase;
@@ -164,6 +168,32 @@ class VersionApiTest extends TestCase
                 'result' => 'error',
                 'message' => 'You must have view access to at least one website.',
             ]);
+    }
+
+    public function test_api_ip_allowlist_runs_before_authentication_and_allows_matching_ips(): void
+    {
+        $authorizer = $this->createMock(VersionAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSomeViewAccess')->willReturn(true);
+        $this->app->instance(VersionAccessAuthorizer::class, $authorizer);
+        $this->app->instance(ReportingApiIpAllowlist::class, new ConfiguredReportingApiIpAllowlist(
+            clientIps: new ClientIpResolver([], [], true),
+            cache: $this->app->make(Repository::class),
+            allowlistedIps: ['203.0.113.0/24'],
+            appliesToReportingApi: true,
+        ));
+
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.20'])
+            ->get('/index.php?module=API&method=API.getMatomoVersion&format=json&token_auth=secret')
+            ->assertUnauthorized()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => 'You cannot use this Matomo as your IP 198.51.100.20 is not allowed.',
+            ]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.20'])
+            ->get('/index.php?module=API&method=API.getMatomoVersion&format=json&token_auth=secret')
+            ->assertOk()
+            ->assertContent('{"value":"'.Version::VERSION.'"}');
     }
 
     public function test_jsonp_callback_is_strictly_validated(): void

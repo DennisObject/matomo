@@ -8,6 +8,10 @@ use App\Matomo\Authentication\DatabaseSessionAuthenticator;
 use App\Matomo\Authentication\DatabaseVersionAccessAuthorizer;
 use App\Matomo\Authentication\VersionAccessAuthorizer;
 use App\Matomo\Config\InstallationConfig;
+use App\Matomo\Security\ClientIpResolver;
+use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
+use App\Matomo\Security\ReportingApiIpAllowlist;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\DatabaseManager;
@@ -51,6 +55,24 @@ class AppServiceProvider extends ServiceProvider
                         sessionLifetime: $installation->sessionLifetime(),
                         idleTimeout: $installation->sessionIdleTimeout(),
                     ),
+                );
+            },
+        );
+
+        $this->app->singleton(
+            ReportingApiIpAllowlist::class,
+            function (Application $application): ReportingApiIpAllowlist {
+                $installation = $application->make(InstallationConfig::class);
+
+                return new ConfiguredReportingApiIpAllowlist(
+                    clientIps: new ClientIpResolver(
+                        proxyHeaders: $installation->proxyClientHeaders(),
+                        proxyIps: $installation->proxyIps(),
+                        readLastProxyIp: $installation->proxyIpReadLastInList(),
+                    ),
+                    cache: $application->make(CacheRepository::class),
+                    allowlistedIps: $installation->loginAllowlistIps(),
+                    appliesToReportingApi: $installation->loginAllowlistAppliesToReportingApi(),
                 );
             },
         );
