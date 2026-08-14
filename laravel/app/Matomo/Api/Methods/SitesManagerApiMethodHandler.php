@@ -21,7 +21,9 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
     public function supports(ApiRequest $request): bool
     {
-        return $request->siteAccessRole() !== null || $request->isAllSiteIdsRequest();
+        return $request->siteAccessRole() !== null
+            || $request->isAllSiteIdsRequest()
+            || $request->isViewableSiteIdsRequest();
     }
 
     public function handle(ApiRequest $request): Response
@@ -36,6 +38,16 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             return $this->responses->values(
                 $request,
                 $this->authorizer->siteIdsWithRole($request->authentication, $role),
+            );
+        }
+
+        if ($request->isViewableSiteIdsRequest()) {
+            return $this->responses->values(
+                $request,
+                $this->authorizer->siteIdsWithAtLeastViewAccess(
+                    $request->authentication,
+                    $request->restrictSitesToLogin,
+                ),
             );
         }
 

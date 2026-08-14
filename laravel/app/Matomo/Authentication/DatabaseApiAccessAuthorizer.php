@@ -65,6 +65,35 @@ final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
         return $this->integerList($this->siteIdsByAccess($user['login'])[$role->value] ?? []);
     }
 
+    public function siteIdsWithAtLeastViewAccess(
+        ApiAuthentication $authentication,
+        ?string $restrictToLogin = null,
+    ): array {
+        $user = $this->authenticatedUser($authentication);
+
+        if ($user === null) {
+            return [];
+        }
+
+        if ($restrictToLogin !== null && $restrictToLogin !== '') {
+            if ($user['isSuperUser'] || $user['login'] === $restrictToLogin) {
+                $restrictedUser = $this->findUser($restrictToLogin);
+
+                if ($restrictedUser === null) {
+                    return [];
+                }
+
+                return $restrictedUser['isSuperUser']
+                    ? $this->allSiteIds()
+                    : $this->siteIdsWithAtLeastViewAccessForLogin($restrictedUser['login']);
+            }
+        }
+
+        return $user['isSuperUser']
+            ? $this->allSiteIds()
+            : $this->siteIdsWithAtLeastViewAccessForLogin($user['login']);
+    }
+
     /**
      * @return array{login: string, isSuperUser: bool}|null
      */
@@ -188,6 +217,28 @@ final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
         $this->events?->dispatch($event);
 
         return $event->siteIdsByAccess;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function allSiteIds(): array
+    {
+        return $this->integerList($this->connection->table('site')->pluck('idsite')->all());
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function siteIdsWithAtLeastViewAccessForLogin(string $login): array
+    {
+        $siteIdsByAccess = $this->siteIdsByAccess($login);
+
+        return $this->integerList([
+            ...($siteIdsByAccess['view'] ?? []),
+            ...($siteIdsByAccess['write'] ?? []),
+            ...($siteIdsByAccess['admin'] ?? []),
+        ]);
     }
 
     /**

@@ -194,6 +194,30 @@ class DatabaseApiAccessAuthorizerTest extends TestCase
         );
     }
 
+    public function test_at_least_view_sites_enforce_the_restricted_login_boundary(): void
+    {
+        $this->addUser('alice');
+        $this->addSiteAccess('alice', 'view', 1);
+        $this->addSiteAccess('alice', 'write', 2);
+        $this->addSiteAccess('alice', 'admin', 3);
+        $this->addToken('alice', 'alice-token');
+        $this->addUser('bob');
+        $this->addSiteAccess('bob', 'admin', 4);
+        $this->addToken('bob', 'bob-token');
+        $this->addUser('root', true);
+        $this->addToken('root', 'root-token');
+        $authorizer = $this->authorizer();
+        $alice = $this->authentication('alice-token', true);
+        $root = $this->authentication('root-token', true);
+
+        $this->assertSame([1, 2, 3], $authorizer->siteIdsWithAtLeastViewAccess($alice));
+        $this->assertSame([1, 2, 3], $authorizer->siteIdsWithAtLeastViewAccess($alice, 'bob'));
+        $this->assertSame([1, 2, 3, 4], $authorizer->siteIdsWithAtLeastViewAccess($root));
+        $this->assertSame([4], $authorizer->siteIdsWithAtLeastViewAccess($root, 'bob'));
+        $this->assertSame([], $authorizer->siteIdsWithAtLeastViewAccess($root, 'missing'));
+        $this->assertSame([1, 2, 3, 4], $authorizer->siteIdsWithAtLeastViewAccess($root, 'root'));
+    }
+
     private function authorizer(
         bool $onlyAllowSecureTokens = false,
         ?Dispatcher $events = null,

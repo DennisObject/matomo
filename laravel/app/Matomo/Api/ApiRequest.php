@@ -20,6 +20,7 @@ final readonly class ApiRequest
         public bool $serialize,
         public bool $convertToUnicode,
         public bool $showMetadata,
+        public ?string $restrictSitesToLogin,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -39,6 +40,7 @@ final readonly class ApiRequest
             serialize: self::booleanInput($request, 'serialize', false),
             convertToUnicode: self::booleanInput($request, 'convertToUnicode', true),
             showMetadata: self::booleanInput($request, 'showMetadata', true),
+            restrictSitesToLogin: self::safeNullableStringInput($request, '_restrictSitesToLogin'),
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -73,6 +75,12 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getAllSitesId';
     }
 
+    public function isViewableSiteIdsRequest(): bool
+    {
+        return $this->module === 'API'
+            && $this->method === 'SitesManager.getSitesIdWithAtLeastViewAccess';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -93,6 +101,7 @@ final readonly class ApiRequest
             serialize: self::booleanInput($request, 'serialize', false),
             convertToUnicode: self::booleanInput($request, 'convertToUnicode', true),
             showMetadata: self::booleanInput($request, 'showMetadata', true),
+            restrictSitesToLogin: self::nullableStringInput($request, '_restrictSitesToLogin'),
             authentication: $authentication,
         );
     }
