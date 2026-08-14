@@ -29,6 +29,7 @@ final readonly class ApiRequest
 
     /** @var list<string> */
     private const array VISIT_TIME_METHODS = [
+        'VisitTime.getByDayOfWeek',
         'VisitTime.getVisitInformationPerLocalTime',
         'VisitTime.getVisitInformationPerServerTime',
     ];

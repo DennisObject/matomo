@@ -5,10 +5,88 @@ declare(strict_types=1);
 namespace App\Matomo\Reporting;
 
 use App\Matomo\Api\ApiTableReport;
+use Carbon\CarbonImmutable;
 
 final readonly class VisitTimeReportBuilder
 {
-    public function __construct(private BlobArchiveRepository $archives) {}
+    /** @var list<string> */
+    private const array DAY_METRICS = [
+        'nb_uniq_visitors',
+        'nb_visits',
+        'nb_actions',
+        'nb_users',
+        'sum_visit_length',
+        'bounce_count',
+        'nb_visits_converted',
+    ];
+
+    /** @var array<int, string> */
+    private const array DAY_NAMES = [
+        1 => 'Monday',
+        2 => 'Tuesday',
+        3 => 'Wednesday',
+        4 => 'Thursday',
+        5 => 'Friday',
+        6 => 'Saturday',
+        7 => 'Sunday',
+    ];
+
+    public function __construct(
+        private BlobArchiveRepository $archives,
+        private VisitsSummaryArchiveRepository $numericArchives,
+    ) {}
+
+    public function byDayOfWeek(
+        int $idSite,
+        ReportingPeriod $period,
+        string $segmentHash,
+        bool $showMetadata,
+    ): ApiTableReport {
+        $days = [];
+        $date = CarbonImmutable::parse($period->startDate, 'UTC');
+        $end = CarbonImmutable::parse($period->endDate, 'UTC');
+
+        while ($date->lessThanOrEqualTo($end)) {
+            $day = $date->toDateString();
+            $days[] = new ReportingPeriod('day', 1, $day, $day, $day);
+            $date = $date->addDay();
+        }
+
+        $archiveRows = $this->numericArchives->metrics(
+            [$idSite],
+            $days,
+            $segmentHash,
+            self::DAY_METRICS,
+        )[$idSite] ?? [];
+
+        if ($archiveRows === []) {
+            return new ApiTableReport([], []);
+        }
+
+        $grouped = [];
+
+        foreach ($archiveRows as $range => $metrics) {
+            $day = (int) CarbonImmutable::parse(substr($range, 0, 10), 'UTC')->format('N');
+
+            foreach ($metrics as $metric => $value) {
+                $grouped[$day][$metric] = ($grouped[$day][$metric] ?? 0) + $value;
+            }
+        }
+
+        $rows = [];
+
+        foreach (self::DAY_NAMES as $day => $name) {
+            $row = ['label' => $name, 'nb_visits' => 0, ...($grouped[$day] ?? [])];
+
+            if ($showMetadata) {
+                $row['day_of_week'] = $day;
+            }
+
+            $rows[] = $row;
+        }
+
+        return new ApiTableReport($this->addPercentMetrics($rows), []);
+    }
 
     /**
      * @param  list<int>  $siteIds
@@ -108,22 +186,12 @@ final readonly class VisitTimeReportBuilder
     private function rows(array $archiveRows, bool $localTime, bool $showMetadata): array
     {
         usort($archiveRows, static fn (array $left, array $right): int => (int) ($left['columns']['label'] ?? 0) <=> (int) ($right['columns']['label'] ?? 0));
-        $totals = [];
+        $rows = array_map(static fn (array $row): array => $row['columns'], $archiveRows);
+        $rows = $this->addPercentMetrics($rows);
 
-        foreach ($archiveRows as $archiveRow) {
-            foreach (['nb_visits', 'nb_actions', 'nb_visits_converted', 'bounce_count'] as $metric) {
-                $value = $archiveRow['columns'][$metric] ?? null;
+        $result = [];
 
-                if (is_float($value) || is_int($value)) {
-                    $totals[$metric] = ($totals[$metric] ?? 0) + $value;
-                }
-            }
-        }
-
-        $rows = [];
-
-        foreach ($archiveRows as $archiveRow) {
-            $row = $archiveRow['columns'];
+        foreach ($rows as $index => $row) {
             $label = $row['label'] ?? null;
 
             if (is_numeric($label)) {
@@ -135,6 +203,35 @@ final readonly class VisitTimeReportBuilder
                 }
             }
 
+            if ($showMetadata) {
+                $row = [...$row, ...$archiveRows[$index]['metadata']];
+            }
+
+            $result[] = $row;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  list<array<string, float|int|string|null>>  $rows
+     * @return list<array<string, float|int|string|null>>
+     */
+    private function addPercentMetrics(array $rows): array
+    {
+        $totals = [];
+
+        foreach ($rows as $row) {
+            foreach (['nb_visits', 'nb_actions', 'nb_visits_converted', 'bounce_count'] as $metric) {
+                $value = $row[$metric] ?? null;
+
+                if (is_float($value) || is_int($value)) {
+                    $totals[$metric] = ($totals[$metric] ?? 0) + $value;
+                }
+            }
+        }
+
+        foreach ($rows as &$row) {
             foreach (['nb_visits', 'nb_actions', 'nb_visits_converted', 'bounce_count'] as $metric) {
                 $value = $row[$metric] ?? null;
 
@@ -142,13 +239,9 @@ final readonly class VisitTimeReportBuilder
                     $row[$metric.'_percent_of_total'] = $this->percent($value, $totals[$metric]);
                 }
             }
-
-            if ($showMetadata) {
-                $row = [...$row, ...$archiveRow['metadata']];
-            }
-
-            $rows[] = $row;
         }
+
+        unset($row);
 
         return $rows;
     }

@@ -8,11 +8,80 @@ use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\SegmentHashResolver;
+use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
 use App\Matomo\Sites\SiteRepository;
 use Tests\TestCase;
 
 class VisitTimeApiTest extends TestCase
 {
+    public function test_groups_daily_numeric_archives_by_day_of_week(): void
+    {
+        $this->bindViewAccess([7]);
+        $sites = $this->createStub(SiteRepository::class);
+        $sites->method('timezone')->willReturn('UTC');
+        $archives = $this->createMock(VisitsSummaryArchiveRepository::class);
+        $archives->expects($this->once())
+            ->method('metrics')
+            ->with(
+                [7],
+                $this->callback(static fn (array $periods): bool => count($periods) === 7
+                    && $periods[0]->startDate === '2026-08-10'
+                    && $periods[6]->endDate === '2026-08-16'),
+                '',
+                [
+                    'nb_uniq_visitors',
+                    'nb_visits',
+                    'nb_actions',
+                    'nb_users',
+                    'sum_visit_length',
+                    'bounce_count',
+                    'nb_visits_converted',
+                ],
+            )
+            ->willReturn([7 => [
+                '2026-08-14,2026-08-14' => ['nb_visits' => 2, 'nb_actions' => 3],
+                '2026-08-15,2026-08-15' => ['nb_visits' => 1, 'nb_actions' => 1],
+            ]]);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(VisitsSummaryArchiveRepository::class, $archives);
+
+        $response = $this->get(
+            '/index.php?module=API&method=VisitTime.getByDayOfWeek&idSite=7'.
+            '&period=week&date=2026-08-14&format=json&token_auth=view-token',
+        )->assertOk()->json();
+
+        $this->assertCount(7, $response);
+        $this->assertSame([
+            'label' => 'Friday',
+            'nb_visits' => 2,
+            'nb_actions' => 3,
+            'day_of_week' => 5,
+            'nb_visits_percent_of_total' => '66.7%',
+            'nb_actions_percent_of_total' => '75%',
+        ], $response[4]);
+        $this->assertSame('Saturday', $response[5]['label']);
+        $this->assertSame('33.3%', $response[5]['nb_visits_percent_of_total']);
+    }
+
+    public function test_day_of_week_rejects_multiple_dates_before_reading_archives(): void
+    {
+        $this->bindViewAccess([7]);
+        $sites = $this->createStub(SiteRepository::class);
+        $sites->method('timezone')->willReturn('UTC');
+        $archives = $this->createMock(VisitsSummaryArchiveRepository::class);
+        $archives->expects($this->never())->method('metrics');
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(VisitsSummaryArchiveRepository::class, $archives);
+
+        $this->get(
+            '/index.php?module=API&method=VisitTime.getByDayOfWeek&idSite=7'.
+            '&period=day&date=2026-08-13,2026-08-14&format=json&token_auth=view-token',
+        )->assertBadRequest()->assertExactJson([
+            'result' => 'error',
+            'message' => 'VisitTime.getByDayOfWeek does not support multiple dates.',
+        ]);
+    }
+
     public function test_returns_local_time_rows_with_processed_metrics_and_segments(): void
     {
         $this->bindViewAccess([7]);

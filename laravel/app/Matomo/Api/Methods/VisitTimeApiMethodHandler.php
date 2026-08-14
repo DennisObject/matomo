@@ -112,15 +112,43 @@ final readonly class VisitTimeApiMethodHandler implements ApiMethodHandler
             return $this->responses->error($request, $invalidArgumentException->getMessage(), 400);
         }
 
-        $report = $this->reports->build(
-            siteIds: $siteIds,
-            periods: $periods,
-            segmentHash: $this->segments->resolve($query->segment),
-            localTime: $request->method === 'VisitTime.getVisitInformationPerLocalTime',
-            showMetadata: $request->showMetadata,
-            forceSiteIndex: $query->allSites || count($siteIds) > 1,
-            forceDateIndex: $forceDateIndex,
-        );
+        $segmentHash = $this->segments->resolve($query->segment);
+
+        if ($request->method === 'VisitTime.getByDayOfWeek') {
+            if ($forceDateIndex) {
+                return $this->responses->error(
+                    $request,
+                    'VisitTime.getByDayOfWeek does not support multiple dates.',
+                    400,
+                );
+            }
+
+            if (count($siteIds) !== 1) {
+                return $this->responses->error(
+                    $request,
+                    'VisitTime.getByDayOfWeek does not support multiple sites.',
+                    400,
+                );
+            }
+
+            $period = $periods[0] ?? throw new LogicException('The reporting period was not built.');
+            $report = $this->reports->byDayOfWeek(
+                $siteIds[0],
+                $period,
+                $segmentHash,
+                $request->showMetadata,
+            );
+        } else {
+            $report = $this->reports->build(
+                siteIds: $siteIds,
+                periods: $periods,
+                segmentHash: $segmentHash,
+                localTime: $request->method === 'VisitTime.getVisitInformationPerLocalTime',
+                showMetadata: $request->showMetadata,
+                forceSiteIndex: $query->allSites || count($siteIds) > 1,
+                forceDateIndex: $forceDateIndex,
+            );
+        }
 
         if ($request->format !== 'rss') {
             return $this->responses->tableReport($request, $report);
