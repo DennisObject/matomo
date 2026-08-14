@@ -13,5 +13,8 @@ interface ApiAccessAuthorizer
     /**
      * @return list<int>
      */
-    public function siteIdsWithAdminAccess(ApiAuthentication $authentication): array;
+    public function siteIdsWithRole(
+        ApiAuthentication $authentication,
+        SiteAccessRole $role,
+    ): array;
 }

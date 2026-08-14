@@ -46,8 +46,10 @@ final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
         return $this->authenticatedUser($authentication)['isSuperUser'] ?? false;
     }
 
-    public function siteIdsWithAdminAccess(ApiAuthentication $authentication): array
-    {
+    public function siteIdsWithRole(
+        ApiAuthentication $authentication,
+        SiteAccessRole $role,
+    ): array {
         $user = $this->authenticatedUser($authentication);
 
         if ($user === null) {
@@ -55,12 +57,12 @@ final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
         }
 
         if ($user['isSuperUser']) {
-            return $this->integerList(
-                $this->connection->table('site')->pluck('idsite')->all(),
-            );
+            return $role === SiteAccessRole::Admin
+                ? $this->integerList($this->connection->table('site')->pluck('idsite')->all())
+                : [];
         }
 
-        return $this->integerList($this->siteIdsByAccess($user['login'])['admin'] ?? []);
+        return $this->integerList($this->siteIdsByAccess($user['login'])[$role->value] ?? []);
     }
 
     /**

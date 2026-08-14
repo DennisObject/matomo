@@ -7,6 +7,7 @@ namespace Tests\Feature\Matomo;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use App\Matomo\Authentication\Events\UserSiteAccessLoaded;
+use App\Matomo\Authentication\SiteAccessRole;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\DatabaseManager;
@@ -120,22 +121,50 @@ class DatabaseApiAccessAuthorizerTest extends TestCase
         $this->assertTrue($this->authorizer()->hasSomeViewAccess($this->authentication(null)));
     }
 
-    public function test_returns_admin_sites_for_users_and_every_site_for_superusers(): void
+    public function test_returns_exact_role_sites_and_only_admin_sites_for_superusers(): void
     {
         $this->addUser('admin');
         $this->addSiteAccess('admin', 'admin', 1);
         $this->addSiteAccess('admin', 'view', 2);
+        $this->addSiteAccess('admin', 'write', 3);
         $this->addToken('admin', 'admin-token');
         $this->addUser('root', true);
         $this->addToken('root', 'root-token');
 
         $this->assertSame(
             [1],
-            $this->authorizer()->siteIdsWithAdminAccess($this->authentication('admin-token', true)),
+            $this->authorizer()->siteIdsWithRole(
+                $this->authentication('admin-token', true),
+                SiteAccessRole::Admin,
+            ),
         );
         $this->assertSame(
-            [1, 2],
-            $this->authorizer()->siteIdsWithAdminAccess($this->authentication('root-token', true)),
+            [2],
+            $this->authorizer()->siteIdsWithRole(
+                $this->authentication('admin-token', true),
+                SiteAccessRole::View,
+            ),
+        );
+        $this->assertSame(
+            [3],
+            $this->authorizer()->siteIdsWithRole(
+                $this->authentication('admin-token', true),
+                SiteAccessRole::Write,
+            ),
+        );
+        $this->assertSame(
+            [1, 2, 3],
+            $this->authorizer()->siteIdsWithRole(
+                $this->authentication('root-token', true),
+                SiteAccessRole::Admin,
+            ),
+        );
+        $this->assertSame(
+            [],
+            $this->authorizer()->siteIdsWithRole(
+                $this->authentication('root-token', true),
+                SiteAccessRole::View,
+            ),
         );
     }
 
@@ -158,7 +187,10 @@ class DatabaseApiAccessAuthorizerTest extends TestCase
         $this->assertTrue($authorizer->hasSomeViewAccess($this->authentication('view-token', true)));
         $this->assertSame(
             [2],
-            $authorizer->siteIdsWithAdminAccess($this->authentication('view-token', true)),
+            $authorizer->siteIdsWithRole(
+                $this->authentication('view-token', true),
+                SiteAccessRole::Admin,
+            ),
         );
     }
 

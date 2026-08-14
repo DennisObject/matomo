@@ -6,12 +6,42 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
+use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Sites\SiteRepository;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    #[DataProvider('siteRoleMethods')]
+    public function test_site_role_id_methods_use_the_exact_role(
+        string $method,
+        SiteAccessRole $role,
+    ): void {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithRole')
+            ->with(
+                $this->isInstanceOf(ApiAuthentication::class),
+                $role,
+            )
+            ->willReturn([4]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get("/index.php?module=API&method={$method}&format=json&token_auth=token")
+            ->assertOk()
+            ->assertExactJson([4]);
+    }
+
+    /**
+     * @return iterable<string, array{string, SiteAccessRole}>
+     */
+    public static function siteRoleMethods(): iterable
+    {
+        yield 'view' => ['SitesManager.getSitesIdWithViewAccess', SiteAccessRole::View];
+        yield 'write' => ['SitesManager.getSitesIdWithWriteAccess', SiteAccessRole::Write];
+    }
+
     public function test_all_site_ids_requires_superuser_and_reads_the_site_store(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
@@ -180,10 +210,13 @@ class SitesManagerApiTest extends TestCase
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
         $authorizer->expects($this->once())
-            ->method('siteIdsWithAdminAccess')
-            ->with($this->callback(
-                static fn (ApiAuthentication $authentication): bool => $authentication->token !== null,
-            ))
+            ->method('siteIdsWithRole')
+            ->with(
+                $this->callback(
+                    static fn (ApiAuthentication $authentication): bool => $authentication->token !== null,
+                ),
+                SiteAccessRole::Admin,
+            )
             ->willReturn($siteIds);
         $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
     }
