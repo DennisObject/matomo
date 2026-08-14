@@ -16,13 +16,18 @@ final readonly class DatabaseVersionAccessAuthorizer implements VersionAccessAut
         #[\SensitiveParameter]
         private string $salt,
         private bool $onlyAllowSecureTokens,
+        private ?DatabaseSessionAuthenticator $sessions = null,
     ) {}
 
-    public function hasSomeViewAccess(?string $token, bool $tokenIsSecure): bool
+    public function hasSomeViewAccess(ApiAuthentication $authentication): bool
     {
-        $user = in_array($token, [null, '', 'anonymous'], true)
+        $user = $this->sessions?->authenticate($authentication);
+
+        if ($user === null) {
+            $user = in_array($authentication->token, [null, '', 'anonymous'], true)
             ? $this->findUser('anonymous')
-            : $this->authenticateToken($token, $tokenIsSecure);
+            : $this->authenticateToken($authentication->token, $authentication->tokenIsSecure);
+        }
 
         if ($user === null) {
             return false;

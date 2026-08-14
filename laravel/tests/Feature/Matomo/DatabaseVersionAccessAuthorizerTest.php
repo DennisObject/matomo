@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\DatabaseVersionAccessAuthorizer;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\DatabaseManager;
@@ -61,7 +62,7 @@ class DatabaseVersionAccessAuthorizerTest extends TestCase
         $this->addSiteAccess('viewer', 'view');
         $tokenId = $this->addToken('viewer', 'view-token');
 
-        $this->assertTrue($this->authorizer()->hasSomeViewAccess('view-token', false));
+        $this->assertTrue($this->authorizer()->hasSomeViewAccess($this->authentication('view-token')));
         $this->assertNotNull(
             $this->connection->table('user_token_auth')->where('idusertokenauth', $tokenId)->value('last_used'),
         );
@@ -72,7 +73,7 @@ class DatabaseVersionAccessAuthorizerTest extends TestCase
         $this->addUser('root', true);
         $this->addToken('root', 'root-token');
 
-        $this->assertTrue($this->authorizer()->hasSomeViewAccess('root-token', true));
+        $this->assertTrue($this->authorizer()->hasSomeViewAccess($this->authentication('root-token', true)));
     }
 
     public function test_secure_only_token_is_rejected_from_query_and_accepted_from_post(): void
@@ -81,8 +82,8 @@ class DatabaseVersionAccessAuthorizerTest extends TestCase
         $this->addSiteAccess('viewer', 'view');
         $this->addToken('viewer', 'secure-token', secureOnly: true);
 
-        $this->assertFalse($this->authorizer()->hasSomeViewAccess('secure-token', false));
-        $this->assertTrue($this->authorizer()->hasSomeViewAccess('secure-token', true));
+        $this->assertFalse($this->authorizer()->hasSomeViewAccess($this->authentication('secure-token')));
+        $this->assertTrue($this->authorizer()->hasSomeViewAccess($this->authentication('secure-token', true)));
     }
 
     public function test_global_secure_token_rule_rejects_query_token(): void
@@ -91,7 +92,9 @@ class DatabaseVersionAccessAuthorizerTest extends TestCase
         $this->addSiteAccess('viewer', 'view');
         $this->addToken('viewer', 'token');
 
-        $this->assertFalse($this->authorizer(onlyAllowSecureTokens: true)->hasSomeViewAccess('token', false));
+        $this->assertFalse(
+            $this->authorizer(onlyAllowSecureTokens: true)->hasSomeViewAccess($this->authentication('token')),
+        );
     }
 
     public function test_expired_token_is_rejected(): void
@@ -100,7 +103,9 @@ class DatabaseVersionAccessAuthorizerTest extends TestCase
         $this->addSiteAccess('viewer', 'view');
         $this->addToken('viewer', 'expired-token', expiredAt: '2000-01-01 00:00:00');
 
-        $this->assertFalse($this->authorizer()->hasSomeViewAccess('expired-token', true));
+        $this->assertFalse(
+            $this->authorizer()->hasSomeViewAccess($this->authentication('expired-token', true)),
+        );
     }
 
     public function test_anonymous_user_can_use_public_site_access(): void
@@ -108,7 +113,7 @@ class DatabaseVersionAccessAuthorizerTest extends TestCase
         $this->addUser('anonymous');
         $this->addSiteAccess('anonymous', 'view');
 
-        $this->assertTrue($this->authorizer()->hasSomeViewAccess(null, false));
+        $this->assertTrue($this->authorizer()->hasSomeViewAccess($this->authentication(null)));
     }
 
     private function authorizer(bool $onlyAllowSecureTokens = false): DatabaseVersionAccessAuthorizer
@@ -118,6 +123,11 @@ class DatabaseVersionAccessAuthorizerTest extends TestCase
             salt: self::SALT,
             onlyAllowSecureTokens: $onlyAllowSecureTokens,
         );
+    }
+
+    private function authentication(?string $token, bool $secure = false): ApiAuthentication
+    {
+        return new ApiAuthentication($token, $secure, false, null);
     }
 
     private function addUser(string $login, bool $superuser = false): void

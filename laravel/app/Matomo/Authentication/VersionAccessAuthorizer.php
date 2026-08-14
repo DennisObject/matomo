@@ -6,9 +6,5 @@ namespace App\Matomo\Authentication;
 
 interface VersionAccessAuthorizer
 {
-    public function hasSomeViewAccess(
-        #[\SensitiveParameter]
-        ?string $token,
-        bool $tokenIsSecure,
-    ): bool;
+    public function hasSomeViewAccess(ApiAuthentication $authentication): bool;
 }

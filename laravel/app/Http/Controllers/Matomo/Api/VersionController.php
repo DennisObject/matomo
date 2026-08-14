@@ -41,7 +41,7 @@ class VersionController extends Controller
             return $this->responses->error($apiRequest, 'This response format has not moved to Laravel yet.', 501);
         }
 
-        if (! $this->authorizer->hasSomeViewAccess($apiRequest->token, $apiRequest->tokenIsSecure)) {
+        if (! $this->authorizer->hasSomeViewAccess($apiRequest->authentication)) {
             return $this->responses->error(
                 $apiRequest,
                 'You must have view access to at least one website.',

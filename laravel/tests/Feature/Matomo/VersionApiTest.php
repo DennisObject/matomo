@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\VersionAccessAuthorizer;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Piwik\Version;
@@ -170,7 +171,10 @@ class VersionApiTest extends TestCase
         $authorizer = $this->createMock(VersionAccessAuthorizer::class);
         $authorizer->expects($this->exactly(2))
             ->method('hasSomeViewAccess')
-            ->with('token', false)
+            ->with($this->callback(
+                static fn (ApiAuthentication $authentication): bool => $authentication->token === 'token'
+                    && ! $authentication->tokenIsSecure,
+            ))
             ->willReturn(true);
         $this->app->instance(VersionAccessAuthorizer::class, $authorizer);
 
@@ -198,6 +202,47 @@ class VersionApiTest extends TestCase
                 'result' => 'error',
                 'message' => 'Authentication parameters must not have conflicting values.',
             ]);
+    }
+
+    public function test_conflicting_session_flags_are_rejected_before_authentication(): void
+    {
+        $authorizer = $this->createMock(VersionAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasSomeViewAccess');
+        $this->app->instance(VersionAccessAuthorizer::class, $authorizer);
+
+        $this->post(
+            '/index.php?module=API&method=API.getMatomoVersion&format=json&force_api_session=1',
+            [
+                'token_auth' => 'token',
+                'force_api_session' => '0',
+            ],
+        )->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => 'Authentication parameters must not have conflicting values.',
+            ]);
+    }
+
+    public function test_post_session_credentials_reach_the_authorizer(): void
+    {
+        $authorizer = $this->createMock(VersionAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('hasSomeViewAccess')
+            ->with($this->callback(
+                static fn (ApiAuthentication $authentication): bool => $authentication->token === 'session-token'
+                    && $authentication->tokenIsSecure
+                    && $authentication->forceSession
+                    && $authentication->sessionId === 'session-id',
+            ))
+            ->willReturn(true);
+        $this->app->instance(VersionAccessAuthorizer::class, $authorizer);
+
+        $this->withUnencryptedCookie('MATOMO_SESSID', 'session-id')
+            ->post('/index.php?module=API&method=API.getMatomoVersion&format=json', [
+                'token_auth' => 'session-token',
+                'force_api_session' => '1',
+            ])->assertOk()
+            ->assertContent('{"value":"'.Version::VERSION.'"}');
     }
 
     public function test_array_token_is_rejected_before_anonymous_access(): void
@@ -233,7 +278,10 @@ class VersionApiTest extends TestCase
         $authorizer = $this->createMock(VersionAccessAuthorizer::class);
         $authorizer->expects($this->once())
             ->method('hasSomeViewAccess')
-            ->with($token, $tokenIsSecure)
+            ->with($this->callback(
+                static fn (ApiAuthentication $authentication): bool => $authentication->token === $token
+                    && $authentication->tokenIsSecure === $tokenIsSecure,
+            ))
             ->willReturn($result);
         $this->app->instance(VersionAccessAuthorizer::class, $authorizer);
     }

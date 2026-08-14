@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Matomo\Authentication\DatabaseSessionAuthenticator;
 use App\Matomo\Authentication\DatabaseVersionAccessAuthorizer;
 use App\Matomo\Authentication\VersionAccessAuthorizer;
 use App\Matomo\Config\InstallationConfig;
@@ -44,6 +45,12 @@ class AppServiceProvider extends ServiceProvider
                     connection: $databases->connection('matomo'),
                     salt: $installation->salt(),
                     onlyAllowSecureTokens: $installation->onlyAllowSecureTokens(),
+                    sessions: new DatabaseSessionAuthenticator(
+                        connection: $databases->connection('matomo'),
+                        salt: $installation->salt(),
+                        sessionLifetime: $installation->sessionLifetime(),
+                        idleTimeout: $installation->sessionIdleTimeout(),
+                    ),
                 );
             },
         );
