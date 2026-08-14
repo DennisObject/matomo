@@ -216,6 +216,11 @@ final class ApiResponseFactory
         };
     }
 
+    public function rss(string $content): Response
+    {
+        return $this->response($content, 200, 'text/xml; charset=utf-8');
+    }
+
     private function xmlScalar(bool|int|string $value): Response
     {
         $value = $this->scalarText($value, false);

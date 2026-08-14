@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 54 method names handled; VisitsSummary responses still exclude RSS |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 54 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Not ported |
@@ -54,7 +54,7 @@ Handled reporting API method names:
 
 - `API`: `getIpFromHeader`, `getMatomoVersion`, `getPhpVersion`, `getPiwikVersion`, `isPluginActivated`.
 - `SitesManager`: `detectConsentManager`, `getAllSites`, `getAllSitesId`, `getCurrencyList`, `getCurrencySymbols`, `getDefaultCurrency`, `getDefaultTimezone`, `getExcludedIpsGlobal`, `getExcludedQueryParameters`, `getExcludedQueryParametersGlobal`, `getExcludedReferrers`, `getExcludedReferrersGlobal`, `getExcludedUserAgentsGlobal`, `getExclusionTypeForQueryParams`, `getIpsForRange`, `getKeepURLFragmentsGlobal`, `getMessagesToWarnOnSiteRemoval`, `getNumWebsitesToDisplayPerPage`, `getPatternMatchSites`, `getSearchCategoryParametersGlobal`, `getSearchKeywordParametersGlobal`, `getSiteFromId`, `getSiteUrlsFromId`, `getSitesFromGroup`, `getSitesGroups`, `getSitesIdFromSiteUrl`, `getSitesIdFromTimezones`, `getSitesIdWithAdminAccess`, `getSitesIdWithAtLeastViewAccess`, `getSitesIdWithViewAccess`, `getSitesIdWithWriteAccess`, `getSitesWithAdminAccess`, `getSitesWithAtLeastViewAccess`, `getSitesWithMinimumAccess`, `getSitesWithViewAccess`, `getTimezoneName`, `getTimezonesList`, `getUniqueSiteTimezones`, `isTimezoneSupportEnabled`.
-- `VisitsSummary`: all 10 API methods for JSON, XML, CSV, TSV, HTML, original, and console output. RSS remains on the legacy path.
+- `VisitsSummary`: all 10 API methods in every supported response format.
 
 Reporting API module matrix:
 
@@ -113,7 +113,7 @@ Reporting API module matrix:
 | `VisitsSummary` | 10 | 10 | 0 |
 | **Total** | **389** | **54** | **335** |
 
-The final parity gate requires every remaining counter to reach zero, the RSS gap to close, and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
+The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
 ## Files likely to change
 

@@ -11,6 +11,7 @@ use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
 use App\Matomo\Sites\SiteRepository;
+use Carbon\CarbonImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -447,19 +448,84 @@ XML);
         ];
     }
 
-    public function test_rss_stays_on_the_unmigrated_path(): void
+    public function test_renders_a_date_map_as_an_rss_feed_for_one_site(): void
     {
-        $this->app->instance(
-            ApiAccessAuthorizer::class,
-            $this->createStub(ApiAccessAuthorizer::class),
-        );
+        CarbonImmutable::setTestNow('2026-08-14 12:00:00 UTC');
+        $this->bindViewAccess([1]);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->method('timezone')->with(1)->willReturn('Pacific/Auckland');
+        $sites->method('details')->with(1)->willReturn(['name' => 'Example & Co']);
+        $archives = $this->createStub(VisitsSummaryArchiveRepository::class);
+        $archives->method('metrics')->willReturn([
+            1 => [
+                '2026-08-13,2026-08-13' => ['nb_visits' => 2],
+                '2026-08-14,2026-08-14' => ['nb_visits' => 3],
+            ],
+        ]);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(VisitsSummaryArchiveRepository::class, $archives);
+
+        $response = $this->get(
+            '/index.php?module=API&method=VisitsSummary.get&idSite=1'.
+            '&period=day&date=2026-08-13,2026-08-14&columns=nb_visits'.
+            '&format=rss&token_auth=view-token',
+        )->assertOk()->assertHeader('Content-Type', 'text/xml; charset=utf-8');
+        CarbonImmutable::setTestNow();
+
+        $content = $response->getContent();
+        $this->assertIsString($content);
+        $this->assertStringContainsString('<rss version="2.0">', $content);
+        $this->assertStringContainsString('<title>Example &amp; Co on 2026-08-14</title>', $content);
+        $this->assertStringContainsString('&lt;strong&gt;nb_visits&lt;/strong&gt;', $content);
+        $this->assertStringContainsString('&lt;td&gt;3&lt;/td&gt;', $content);
+        $this->assertStringNotContainsString('matomo.org', $content);
+    }
+
+    public function test_rss_rejects_more_than_one_site(): void
+    {
+        $this->bindViewAccess([1, 2]);
+        $sites = $this->createStub(SiteRepository::class);
+        $archives = $this->createStub(VisitsSummaryArchiveRepository::class);
+        $archives->method('metrics')->willReturn([
+            1 => ['2026-08-14,2026-08-14' => ['nb_visits' => 1]],
+            2 => ['2026-08-14,2026-08-14' => ['nb_visits' => 2]],
+        ]);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(VisitsSummaryArchiveRepository::class, $archives);
 
         $this->get(
-            '/index.php?module=API&method=VisitsSummary.get&idSite=1'.
-            '&period=day&date=2026-08-14&format=rss',
-        )->assertStatus(501)
+            '/index.php?module=API&method=VisitsSummary.get&idSite=1,2&period=day'.
+            '&date=2026-08-14&format=rss&token_auth=view-token',
+        )->assertOk()
             ->assertHeader('Content-Type', 'text/plain; charset=utf-8')
-            ->assertContent('Error: This API method has not moved to Laravel yet.');
+            ->assertContent("Error: RSS feeds can be generated for one specific website &amp;idSite=X.\n".
+                'Please specify only one idSite or consider using &amp;format=XML instead.');
+    }
+
+    public function test_renders_a_scalar_method_date_map_as_rss(): void
+    {
+        $this->bindViewAccess([1]);
+        $sites = $this->createStub(SiteRepository::class);
+        $sites->method('timezone')->willReturn('UTC');
+        $sites->method('details')->willReturn(['name' => 'Example']);
+        $archives = $this->createStub(VisitsSummaryArchiveRepository::class);
+        $archives->method('metrics')->willReturn([
+            1 => [
+                '2026-08-13,2026-08-13' => ['nb_visits' => 2],
+                '2026-08-14,2026-08-14' => ['nb_visits' => 3],
+            ],
+        ]);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(VisitsSummaryArchiveRepository::class, $archives);
+
+        $response = $this->get(
+            '/index.php?module=API&method=VisitsSummary.getVisits&idSite=1&period=day'.
+            '&date=2026-08-13,2026-08-14&format=rss&token_auth=view-token',
+        )->assertOk();
+        $content = $response->getContent();
+        $this->assertIsString($content);
+        $this->assertStringContainsString('&lt;strong&gt;0&lt;/strong&gt;', $content);
+        $this->assertStringContainsString('&lt;td&gt;3&lt;/td&gt;', $content);
     }
 
     /**

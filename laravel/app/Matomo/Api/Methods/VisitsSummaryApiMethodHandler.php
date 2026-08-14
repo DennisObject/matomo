@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Matomo\Api\Methods;
 
 use App\Matomo\Api\ApiMetricReport;
+use App\Matomo\Api\ApiReport;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
+use App\Matomo\Api\VisitsSummaryRequest;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Reporting\DurationFormatter;
+use App\Matomo\Reporting\ReportingPeriod;
 use App\Matomo\Reporting\ReportingPeriodFactory;
 use App\Matomo\Reporting\ReportingSettings;
+use App\Matomo\Reporting\RssReportRenderer;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\VisitsSummaryReportBuilder;
 use App\Matomo\Sites\SiteRepository;
@@ -43,11 +47,12 @@ final readonly class VisitsSummaryApiMethodHandler implements ApiMethodHandler
         private SegmentHashResolver $segments,
         private VisitsSummaryReportBuilder $reports,
         private DurationFormatter $durations,
+        private RssReportRenderer $rss,
     ) {}
 
     public function supports(ApiRequest $request): bool
     {
-        return $request->isVisitsSummaryRequest() && $request->format !== 'rss';
+        return $request->isVisitsSummaryRequest();
     }
 
     public function handle(ApiRequest $request, Request $httpRequest): Response
@@ -114,6 +119,15 @@ final readonly class VisitsSummaryApiMethodHandler implements ApiMethodHandler
             );
         }
 
+        if ($request->format === 'rss' && count($siteIds) !== 1) {
+            return $this->responses->error(
+                $request,
+                "RSS feeds can be generated for one specific website &idSite=X.\n".
+                    'Please specify only one idSite or consider using &format=XML instead.',
+                200,
+            );
+        }
+
         $timezone = count($siteIds) === 1
             ? ($this->sites->timezone($siteIds[0]) ?? 'UTC')
             : 'UTC';
@@ -141,7 +155,9 @@ final readonly class VisitsSummaryApiMethodHandler implements ApiMethodHandler
         );
 
         if ($metric === null) {
-            return $this->responses->report($request, $report);
+            return $request->format === 'rss'
+                ? $this->rssResponse($request, $query, $siteIds, $periods, $timezone, $report)
+                : $this->responses->report($request, $report);
         }
 
         $metricReport = ApiMetricReport::fromReport($report, $metric);
@@ -150,6 +166,35 @@ final readonly class VisitsSummaryApiMethodHandler implements ApiMethodHandler
             $metricReport = $metricReport->map($this->durations->sentence(...));
         }
 
-        return $this->responses->metricReport($request, $metricReport);
+        return $request->format === 'rss'
+            ? $this->rssResponse($request, $query, $siteIds, $periods, $timezone, $report, $metricReport)
+            : $this->responses->metricReport($request, $metricReport);
+    }
+
+    /**
+     * @param  list<int>  $siteIds
+     * @param  list<ReportingPeriod>  $periods
+     */
+    private function rssResponse(
+        ApiRequest $request,
+        VisitsSummaryRequest $query,
+        array $siteIds,
+        array $periods,
+        string $timezone,
+        ApiReport $report,
+        ?ApiMetricReport $metricReport = null,
+    ): Response {
+        $details = $this->sites->details($siteIds[0]);
+        $siteName = is_string($details['name'] ?? null) ? $details['name'] : '';
+
+        try {
+            $content = $metricReport === null
+                ? $this->rss->report($report, $periods, $siteIds[0], $query->period, $siteName, $timezone)
+                : $this->rss->metric($metricReport, $periods, $siteIds[0], $query->period, $siteName, $timezone);
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            return $this->responses->error($request, $invalidArgumentException->getMessage(), 200);
+        }
+
+        return $this->responses->rss($content);
     }
 }
