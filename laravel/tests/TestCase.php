@@ -118,6 +118,11 @@ abstract class TestCase extends BaseTestCase
                 return [];
             }
 
+            public function detailsInGroup(string $group): array
+            {
+                return [];
+            }
+
             public function groups(): array
             {
                 return [];

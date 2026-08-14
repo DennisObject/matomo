@@ -21,6 +21,36 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_sites_from_group_trim_the_group_and_require_superuser(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('detailsInGroup')
+            ->with('Main')
+            ->willReturn([['idsite' => 7, 'name' => 'Docs']]);
+        $presenter = $this->createMock(SiteDetailsPresenter::class);
+        $presenter->expects($this->once())
+            ->method('present')
+            ->with(['idsite' => 7, 'name' => 'Docs'], 'fr', true)
+            ->willReturn(['idsite' => 7, 'name' => 'Docs', 'currency_name' => 'euro']);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(SiteDetailsPresenter::class, $presenter);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesFromGroup'.
+            '&group=%20Main%20&format=json&token_auth=root-token',
+        )->assertOk()
+            ->assertExactJson([
+                ['idsite' => 7, 'name' => 'Docs', 'currency_name' => 'euro'],
+            ]);
+    }
+
     public function test_all_sites_require_superuser_and_keep_site_ids_as_keys(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
