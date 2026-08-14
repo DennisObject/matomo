@@ -26,16 +26,30 @@ class DatabaseSiteRepositoryTest extends TestCase
         $connection->getSchemaBuilder()->create('site', function (Blueprint $table): void {
             $table->unsignedInteger('idsite')->primary();
             $table->string('group')->default('');
+            $table->string('main_url');
+        });
+        $connection->getSchemaBuilder()->create('site_url', function (Blueprint $table): void {
+            $table->unsignedInteger('idsite');
+            $table->string('url');
         });
         $connection->table('site')->insert([
-            ['idsite' => 3, 'group' => ' Main '],
-            ['idsite' => 8, 'group' => 'a,b'],
+            ['idsite' => 3, 'group' => ' Main ', 'main_url' => 'https://example.test'],
+            ['idsite' => 8, 'group' => 'a,b', 'main_url' => 'https://other.test'],
+        ]);
+        $connection->table('site_url')->insert([
+            ['idsite' => 3, 'url' => 'https://www.example.test'],
+            ['idsite' => 3, 'url' => 'https://example.test/docs'],
         ]);
 
         $sites = new DatabaseSiteRepository($connection);
 
         $this->assertSame([3, 8], $sites->allIds());
         $this->assertSame(['Main', 'a,b'], $sites->groups());
+        $this->assertSame([
+            'https://example.test',
+            'https://www.example.test',
+            'https://example.test/docs',
+        ], $sites->urls(3));
     }
 
     public function test_returns_an_empty_list_before_the_site_table_exists(): void

@@ -6,6 +6,7 @@ namespace App\Matomo\Api;
 
 use App\Matomo\Api\Exceptions\ConflictingAuthenticationParameters;
 use App\Matomo\Api\Exceptions\InvalidApiParameter;
+use App\Matomo\Api\Exceptions\MissingApiParameter;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\SiteAccessRole;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ final readonly class ApiRequest
         public bool $convertToUnicode,
         public bool $showMetadata,
         public ?string $restrictSitesToLogin,
+        public ?int $idSite,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -41,6 +43,7 @@ final readonly class ApiRequest
             convertToUnicode: self::booleanInput($request, 'convertToUnicode', true),
             showMetadata: self::booleanInput($request, 'showMetadata', true),
             restrictSitesToLogin: self::safeNullableStringInput($request, '_restrictSitesToLogin'),
+            idSite: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -112,6 +115,11 @@ final readonly class ApiRequest
             && $this->method === 'SitesManager.getNumWebsitesToDisplayPerPage';
     }
 
+    public function isSiteUrlsRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSiteUrlsFromId';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -123,9 +131,12 @@ final readonly class ApiRequest
 
     private static function make(Request $request, ApiAuthentication $authentication): self
     {
+        $module = self::stringInput($request, 'module');
+        $method = self::stringInput($request, 'method');
+
         return new self(
-            module: self::stringInput($request, 'module'),
-            method: self::stringInput($request, 'method'),
+            module: $module,
+            method: $method,
             format: strtolower(self::stringInput($request, 'format', 'xml')),
             callback: self::nullableStringInput($request, 'callback')
                 ?? self::nullableStringInput($request, 'jsoncallback'),
@@ -133,8 +144,24 @@ final readonly class ApiRequest
             convertToUnicode: self::booleanInput($request, 'convertToUnicode', true),
             showMetadata: self::booleanInput($request, 'showMetadata', true),
             restrictSitesToLogin: self::nullableStringInput($request, '_restrictSitesToLogin'),
+            idSite: self::siteId($request, $module, $method),
             authentication: $authentication,
         );
+    }
+
+    private static function siteId(Request $request, string $module, string $method): ?int
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.getSiteUrlsFromId') {
+            return null;
+        }
+
+        $value = self::nullableStringInput($request, 'idSite');
+
+        if ($value === null || $value === '' || (string) (int) $value !== $value) {
+            throw new MissingApiParameter('idSite');
+        }
+
+        return (int) $value;
     }
 
     private static function authentication(Request $request): ApiAuthentication

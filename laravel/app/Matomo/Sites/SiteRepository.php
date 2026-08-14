@@ -15,4 +15,9 @@ interface SiteRepository
      * @return list<string>
      */
     public function groups(): array;
+
+    /**
+     * @return list<string>
+     */
+    public function urls(int $idSite): array;
 }

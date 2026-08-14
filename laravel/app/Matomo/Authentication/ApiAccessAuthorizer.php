@@ -10,6 +10,8 @@ interface ApiAccessAuthorizer
 
     public function hasSomeAdminAccess(ApiAuthentication $authentication): bool;
 
+    public function hasViewAccessToSite(ApiAuthentication $authentication, int $idSite): bool;
+
     public function hasSuperUserAccess(ApiAuthentication $authentication): bool;
 
     /**

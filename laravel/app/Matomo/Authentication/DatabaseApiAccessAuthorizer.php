@@ -53,6 +53,27 @@ final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
             || ($this->siteIdsByAccess($user['login'])['admin'] ?? []) !== [];
     }
 
+    public function hasViewAccessToSite(ApiAuthentication $authentication, int $idSite): bool
+    {
+        $user = $this->authenticatedUser($authentication);
+
+        if ($user === null) {
+            return false;
+        }
+
+        if ($user['isSuperUser']) {
+            return true;
+        }
+
+        $siteIdsByAccess = $this->siteIdsByAccess($user['login']);
+
+        return in_array($idSite, [
+            ...($siteIdsByAccess['view'] ?? []),
+            ...($siteIdsByAccess['write'] ?? []),
+            ...($siteIdsByAccess['admin'] ?? []),
+        ], true);
+    }
+
     public function hasSuperUserAccess(ApiAuthentication $authentication): bool
     {
         return $this->authenticatedUser($authentication)['isSuperUser'] ?? false;

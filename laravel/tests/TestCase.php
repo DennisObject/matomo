@@ -44,6 +44,11 @@ abstract class TestCase extends BaseTestCase
             {
                 return [];
             }
+
+            public function urls(int $idSite): array
+            {
+                return [];
+            }
         });
         $this->app->instance(SiteRuntimeSettings::class, new class implements SiteRuntimeSettings
         {

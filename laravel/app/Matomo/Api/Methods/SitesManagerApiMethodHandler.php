@@ -76,6 +76,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isDefaultTimezoneRequest()
             || $request->isTimezoneSupportRequest()
             || $request->isWebsitesCountToDisplayRequest()
+            || $request->isSiteUrlsRequest()
             || $this->globalOption($request) !== null;
     }
 
@@ -153,6 +154,20 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
                     ? $this->runtime->timezoneSupportEnabled()
                     : $this->runtime->websitesCountToDisplay(),
             );
+        }
+
+        if ($request->isSiteUrlsRequest()) {
+            $idSite = $request->idSite ?? throw new LogicException('The site ID was not parsed.');
+
+            if (! $this->authorizer->hasViewAccessToSite($request->authentication, $idSite)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires 'view' access for the website id = {$idSite}.",
+                    401,
+                );
+            }
+
+            return $this->responses->values($request, $this->sites->urls($idSite));
         }
 
         $globalOption = $this->globalOption($request);
