@@ -21,6 +21,42 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_all_sites_require_superuser_and_keep_site_ids_as_keys(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())->method('allDetails')->willReturn([
+            1 => ['idsite' => 1, 'name' => 'One'],
+            3 => ['idsite' => 3, 'name' => 'Three'],
+        ]);
+        $presenter = $this->createMock(SiteDetailsPresenter::class);
+        $presenter->expects($this->exactly(2))
+            ->method('present')
+            ->willReturnCallback(
+                static fn (array $site, string $language, bool $includeCreator): array => [
+                    ...$site,
+                    'language' => $language,
+                    'include_creator' => (int) $includeCreator,
+                ],
+            );
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(SiteDetailsPresenter::class, $presenter);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getAllSites'.
+            '&format=json&token_auth=root-token',
+        )->assertOk()
+            ->assertContent(
+                '{"1":{"idsite":1,"name":"One","language":"fr","include_creator":1},'.
+                '"3":{"idsite":3,"name":"Three","language":"fr","include_creator":1}}',
+            );
+    }
+
     public function test_site_details_require_view_access_and_hide_regular_user_creator(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

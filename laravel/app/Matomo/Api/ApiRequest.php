@@ -98,6 +98,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getAllSitesId';
     }
 
+    public function isAllSitesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getAllSites';
+    }
+
     public function isViewableSiteIdsRequest(): bool
     {
         return $this->module === 'API'

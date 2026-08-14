@@ -78,6 +78,7 @@ class DatabaseSiteRepositoryTest extends TestCase
         $this->assertSame(1, $details['ecommerce']);
         $this->assertSame('owner', $details['creator_login']);
         $this->assertSame([], $sites->details(99));
+        $this->assertSame([3, 8], array_keys($sites->allDetails()));
         $this->assertSame(['Main', 'a,b'], $sites->groups());
         $this->assertSame([
             'https://example.test',
