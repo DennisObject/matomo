@@ -68,6 +68,100 @@ class SitesManagerApiTest extends TestCase
             ]);
     }
 
+    #[DataProvider('globalSiteOptions')]
+    public function test_global_site_option_reads_keep_access_and_fallbacks(
+        string $method,
+        string $optionName,
+        ?string $storedValue,
+        string $content,
+    ): void {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSomeAdminAccess')->willReturn(true);
+        $options = $this->createMock(OptionRepository::class);
+        $options->expects($this->once())->method('value')->with($optionName)->willReturn($storedValue);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(OptionRepository::class, $options);
+
+        $this->get("/index.php?module=API&method={$method}&format=json&token_auth=admin-token")
+            ->assertOk()
+            ->assertContent($content);
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string|null, string}>
+     */
+    public static function globalSiteOptions(): iterable
+    {
+        yield 'search keywords use the built-in default' => [
+            'SitesManager.getSearchKeywordParametersGlobal',
+            'SitesManager_SearchKeywordParameters',
+            null,
+            '{"value":"q,query,s,search,searchword,k,keyword,keywords"}',
+        ];
+        yield 'search categories preserve a missing option' => [
+            'SitesManager.getSearchCategoryParametersGlobal',
+            'SitesManager_SearchCategoryParameters',
+            null,
+            '{"value":false}',
+        ];
+        yield 'excluded user agents preserve their value' => [
+            'SitesManager.getExcludedUserAgentsGlobal',
+            'SitesManager_ExcludedUserAgentsGlobal',
+            'bot,crawler',
+            '{"value":"bot,crawler"}',
+        ];
+        yield 'excluded referrers use an empty fallback' => [
+            'SitesManager.getExcludedReferrersGlobal',
+            'SitesManager_ExcludedReferrersGlobal',
+            null,
+            '{"value":""}',
+        ];
+        yield 'excluded IPs preserve a missing option' => [
+            'SitesManager.getExcludedIpsGlobal',
+            'SitesManager_ExcludedIpsGlobal',
+            null,
+            '{"value":false}',
+        ];
+    }
+
+    public function test_keep_url_fragments_uses_view_access_and_boolean_output(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSomeViewAccess')->willReturn(true);
+        $options = $this->createMock(OptionRepository::class);
+        $options->expects($this->once())
+            ->method('value')
+            ->with('SitesManager_KeepURLFragmentsGlobal')
+            ->willReturn('1');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(OptionRepository::class, $options);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getKeepURLFragmentsGlobal'.
+            '&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertContent('{"value":true}');
+    }
+
+    public function test_global_option_csv_quotes_lists_and_blocks_formulas(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSomeAdminAccess')->willReturn(true);
+        $options = $this->createMock(OptionRepository::class);
+        $options->expects($this->once())
+            ->method('value')
+            ->with('SitesManager_SearchKeywordParameters')
+            ->willReturn('=SUM(A1:A2),q');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(OptionRepository::class, $options);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSearchKeywordParametersGlobal'.
+            '&format=csv&convertToUnicode=0&token_auth=admin-token',
+        )->assertOk()
+            ->assertContent("value\n\"'=SUM(A1:A2),q\"");
+    }
+
     #[DataProvider('siteGroupFormats')]
     public function test_site_groups_require_superuser_and_keep_string_list_formats(
         string $format,

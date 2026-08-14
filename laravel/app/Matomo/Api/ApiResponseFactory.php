@@ -9,7 +9,7 @@ use LogicException;
 
 final class ApiResponseFactory
 {
-    public function scalar(ApiRequest $request, string $value): Response
+    public function scalar(ApiRequest $request, bool|int|string $value): Response
     {
         return match ($request->format) {
             'console' => $this->console($request, $value),
@@ -73,8 +73,10 @@ final class ApiResponseFactory
         };
     }
 
-    private function xmlScalar(string $value): Response
+    private function xmlScalar(bool|int|string $value): Response
     {
+        $value = $this->scalarText($value, false);
+
         return $this->response(
             "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>{$this->escape($value)}</result>",
             200,
@@ -137,8 +139,9 @@ final class ApiResponseFactory
         );
     }
 
-    private function spreadsheet(ApiRequest $request, string $value): Response
+    private function spreadsheet(ApiRequest $request, bool|int|string $value): Response
     {
+        $value = $this->spreadsheetCell($this->scalarText($value, false), ',');
         $content = "value\n{$value}";
 
         if ($request->convertToUnicode && function_exists('mb_convert_encoding')) {
@@ -201,17 +204,45 @@ final class ApiResponseFactory
 
     private function spreadsheetCell(string $value, string $delimiter): string
     {
-        if (! str_contains($value, $delimiter) && strpbrk($value, "\"\r\n") === false) {
+        if (! is_numeric($value)) {
+            $value = html_entity_decode($value, ENT_QUOTES, 'UTF-8');
+        }
+
+        $value = $this->spreadsheetFormulaSafe($value);
+        $value = str_replace(["\t", "\r"], ' ', $value);
+
+        if (! str_contains($value, $delimiter) && strpbrk($value, ",;\"\n") === false) {
             return $value;
         }
 
         return '"'.str_replace('"', '""', $value).'"';
     }
 
-    private function html(ApiRequest $request, string $value): Response
+    private function spreadsheetFormulaSafe(string $value): string
+    {
+        $probe = ltrim($value, "\0");
+
+        while (str_starts_with($probe, '%00')) {
+            $probe = ltrim(substr($probe, 3), "\0");
+        }
+
+        $percent = strpos($probe, '%');
+
+        if ($percent !== false) {
+            $probe = substr_replace($probe, '', $percent, 1);
+        }
+
+        if ($probe !== '' && ! is_numeric($probe) && in_array($probe[0], ['=', '+', '-', '@'], true)) {
+            return "'".$value;
+        }
+
+        return $value;
+    }
+
+    private function html(ApiRequest $request, bool|int|string $value): Response
     {
         $id = $this->escape(str_replace('.', '_', $request->method));
-        $value = $this->escape($value);
+        $value = $this->escape($this->scalarText($value, false));
         $content = <<<HTML
         <table id="{$id}" border="1">
         <thead>
@@ -297,10 +328,10 @@ final class ApiResponseFactory
         return $this->response($content, 200, 'text/html; charset=utf-8');
     }
 
-    private function original(ApiRequest $request, string $value): Response
+    private function original(ApiRequest $request, bool|int|string $value): Response
     {
         return $this->response(
-            $request->serialize ? serialize($value) : $value,
+            $request->serialize ? serialize($value) : $this->scalarText($value, true),
             200,
             'text/plain; charset=utf-8',
         );
@@ -339,13 +370,15 @@ final class ApiResponseFactory
         return $this->response($content, $status, 'text/plain; charset=utf-8');
     }
 
-    private function console(ApiRequest $request, string $value): Response
+    private function console(ApiRequest $request, bool|int|string $value): Response
     {
-        $value = str_replace(['\\', "'"], ['\\\\', "\\'"], $value);
+        $value = is_string($value)
+            ? "'".str_replace(['\\', "'"], ['\\\\', "\\'"], $value)."'"
+            : $this->scalarText($value, true);
         $metadata = $request->showMetadata ? ' [] [idsubtable = ]' : '';
 
         return $this->response(
-            "- 1 ['0' => '{$value}']{$metadata}<br />\n",
+            "- 1 ['0' => {$value}]{$metadata}<br />\n",
             200,
             'text/plain; charset=utf-8',
         );
@@ -413,7 +446,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, int|string>  $payload
+     * @param  array<string, bool|int|string>  $payload
      */
     private function json(ApiRequest $request, array $payload, int $status): Response
     {
@@ -428,6 +461,15 @@ final class ApiResponseFactory
         }
 
         return $this->response($json, $status, 'application/json; charset=utf-8');
+    }
+
+    private function scalarText(bool|int|string $value, bool $emptyFalse): string
+    {
+        if ($value === false) {
+            return $emptyFalse ? '' : '0';
+        }
+
+        return (string) $value;
     }
 
     /**

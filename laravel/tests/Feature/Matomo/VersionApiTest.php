@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\Api\ApiRequest;
+use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use Illuminate\Contracts\Cache\Repository;
+use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Piwik\Version;
 use Tests\TestCase;
@@ -133,6 +136,54 @@ class VersionApiTest extends TestCase
             "Error: RSS feeds can be generated for one specific website &idSite=X.\n".
                 'Please specify only one idSite or consider using &format=XML instead.',
             null,
+        ];
+    }
+
+    #[DataProvider('legacyBooleanScalarFormats')]
+    public function test_legacy_boolean_scalar_formats_keep_exact_output(
+        string $parameters,
+        string $contentType,
+        string $content,
+    ): void {
+        $request = ApiRequest::fromRequest(
+            Request::create('/index.php?'.$parameters),
+        );
+
+        $response = $this->app->make(ApiResponseFactory::class)
+            ->scalar($request, false);
+
+        $this->assertSame($contentType, $response->headers->get('Content-Type'));
+        $this->assertSame($content, $response->getContent());
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string}>
+     */
+    public static function legacyBooleanScalarFormats(): iterable
+    {
+        yield 'JSON' => ['format=json', 'application/json; charset=utf-8', '{"value":false}'];
+        yield 'XML' => [
+            'format=xml',
+            'text/xml; charset=utf-8',
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>0</result>",
+        ];
+        yield 'CSV' => ['format=csv&convertToUnicode=0', 'application/vnd.ms-excel', "value\n0"];
+        yield 'HTML' => [
+            'format=html',
+            'text/html; charset=utf-8',
+            "<table id=\"\" border=\"1\">\n<thead>\n\t<tr>\n\t\t<th>value</th>\n\t</tr>\n".
+                "</thead>\n<tbody>\n\t<tr>\n\t\t<td>0</td>\n\t</tr>\n</tbody>\n</table>\n",
+        ];
+        yield 'original' => ['format=original', 'text/plain; charset=utf-8', ''];
+        yield 'serialized original' => [
+            'format=original&serialize=1',
+            'text/plain; charset=utf-8',
+            'b:0;',
+        ];
+        yield 'console' => [
+            'format=console',
+            'text/plain; charset=utf-8',
+            "- 1 ['0' => ] [] [idsubtable = ]<br />\n",
         ];
     }
 
