@@ -41,6 +41,7 @@ final readonly class ApiRequest
         public ?SiteAccessRole $minimumSiteAccessRole,
         /** @var list<string> */
         public array $siteTypesToExclude,
+        public ?VisitsSummaryRequest $visitsSummary,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -77,6 +78,7 @@ final readonly class ApiRequest
             sitesToExclude: [],
             minimumSiteAccessRole: null,
             siteTypesToExclude: [],
+            visitsSummary: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -272,6 +274,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getSitesIdFromSiteUrl';
     }
 
+    public function isVisitsSummaryRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'VisitsSummary.get';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -312,6 +319,7 @@ final readonly class ApiRequest
             sitesToExclude: self::sitesToExclude($request, $module, $method),
             minimumSiteAccessRole: self::minimumSiteAccessRole($request, $module, $method),
             siteTypesToExclude: self::siteTypesToExclude($request, $module, $method),
+            visitsSummary: self::visitsSummary($request, $module, $method),
             authentication: $authentication,
         );
     }
@@ -621,6 +629,190 @@ final readonly class ApiRequest
         }
 
         return array_values(array_unique($siteTypes));
+    }
+
+    private static function visitsSummary(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?VisitsSummaryRequest {
+        if ($module !== 'API' || $method !== 'VisitsSummary.get') {
+            return null;
+        }
+
+        [$siteIds, $allSites] = self::reportSiteIds($request);
+        $period = self::nullableStringInput($request, 'period');
+        $date = self::nullableStringInput($request, 'date');
+
+        if ($period === null || $period === '') {
+            throw new MissingApiParameter('period');
+        }
+
+        if (! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
+            throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
+        }
+
+        if ($date === null || $date === '') {
+            throw new MissingApiParameter('date');
+        }
+
+        if (! self::validReportDate($date)) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not valid.");
+        }
+
+        if ($period === 'range'
+            && ! str_contains($date, ',')
+            && preg_match('/^(last|previous)[0-9]*$/D', $date) !== 1) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not a valid range.");
+        }
+
+        $segment = self::nullableStringInput($request, 'segment');
+
+        return new VisitsSummaryRequest(
+            siteIds: $siteIds,
+            allSites: $allSites,
+            period: $period,
+            date: $date,
+            segment: $segment === null || trim($segment) === '' ? null : trim($segment),
+            columns: self::reportColumnList($request, 'columns', true),
+            showColumns: self::reportColumnList($request, 'showColumns') ?? [],
+            hideColumns: self::reportColumnList($request, 'hideColumns') ?? [],
+        );
+    }
+
+    /**
+     * @return array{list<int>, bool}
+     */
+    private static function reportSiteIds(Request $request): array
+    {
+        $input = self::inputValue($request, 'idSite');
+
+        if ($input === null || $input === '') {
+            throw new MissingApiParameter('idSite');
+        }
+
+        if ($input === 'all' || $input === ['all']) {
+            return [[], true];
+        }
+
+        $values = is_array($input) ? $input : explode(',', (string) $input);
+        $siteIds = [];
+
+        foreach ($values as $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            if (! is_scalar($value)) {
+                throw new InvalidApiParameter('idSite');
+            }
+
+            $value = is_string($value) ? trim($value) : $value;
+
+            if ((string) (int) $value !== (string) $value || (int) $value < 1) {
+                throw new InvalidApiParameter('idSite', "The parameter 'idSite=' contains an invalid value.");
+            }
+
+            $siteIds[] = (int) $value;
+        }
+
+        if ($siteIds === []) {
+            throw new InvalidApiParameter('idSite', "The parameter 'idSite=' contains an invalid value.");
+        }
+
+        return [array_values(array_unique($siteIds)), false];
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    private static function reportColumnList(
+        Request $request,
+        string $parameter,
+        bool $emptyMeansAll = false,
+    ): ?array {
+        $input = self::inputValue($request, $parameter);
+
+        if ($input === null) {
+            return null;
+        }
+
+        $values = is_array($input) ? $input : explode(',', (string) $input);
+        $columns = [];
+
+        foreach ($values as $value) {
+            if (! is_scalar($value)) {
+                throw new InvalidApiParameter($parameter);
+            }
+
+            $columns[] = str_replace("\0", '', (string) $value);
+        }
+
+        $columns = array_values(array_unique(array_filter(
+            $columns,
+            static fn (string $column): bool => $column !== '',
+        )));
+
+        return $columns === [] && $emptyMeansAll ? null : $columns;
+    }
+
+    private static function validReportDate(string $date): bool
+    {
+        if (preg_match('/^(now|today|yesterday|yesterdaySameTime|last[ -]?(?:week|month|year))$/iD', $date) === 1) {
+            return true;
+        }
+
+        if (preg_match('/^(last|previous)[0-9]*$/D', $date) === 1) {
+            return true;
+        }
+
+        $dates = explode(',', $date);
+
+        if (count($dates) === 1) {
+            return self::validIsoDate($dates[0]);
+        }
+
+        if (count($dates) !== 2) {
+            return false;
+        }
+
+        return self::validReportDateRangeBoundary($dates[0], false)
+            && self::validReportDateRangeBoundary($dates[1], true);
+    }
+
+    private static function validReportDateRangeBoundary(string $date, bool $isEnd): bool
+    {
+        if (self::validIsoDate($date)) {
+            return true;
+        }
+
+        if (preg_match('/^last[ -]?(?:week|month|year)$/iD', $date) === 1) {
+            return true;
+        }
+
+        return $isEnd && preg_match('/^(today|now|yesterday)$/iD', $date) === 1;
+    }
+
+    private static function validIsoDate(string $date): bool
+    {
+        if (preg_match('/^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})$/D', $date, $parts) !== 1) {
+            return false;
+        }
+
+        return checkdate((int) $parts[2], (int) $parts[3], (int) $parts[1]);
+    }
+
+    private static function inputValue(Request $request, string $key): mixed
+    {
+        $query = $request->query->all();
+
+        if (array_key_exists($key, $query)) {
+            return $query[$key];
+        }
+
+        $post = $request->request->all();
+
+        return $post[$key] ?? null;
     }
 
     private static function supportsSiteListFilters(string $module, string $method): bool

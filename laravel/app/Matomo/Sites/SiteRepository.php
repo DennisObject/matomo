@@ -18,6 +18,8 @@ interface SiteRepository
 
     public function mainUrl(int $idSite): ?string;
 
+    public function timezone(int $idSite): ?string;
+
     /**
      * @return array<int, array<string, int|string|null>>
      */

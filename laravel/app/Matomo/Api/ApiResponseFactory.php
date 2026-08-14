@@ -84,7 +84,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
      */
     public function rows(ApiRequest $request, array $rows): Response
     {
@@ -131,6 +131,32 @@ final class ApiResponseFactory
                 $this->nestedArrayFormatError($values),
                 500,
             ),
+            default => throw new LogicException('The API response format is not supported.'),
+        };
+    }
+
+    public function report(ApiRequest $request, ApiReport $report): Response
+    {
+        $rows = ! $report->isMapped() && $report->data === []
+            ? []
+            : $report->flattenedRows();
+
+        return match ($request->format) {
+            'console' => $this->consoleRows($request, $rows),
+            'csv', 'tsv' => $this->spreadsheetRows($request, $rows),
+            'html' => $this->htmlRows($rows),
+            'json' => $this->jsonEncoded(
+                $request,
+                json_encode($report->data, JSON_THROW_ON_ERROR),
+                200,
+            ),
+            'original' => $this->response(
+                $request->serialize ? serialize($report->data) : var_export($report->data, true),
+                200,
+                'text/plain; charset=utf-8',
+            ),
+            'xml' => $this->xmlReport($report),
+            'rss' => throw new LogicException('RSS reporting has not moved to Laravel yet.'),
             default => throw new LogicException('The API response format is not supported.'),
         };
     }
@@ -210,7 +236,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
      */
     private function xmlRows(array $rows): Response
     {
@@ -259,7 +285,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<array-key, array<array-key, bool|int|string|null>|bool|int|string|null>  $values
+     * @param  array<array-key, array<array-key, bool|float|int|string|null>|bool|float|int|string|null>  $values
      */
     private function xmlArray(array $values, string $indent): string
     {
@@ -331,6 +357,92 @@ final class ApiResponseFactory
         );
     }
 
+    private function xmlReport(ApiReport $report): Response
+    {
+        if (! $report->isMapped()) {
+            if ($report->data === []) {
+                return $this->response(
+                    "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result />",
+                    200,
+                    'text/xml; charset=utf-8',
+                );
+            }
+
+            return $this->response(
+                "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>\n".
+                    $this->xmlReportMetrics($report->data, "\t").'</result>',
+                200,
+                'text/xml; charset=utf-8',
+            );
+        }
+
+        return $this->response(
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<results>\n".
+                $this->xmlReportMap($report->data, $report->dimensions, 0, "\t").'</results>',
+            200,
+            'text/xml; charset=utf-8',
+        );
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $data
+     * @param  list<'idSite'|'date'>  $dimensions
+     */
+    private function xmlReportMap(
+        array $data,
+        array $dimensions,
+        int $depth,
+        string $indent,
+    ): string {
+        $xml = '';
+        $dimension = $dimensions[$depth];
+        $hasChildMap = isset($dimensions[$depth + 1]);
+
+        foreach ($data as $key => $value) {
+            if (! is_array($value)) {
+                continue;
+            }
+
+            $attribute = $this->escape($dimension).'="'.$this->escape((string) $key).'"';
+
+            if ($value === []) {
+                $xml .= "{$indent}<result {$attribute} />\n";
+
+                continue;
+            }
+
+            $xml .= "{$indent}<result {$attribute}>\n";
+            $xml .= $hasChildMap
+                ? $this->xmlReportMap($value, $dimensions, $depth + 1, $indent."\t")
+                : $this->xmlReportMetrics($value, $indent."\t");
+            $xml .= "{$indent}</result>\n";
+        }
+
+        return $xml;
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $metrics
+     */
+    private function xmlReportMetrics(array $metrics, string $indent): string
+    {
+        $xml = '';
+
+        foreach ($metrics as $name => $value) {
+            if (! is_scalar($value) && $value !== null) {
+                continue;
+            }
+
+            $name = (string) $name;
+            $text = $this->scalarText($value, false);
+            $xml .= $text === ''
+                ? "{$indent}<{$name} />\n"
+                : "{$indent}<{$name}>{$this->escape($text)}</{$name}>\n";
+        }
+
+        return $xml;
+    }
+
     private function spreadsheet(ApiRequest $request, bool|int|string $value): Response
     {
         $value = $this->spreadsheetCell($this->scalarText($value, false), ',');
@@ -398,7 +510,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
      */
     private function spreadsheetRows(ApiRequest $request, array $rows): Response
     {
@@ -563,7 +675,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
      */
     private function htmlRows(array $rows): Response
     {
@@ -638,7 +750,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
      */
     private function originalRows(ApiRequest $request, array $rows): Response
     {
@@ -731,7 +843,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
      */
     private function consoleRows(ApiRequest $request, array $rows): Response
     {
@@ -786,7 +898,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
      */
     private function jsonRows(ApiRequest $request, array $rows): Response
     {
@@ -833,7 +945,7 @@ final class ApiResponseFactory
             "'&format=original&serialize=1'; you will get the original php data structure serialized.";
     }
 
-    private function scalarText(bool|int|string|null $value, bool $emptyFalse): string
+    private function scalarText(bool|float|int|string|null $value, bool $emptyFalse): string
     {
         if ($value === null) {
             return '';
@@ -847,7 +959,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
      * @return list<string>
      */
     private function rowColumns(array $rows): array
@@ -866,8 +978,8 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<array-key, array<array-key, string>|bool|int|string|null>  $row
-     * @return array<string, bool|int|string|null>
+     * @param  array<array-key, array<array-key, float|int|string>|bool|float|int|string|null>  $row
+     * @return array<string, bool|float|int|string|null>
      */
     private function flattenNestedRow(array $row, string $prefix = ''): array
     {

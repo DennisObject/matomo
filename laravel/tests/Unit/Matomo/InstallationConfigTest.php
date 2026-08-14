@@ -56,6 +56,29 @@ class InstallationConfigTest extends TestCase
         $this->assertSame('fr', $configuration->defaultLanguage());
         $this->assertSame('language_cookie', $configuration->languageCookieName());
         $this->assertSame(['en', 'fr'], $configuration->availableLanguages());
+        $this->assertTrue($configuration->uniqueVisitorsEnabled('day'));
+        $this->assertFalse($configuration->uniqueVisitorsEnabled('year'));
+        $this->assertTrue($configuration->reportingPeriodEnabled('range'));
+        $this->assertTrue($configuration->anonymousSegmentsEnabled());
+    }
+
+    public function test_loads_reporting_overrides(): void
+    {
+        $configuration = InstallationConfig::fromFile($this->configurationFile(
+            tablesPrefix: 'matomo_',
+            extraGeneral: <<<'INI'
+            enable_processing_unique_visitors_day = 0
+            enable_processing_unique_visitors_year = 1
+            enabled_periods_API = "day,month"
+            anonymous_user_enable_use_segments_API = 0
+            INI,
+        ));
+
+        $this->assertFalse($configuration->uniqueVisitorsEnabled('day'));
+        $this->assertTrue($configuration->uniqueVisitorsEnabled('year'));
+        $this->assertTrue($configuration->reportingPeriodEnabled('month'));
+        $this->assertFalse($configuration->reportingPeriodEnabled('week'));
+        $this->assertFalse($configuration->anonymousSegmentsEnabled());
     }
 
     public function test_rejects_unsafe_table_prefix(): void
@@ -66,8 +89,11 @@ class InstallationConfigTest extends TestCase
         InstallationConfig::fromFile($this->configurationFile(tablesPrefix: 'matomo`; DROP TABLE user;'));
     }
 
-    private function configurationFile(string $tablesPrefix, string $secureTokens = '0'): string
-    {
+    private function configurationFile(
+        string $tablesPrefix,
+        string $secureTokens = '0',
+        string $extraGeneral = '',
+    ): string {
         $path = tempnam(sys_get_temp_dir(), 'matomo-config-');
         $this->assertIsString($path);
         $this->temporaryFiles[] = $path;
@@ -96,6 +122,7 @@ class InstallationConfigTest extends TestCase
             currencies[BTC] = "Bitcoin"
             default_language = "fr"
             language_cookie_name = "language_cookie"
+            {$extraGeneral}
 
             [Plugins]
             Plugins[] = "CoreHome"
