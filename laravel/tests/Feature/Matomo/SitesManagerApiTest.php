@@ -13,6 +13,27 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_at_least_view_site_ids_pass_the_safe_login_restriction(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithAtLeastViewAccess')
+            ->with(
+                $this->callback(
+                    static fn (ApiAuthentication $authentication): bool => $authentication->token === 'token',
+                ),
+                'alice',
+            )
+            ->willReturn([1, 2]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesIdWithAtLeastViewAccess'.
+            '&format=json&token_auth=token&_restrictSitesToLogin=alice',
+        )->assertOk()
+            ->assertExactJson([1, 2]);
+    }
+
     #[DataProvider('siteRoleMethods')]
     public function test_site_role_id_methods_use_the_exact_role(
         string $method,

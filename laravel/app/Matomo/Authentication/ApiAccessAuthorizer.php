@@ -17,4 +17,12 @@ interface ApiAccessAuthorizer
         ApiAuthentication $authentication,
         SiteAccessRole $role,
     ): array;
+
+    /**
+     * @return list<int>
+     */
+    public function siteIdsWithAtLeastViewAccess(
+        ApiAuthentication $authentication,
+        ?string $restrictToLogin = null,
+    ): array;
 }
