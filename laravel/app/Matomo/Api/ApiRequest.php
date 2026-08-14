@@ -28,6 +28,9 @@ final readonly class ApiRequest
         public ?string $ipRange,
         public ?string $pluginName,
         public ?string $siteUrl,
+        public ?string $timezone,
+        public ?string $countryCode,
+        public ?bool $multipleTimezonesInCountry,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -53,6 +56,9 @@ final readonly class ApiRequest
             ipRange: null,
             pluginName: null,
             siteUrl: null,
+            timezone: null,
+            countryCode: null,
+            multipleTimezonesInCountry: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -121,6 +127,11 @@ final readonly class ApiRequest
     public function isDefaultTimezoneRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getDefaultTimezone';
+    }
+
+    public function isTimezoneNameRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getTimezoneName';
     }
 
     public function isTimezoneSupportRequest(): bool
@@ -216,6 +227,9 @@ final readonly class ApiRequest
             ipRange: self::ipRange($request, $module, $method),
             pluginName: self::pluginName($request, $module, $method),
             siteUrl: self::siteUrl($request, $module, $method),
+            timezone: self::timezone($request, $module, $method),
+            countryCode: self::timezoneCountryCode($request, $module, $method),
+            multipleTimezonesInCountry: self::multipleTimezonesInCountry($request, $module, $method),
             authentication: $authentication,
         );
     }
@@ -329,6 +343,41 @@ final readonly class ApiRequest
         }
 
         return $value;
+    }
+
+    private static function timezone(Request $request, string $module, string $method): ?string
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.getTimezoneName') {
+            return null;
+        }
+
+        $value = self::nullableStringInput($request, 'timezone');
+
+        if ($value === null) {
+            throw new MissingApiParameter('timezone');
+        }
+
+        return $value;
+    }
+
+    private static function timezoneCountryCode(Request $request, string $module, string $method): ?string
+    {
+        return $module === 'API' && $method === 'SitesManager.getTimezoneName'
+            ? self::nullableStringInput($request, 'countryCode')
+            : null;
+    }
+
+    private static function multipleTimezonesInCountry(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?bool {
+        if ($module !== 'API' || $method !== 'SitesManager.getTimezoneName') {
+            return null;
+        }
+
+        return self::booleanFromArray($request->query->all(), 'multipleTimezonesInCountry')
+            ?? self::booleanFromArray($request->request->all(), 'multipleTimezonesInCountry');
     }
 
     private static function authentication(Request $request): ApiAuthentication

@@ -13,6 +13,7 @@ use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
+use App\Matomo\Sites\TimezoneProvider;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use LogicException;
@@ -71,6 +72,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private CurrencyProvider $currencies,
         private QueryParameterExclusionPolicy $queryParameterExclusions,
         private LanguageResolver $languages,
+        private TimezoneProvider $timezones,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -83,6 +85,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isCurrencySymbolsRequest()
             || $request->isCurrencyListRequest()
             || $request->isDefaultTimezoneRequest()
+            || $request->isTimezoneNameRequest()
             || $request->isTimezoneSupportRequest()
             || $request->isWebsitesCountToDisplayRequest()
             || $request->isSiteUrlsRequest()
@@ -111,6 +114,20 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             $language = $this->languages->resolve($httpRequest, $request->authentication);
 
             return $this->responses->row($request, $this->currencies->names($language));
+        }
+
+        if ($request->isTimezoneNameRequest()) {
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+
+            return $this->responses->scalar(
+                $request,
+                $this->timezones->name(
+                    $request->timezone ?? throw new LogicException('The timezone was not parsed.'),
+                    $language,
+                    $request->countryCode,
+                    $request->multipleTimezonesInCountry,
+                ),
+            );
         }
 
         $role = $request->siteAccessRole();
