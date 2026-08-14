@@ -565,7 +565,7 @@ class VersionApiTest extends TestCase
         $authorizer->expects($this->never())->method('hasSomeViewAccess');
         $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
 
-        $this->get('/index.php?module=API&method=SitesManager.getMessagesToWarnOnSiteRemoval&format=json')
+        $this->get('/index.php?module=API&method=SitesManager.getPatternMatchSites&format=json')
             ->assertStatus(501)
             ->assertExactJson([
                 'result' => 'error',

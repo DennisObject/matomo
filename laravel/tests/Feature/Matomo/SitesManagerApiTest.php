@@ -10,17 +10,91 @@ use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\CurrencyProvider;
+use App\Matomo\Sites\Events\SiteRemovalWarningsCollecting;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_site_removal_warnings_collect_plugin_messages_for_superusers(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $events = $this->app->make(Dispatcher::class);
+        $events->listen(
+            SiteRemovalWarningsCollecting::class,
+            function (SiteRemovalWarningsCollecting $event): void {
+                $this->assertSame(7, $event->idSite);
+                $event->messages[] = '<strong>Remove related data first.</strong>';
+                $event->messages[] = 'This cannot be undone.';
+            },
+        );
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getMessagesToWarnOnSiteRemoval'.
+            '&idSite=7&format=json&token_auth=root-token',
+        )->assertOk()
+            ->assertExactJson([
+                '<strong>Remove related data first.</strong>',
+                'This cannot be undone.',
+            ]);
+    }
+
+    public function test_site_removal_warnings_are_empty_without_plugin_listeners(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getMessagesToWarnOnSiteRemoval'.
+            '&idSite=7&format=json&token_auth=root-token',
+        )->assertOk()
+            ->assertExactJson([]);
+    }
+
+    public function test_site_removal_warnings_require_superuser_before_dispatching_event(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $events = $this->createMock(Dispatcher::class);
+        $events->expects($this->never())->method('dispatch');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(Dispatcher::class, $events);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getMessagesToWarnOnSiteRemoval'.
+            '&idSite=7&format=json&token_auth=admin-token',
+        )->assertUnauthorized()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "You can't access this resource as it requires a 'superuser' access.",
+            ]);
+    }
+
+    public function test_site_removal_warnings_require_a_site_id_before_authorization(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasSuperUserAccess');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getMessagesToWarnOnSiteRemoval&format=json',
+        )->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "Please specify a value for 'idSite'.",
+            ]);
+    }
+
     public function test_at_least_view_sites_apply_restricted_login_and_limit(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

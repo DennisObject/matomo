@@ -11,11 +11,13 @@ use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\CurrencyProvider;
+use App\Matomo\Sites\Events\SiteRemovalWarningsCollecting;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use LogicException;
@@ -67,6 +69,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
     public function __construct(
         private ApiAccessAuthorizer $authorizer,
+        private Dispatcher $events,
         private ApiResponseFactory $responses,
         private SiteRepository $sites,
         private OptionRepository $options,
@@ -90,6 +93,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isMinimumAccessSitesRequest()
             || $request->isViewSitesRequest()
             || $request->isAtLeastViewSitesRequest()
+            || $request->isSiteRemovalWarningsRequest()
             || $request->isDefaultCurrencyRequest()
             || $request->isCurrencySymbolsRequest()
             || $request->isCurrencyListRequest()
@@ -327,6 +331,23 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             );
 
             return $this->responses->rows($request, $sites);
+        }
+
+        if ($request->isSiteRemovalWarningsRequest()) {
+            if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires a 'superuser' access.",
+                    401,
+                );
+            }
+
+            $event = new SiteRemovalWarningsCollecting(
+                $request->idSite ?? throw new LogicException('The site ID was not parsed.'),
+            );
+            $this->events->dispatch($event);
+
+            return $this->responses->values($request, $event->messages);
         }
 
         $role = $request->siteAccessRole();

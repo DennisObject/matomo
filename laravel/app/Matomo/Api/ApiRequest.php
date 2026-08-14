@@ -155,6 +155,12 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getSitesWithAtLeastViewAccess';
     }
 
+    public function isSiteRemovalWarningsRequest(): bool
+    {
+        return $this->module === 'API'
+            && $this->method === 'SitesManager.getMessagesToWarnOnSiteRemoval';
+    }
+
     public function isDefaultCurrencyRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getDefaultCurrency';
@@ -302,6 +308,7 @@ final readonly class ApiRequest
         $requiredMethods = [
             'SitesManager.getExcludedQueryParameters',
             'SitesManager.getExcludedReferrers',
+            'SitesManager.getMessagesToWarnOnSiteRemoval',
             'SitesManager.getSiteFromId',
             'SitesManager.getSiteUrlsFromId',
         ];
