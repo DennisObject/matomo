@@ -7,6 +7,10 @@ namespace App\Matomo\Reporting;
 use App\Matomo\Api\ApiMetricReport;
 use App\Matomo\Api\ApiTableReport;
 use App\Matomo\Geolocation\CountryMetadataProvider;
+use App\Matomo\Localization\MatomoTranslator;
+use App\Matomo\Options\OptionRepository;
+use Carbon\CarbonImmutable;
+use Throwable;
 
 final readonly class UserCountryReportBuilder
 {
@@ -16,8 +20,11 @@ final readonly class UserCountryReportBuilder
 
     public function __construct(
         private BlobArchiveRepository $blobs,
+        private BlobArchiveMetadataRepository $blobMetadata,
         private NumericArchiveRepository $numbers,
         private CountryMetadataProvider $countries,
+        private OptionRepository $options,
+        private MatomoTranslator $translator,
     ) {}
 
     /**
@@ -88,6 +95,81 @@ final readonly class UserCountryReportBuilder
                     $language,
                     $showMetadata,
                 );
+            }
+        }
+
+        return new ApiTableReport($data, $dimensions);
+    }
+
+    /**
+     * @param  list<int>  $siteIds
+     * @param  list<ReportingPeriod>  $periods
+     */
+    public function locations(
+        bool $cities,
+        array $siteIds,
+        array $periods,
+        string $segmentHash,
+        string $language,
+        bool $showMetadata,
+        bool $forceSiteIndex,
+        bool $forceDateIndex,
+    ): ApiTableReport {
+        $archives = $this->blobMetadata->archives(
+            $siteIds,
+            $periods,
+            $segmentHash,
+            $cities ? 'UserCountry_city' : 'UserCountry_region',
+        );
+        $dimensions = [
+            ...($forceSiteIndex ? ['idSite'] : []),
+            ...($forceDateIndex ? ['date'] : []),
+        ];
+
+        if (! $forceSiteIndex) {
+            $idSite = $siteIds[0] ?? 0;
+
+            if (! $forceDateIndex) {
+                $period = $periods[0] ?? null;
+                $archive = $period === null ? null : ($archives[$idSite][$period->rangeKey()] ?? null);
+
+                return new ApiTableReport(
+                    $period === null || $archive === null
+                        ? []
+                        : $this->locationRows($archive, $period, $cities, $language, $showMetadata),
+                    [],
+                );
+            }
+
+            return new ApiTableReport(
+                $this->locationDateRows(
+                    $archives[$idSite] ?? [],
+                    $periods,
+                    $cities,
+                    $language,
+                    $showMetadata,
+                ),
+                $dimensions,
+            );
+        }
+
+        $data = [];
+
+        foreach ($siteIds as $idSite) {
+            if ($forceDateIndex) {
+                $data[$idSite] = $this->locationDateRows(
+                    $archives[$idSite] ?? [],
+                    $periods,
+                    $cities,
+                    $language,
+                    $showMetadata,
+                );
+            } else {
+                $period = $periods[0] ?? null;
+                $archive = $period === null ? null : ($archives[$idSite][$period->rangeKey()] ?? null);
+                $data[$idSite] = $period === null || $archive === null
+                    ? []
+                    : $this->locationRows($archive, $period, $cities, $language, $showMetadata);
             }
         }
 
@@ -192,6 +274,30 @@ final readonly class UserCountryReportBuilder
     }
 
     /**
+     * @param  array<string, BlobArchive>  $archives
+     * @param  list<ReportingPeriod>  $periods
+     * @return array<string, list<array<string, float|int|string|null>>>
+     */
+    private function locationDateRows(
+        array $archives,
+        array $periods,
+        bool $cities,
+        string $language,
+        bool $showMetadata,
+    ): array {
+        $rows = [];
+
+        foreach ($periods as $period) {
+            $archive = $archives[$period->rangeKey()] ?? null;
+            $rows[$period->resultKey] = $archive === null
+                ? []
+                : $this->locationRows($archive, $period, $cities, $language, $showMetadata);
+        }
+
+        return $rows;
+    }
+
+    /**
      * @param  array<string, array<string, int|float>>  $archive
      * @param  list<ReportingPeriod>  $periods
      * @return array<string, int|float>
@@ -256,6 +362,197 @@ final readonly class UserCountryReportBuilder
         }
 
         return $result;
+    }
+
+    /** @return list<array<string, float|int|string|null>> */
+    private function locationRows(
+        BlobArchive $archive,
+        ReportingPeriod $period,
+        bool $cities,
+        string $language,
+        bool $showMetadata,
+    ): array {
+        $rows = $this->groupLocations(
+            $archive->rows,
+            $cities,
+            $this->shouldConvertRegions($period, $archive->archivedAt),
+        );
+        $totals = $this->totals($rows);
+        $result = [];
+        $unknown = $this->translator->translate('General_Unknown', $language);
+
+        foreach ($rows as $archiveRow) {
+            $row = $archiveRow['columns'];
+            $label = is_string($row['label'] ?? null) ? $row['label'] : '';
+
+            if ($label === '-1') {
+                $row['label'] = $this->translator->translate('General_Others', $language);
+                $result[] = $row;
+
+                continue;
+            }
+
+            if ($showMetadata) {
+                $row = [...$row, ...$archiveRow['metadata']];
+            }
+
+            foreach ($totals as $metric => $total) {
+                $value = $row[$metric] ?? null;
+
+                if (is_float($value) || is_int($value)) {
+                    $row[$metric.'_percent_of_total'] = $this->percent($value, $total);
+                }
+            }
+
+            $parts = explode('|', $label);
+            $city = $cities ? $parts[0] : null;
+            $region = $parts[$cities ? 1 : 0] ?? '';
+            $country = strtolower($parts[$cities ? 2 : 1] ?? '');
+            $country = $country === '' ? 'xx' : $country;
+            $region = $region === '' ? 'xx' : $region;
+            $countryName = $this->countries->countryName($country, $language);
+            $regionName = $this->countries->regionName($country, $region, $language);
+
+            if ($showMetadata) {
+                $row['region'] = $region;
+                $row['country'] = $country;
+                $row['country_name'] = $countryName;
+                $row['region_name'] = $regionName;
+                $row['logo'] = $this->countries->flag($country);
+            }
+
+            if (! $cities) {
+                $row['label'] = $country === 'xx' ? $unknown : $regionName.', '.$countryName;
+
+                if ($showMetadata && $region !== 'xx' && $country !== 'xx') {
+                    $row['segment'] = 'regionCode=='.urlencode($region).
+                        ';countryCode=='.urlencode($country);
+                }
+
+                $result[] = $row;
+
+                continue;
+            }
+
+            $cityName = in_array($city, [null, '', 'xx'], true) ? $unknown : $city;
+
+            if ($showMetadata) {
+                $row['city_name'] = $cityName;
+
+                if ($cityName === $unknown) {
+                    $row['city'] = 'xx';
+                }
+
+                foreach (['lat' => 3, 'long' => 4] as $metadata => $index) {
+                    if (isset($parts[$index]) && $parts[$index] !== '') {
+                        $row[$metadata] = $parts[$index];
+                    }
+                }
+
+                if ($cityName !== $unknown && $region !== 'xx' && $country !== 'xx') {
+                    $row['segment'] = 'city=='.urlencode($cityName).
+                        ';regionCode=='.urlencode($region).
+                        ';countryCode=='.urlencode($country);
+                }
+            }
+
+            $row['label'] = $cityName;
+
+            if ($country !== 'xx') {
+                if ($region !== 'xx') {
+                    $row['label'] .= ', '.$regionName;
+                }
+
+                $row['label'] .= ', '.$countryName;
+            }
+
+            $result[] = $row;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  list<array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>}>  $rows
+     * @return list<array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>}>
+     */
+    private function groupLocations(array $rows, bool $cities, bool $convertRegions): array
+    {
+        $grouped = [];
+
+        foreach ($rows as $row) {
+            $rawLabel = $row['columns']['label'] ?? '';
+            $label = is_string($rawLabel) ? $rawLabel : (string) $rawLabel;
+
+            if ($label !== '-1') {
+                $parts = explode('|', $label);
+                $regionIndex = $cities ? 1 : 0;
+                $countryIndex = $cities ? 2 : 1;
+                $region = $parts[$regionIndex] ?? '';
+                $country = $parts[$countryIndex] ?? '';
+
+                if ($convertRegions) {
+                    $converted = $this->countries->convertLegacyRegion($country, $region);
+                    $parts[$regionIndex] = $converted['region'];
+                    $parts[$countryIndex] = $converted['country'];
+                    $label = implode('|', $parts);
+                } elseif ($region === '1' && strtolower($country) === 'ti') {
+                    $parts[$regionIndex] = '14';
+                    $parts[$countryIndex] = 'cn';
+                    $label = implode('|', $parts);
+                }
+            }
+
+            if (! isset($grouped[$label])) {
+                $grouped[$label] = ['columns' => ['label' => $label], 'metadata' => $row['metadata']];
+            }
+
+            foreach ($row['columns'] as $metric => $value) {
+                if ($metric === 'label' || (! is_float($value) && ! is_int($value))) {
+                    continue;
+                }
+
+                if ($metric === 'max_actions') {
+                    $grouped[$label]['columns'][$metric] = max(
+                        (float) ($grouped[$label]['columns'][$metric] ?? 0),
+                        $value,
+                    );
+                } else {
+                    $grouped[$label]['columns'][$metric] =
+                        (float) ($grouped[$label]['columns'][$metric] ?? 0) + $value;
+                }
+            }
+        }
+
+        return array_values($grouped);
+    }
+
+    private function shouldConvertRegions(ReportingPeriod $period, ?string $archivedAt): bool
+    {
+        $switch = $this->options->value('usercountry.switchtoisoregions');
+
+        if (! is_numeric($switch) || (int) $switch < 1) {
+            return false;
+        }
+
+        try {
+            $switchDate = CarbonImmutable::createFromTimestampUTC((int) $switch);
+            $periodStart = CarbonImmutable::parse($period->startDate, 'UTC');
+
+            $converted = $this->options->value('regioncodes_converted');
+
+            if (! in_array($converted, [null, '', '0'], true) && $archivedAt !== null) {
+                $archiveDate = CarbonImmutable::parse($archivedAt, 'UTC');
+
+                if ($archiveDate->isAfter($switchDate)) {
+                    return false;
+                }
+            }
+
+            return ! $switchDate->isBefore($periodStart);
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     /**

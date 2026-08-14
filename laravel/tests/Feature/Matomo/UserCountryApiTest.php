@@ -6,6 +6,9 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Geolocation\CountryMetadataProvider;
+use App\Matomo\Options\OptionRepository;
+use App\Matomo\Reporting\BlobArchive;
+use App\Matomo\Reporting\BlobArchiveMetadataRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Sites\SiteRepository;
@@ -125,6 +128,115 @@ class UserCountryApiTest extends TestCase
             ->assertContent('3');
     }
 
+    public function test_returns_region_and_city_metadata(): void
+    {
+        $this->bindViewAccess();
+        $archives = $this->createMock(BlobArchiveMetadataRepository::class);
+        $archives->expects($this->exactly(2))->method('archives')->willReturnCallback(
+            fn (array $siteIds, array $periods, string $segmentHash, string $record): array => [
+                7 => ['2026-08-14,2026-08-14' => new BlobArchive(
+                    $record === 'UserCountry_city'
+                        ? [
+                            $this->row('Besançon|BFC|fr|47.25|6.02', 3),
+                            $this->row('xx|xx|xx', 1),
+                        ]
+                        : [
+                            $this->row('BFC|fr', 3),
+                            $this->row('xx|xx', 1),
+                        ],
+                    '2026-08-15 00:00:00',
+                )],
+            ],
+        );
+        $this->app->instance(BlobArchiveMetadataRepository::class, $archives);
+        $this->app->instance(CountryMetadataProvider::class, $this->countries());
+
+        $this->get($this->url('getRegion'))->assertOk()->assertExactJson([
+            [
+                'label' => 'Bourgogne-Franche-Comté, France',
+                'nb_visits' => 3.0,
+                'nb_actions' => 6.0,
+                'nb_visits_percent_of_total' => '75%',
+                'nb_actions_percent_of_total' => '75%',
+                'region' => 'BFC',
+                'country' => 'fr',
+                'country_name' => 'France',
+                'region_name' => 'Bourgogne-Franche-Comté',
+                'logo' => 'flags/fr.png',
+                'segment' => 'regionCode==BFC;countryCode==fr',
+            ],
+            [
+                'label' => 'Unknown',
+                'nb_visits' => 1.0,
+                'nb_actions' => 2.0,
+                'nb_visits_percent_of_total' => '25%',
+                'nb_actions_percent_of_total' => '25%',
+                'region' => 'xx',
+                'country' => 'xx',
+                'country_name' => 'Unknown',
+                'region_name' => 'Unknown',
+                'logo' => 'flags/xx.png',
+            ],
+        ]);
+        $this->get($this->url('getCity'))->assertOk()->assertExactJson([
+            [
+                'label' => 'Besançon, Bourgogne-Franche-Comté, France',
+                'nb_visits' => 3.0,
+                'nb_actions' => 6.0,
+                'nb_visits_percent_of_total' => '75%',
+                'nb_actions_percent_of_total' => '75%',
+                'region' => 'BFC',
+                'country' => 'fr',
+                'country_name' => 'France',
+                'region_name' => 'Bourgogne-Franche-Comté',
+                'logo' => 'flags/fr.png',
+                'city_name' => 'Besançon',
+                'lat' => '47.25',
+                'long' => '6.02',
+                'segment' => 'city==Besan%C3%A7on;regionCode==BFC;countryCode==fr',
+            ],
+            [
+                'label' => 'Unknown',
+                'nb_visits' => 1.0,
+                'nb_actions' => 2.0,
+                'nb_visits_percent_of_total' => '25%',
+                'nb_actions_percent_of_total' => '25%',
+                'region' => 'xx',
+                'country' => 'xx',
+                'country_name' => 'Unknown',
+                'region_name' => 'Unknown',
+                'logo' => 'flags/xx.png',
+                'city_name' => 'Unknown',
+                'city' => 'xx',
+            ],
+        ]);
+    }
+
+    public function test_converts_legacy_region_codes_only_for_archives_before_the_iso_switch(): void
+    {
+        $this->bindViewAccess();
+        $archives = $this->createStub(BlobArchiveMetadataRepository::class);
+        $archives->method('archives')->willReturn([
+            7 => ['2026-08-14,2026-08-14' => new BlobArchive(
+                [$this->row('01|fr', 1)],
+                '2026-08-14 00:00:00',
+            )],
+        ]);
+        $options = $this->createStub(OptionRepository::class);
+        $options->method('value')->willReturnCallback(static fn (string $name): ?string => match ($name) {
+            'usercountry.switchtoisoregions' => (string) strtotime('2026-08-15 00:00:00 UTC'),
+            default => null,
+        });
+        $this->app->instance(BlobArchiveMetadataRepository::class, $archives);
+        $this->app->instance(OptionRepository::class, $options);
+        $this->app->instance(CountryMetadataProvider::class, $this->countries());
+
+        $this->get($this->url('getRegion'))
+            ->assertOk()
+            ->assertJsonPath('0.region', 'BFC')
+            ->assertJsonPath('0.country', 'fr');
+    }
+
     public function test_rejects_country_reports_without_view_access(): void
     {
         $authorizer = $this->createStub(ApiAccessAuthorizer::class);
@@ -186,6 +298,22 @@ class UserCountryApiTest extends TestCase
             public function flag(string $countryCode): string
             {
                 return "flags/{$countryCode}.png";
+            }
+
+            public function regionName(string $countryCode, string $regionCode, string $language): string
+            {
+                if ($countryCode === 'fr' && $regionCode === 'BFC') {
+                    return 'Bourgogne-Franche-Comté';
+                }
+
+                return 'Unknown';
+            }
+
+            public function convertLegacyRegion(string $countryCode, string $regionCode): array
+            {
+                return strtolower($countryCode) === 'fr' && $regionCode === '01'
+                    ? ['country' => 'fr', 'region' => 'BFC']
+                    : ['country' => strtolower($countryCode), 'region' => $regionCode];
             }
         };
     }

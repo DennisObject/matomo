@@ -78,6 +78,8 @@ final readonly class ApiRequest
     private const array USER_COUNTRY_METHODS = [
         'UserCountry.getCountry',
         'UserCountry.getContinent',
+        'UserCountry.getRegion',
+        'UserCountry.getCity',
         'UserCountry.getCountryCodeMapping',
         'UserCountry.getNumberOfDistinctCountries',
     ];
@@ -874,6 +876,8 @@ final readonly class ApiRequest
                 && ! in_array($method, [
                     'UserCountry.getCountry',
                     'UserCountry.getContinent',
+                    'UserCountry.getRegion',
+                    'UserCountry.getCity',
                     'UserCountry.getNumberOfDistinctCountries',
                 ], true))) {
             return null;

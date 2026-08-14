@@ -14,6 +14,7 @@ use App\Matomo\Login\LoginAttemptStatus;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
+use App\Matomo\Reporting\BlobArchiveMetadataRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Reporting\ReportingSettings;
@@ -100,6 +101,16 @@ abstract class TestCase extends BaseTestCase
             public function flag(string $countryCode): string
             {
                 return 'plugins/Morpheus/icons/dist/flags/xx.png';
+            }
+
+            public function regionName(string $countryCode, string $regionCode, string $language): string
+            {
+                return $regionCode;
+            }
+
+            public function convertLegacyRegion(string $countryCode, string $regionCode): array
+            {
+                return ['country' => $countryCode, 'region' => $regionCode];
             }
         });
         $this->app->instance(CurrencyProvider::class, new class implements CurrencyProvider
@@ -312,6 +323,17 @@ abstract class TestCase extends BaseTestCase
         $this->app->instance(BlobArchiveRepository::class, new class implements BlobArchiveRepository
         {
             public function rows(
+                array $siteIds,
+                array $periods,
+                string $segmentHash,
+                string $recordName,
+            ): array {
+                return [];
+            }
+        });
+        $this->app->instance(BlobArchiveMetadataRepository::class, new class implements BlobArchiveMetadataRepository
+        {
+            public function archives(
                 array $siteIds,
                 array $periods,
                 string $segmentHash,

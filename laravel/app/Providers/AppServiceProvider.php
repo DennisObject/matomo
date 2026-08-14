@@ -53,6 +53,7 @@ use App\Matomo\Plugins\PluginState;
 use App\Matomo\Plugins\TrackerFileAvailability;
 use App\Matomo\ProfessionalServices\DatabasePromoWidgetDismissalRepository;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
+use App\Matomo\Reporting\BlobArchiveMetadataRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\CarbonReportingPeriodFactory;
 use App\Matomo\Reporting\ConfiguredReportingSettings;
@@ -209,6 +210,13 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            BlobArchiveMetadataRepository::class,
+            fn (Application $application): BlobArchiveMetadataRepository => new DatabaseBlobArchiveRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
             ScreenResolutionPolicy::class,
             fn (Application $application): ScreenResolutionPolicy => new ConfiguredScreenResolutionPolicy(
                 settings: $application->make(PolicySettingRepository::class),
@@ -256,9 +264,16 @@ class AppServiceProvider extends ServiceProvider
             CountryMetadataProvider::class,
             function (Application $application): CountryMetadataProvider {
                 $countries = require base_path('../core/Intl/Data/Resources/countries.php');
+                $isoRegions = require base_path('../plugins/GeoIp2/data/isoRegionNames.php');
+                $legacyRegionMapping = require base_path('../plugins/GeoIp2/data/regionMapping.php');
+                $GEOIP_REGION_NAME = [];
+                require base_path('../libs/MaxMindGeoIP/geoipregionvars.php');
 
                 return new LocalizedCountryMetadataProvider(
                     continentsByCountry: is_array($countries) ? $countries : [],
+                    isoRegions: is_array($isoRegions) ? $isoRegions : [],
+                    legacyRegions: $GEOIP_REGION_NAME,
+                    legacyRegionMapping: is_array($legacyRegionMapping) ? $legacyRegionMapping : [],
                     flagDirectory: base_path('../plugins/Morpheus/icons/dist/flags'),
                     translator: $application->make(MatomoTranslator::class),
                 );

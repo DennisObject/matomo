@@ -22,6 +22,9 @@ class LocalizedCountryMetadataProviderTest extends TestCase
         );
         $provider = new LocalizedCountryMetadataProvider(
             ['cn' => 'asi'],
+            ['CN' => ['14' => ['name' => 'Tibet Autonomous Region']]],
+            ['CN' => ['14' => 'Tibet']],
+            ['CN' => ['01' => 'AH']],
             '/directory/that/does/not/exist',
             $translator,
         );
@@ -32,5 +35,11 @@ class LocalizedCountryMetadataProviderTest extends TestCase
         $this->assertSame('Asia', $provider->continentName('asi', 'en'));
         $this->assertSame('Unknown', $provider->countryName('xx', 'en'));
         $this->assertSame('plugins/Morpheus/icons/dist/flags/xx.png', $provider->flag('cn'));
+        $this->assertSame('plugins/Morpheus/icons/dist/flags/xx.png', $provider->flag('../secret'));
+        $this->assertSame('Tibet Autonomous Region', $provider->regionName('cn', '14', 'en'));
+        $this->assertSame(
+            ['country' => 'cn', 'region' => 'AH'],
+            $provider->convertLegacyRegion('cn', '01'),
+        );
     }
 }

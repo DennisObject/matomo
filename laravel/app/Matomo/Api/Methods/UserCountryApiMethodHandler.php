@@ -130,16 +130,27 @@ final readonly class UserCountryApiMethodHandler implements ApiMethodHandler
                 : $this->responses->metricReport($request, $report);
         }
 
-        $report = $this->reports->table(
-            continents: $request->method === 'UserCountry.getContinent',
-            siteIds: $siteIds,
-            periods: $periods,
-            segmentHash: $segmentHash,
-            language: $language,
-            showMetadata: $request->showMetadata,
-            forceSiteIndex: $forceSiteIndex,
-            forceDateIndex: $forceDateIndex,
-        );
+        $report = in_array($request->method, ['UserCountry.getRegion', 'UserCountry.getCity'], true)
+            ? $this->reports->locations(
+                cities: $request->method === 'UserCountry.getCity',
+                siteIds: $siteIds,
+                periods: $periods,
+                segmentHash: $segmentHash,
+                language: $language,
+                showMetadata: $request->showMetadata,
+                forceSiteIndex: $forceSiteIndex,
+                forceDateIndex: $forceDateIndex,
+            )
+            : $this->reports->table(
+                continents: $request->method === 'UserCountry.getContinent',
+                siteIds: $siteIds,
+                periods: $periods,
+                segmentHash: $segmentHash,
+                language: $language,
+                showMetadata: $request->showMetadata,
+                forceSiteIndex: $forceSiteIndex,
+                forceDateIndex: $forceDateIndex,
+            );
 
         return $request->format === 'rss'
             ? $this->rssTable($request, $query->period, $siteIds, $periods, $timezone, $report)

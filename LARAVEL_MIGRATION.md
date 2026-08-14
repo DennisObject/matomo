@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 84 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 86 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Not ported |
@@ -70,7 +70,7 @@ Handled reporting API method names:
 - `AIAgents`: `get` in every supported response format, including suffixed column filtering.
 - `Tour`: all 3 API methods, including localized challenge state, extension events, and legacy per-user progress storage.
 - `TwoFactorAuth`: `resetTwoFactorAuth`, including password confirmation and transactional recovery-code removal.
-- `UserCountry`: country and continent archive reports, localized country-code mapping, and the distinct-country metric.
+- `UserCountry`: country, continent, region, and city archive reports, localized country-code mapping, and the distinct-country metric.
 
 Reporting API module matrix:
 
@@ -119,7 +119,7 @@ Reporting API module matrix:
 | `Tour` | 3 | 3 | 0 |
 | `Transitions` | 5 | 0 | 5 |
 | `TwoFactorAuth` | 1 | 1 | 0 |
-| `UserCountry` | 8 | 4 | 4 |
+| `UserCountry` | 8 | 6 | 2 |
 | `UserId` | 1 | 1 | 0 |
 | `UserLanguage` | 2 | 2 | 0 |
 | `UsersManager` | 33 | 0 | 33 |
@@ -127,7 +127,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **84** | **305** |
+| **Total** | **389** | **86** | **303** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 

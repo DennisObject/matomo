@@ -16,4 +16,9 @@ interface CountryMetadataProvider
     public function continentName(string $continentCode, string $language): string;
 
     public function flag(string $countryCode): string;
+
+    public function regionName(string $countryCode, string $regionCode, string $language): string;
+
+    /** @return array{country: string, region: string} */
+    public function convertLegacyRegion(string $countryCode, string $regionCode): array;
 }
