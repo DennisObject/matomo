@@ -21,6 +21,8 @@ interface SiteRepository
      */
     public function urls(int $idSite): array;
 
+    public function excludedReferrers(int $idSite): ?string;
+
     /**
      * @return list<string>
      */

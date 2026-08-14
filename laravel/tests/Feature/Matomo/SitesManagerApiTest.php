@@ -15,6 +15,52 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_excluded_referrers_merge_global_and_site_values(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('hasViewAccessToSite')
+            ->with($this->isInstanceOf(ApiAuthentication::class), 7)
+            ->willReturn(true);
+        $options = $this->createMock(OptionRepository::class);
+        $options->expects($this->once())
+            ->method('value')
+            ->with('SitesManager_ExcludedReferrersGlobal')
+            ->willReturn('global.test,shared.test');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('excludedReferrers')
+            ->with(7)
+            ->willReturn('site.test,shared.test');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(OptionRepository::class, $options);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getExcludedReferrers'.
+            '&idSite=7&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson(['global.test', 'shared.test', 'site.test']);
+    }
+
+    public function test_excluded_referrers_do_not_read_settings_without_view_access(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasViewAccessToSite')->willReturn(false);
+        $options = $this->createMock(OptionRepository::class);
+        $options->expects($this->never())->method('value');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('excludedReferrers');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(OptionRepository::class, $options);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getExcludedReferrers'.
+            '&idSite=7&format=json&token_auth=other-token',
+        )->assertUnauthorized();
+    }
+
     public function test_site_id_from_url_normalizes_urls_and_limits_access(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

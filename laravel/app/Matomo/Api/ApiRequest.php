@@ -129,6 +129,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getSiteUrlsFromId';
     }
 
+    public function isExcludedReferrersRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getExcludedReferrers';
+    }
+
     public function isUniqueSiteTimezonesRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getUniqueSiteTimezones';
@@ -189,7 +194,10 @@ final readonly class ApiRequest
 
     private static function siteId(Request $request, string $module, string $method): ?int
     {
-        if ($module !== 'API' || $method !== 'SitesManager.getSiteUrlsFromId') {
+        if ($module !== 'API' || ! in_array($method, [
+            'SitesManager.getExcludedReferrers',
+            'SitesManager.getSiteUrlsFromId',
+        ], true)) {
             return null;
         }
 
