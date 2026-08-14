@@ -183,6 +183,22 @@ class DatabaseApiAccessAuthorizerTest extends TestCase
                 SiteAccessRole::View,
             ),
         );
+        $this->assertTrue($this->authorizer()->hasViewAccessToSite(
+            $this->authentication('admin-token', true),
+            1,
+        ));
+        $this->assertTrue($this->authorizer()->hasViewAccessToSite(
+            $this->authentication('admin-token', true),
+            2,
+        ));
+        $this->assertTrue($this->authorizer()->hasViewAccessToSite(
+            $this->authentication('admin-token', true),
+            3,
+        ));
+        $this->assertFalse($this->authorizer()->hasViewAccessToSite(
+            $this->authentication('admin-token', true),
+            4,
+        ));
     }
 
     public function test_access_event_can_apply_migrated_plugin_permissions(): void

@@ -15,6 +15,57 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_site_urls_require_site_view_access_and_keep_main_url_first(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('hasViewAccessToSite')
+            ->with($this->isInstanceOf(ApiAuthentication::class), 7)
+            ->willReturn(true);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('urls')
+            ->with(7)
+            ->willReturn(['https://example.test', 'https://www.example.test']);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSiteUrlsFromId'.
+            '&idSite=7&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson(['https://example.test', 'https://www.example.test']);
+    }
+
+    public function test_site_urls_reject_missing_site_id_before_authentication(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasViewAccessToSite');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get('/index.php?module=API&method=SitesManager.getSiteUrlsFromId&format=json')
+            ->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "Please specify a value for 'idSite'.",
+            ]);
+    }
+
+    public function test_site_urls_reject_missing_view_access_before_the_site_store(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasViewAccessToSite')->willReturn(false);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('urls');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSiteUrlsFromId'.
+            '&idSite=7&format=json&token_auth=other-token',
+        )->assertUnauthorized();
+    }
+
     public function test_runtime_site_settings_keep_view_access_and_scalar_types(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

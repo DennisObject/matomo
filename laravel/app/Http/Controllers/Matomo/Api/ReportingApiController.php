@@ -9,6 +9,7 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Api\Exceptions\ConflictingAuthenticationParameters;
 use App\Matomo\Api\Exceptions\InvalidApiParameter;
+use App\Matomo\Api\Exceptions\MissingApiParameter;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use Illuminate\Http\Request;
@@ -26,7 +27,7 @@ class ReportingApiController extends Controller
     {
         try {
             $apiRequest = ApiRequest::fromRequest($request);
-        } catch (ConflictingAuthenticationParameters|InvalidApiParameter $invalidApiRequest) {
+        } catch (ConflictingAuthenticationParameters|InvalidApiParameter|MissingApiParameter $invalidApiRequest) {
             return $this->responses->error(
                 ApiRequest::withoutAuthentication($request),
                 $invalidApiRequest->getMessage(),

@@ -38,4 +38,23 @@ final readonly class DatabaseSiteRepository implements SiteRepository
                 ->all(),
         );
     }
+
+    public function urls(int $idSite): array
+    {
+        $mainUrl = $this->connection
+            ->table('site')
+            ->where('idsite', $idSite)
+            ->value('main_url');
+        $aliases = $this->connection
+            ->table('site_url')
+            ->where('idsite', $idSite)
+            ->pluck('url')
+            ->filter(static fn (mixed $url): bool => is_string($url))
+            ->all();
+
+        return array_values([
+            ...(is_string($mainUrl) ? [$mainUrl] : []),
+            ...$aliases,
+        ]);
+    }
 }
