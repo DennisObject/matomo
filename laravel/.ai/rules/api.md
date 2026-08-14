@@ -10,3 +10,6 @@ Keep module, method, query, response, and status contracts unchanged. Do not cut
 
 ## Keep every public response format exact
 Scalar, row, and list responses must match Matomo for JSON, XML, CSV, TSV, HTML, original, console, and RSS output. Preserve content types, empty results, download headers, Unicode conversion, serialization, and JSONP validation.
+
+## Keep migrated methods isolated
+Put each plugin's migrated API methods in its own `ApiMethodHandler`. Register the handler in `ApiMethodDispatcher`; keep parsing, IP checks, and unsupported-method replies in the reporting API controller.
