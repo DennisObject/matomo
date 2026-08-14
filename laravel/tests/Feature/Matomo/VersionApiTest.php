@@ -216,6 +216,51 @@ class VersionApiTest extends TestCase
         ];
     }
 
+    #[DataProvider('legacyRowListFormats')]
+    public function test_legacy_row_list_formats_keep_exact_output(
+        string $parameters,
+        string $contentType,
+        string $content,
+    ): void {
+        $request = ApiRequest::fromRequest(Request::create('/index.php?'.$parameters));
+        $rows = [['idsite' => '1'], ['idsite' => '3']];
+
+        $response = $this->app->make(ApiResponseFactory::class)->rows($request, $rows);
+
+        $this->assertSame($contentType, $response->headers->get('Content-Type'));
+        $this->assertSame($content, $response->getContent());
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string}>
+     */
+    public static function legacyRowListFormats(): iterable
+    {
+        yield 'JSON' => [
+            'format=json',
+            'application/json; charset=utf-8',
+            '[{"idsite":"1"},{"idsite":"3"}]',
+        ];
+        yield 'XML' => [
+            'format=xml',
+            'text/xml; charset=utf-8',
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>\n".
+                "\t<row>\n\t\t<idsite>1</idsite>\n\t</row>\n".
+                "\t<row>\n\t\t<idsite>3</idsite>\n\t</row>\n</result>",
+        ];
+        yield 'CSV' => [
+            'format=csv&convertToUnicode=0',
+            'application/vnd.ms-excel',
+            "idsite\n1\n3",
+        ];
+        yield 'console' => [
+            'format=console',
+            'text/plain; charset=utf-8',
+            "- 1 ['idsite' => '1'] [] [idsubtable = ]<br />\n".
+                "- 2 ['idsite' => '3'] [] [idsubtable = ]<br />\n",
+        ];
+    }
+
     #[DataProvider('legacyPhpVersionFormats')]
     public function test_php_version_requires_superuser_and_keeps_exact_output(
         string $parameters,
