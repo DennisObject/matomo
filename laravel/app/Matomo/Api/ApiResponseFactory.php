@@ -161,6 +161,45 @@ final class ApiResponseFactory
         };
     }
 
+    public function metricReport(ApiRequest $request, ApiMetricReport $report): Response
+    {
+        if (! $report->isMapped()) {
+            $value = is_array($report->data) ? null : $report->data;
+
+            return match ($request->format) {
+                'console' => $this->console($request, $value),
+                'csv', 'tsv' => $this->spreadsheet($request, $value),
+                'html' => $this->html($request, $value),
+                'json' => $this->jsonEncoded($request, json_encode($value, JSON_THROW_ON_ERROR), 200),
+                'original' => $this->response(
+                    $request->serialize ? serialize($value) : var_export($value, true),
+                    200,
+                    'text/plain; charset=utf-8',
+                ),
+                'xml' => $this->xmlMetric($value),
+                'rss' => throw new LogicException('RSS reporting has not moved to Laravel yet.'),
+                default => throw new LogicException('The API response format is not supported.'),
+            };
+        }
+
+        $data = is_array($report->data) ? $report->data : [];
+
+        return match ($request->format) {
+            'console' => $this->consoleRows($request, $report->flattenedRows()),
+            'csv', 'tsv' => $this->spreadsheetRows($request, $report->flattenedRows()),
+            'html' => $this->htmlRows($report->flattenedRows()),
+            'json' => $this->jsonEncoded($request, json_encode($data, JSON_THROW_ON_ERROR), 200),
+            'original' => $this->response(
+                $request->serialize ? serialize($data) : var_export($data, true),
+                200,
+                'text/plain; charset=utf-8',
+            ),
+            'xml' => $this->xmlMetricMap($data, $report->dimensions),
+            'rss' => throw new LogicException('RSS reporting has not moved to Laravel yet.'),
+            default => throw new LogicException('The API response format is not supported.'),
+        };
+    }
+
     public function error(ApiRequest $request, string $message, int $status): Response
     {
         return match ($request->format) {
@@ -186,6 +225,61 @@ final class ApiResponseFactory
             200,
             'text/xml; charset=utf-8',
         );
+    }
+
+    private function xmlMetric(float|int|string|null $value): Response
+    {
+        $text = $this->escape($this->scalarText($value, false));
+
+        return $this->response(
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>{$text}</result>",
+            200,
+            'text/xml; charset=utf-8',
+        );
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $data
+     * @param  list<'idSite'|'date'>  $dimensions
+     */
+    private function xmlMetricMap(array $data, array $dimensions): Response
+    {
+        return $this->response(
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<results>\n".
+                $this->xmlMetricMapValues($data, $dimensions, 0, "\t").'</results>',
+            200,
+            'text/xml; charset=utf-8',
+        );
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $data
+     * @param  list<'idSite'|'date'>  $dimensions
+     */
+    private function xmlMetricMapValues(array $data, array $dimensions, int $depth, string $indent): string
+    {
+        $xml = '';
+        $dimension = $dimensions[$depth];
+        $hasChildMap = isset($dimensions[$depth + 1]);
+
+        foreach ($data as $key => $value) {
+            $attribute = $this->escape($dimension).'="'.$this->escape((string) $key).'"';
+
+            if ($hasChildMap && is_array($value)) {
+                $xml .= "{$indent}<result {$attribute}>\n";
+                $xml .= $this->xmlMetricMapValues($value, $dimensions, $depth + 1, $indent."\t");
+                $xml .= "{$indent}</result>\n";
+
+                continue;
+            }
+
+            $text = is_float($value) || is_int($value) || is_string($value) || $value === null
+                ? $this->escape($this->scalarText($value, false))
+                : '';
+            $xml .= "{$indent}<result {$attribute}>{$text}</result>\n";
+        }
+
+        return $xml;
     }
 
     /**
@@ -443,7 +537,7 @@ final class ApiResponseFactory
         return $xml;
     }
 
-    private function spreadsheet(ApiRequest $request, bool|int|string $value): Response
+    private function spreadsheet(ApiRequest $request, bool|float|int|string|null $value): Response
     {
         $value = $this->spreadsheetCell($this->scalarText($value, false), ',');
         $content = "value\n{$value}";
@@ -585,7 +679,7 @@ final class ApiResponseFactory
         return $value;
     }
 
-    private function html(ApiRequest $request, bool|int|string $value): Response
+    private function html(ApiRequest $request, bool|float|int|string|null $value): Response
     {
         $id = $this->escape(str_replace('.', '_', $request->method));
         $value = $this->escape($this->scalarText($value, false));
@@ -782,7 +876,7 @@ final class ApiResponseFactory
         return $this->response($content, $status, 'text/plain; charset=utf-8');
     }
 
-    private function console(ApiRequest $request, bool|int|string $value): Response
+    private function console(ApiRequest $request, bool|float|int|string|null $value): Response
     {
         $value = is_string($value)
             ? "'".str_replace(['\\', "'"], ['\\\\', "\\'"], $value)."'"

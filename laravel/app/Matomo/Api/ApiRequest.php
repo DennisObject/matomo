@@ -13,6 +13,20 @@ use Illuminate\Http\Request;
 
 final readonly class ApiRequest
 {
+    /** @var list<string> */
+    private const array VISITS_SUMMARY_METHODS = [
+        'VisitsSummary.get',
+        'VisitsSummary.getVisits',
+        'VisitsSummary.getUniqueVisitors',
+        'VisitsSummary.getUsers',
+        'VisitsSummary.getActions',
+        'VisitsSummary.getMaxActions',
+        'VisitsSummary.getBounceCount',
+        'VisitsSummary.getVisitsConverted',
+        'VisitsSummary.getSumVisitsLength',
+        'VisitsSummary.getSumVisitsLengthPretty',
+    ];
+
     private function __construct(
         public string $module,
         public string $method,
@@ -276,7 +290,8 @@ final readonly class ApiRequest
 
     public function isVisitsSummaryRequest(): bool
     {
-        return $this->module === 'API' && $this->method === 'VisitsSummary.get';
+        return $this->module === 'API'
+            && in_array($this->method, self::VISITS_SUMMARY_METHODS, true);
     }
 
     public function hasSupportedFormat(): bool
@@ -636,7 +651,7 @@ final readonly class ApiRequest
         string $module,
         string $method,
     ): ?VisitsSummaryRequest {
-        if ($module !== 'API' || $method !== 'VisitsSummary.get') {
+        if ($module !== 'API' || ! in_array($method, self::VISITS_SUMMARY_METHODS, true)) {
             return null;
         }
 

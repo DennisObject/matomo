@@ -16,6 +16,122 @@ use Tests\TestCase;
 
 class VisitsSummaryApiTest extends TestCase
 {
+    #[DataProvider('scalarMethods')]
+    public function test_returns_each_numeric_method_as_a_scalar(string $method, string $metric, int $value): void
+    {
+        $this->bindViewAccess([7]);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->method('timezone')->willReturn('UTC');
+        $archives = $this->createMock(VisitsSummaryArchiveRepository::class);
+        $archives->expects($this->once())
+            ->method('metrics')
+            ->with([7], $this->isType('array'), '', [$metric])
+            ->willReturn([7 => ['2026-08-14,2026-08-14' => [$metric => $value]]]);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(VisitsSummaryArchiveRepository::class, $archives);
+
+        $this->get(
+            "/index.php?module=API&method={$method}&idSite=7&period=day".
+            '&date=2026-08-14&format=json&token_auth=view-token',
+        )->assertOk()->assertContent((string) $value);
+    }
+
+    /**
+     * @return iterable<string, array{string, string, int}>
+     */
+    public static function scalarMethods(): iterable
+    {
+        yield 'visits' => ['VisitsSummary.getVisits', 'nb_visits', 4];
+        yield 'unique visitors' => ['VisitsSummary.getUniqueVisitors', 'nb_uniq_visitors', 3];
+        yield 'users' => ['VisitsSummary.getUsers', 'nb_users', 2];
+        yield 'actions' => ['VisitsSummary.getActions', 'nb_actions', 9];
+        yield 'maximum actions' => ['VisitsSummary.getMaxActions', 'max_actions', 7];
+        yield 'bounces' => ['VisitsSummary.getBounceCount', 'bounce_count', 1];
+        yield 'converted visits' => ['VisitsSummary.getVisitsConverted', 'nb_visits_converted', 2];
+        yield 'visit duration' => ['VisitsSummary.getSumVisitsLength', 'sum_visit_length', 3700];
+    }
+
+    public function test_returns_scalar_xml_without_a_metric_element(): void
+    {
+        $this->bindViewAccess([7]);
+        $sites = $this->createStub(SiteRepository::class);
+        $sites->method('timezone')->willReturn('UTC');
+        $archives = $this->createMock(VisitsSummaryArchiveRepository::class);
+        $archives->method('metrics')->willReturn([
+            7 => ['2026-08-14,2026-08-14' => ['nb_visits' => 4]],
+        ]);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(VisitsSummaryArchiveRepository::class, $archives);
+
+        $this->get(
+            '/index.php?module=API&method=VisitsSummary.getVisits&idSite=7&period=day'.
+            '&date=2026-08-14&format=xml&token_auth=view-token',
+        )->assertOk()->assertContent("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>4</result>");
+    }
+
+    public function test_keeps_site_and_date_dimensions_for_scalar_methods(): void
+    {
+        $this->bindViewAccess([1, 2]);
+        $sites = $this->createStub(SiteRepository::class);
+        $archives = $this->createMock(VisitsSummaryArchiveRepository::class);
+        $archives->method('metrics')->willReturn([
+            1 => [
+                '2026-08-13,2026-08-13' => ['nb_visits' => 2],
+                '2026-08-14,2026-08-14' => ['nb_visits' => 3],
+            ],
+            2 => [
+                '2026-08-13,2026-08-13' => ['nb_visits' => 0],
+                '2026-08-14,2026-08-14' => ['nb_visits' => 1],
+            ],
+        ]);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(VisitsSummaryArchiveRepository::class, $archives);
+
+        $this->get(
+            '/index.php?module=API&method=VisitsSummary.getVisits&idSite=1,2&period=day'.
+            '&date=2026-08-13,2026-08-14&format=json&token_auth=view-token',
+        )->assertOk()->assertContent('{"1":{"2026-08-13":2,"2026-08-14":3},'.
+            '"2":{"2026-08-13":0,"2026-08-14":1}}');
+    }
+
+    public function test_rejects_unique_metrics_when_the_period_does_not_archive_them(): void
+    {
+        $this->bindViewAccess([7]);
+        $settings = $this->createMock(ReportingSettings::class);
+        $settings->expects($this->once())->method('periodEnabled')->with('year')->willReturn(true);
+        $settings->expects($this->once())->method('uniqueVisitorsEnabled')->with('year')->willReturn(false);
+        $archives = $this->createMock(VisitsSummaryArchiveRepository::class);
+        $archives->expects($this->never())->method('metrics');
+        $this->app->instance(ReportingSettings::class, $settings);
+        $this->app->instance(VisitsSummaryArchiveRepository::class, $archives);
+
+        $this->get(
+            '/index.php?module=API&method=VisitsSummary.getUniqueVisitors&idSite=7'.
+            '&period=year&date=2026-08-14&format=json&token_auth=view-token',
+        )->assertBadRequest()->assertExactJson([
+            'result' => 'error',
+            'message' => 'The metric nb_uniq_visitors is not enabled for the requested period.',
+        ]);
+    }
+
+    public function test_formats_total_visit_duration_as_legacy_sentence_text(): void
+    {
+        $this->bindViewAccess([7]);
+        $sites = $this->createStub(SiteRepository::class);
+        $sites->method('timezone')->willReturn('UTC');
+        $archives = $this->createStub(VisitsSummaryArchiveRepository::class);
+        $archives->method('metrics')->willReturn([
+            7 => ['2026-08-14,2026-08-14' => ['sum_visit_length' => 3700]],
+        ]);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(VisitsSummaryArchiveRepository::class, $archives);
+
+        $this->get(
+            '/index.php?module=API&method=VisitsSummary.getSumVisitsLengthPretty&idSite=7'.
+            '&period=day&date=2026-08-14&format=json&token_auth=view-token',
+        )->assertOk()->assertContent('"1 hours 1 min"');
+    }
+
     public function test_returns_the_default_metrics_and_processed_metrics_from_archives(): void
     {
         $this->bindViewAccess([7]);

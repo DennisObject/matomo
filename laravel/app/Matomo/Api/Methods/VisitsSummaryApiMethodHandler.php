@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Matomo\Api\Methods;
 
+use App\Matomo\Api\ApiMetricReport;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Reporting\DurationFormatter;
 use App\Matomo\Reporting\ReportingPeriodFactory;
 use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\SegmentHashResolver;
@@ -19,6 +21,19 @@ use LogicException;
 
 final readonly class VisitsSummaryApiMethodHandler implements ApiMethodHandler
 {
+    /** @var array<string, string> */
+    private const array METRICS = [
+        'VisitsSummary.getVisits' => 'nb_visits',
+        'VisitsSummary.getUniqueVisitors' => 'nb_uniq_visitors',
+        'VisitsSummary.getUsers' => 'nb_users',
+        'VisitsSummary.getActions' => 'nb_actions',
+        'VisitsSummary.getMaxActions' => 'max_actions',
+        'VisitsSummary.getBounceCount' => 'bounce_count',
+        'VisitsSummary.getVisitsConverted' => 'nb_visits_converted',
+        'VisitsSummary.getSumVisitsLength' => 'sum_visit_length',
+        'VisitsSummary.getSumVisitsLengthPretty' => 'sum_visit_length',
+    ];
+
     public function __construct(
         private ApiAccessAuthorizer $authorizer,
         private ApiResponseFactory $responses,
@@ -27,6 +42,7 @@ final readonly class VisitsSummaryApiMethodHandler implements ApiMethodHandler
         private ReportingSettings $settings,
         private SegmentHashResolver $segments,
         private VisitsSummaryReportBuilder $reports,
+        private DurationFormatter $durations,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -77,6 +93,17 @@ final readonly class VisitsSummaryApiMethodHandler implements ApiMethodHandler
             );
         }
 
+        $metric = self::METRICS[$request->method] ?? null;
+
+        if (in_array($metric, ['nb_uniq_visitors', 'nb_users'], true)
+            && ! $this->settings->uniqueVisitorsEnabled($query->period)) {
+            return $this->responses->error(
+                $request,
+                "The metric {$metric} is not enabled for the requested period.",
+                400,
+            );
+        }
+
         if ($query->segment !== null
             && ! $this->settings->anonymousSegmentsEnabled()
             && $this->authorizer->authenticatedLogin($request->authentication) === 'anonymous') {
@@ -106,13 +133,23 @@ final readonly class VisitsSummaryApiMethodHandler implements ApiMethodHandler
             periods: $periods,
             requestedPeriod: $query->period,
             segmentHash: $this->segments->resolve($query->segment),
-            requestedColumns: $query->columns,
-            showColumns: $query->showColumns,
-            hideColumns: $query->hideColumns,
+            requestedColumns: $metric === null ? $query->columns : [$metric],
+            showColumns: $metric === null ? $query->showColumns : [],
+            hideColumns: $metric === null ? $query->hideColumns : [],
             forceSiteIndex: $query->allSites || count($siteIds) > 1,
             forceDateIndex: $forceDateIndex,
         );
 
-        return $this->responses->report($request, $report);
+        if ($metric === null) {
+            return $this->responses->report($request, $report);
+        }
+
+        $metricReport = ApiMetricReport::fromReport($report, $metric);
+
+        if ($request->method === 'VisitsSummary.getSumVisitsLengthPretty') {
+            $metricReport = $metricReport->map($this->durations->sentence(...));
+        }
+
+        return $this->responses->metricReport($request, $metricReport);
     }
 }
