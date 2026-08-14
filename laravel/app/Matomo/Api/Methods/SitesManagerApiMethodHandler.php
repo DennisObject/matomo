@@ -86,6 +86,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isCurrencyListRequest()
             || $request->isDefaultTimezoneRequest()
             || $request->isTimezoneNameRequest()
+            || $request->isTimezoneListRequest()
             || $request->isTimezoneSupportRequest()
             || $request->isWebsitesCountToDisplayRequest()
             || $request->isSiteUrlsRequest()
@@ -127,6 +128,15 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
                     $request->countryCode,
                     $request->multipleTimezonesInCountry,
                 ),
+            );
+        }
+
+        if ($request->isTimezoneListRequest()) {
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+
+            return $this->responses->structured(
+                $request,
+                $this->timezones->all($language, $this->runtime->timezoneSupportEnabled()),
             );
         }
 

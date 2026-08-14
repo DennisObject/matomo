@@ -134,6 +134,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getTimezoneName';
     }
 
+    public function isTimezoneListRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getTimezonesList';
+    }
+
     public function isTimezoneSupportRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.isTimezoneSupportEnabled';

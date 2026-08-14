@@ -20,6 +20,29 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_timezone_list_is_public_and_uses_runtime_support(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasSomeViewAccess');
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $runtime = $this->createMock(SiteRuntimeSettings::class);
+        $runtime->expects($this->once())->method('timezoneSupportEnabled')->willReturn(false);
+        $timezones = $this->createMock(TimezoneProvider::class);
+        $timezones->expects($this->once())
+            ->method('all')
+            ->with('fr', false)
+            ->willReturn(['UTC' => ['UTC' => 'UTC']]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRuntimeSettings::class, $runtime);
+        $this->app->instance(TimezoneProvider::class, $timezones);
+
+        $this->get('/index.php?module=API&method=SitesManager.getTimezonesList&format=json')
+            ->assertOk()
+            ->assertExactJson(['UTC' => ['UTC' => 'UTC']]);
+    }
+
     public function test_timezone_name_is_public_and_keeps_optional_context(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
