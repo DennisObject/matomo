@@ -26,6 +26,7 @@ class DatabaseOptionRepositoryTest extends TestCase
         $connection->getSchemaBuilder()->create('option', function (Blueprint $table): void {
             $table->string('option_name')->primary();
             $table->text('option_value');
+            $table->boolean('autoload')->default(false);
         });
         $connection->table('option')->insert([
             'option_name' => 'SitesManager_DefaultTimezone',
@@ -35,5 +36,14 @@ class DatabaseOptionRepositoryTest extends TestCase
 
         $this->assertSame('Europe/Paris', $options->value('SitesManager_DefaultTimezone'));
         $this->assertNull($options->value('missing'));
+
+        $options->set('SitesManager_DefaultTimezone', 'America/Toronto', true);
+        $options->set('new-option', 'new-value');
+
+        $this->assertSame('America/Toronto', $options->value('SitesManager_DefaultTimezone'));
+        $this->assertSame('new-value', $options->value('new-option'));
+        $this->assertSame(1, $connection->table('option')
+            ->where('option_name', 'SitesManager_DefaultTimezone')
+            ->value('autoload'));
     }
 }

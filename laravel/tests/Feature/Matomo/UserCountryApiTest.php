@@ -6,6 +6,8 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Geolocation\CountryMetadataProvider;
+use App\Matomo\Geolocation\GeolocationProviderRegistry;
+use App\Matomo\Geolocation\GeolocationSettings;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Reporting\BlobArchive;
 use App\Matomo\Reporting\BlobArchiveMetadataRepository;
@@ -246,6 +248,103 @@ class UserCountryApiTest extends TestCase
         $this->get($this->url('getCountry'))->assertUnauthorized();
     }
 
+    public function test_geolocates_an_ip_with_an_explicit_provider(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasSomeViewAccess')->willReturn(true);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(CountryMetadataProvider::class, $this->countries());
+
+        $providers = $this->createMock(GeolocationProviderRegistry::class);
+        $providers->expects($this->once())->method('locate')->with(
+            '198.51.100.10',
+            'fr-FR,fr;q=0.9',
+            '192.0.2.20',
+            'geoip2php',
+        )->willReturn([
+            'country_code' => 'fr',
+            'lat' => 48.85661,
+            'long' => 2.35222,
+        ]);
+        $this->app->instance(GeolocationProviderRegistry::class, $providers);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.20'])
+            ->withHeader('Accept-Language', 'fr-FR,fr;q=0.9')
+            ->get('/index.php?module=API&method=UserCountry.getLocationFromIP'.
+                '&ip=198.51.100.10&provider=geoip2php&format=json&token_auth=view-token')
+            ->assertOk()
+            ->assertExactJson([
+                'country_code' => 'fr',
+                'lat' => 48.86,
+                'long' => 2.35,
+                'continent_code' => 'eur',
+                'continent_name' => 'Europe',
+                'country_name' => 'France',
+                'ip' => '198.51.100.10',
+            ]);
+    }
+
+    public function test_rejects_ip_geolocation_without_view_access(): void
+    {
+        $this->app->instance(ApiAccessAuthorizer::class, $this->createStub(ApiAccessAuthorizer::class));
+
+        $this->get('/index.php?module=API&method=UserCountry.getLocationFromIP'.
+            '&format=json&token_auth=view-token')
+            ->assertUnauthorized()
+            ->assertJsonPath('message', 'You must have view access to at least one website.');
+    }
+
+    public function test_empty_legacy_ip_and_provider_values_use_request_defaults(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasSomeViewAccess')->willReturn(true);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $providers = $this->createMock(GeolocationProviderRegistry::class);
+        $providers->expects($this->once())->method('locate')->with(
+            '192.0.2.20',
+            $this->isType('string'),
+            '192.0.2.20',
+            null,
+        )->willReturn(['country_code' => 'fr']);
+        $this->app->instance(GeolocationProviderRegistry::class, $providers);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.20'])
+            ->get('/index.php?module=API&method=UserCountry.getLocationFromIP'.
+                '&ip=0&provider=0&format=json&token_auth=view-token')
+            ->assertOk()
+            ->assertJsonPath('ip', '192.0.2.20');
+    }
+
+    public function test_sets_the_location_provider_for_a_superuser(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasSuperUserAccess')->willReturn(true);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $providers = $this->createMock(GeolocationProviderRegistry::class);
+        $providers->expects($this->once())->method('setCurrent')->with('default');
+        $this->app->instance(GeolocationProviderRegistry::class, $providers);
+
+        $this->get('/index.php?module=API&method=UserCountry.setLocationProvider'.
+            '&providerId=default&format=json&token_auth=super-token')
+            ->assertOk()
+            ->assertExactJson(['result' => 'success', 'message' => 'ok']);
+    }
+
+    public function test_rejects_provider_changes_when_geolocation_admin_is_disabled(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasSuperUserAccess')->willReturn(true);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $settings = $this->createStub(GeolocationSettings::class);
+        $settings->method('adminEnabled')->willReturn(false);
+        $this->app->instance(GeolocationSettings::class, $settings);
+
+        $this->get('/index.php?module=API&method=UserCountry.setLocationProvider'.
+            '&providerId=default&format=json&token_auth=super-token')
+            ->assertBadRequest()
+            ->assertJsonPath('message', 'Setting geo location has been disabled in config.');
+    }
+
     private function bindViewAccess(): void
     {
         $authorizer = $this->createStub(ApiAccessAuthorizer::class);
@@ -307,6 +406,11 @@ class UserCountryApiTest extends TestCase
                 }
 
                 return 'Unknown';
+            }
+
+            public function regionCodeForName(string $countryCode, string $regionName): string
+            {
+                return '';
             }
 
             public function convertLegacyRegion(string $countryCode, string $regionCode): array

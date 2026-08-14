@@ -50,7 +50,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, bool|int|string|null>  $values
+     * @param  array<string, bool|float|int|string|null>  $values
      */
     public function row(ApiRequest $request, array $values): Response
     {
@@ -101,7 +101,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<int, array<string, bool|int|string|null>>  $rows
+     * @param  array<int, array<string, bool|float|int|string|null>>  $rows
      */
     public function keyedRows(ApiRequest $request, array $rows): Response
     {
@@ -308,7 +308,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, bool|int|string|null>  $values
+     * @param  array<string, bool|float|int|string|null>  $values
      */
     private function xmlRow(array $values): Response
     {
@@ -383,7 +383,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<array-key, array<string, bool|int|string|null>>  $values
+     * @param  array<array-key, array<string, bool|float|int|string|null>>  $values
      */
     private function xmlStructured(array $values): Response
     {
@@ -648,7 +648,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, bool|int|string|null>  $values
+     * @param  array<string, bool|float|int|string|null>  $values
      */
     private function spreadsheetRow(ApiRequest $request, array $values): Response
     {
@@ -658,7 +658,7 @@ final class ApiResponseFactory
             array_keys($values),
         ));
         $row = implode($delimiter, array_map(
-            fn (bool|int|string|null $value): string => $this->spreadsheetCell(
+            fn (bool|float|int|string|null $value): string => $this->spreadsheetCell(
                 $this->scalarText($value, false),
                 $delimiter,
             ),
@@ -798,7 +798,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, bool|int|string|null>  $values
+     * @param  array<string, bool|float|int|string|null>  $values
      */
     private function htmlRow(array $values): Response
     {
@@ -915,7 +915,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, bool|int|string|null>  $values
+     * @param  array<string, bool|float|int|string|null>  $values
      */
     private function originalRow(ApiRequest $request, array $values): Response
     {
@@ -951,7 +951,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<array-key, array<string, bool|int|string|null>>  $values
+     * @param  array<array-key, array<string, bool|float|int|string|null>>  $values
      */
     private function originalStructured(ApiRequest $request, array $values): Response
     {
@@ -986,7 +986,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, bool|int|string|null>  $values
+     * @param  array<string, bool|float|int|string|null>  $values
      */
     private function consoleRow(ApiRequest $request, array $values): Response
     {
@@ -1079,7 +1079,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, bool|int|string|null>  $payload
+     * @param  array<string, bool|float|int|string|null>  $payload
      */
     private function json(ApiRequest $request, array $payload, int $status): Response
     {
@@ -1095,7 +1095,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<array-key, array<string, bool|int|string|null>>  $values
+     * @param  array<array-key, array<string, bool|float|int|string|null>>  $values
      */
     private function jsonStructured(ApiRequest $request, array $values): Response
     {

@@ -10,7 +10,7 @@ final readonly class LocalizedCountryMetadataProvider implements CountryMetadata
 {
     /**
      * @param  array<string, string>  $continentsByCountry
-     * @param  array<string, array<array-key, array{name?: mixed}>>  $isoRegions
+     * @param  array<string, array<array-key, array{name?: mixed, altNames?: mixed}>>  $isoRegions
      * @param  array<string, array<array-key, string>>  $legacyRegions
      * @param  array<string, array<array-key, string>>  $legacyRegionMapping
      */
@@ -56,6 +56,8 @@ final readonly class LocalizedCountryMetadataProvider implements CountryMetadata
 
     public function continentName(string $continentCode, string $language): string
     {
+        $continentCode = strtolower($continentCode);
+
         if ($continentCode === '' || $continentCode === 'unk') {
             return $this->translator->translate('General_Unknown', $language);
         }
@@ -95,6 +97,25 @@ final readonly class LocalizedCountryMetadataProvider implements CountryMetadata
             : $this->translator->translate('General_Unknown', $language);
     }
 
+    public function regionCodeForName(string $countryCode, string $regionName): string
+    {
+        foreach ($this->isoRegions[strtoupper($countryCode)] ?? [] as $code => $region) {
+            $names = [$region['name'] ?? null];
+
+            if (is_array($region['altNames'] ?? null)) {
+                $names = [...$names, ...$region['altNames']];
+            }
+
+            foreach ($names as $name) {
+                if (is_string($name) && $this->normalizedName($name) === $this->normalizedName($regionName)) {
+                    return (string) $code;
+                }
+            }
+        }
+
+        return '';
+    }
+
     public function convertLegacyRegion(string $countryCode, string $regionCode): array
     {
         $countryCode = strtoupper($countryCode);
@@ -123,5 +144,24 @@ final readonly class LocalizedCountryMetadataProvider implements CountryMetadata
         $countryCode = strtolower($countryCode);
 
         return $countryCode === 'ti' ? 'cn' : $countryCode;
+    }
+
+    private function normalizedName(string $name): string
+    {
+        if (function_exists('transliterator_transliterate')) {
+            $transliterated = transliterator_transliterate('Any-Latin; Latin-ASCII', $name);
+
+            if (is_string($transliterated)) {
+                $name = $transliterated;
+            }
+        } elseif (function_exists('iconv')) {
+            $transliterated = iconv('UTF-8', 'ASCII//TRANSLIT', $name);
+
+            if (is_string($transliterated)) {
+                $name = $transliterated;
+            }
+        }
+
+        return strtolower($name);
     }
 }

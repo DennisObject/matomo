@@ -9,6 +9,9 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Api\ApiTableReport;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Geolocation\GeolocationProviderRegistry;
+use App\Matomo\Geolocation\GeolocationSettings;
+use App\Matomo\Geolocation\LocationResultCompleter;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Reporting\ReportingPeriod;
 use App\Matomo\Reporting\ReportingPeriodFactory;
@@ -16,6 +19,7 @@ use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\RssReportRenderer;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\UserCountryReportBuilder;
+use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Sites\SiteRepository;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -34,6 +38,10 @@ final readonly class UserCountryApiMethodHandler implements ApiMethodHandler
         private LanguageResolver $languages,
         private UserCountryReportBuilder $reports,
         private RssReportRenderer $rss,
+        private GeolocationProviderRegistry $geolocation,
+        private GeolocationSettings $geolocationSettings,
+        private LocationResultCompleter $locationCompleter,
+        private ClientIpResolver $clientIps,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -48,6 +56,14 @@ final readonly class UserCountryApiMethodHandler implements ApiMethodHandler
         }
 
         $language = $this->languages->resolve($httpRequest, $request->authentication);
+
+        if ($request->method === 'UserCountry.getLocationFromIP') {
+            return $this->location($request, $httpRequest, $language);
+        }
+
+        if ($request->method === 'UserCountry.setLocationProvider') {
+            return $this->setLocationProvider($request);
+        }
 
         if ($request->method === 'UserCountry.getCountryCodeMapping') {
             return $this->responses->row($request, $this->reports->countryCodeMapping($language));
@@ -155,6 +171,71 @@ final readonly class UserCountryApiMethodHandler implements ApiMethodHandler
         return $request->format === 'rss'
             ? $this->rssTable($request, $query->period, $siteIds, $periods, $timezone, $report)
             : $this->responses->tableReport($request, $report);
+    }
+
+    private function location(ApiRequest $request, Request $httpRequest, string $language): Response
+    {
+        if (! $this->authorizer->hasSomeViewAccess($request->authentication)) {
+            return $this->responses->error(
+                $request,
+                'You must have view access to at least one website.',
+                401,
+            );
+        }
+
+        $currentIpAddress = $this->clientIps->resolve($httpRequest);
+        $ipAddress = $request->locationIp ?? $currentIpAddress;
+        $browserLanguage = $httpRequest->header('Accept-Language', '');
+
+        try {
+            $location = $this->geolocation->locate(
+                ipAddress: $ipAddress,
+                browserLanguage: $browserLanguage,
+                currentIpAddress: $currentIpAddress,
+                providerId: $request->locationProviderId,
+            );
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            return $this->responses->error($request, $invalidArgumentException->getMessage(), 400);
+        }
+
+        if ($location === null || $location === []) {
+            return $this->responses->error($request, "Could not geolocate '{$ipAddress}'!", 400);
+        }
+
+        return $this->responses->row(
+            $request,
+            [...$this->locationCompleter->complete($location, $language), 'ip' => $ipAddress],
+        );
+    }
+
+    private function setLocationProvider(ApiRequest $request): Response
+    {
+        if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+            return $this->responses->error(
+                $request,
+                "You can't access this resource as it requires a 'superuser' access.",
+                401,
+            );
+        }
+
+        if (! $this->geolocationSettings->adminEnabled()) {
+            return $this->responses->error(
+                $request,
+                'Setting geo location has been disabled in config.',
+                400,
+            );
+        }
+
+        try {
+            $this->geolocation->setCurrent(
+                $request->locationProviderId
+                    ?? throw new LogicException('The location provider ID was not parsed.'),
+            );
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            return $this->responses->error($request, $invalidArgumentException->getMessage(), 400);
+        }
+
+        return $this->responses->success($request);
     }
 
     /**

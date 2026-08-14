@@ -69,6 +69,8 @@ class InstallationConfigTest extends TestCase
         $this->assertTrue($configuration->geolocationAdminEnabled());
         $this->assertTrue($configuration->customLogoEnabled());
         $this->assertTrue($configuration->browserArchivingTriggerEnabled());
+        $this->assertTrue($configuration->defaultLocationProviderEnabled());
+        $this->assertTrue($configuration->languageToCountryGuessEnabled());
     }
 
     public function test_loads_reporting_overrides(): void
@@ -87,6 +89,10 @@ class InstallationConfigTest extends TestCase
             enable_custom_logo = 0
             enable_browser_archiving_triggering = 0
             INI,
+            extraTracker: <<<'INI'
+            enable_default_location_provider = 0
+            enable_language_to_country_guess = 0
+            INI,
         ));
 
         $this->assertFalse($configuration->uniqueVisitorsEnabled('day'));
@@ -100,6 +106,8 @@ class InstallationConfigTest extends TestCase
         $this->assertFalse($configuration->geolocationAdminEnabled());
         $this->assertFalse($configuration->customLogoEnabled());
         $this->assertFalse($configuration->browserArchivingTriggerEnabled());
+        $this->assertFalse($configuration->defaultLocationProviderEnabled());
+        $this->assertFalse($configuration->languageToCountryGuessEnabled());
     }
 
     public function test_rejects_unsafe_table_prefix(): void
@@ -114,6 +122,7 @@ class InstallationConfigTest extends TestCase
         string $tablesPrefix,
         string $secureTokens = '0',
         string $extraGeneral = '',
+        string $extraTracker = '',
     ): string {
         $path = tempnam('/dev/shm', 'matomo-config-');
         $this->assertIsString($path);
@@ -169,6 +178,9 @@ class InstallationConfigTest extends TestCase
             [proxy]
             host = "proxy.example"
             exclude = "direct.example, other.example"
+
+            [Tracker]
+            {$extraTracker}
             INI;
 
         $this->assertNotFalse(file_put_contents($path, $content));

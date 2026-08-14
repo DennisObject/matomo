@@ -22,7 +22,10 @@ class LocalizedCountryMetadataProviderTest extends TestCase
         );
         $provider = new LocalizedCountryMetadataProvider(
             ['cn' => 'asi'],
-            ['CN' => ['14' => ['name' => 'Tibet Autonomous Region']]],
+            ['CN' => ['14' => [
+                'name' => 'Tibet Autonomous Region',
+                'altNames' => ['Tibet Autonomous Région'],
+            ]]],
             ['CN' => ['14' => 'Tibet']],
             ['CN' => ['01' => 'AH']],
             '/directory/that/does/not/exist',
@@ -33,10 +36,12 @@ class LocalizedCountryMetadataProviderTest extends TestCase
         $this->assertSame('asi', $provider->continentCode('TI'));
         $this->assertSame('China', $provider->countryName('ti', 'en'));
         $this->assertSame('Asia', $provider->continentName('asi', 'en'));
+        $this->assertSame('Asia', $provider->continentName('ASI', 'en'));
         $this->assertSame('Unknown', $provider->countryName('xx', 'en'));
         $this->assertSame('plugins/Morpheus/icons/dist/flags/xx.png', $provider->flag('cn'));
         $this->assertSame('plugins/Morpheus/icons/dist/flags/xx.png', $provider->flag('../secret'));
         $this->assertSame('Tibet Autonomous Region', $provider->regionName('cn', '14', 'en'));
+        $this->assertSame('14', $provider->regionCodeForName('cn', 'Tibet Autonomous Région'));
         $this->assertSame(
             ['country' => 'cn', 'region' => 'AH'],
             $provider->convertLegacyRegion('cn', '01'),

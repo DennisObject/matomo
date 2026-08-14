@@ -31,8 +31,20 @@ use App\Matomo\Authentication\DatabaseSessionAuthenticator;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Config\InstallationConfig;
 use App\Matomo\Database\MatomoDatabase;
+use App\Matomo\Geolocation\ConfiguredGeolocationProviderRegistry;
+use App\Matomo\Geolocation\ConfiguredGeolocationSettings;
 use App\Matomo\Geolocation\CountryMetadataProvider;
+use App\Matomo\Geolocation\DatabaseServerVariableMapping;
+use App\Matomo\Geolocation\DisabledGeolocationProvider;
+use App\Matomo\Geolocation\FileTrackerCacheInvalidator;
+use App\Matomo\Geolocation\GeolocationProviderRegistry;
+use App\Matomo\Geolocation\GeolocationSettings;
+use App\Matomo\Geolocation\LanguageGeolocationProvider;
 use App\Matomo\Geolocation\LocalizedCountryMetadataProvider;
+use App\Matomo\Geolocation\MaxMindDatabaseGeolocationProvider;
+use App\Matomo\Geolocation\ServerModuleGeolocationProvider;
+use App\Matomo\Geolocation\ServerVariableMapping;
+use App\Matomo\Geolocation\TrackerCacheInvalidator;
 use App\Matomo\Localization\ApiLanguageResolver;
 use App\Matomo\Localization\DatabaseLanguagePreferenceRepository;
 use App\Matomo\Localization\JsonMatomoTranslator;
@@ -46,6 +58,7 @@ use App\Matomo\Login\DatabaseBruteForceUnblocker;
 use App\Matomo\Login\DatabaseLoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Options\DatabaseOptionRepository;
+use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\ConfiguredPluginState;
 use App\Matomo\Plugins\LocalTrackerFileAvailability;
@@ -337,9 +350,19 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
-            OptionRepository::class,
-            fn (Application $application): OptionRepository => new DatabaseOptionRepository(
+            DatabaseOptionRepository::class,
+            fn (Application $application): DatabaseOptionRepository => new DatabaseOptionRepository(
                 $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            OptionRepository::class,
+            fn (Application $application): OptionRepository => $application->make(DatabaseOptionRepository::class),
+        );
+        $this->app->singleton(
+            MutableOptionRepository::class,
+            fn (Application $application): MutableOptionRepository => $application->make(
+                DatabaseOptionRepository::class,
             ),
         );
 
@@ -371,6 +394,78 @@ class AppServiceProvider extends ServiceProvider
             fn (Application $application): PluginState => new ConfiguredPluginState(
                 $application->make(InstallationConfig::class),
             ),
+        );
+
+        $this->app->singleton(GeolocationSettings::class, ConfiguredGeolocationSettings::class);
+        $this->app->singleton(
+            TrackerCacheInvalidator::class,
+            fn (): TrackerCacheInvalidator => new FileTrackerCacheInvalidator(
+                base_path('../tmp/cache/tracker/matomocache_general.php'),
+            ),
+        );
+        $this->app->singleton(
+            ServerVariableMapping::class,
+            fn (Application $application): ServerVariableMapping => new DatabaseServerVariableMapping(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                defaults: [
+                    'continent_code' => 'MM_CONTINENT_CODE',
+                    'continent_name' => 'MM_CONTINENT_NAME',
+                    'country_code' => 'MM_COUNTRY_CODE',
+                    'country_name' => 'MM_COUNTRY_NAME',
+                    'region_code' => 'MM_REGION_CODE',
+                    'region_name' => 'MM_REGION_NAME',
+                    'lat' => 'MM_LATITUDE',
+                    'long' => 'MM_LONGITUDE',
+                    'postal_code' => 'MM_POSTAL_CODE',
+                    'city_name' => 'MM_CITY_NAME',
+                    'isp' => 'MM_ISP',
+                    'org' => 'MM_ORG',
+                ],
+            ),
+        );
+        $this->app->singleton(
+            GeolocationProviderRegistry::class,
+            function (Application $application): GeolocationProviderRegistry {
+                $configuration = $application->make(InstallationConfig::class);
+                $options = $application->make(MutableOptionRepository::class);
+                $countries = $application->make(CountryMetadataProvider::class);
+                $languagesToCountries = require base_path(
+                    '../core/Intl/Data/Resources/languages-to-countries.php',
+                );
+                $maxMind = new MaxMindDatabaseGeolocationProvider(
+                    databaseDirectory: base_path('../misc'),
+                    ispEnabled: true,
+                    options: $options,
+                    countries: $countries,
+                );
+                $providers = [
+                    new DisabledGeolocationProvider,
+                    new LanguageGeolocationProvider(
+                        enabled: $configuration->defaultLocationProviderEnabled(),
+                        guessCountryFromLanguage: $configuration->languageToCountryGuessEnabled(),
+                        countryCodes: $countries->codes(),
+                        countriesByLanguage: is_array($languagesToCountries) ? $languagesToCountries : [],
+                    ),
+                ];
+
+                if ($application->make(PluginState::class)->isActivated('GeoIp2')) {
+                    $providers[] = $maxMind;
+                    $providers[] = new ServerModuleGeolocationProvider(
+                        variables: $application->make(ServerVariableMapping::class),
+                        fallback: $maxMind,
+                        options: $options,
+                    );
+                }
+
+                return new ConfiguredGeolocationProviderRegistry(
+                    providers: $providers,
+                    options: $options,
+                    trackerCache: $application->make(TrackerCacheInvalidator::class),
+                    defaultProviderId: $configuration->defaultLocationProviderEnabled()
+                        ? 'default'
+                        : 'disabled',
+                );
+            },
         );
 
         $this->app->singleton(

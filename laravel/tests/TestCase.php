@@ -7,6 +7,8 @@ namespace Tests;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Geolocation\CountryMetadataProvider;
+use App\Matomo\Geolocation\GeolocationProviderRegistry;
+use App\Matomo\Geolocation\GeolocationSettings;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Login\BruteForceUnblocker;
 use App\Matomo\Login\LoginAttemptGuard;
@@ -108,9 +110,37 @@ abstract class TestCase extends BaseTestCase
                 return $regionCode;
             }
 
+            public function regionCodeForName(string $countryCode, string $regionName): string
+            {
+                return '';
+            }
+
             public function convertLegacyRegion(string $countryCode, string $regionCode): array
             {
                 return ['country' => $countryCode, 'region' => $regionCode];
+            }
+        });
+        $this->app->instance(
+            GeolocationProviderRegistry::class,
+            new class implements GeolocationProviderRegistry
+            {
+                public function locate(
+                    string $ipAddress,
+                    string $browserLanguage,
+                    string $currentIpAddress,
+                    ?string $providerId = null,
+                ): ?array {
+                    return null;
+                }
+
+                public function setCurrent(string $providerId): void {}
+            },
+        );
+        $this->app->instance(GeolocationSettings::class, new class implements GeolocationSettings
+        {
+            public function adminEnabled(): bool
+            {
+                return true;
             }
         });
         $this->app->instance(CurrencyProvider::class, new class implements CurrencyProvider
