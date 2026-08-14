@@ -35,6 +35,10 @@ final readonly class InstallationConfig
         private ?bool $configuredFilterPiiEnforcement,
         /** @var list<string>|null */
         private ?array $commonPiiParameters,
+        private string $defaultLanguage,
+        private string $languageCookieName,
+        /** @var list<string>|null */
+        private ?array $availableLanguages,
     ) {}
 
     public static function fromFile(string $path): self
@@ -54,12 +58,14 @@ final readonly class InstallationConfig
         $plugins = $configuration['Plugins'] ?? [];
         $cnilPolicy = $configuration['CnilPolicy'] ?? [];
         $sitesManager = $configuration['SitesManager'] ?? [];
+        $languages = $configuration['Languages'] ?? [];
 
         if (! is_array($database)
             || ! is_array($general)
             || ! is_array($plugins)
             || ! is_array($cnilPolicy)
-            || ! is_array($sitesManager)) {
+            || ! is_array($sitesManager)
+            || ! is_array($languages)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
 
@@ -112,6 +118,9 @@ final readonly class InstallationConfig
                 'FilterPIIParameters_policy_enforced',
             ),
             commonPiiParameters: self::nullableStringList($sitesManager, 'CommonPIIParams'),
+            defaultLanguage: strtolower(self::string($general, 'default_language', 'en')),
+            languageCookieName: self::string($general, 'language_cookie_name', 'matomo_lang'),
+            availableLanguages: self::nullableStringList($languages, 'Languages'),
         );
     }
 
@@ -214,6 +223,24 @@ final readonly class InstallationConfig
     public function commonPiiParameters(): ?array
     {
         return $this->commonPiiParameters;
+    }
+
+    public function defaultLanguage(): string
+    {
+        return $this->defaultLanguage;
+    }
+
+    public function languageCookieName(): string
+    {
+        return $this->languageCookieName;
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    public function availableLanguages(): ?array
+    {
+        return $this->availableLanguages;
     }
 
     /**

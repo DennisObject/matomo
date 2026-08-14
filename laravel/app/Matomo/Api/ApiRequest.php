@@ -113,6 +113,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getCurrencySymbols';
     }
 
+    public function isCurrencyListRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getCurrencyList';
+    }
+
     public function isDefaultTimezoneRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getDefaultTimezone';

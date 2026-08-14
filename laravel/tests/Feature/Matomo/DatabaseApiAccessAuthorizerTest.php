@@ -65,6 +65,9 @@ class DatabaseApiAccessAuthorizerTest extends TestCase
         $this->addSiteAccess('viewer', 'view');
         $tokenId = $this->addToken('viewer', 'view-token');
 
+        $this->assertSame('viewer', $this->authorizer()->authenticatedLogin(
+            $this->authentication('view-token'),
+        ));
         $this->assertTrue($this->authorizer()->hasSomeViewAccess($this->authentication('view-token')));
         $this->assertFalse($this->authorizer()->hasSuperUserAccess($this->authentication('view-token')));
         $this->assertNotNull(
@@ -127,6 +130,9 @@ class DatabaseApiAccessAuthorizerTest extends TestCase
 
         $this->assertFalse(
             $this->authorizer()->hasSomeViewAccess($this->authentication('expired-token', true)),
+        );
+        $this->assertNull(
+            $this->authorizer()->authenticatedLogin($this->authentication('expired-token', true)),
         );
     }
 
