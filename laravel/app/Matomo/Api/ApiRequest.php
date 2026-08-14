@@ -42,6 +42,12 @@ final readonly class ApiRequest
         'VisitorInterest.getNumberOfVisitsByVisitCount',
     ];
 
+    /** @var list<string> */
+    private const array USER_LANGUAGE_METHODS = [
+        'UserLanguage.getLanguage',
+        'UserLanguage.getLanguageCode',
+    ];
+
     private function __construct(
         public string $module,
         public string $method,
@@ -329,6 +335,12 @@ final readonly class ApiRequest
     {
         return $this->module === 'API'
             && in_array($this->method, self::VISITOR_INTEREST_METHODS, true);
+    }
+
+    public function isUserLanguageRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::USER_LANGUAGE_METHODS, true);
     }
 
     public function hasSupportedFormat(): bool
@@ -692,7 +704,8 @@ final readonly class ApiRequest
             || (! in_array($method, self::VISITS_SUMMARY_METHODS, true)
                 && $method !== 'VisitFrequency.get'
                 && ! in_array($method, self::VISIT_TIME_METHODS, true)
-                && ! in_array($method, self::VISITOR_INTEREST_METHODS, true))) {
+                && ! in_array($method, self::VISITOR_INTEREST_METHODS, true)
+                && ! in_array($method, self::USER_LANGUAGE_METHODS, true))) {
             return null;
         }
 
