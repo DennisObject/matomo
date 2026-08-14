@@ -69,4 +69,21 @@ final readonly class DatabaseSiteRepository implements SiteRepository
                 ->all(),
         );
     }
+
+    public function idsInTimezones(array $timezones): array
+    {
+        if ($timezones === []) {
+            return [];
+        }
+
+        return array_values(
+            $this->connection
+                ->table('site')
+                ->whereIn('timezone', $timezones)
+                ->orderBy('idsite')
+                ->pluck('idsite')
+                ->map(static fn (mixed $idSite): int => (int) $idSite)
+                ->all(),
+        );
+    }
 }
