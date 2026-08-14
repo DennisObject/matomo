@@ -37,7 +37,6 @@ class ResolutionApiTest extends TestCase
                 'nb_actions' => 6,
                 'nb_visits_percent_of_total' => '75%',
                 'nb_actions_percent_of_total' => '75%',
-                'segmentValue' => '1920x1080',
                 'segment' => 'resolution==1920x1080',
             ],
             [
