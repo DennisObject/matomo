@@ -64,3 +64,35 @@ updates:
     pull-request-branch-name:
       separator: "-"    
     versioning-strategy: lockfile-only
+
+  - package-ecosystem: "composer"
+    directory: "/laravel"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+    labels:
+      - "dependencies"
+    groups:
+      laravel-dependencies:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore(deps)"
+    pull-request-branch-name:
+      separator: "-"
+
+  - package-ecosystem: "npm"
+    directory: "/laravel"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+    labels:
+      - "dependencies"
+    groups:
+      laravel-dependencies:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore(deps)"
+    pull-request-branch-name:
+      separator: "-"

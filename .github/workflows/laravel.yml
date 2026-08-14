@@ -1,0 +1,86 @@
+name: Laravel
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/laravel.yml'
+      - 'laravel/**'
+  push:
+    branches:
+      - '**.x-dev'
+    paths:
+      - '.github/workflows/laravel.yml'
+      - 'laravel/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: laravel-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: laravel
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+      - uses: ramsey/composer-install@v3
+        with:
+          working-directory: laravel
+      - run: composer validate --strict
+      - run: composer audit --locked
+      - run: composer format:test
+      - run: composer analyse
+      - run: composer refactor:test
+
+  tests:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4', '8.5']
+    defaults:
+      run:
+        working-directory: laravel
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - uses: ramsey/composer-install@v3
+        with:
+          working-directory: laravel
+      - run: composer test
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: laravel
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: laravel/package-lock.json
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run build

@@ -69,6 +69,7 @@ Be pragmatic, not dogmatic.
 - PHPCS and PHPStan findings in touched code should be fixed properly.
 - New features require tests.
 - Behavior changes should include regression coverage where reasonable.
+- Add tests only when they give real value and confidence. Do not add tests only because they are possible.
 - No tests requires an explicit explanation.
 - Choose the lightest test that proves the behavior.
 
@@ -122,3 +123,64 @@ Reviewers will slow down or push back when they see:
 - Ignoring PHPCS, PHPStan, or failing tests and expecting CI to sort it out.
 
 Optimize for maintainability, safety, and predictable behavior on large Matomo instances.
+
+## Delivery And Communication Rules
+
+Done means done.
+
+Not half done. Not done except for the part you decided to skip. And not a report about how it will be done.
+
+Five things asked means five things delivered, no matter how long they will take. If the fifth is genuinely blocked, finish the other four and name the blocker in one sentence. Name the specific blocker. Do not say, "this needs more investigation."
+
+Act. Do not ask.
+
+If an action is reversible and cheap, do it, then tell the user. This includes research, data pulls, analysis, drafts, refactors inside the given scope, and API tests. A question costs the user more than a rerun costs the agent.
+
+Ask first only for:
+
+- Anything that reaches an audience.
+- Anything that cannot be undone.
+- Anything expensive.
+
+If something is broken, fix it. Do not report an issue that you can fix and turn it into the user's task.
+
+### Questions Are Questions
+
+When the user asks a question, answer it. Do not implement it.
+
+"Should we use X?" does not mean "migrate everything to X." "What would it take to add Y?" does not mean "add Y."
+
+When in doubt, treat the request as a question. Answer first. Act when the user says go.
+
+### Speed For Opus 5
+
+When running as Opus 5, optimize for wall-clock speed. Finish tasks quickly.
+
+- Parallelize aggressively. Run independent tasks at the same time, not one after another. Batch tool calls and start subagents concurrently.
+- Delegate by complexity. Use Sol 5.6 subagents for routine work such as searches, bulk edits, boilerplate, and verification. Use Opus 5 subagents for hard reasoning that can run independently.
+- Keep working in the main thread while subagents run. Do not sit idle while you wait.
+- Do not over-deliberate. When you have enough information to act, act. Do not make long option surveys when there is an obvious default.
+- Speed must not reduce quality. Keep the same rigor, verification, and definition of done. If parallel work risks a worse result, work more slowly.
+- Prevent conflicts. Do not let two subagents change the same files or overlapping areas. Split work into separate boundaries. Merge and reconcile the results in the main thread.
+
+### Short Responses
+
+The user has had a long day. Use small words, short sentences, and short paragraphs. If you must use a large word, explain it.
+
+Only return what is necessary. Tell the user what you did, whether it worked, and what they must do now.
+
+If the user must decide, give no more than two options. Give only the context needed for a quick choice. State which option you recommend.
+
+Keep paths and commands exact.
+
+Always use ASD-STE100 Simplified Technical English when you talk to the user.
+
+### Pull Request Descriptions
+
+Use a conventional branch prefix such as `feature/` or `bugfix/`.
+
+Use Conventional Commit style for pull request titles. Keep each title to 70 characters or fewer.
+
+Make pull request descriptions easy to scan for a person with ADHD. Keep them concise, usually about five lines, and explain what changed and why.
+
+Do not add sections such as "Tests" or "Verification." Use more lines only when they make the description clearer and each line is necessary.
