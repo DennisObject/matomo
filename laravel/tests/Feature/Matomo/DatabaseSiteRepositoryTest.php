@@ -27,14 +27,25 @@ class DatabaseSiteRepositoryTest extends TestCase
             $table->unsignedInteger('idsite')->primary();
             $table->string('group')->default('');
             $table->string('main_url');
+            $table->string('timezone');
         });
         $connection->getSchemaBuilder()->create('site_url', function (Blueprint $table): void {
             $table->unsignedInteger('idsite');
             $table->string('url');
         });
         $connection->table('site')->insert([
-            ['idsite' => 3, 'group' => ' Main ', 'main_url' => 'https://example.test'],
-            ['idsite' => 8, 'group' => 'a,b', 'main_url' => 'https://other.test'],
+            [
+                'idsite' => 3,
+                'group' => ' Main ',
+                'main_url' => 'https://example.test',
+                'timezone' => 'Europe/Paris',
+            ],
+            [
+                'idsite' => 8,
+                'group' => 'a,b',
+                'main_url' => 'https://other.test',
+                'timezone' => 'UTC',
+            ],
         ]);
         $connection->table('site_url')->insert([
             ['idsite' => 3, 'url' => 'https://www.example.test'],
@@ -50,6 +61,7 @@ class DatabaseSiteRepositoryTest extends TestCase
             'https://www.example.test',
             'https://example.test/docs',
         ], $sites->urls(3));
+        $this->assertSame(['Europe/Paris', 'UTC'], $sites->timezones());
     }
 
     public function test_returns_an_empty_list_before_the_site_table_exists(): void

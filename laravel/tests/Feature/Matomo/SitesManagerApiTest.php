@@ -15,6 +15,22 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_unique_site_timezones_require_superuser_access(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())->method('timezones')->willReturn(['UTC', 'Europe/Paris']);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getUniqueSiteTimezones'.
+            '&format=json&token_auth=root-token',
+        )->assertOk()
+            ->assertExactJson(['UTC', 'Europe/Paris']);
+    }
+
     public function test_site_urls_require_site_view_access_and_keep_main_url_first(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

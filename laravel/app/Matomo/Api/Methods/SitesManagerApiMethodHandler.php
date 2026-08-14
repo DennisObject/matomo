@@ -77,6 +77,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isTimezoneSupportRequest()
             || $request->isWebsitesCountToDisplayRequest()
             || $request->isSiteUrlsRequest()
+            || $request->isUniqueSiteTimezonesRequest()
             || $this->globalOption($request) !== null;
     }
 
@@ -168,6 +169,18 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             }
 
             return $this->responses->values($request, $this->sites->urls($idSite));
+        }
+
+        if ($request->isUniqueSiteTimezonesRequest()) {
+            if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires a 'superuser' access.",
+                    401,
+                );
+            }
+
+            return $this->responses->values($request, $this->sites->timezones());
         }
 
         $globalOption = $this->globalOption($request);
