@@ -9,6 +9,7 @@ use App\Matomo\Api\Methods\CoreApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
 use App\Matomo\Api\Methods\VisitsSummaryApiMethodHandler;
+use App\Matomo\Api\Methods\VisitTimeApiMethodHandler;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
@@ -323,6 +324,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(SitesManagerApiMethodHandler::class),
                 $application->make(VisitsSummaryApiMethodHandler::class),
                 $application->make(VisitFrequencyApiMethodHandler::class),
+                $application->make(VisitTimeApiMethodHandler::class),
             ]),
         );
     }
