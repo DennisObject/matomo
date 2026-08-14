@@ -6,6 +6,8 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
+use App\Matomo\Authentication\Events\UserSiteAccessLoaded;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Schema\Blueprint;
@@ -118,12 +120,57 @@ class DatabaseApiAccessAuthorizerTest extends TestCase
         $this->assertTrue($this->authorizer()->hasSomeViewAccess($this->authentication(null)));
     }
 
-    private function authorizer(bool $onlyAllowSecureTokens = false): DatabaseApiAccessAuthorizer
+    public function test_returns_admin_sites_for_users_and_every_site_for_superusers(): void
     {
+        $this->addUser('admin');
+        $this->addSiteAccess('admin', 'admin', 1);
+        $this->addSiteAccess('admin', 'view', 2);
+        $this->addToken('admin', 'admin-token');
+        $this->addUser('root', true);
+        $this->addToken('root', 'root-token');
+
+        $this->assertSame(
+            [1],
+            $this->authorizer()->siteIdsWithAdminAccess($this->authentication('admin-token', true)),
+        );
+        $this->assertSame(
+            [1, 2],
+            $this->authorizer()->siteIdsWithAdminAccess($this->authentication('root-token', true)),
+        );
+    }
+
+    public function test_access_event_can_apply_migrated_plugin_permissions(): void
+    {
+        $this->addUser('viewer');
+        $this->addSiteAccess('viewer', 'view', 1);
+        $this->connection->table('site')->insert(['idsite' => 2]);
+        $this->addToken('viewer', 'view-token');
+        $events = $this->app->make(Dispatcher::class);
+        $events->listen(
+            UserSiteAccessLoaded::class,
+            static function (UserSiteAccessLoaded $event): void {
+                $event->siteIdsByAccess['admin'][] = 2;
+            },
+        );
+
+        $authorizer = $this->authorizer(events: $events);
+
+        $this->assertTrue($authorizer->hasSomeViewAccess($this->authentication('view-token', true)));
+        $this->assertSame(
+            [2],
+            $authorizer->siteIdsWithAdminAccess($this->authentication('view-token', true)),
+        );
+    }
+
+    private function authorizer(
+        bool $onlyAllowSecureTokens = false,
+        ?Dispatcher $events = null,
+    ): DatabaseApiAccessAuthorizer {
         return new DatabaseApiAccessAuthorizer(
             connection: $this->connection,
             salt: self::SALT,
             onlyAllowSecureTokens: $onlyAllowSecureTokens,
+            events: $events,
         );
     }
 
@@ -140,12 +187,12 @@ class DatabaseApiAccessAuthorizerTest extends TestCase
         ]);
     }
 
-    private function addSiteAccess(string $login, string $access): void
+    private function addSiteAccess(string $login, string $access, int $idSite = 1): void
     {
-        $this->connection->table('site')->insertOrIgnore(['idsite' => 1]);
+        $this->connection->table('site')->insertOrIgnore(['idsite' => $idSite]);
         $this->connection->table('access')->insert([
             'login' => $login,
-            'idsite' => 1,
+            'idsite' => $idSite,
             'access' => $access,
         ]);
     }
