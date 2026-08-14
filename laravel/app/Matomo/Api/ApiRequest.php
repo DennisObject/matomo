@@ -113,6 +113,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'API.getIpFromHeader';
     }
 
+    public function isComparisonPagesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'API.getPagesComparisonsDisabledFor';
+    }
+
     public function siteAccessRole(): ?SiteAccessRole
     {
         if ($this->module !== 'API') {
