@@ -23,7 +23,8 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
     {
         return $request->siteAccessRole() !== null
             || $request->isAllSiteIdsRequest()
-            || $request->isViewableSiteIdsRequest();
+            || $request->isViewableSiteIdsRequest()
+            || $request->isSiteGroupsRequest();
     }
 
     public function handle(ApiRequest $request): Response
@@ -49,6 +50,18 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
                     $request->restrictSitesToLogin,
                 ),
             );
+        }
+
+        if ($request->isSiteGroupsRequest()) {
+            if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires a 'superuser' access.",
+                    401,
+                );
+            }
+
+            return $this->responses->values($request, $this->sites->groups());
         }
 
         if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {

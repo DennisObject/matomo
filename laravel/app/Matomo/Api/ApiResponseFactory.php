@@ -185,7 +185,7 @@ final class ApiResponseFactory
         $content = $values === []
             ? 'No data available'
             : implode("\n", array_map(
-                static fn (int|string $value): string => (string) $value,
+                fn (int|string $value): string => $this->spreadsheetCell((string) $value, ','),
                 $values,
             ));
 

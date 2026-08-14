@@ -81,6 +81,11 @@ final readonly class ApiRequest
             && $this->method === 'SitesManager.getSitesIdWithAtLeastViewAccess';
     }
 
+    public function isSiteGroupsRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSitesGroups';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(

@@ -10,4 +10,9 @@ interface SiteRepository
      * @return list<int>
      */
     public function allIds(): array;
+
+    /**
+     * @return list<string>
+     */
+    public function groups(): array;
 }

@@ -25,4 +25,17 @@ final readonly class DatabaseSiteRepository implements SiteRepository
             return [];
         }
     }
+
+    public function groups(): array
+    {
+        return array_values(
+            $this->connection
+                ->table('site')
+                ->distinct()
+                ->pluck('group')
+                ->filter(static fn (mixed $group): bool => is_string($group))
+                ->map(static fn (string $group): string => trim($group))
+                ->all(),
+        );
+    }
 }
