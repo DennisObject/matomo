@@ -48,6 +48,11 @@ final readonly class ApiRequest
             && in_array($this->method, ['API.getMatomoVersion', 'API.getPiwikVersion'], true);
     }
 
+    public function isPhpVersionRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'API.getPhpVersion';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(

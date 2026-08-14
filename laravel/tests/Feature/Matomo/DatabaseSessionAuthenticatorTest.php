@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAuthentication;
+use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
-use App\Matomo\Authentication\DatabaseVersionAccessAuthorizer;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\DatabaseManager;
@@ -129,9 +129,9 @@ class DatabaseSessionAuthenticatorTest extends TestCase
         ));
     }
 
-    private function authorizer(): DatabaseVersionAccessAuthorizer
+    private function authorizer(): DatabaseApiAccessAuthorizer
     {
-        return new DatabaseVersionAccessAuthorizer(
+        return new DatabaseApiAccessAuthorizer(
             connection: $this->connection,
             salt: self::SALT,
             onlyAllowSecureTokens: false,

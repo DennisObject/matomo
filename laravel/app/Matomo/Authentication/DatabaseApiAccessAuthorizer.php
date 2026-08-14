@@ -9,7 +9,7 @@ use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
 use stdClass;
 
-final readonly class DatabaseVersionAccessAuthorizer implements VersionAccessAuthorizer
+final readonly class DatabaseApiAccessAuthorizer implements ApiAccessAuthorizer
 {
     public function __construct(
         private ConnectionInterface $connection,
@@ -21,13 +21,7 @@ final readonly class DatabaseVersionAccessAuthorizer implements VersionAccessAut
 
     public function hasSomeViewAccess(ApiAuthentication $authentication): bool
     {
-        $user = $this->sessions?->authenticate($authentication);
-
-        if ($user === null) {
-            $user = in_array($authentication->token, [null, '', 'anonymous'], true)
-            ? $this->findUser('anonymous')
-            : $this->authenticateToken($authentication->token, $authentication->tokenIsSecure);
-        }
+        $user = $this->authenticatedUser($authentication);
 
         if ($user === null) {
             return false;
@@ -43,6 +37,27 @@ final readonly class DatabaseVersionAccessAuthorizer implements VersionAccessAut
             ->where('access.login', $user['login'])
             ->whereIn('access.access', ['view', 'write', 'admin'])
             ->exists();
+    }
+
+    public function hasSuperUserAccess(ApiAuthentication $authentication): bool
+    {
+        return $this->authenticatedUser($authentication)['isSuperUser'] ?? false;
+    }
+
+    /**
+     * @return array{login: string, isSuperUser: bool}|null
+     */
+    private function authenticatedUser(ApiAuthentication $authentication): ?array
+    {
+        $user = $this->sessions?->authenticate($authentication);
+
+        if ($user !== null) {
+            return $user;
+        }
+
+        return in_array($authentication->token, [null, '', 'anonymous'], true)
+            ? $this->findUser('anonymous')
+            : $this->authenticateToken($authentication->token, $authentication->tokenIsSecure);
     }
 
     /**
