@@ -145,6 +145,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getSitesWithMinimumAccess';
     }
 
+    public function isViewSitesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSitesWithViewAccess';
+    }
+
     public function isDefaultCurrencyRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getDefaultCurrency';

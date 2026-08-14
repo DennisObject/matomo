@@ -21,6 +21,66 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_view_sites_return_only_exact_view_access_with_legacy_presentation(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::View)
+            ->willReturn([1, 3]);
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('detailsForIds')
+            ->with([1, 3])
+            ->willReturn([
+                ['idsite' => 1, 'name' => 'First site'],
+                ['idsite' => 3, 'name' => 'Third site'],
+            ]);
+        $presenter = $this->createMock(SiteDetailsPresenter::class);
+        $presenter->expects($this->exactly(2))
+            ->method('present')
+            ->willReturnCallback(function (array $site, string $language, bool $includeCreator): array {
+                $this->assertSame('fr', $language);
+                $this->assertFalse($includeCreator);
+
+                return [...$site, 'currency_name' => 'euro'];
+            });
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(SiteDetailsPresenter::class, $presenter);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithViewAccess'.
+            '&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([
+                ['idsite' => 1, 'name' => 'First site', 'currency_name' => 'euro'],
+                ['idsite' => 3, 'name' => 'Third site', 'currency_name' => 'euro'],
+            ]);
+    }
+
+    public function test_view_sites_return_empty_for_superuser_exact_role_access(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::View)
+            ->willReturn([]);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('detailsForIds');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithViewAccess'.
+            '&format=json&token_auth=root-token',
+        )->assertOk()
+            ->assertExactJson([]);
+    }
+
     public function test_minimum_access_sites_apply_role_and_site_filters(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
