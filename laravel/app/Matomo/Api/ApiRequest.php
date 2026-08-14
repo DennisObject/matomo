@@ -34,6 +34,14 @@ final readonly class ApiRequest
         'VisitTime.getVisitInformationPerServerTime',
     ];
 
+    /** @var list<string> */
+    private const array VISITOR_INTEREST_METHODS = [
+        'VisitorInterest.getNumberOfVisitsPerVisitDuration',
+        'VisitorInterest.getNumberOfVisitsPerPage',
+        'VisitorInterest.getNumberOfVisitsByDaysSinceLast',
+        'VisitorInterest.getNumberOfVisitsByVisitCount',
+    ];
+
     private function __construct(
         public string $module,
         public string $method,
@@ -315,6 +323,12 @@ final readonly class ApiRequest
     {
         return $this->module === 'API'
             && in_array($this->method, self::VISIT_TIME_METHODS, true);
+    }
+
+    public function isVisitorInterestRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::VISITOR_INTEREST_METHODS, true);
     }
 
     public function hasSupportedFormat(): bool
@@ -677,7 +691,8 @@ final readonly class ApiRequest
         if ($module !== 'API'
             || (! in_array($method, self::VISITS_SUMMARY_METHODS, true)
                 && $method !== 'VisitFrequency.get'
-                && ! in_array($method, self::VISIT_TIME_METHODS, true))) {
+                && ! in_array($method, self::VISIT_TIME_METHODS, true)
+                && ! in_array($method, self::VISITOR_INTEREST_METHODS, true))) {
             return null;
         }
 

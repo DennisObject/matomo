@@ -194,6 +194,10 @@ final readonly class VisitTimeReportBuilder
         foreach ($rows as $index => $row) {
             $label = $row['label'] ?? null;
 
+            if ($showMetadata) {
+                $row = [...$row, ...$archiveRows[$index]['metadata']];
+            }
+
             if (is_numeric($label)) {
                 $hour = (int) $label;
                 $row['label'] = str_pad((string) $hour, 2, '0', STR_PAD_LEFT);
@@ -201,10 +205,6 @@ final readonly class VisitTimeReportBuilder
                 if ($showMetadata) {
                     $row['segment'] = ($localTime ? 'visitLocalHour==' : 'visitStartServerHour==').$hour;
                 }
-            }
-
-            if ($showMetadata) {
-                $row = [...$row, ...$archiveRows[$index]['metadata']];
             }
 
             $result[] = $row;
