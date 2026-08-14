@@ -23,6 +23,8 @@ interface SiteRepository
 
     public function excludedReferrers(int $idSite): ?string;
 
+    public function excludedParameters(int $idSite): ?string;
+
     /**
      * @return list<string>
      */

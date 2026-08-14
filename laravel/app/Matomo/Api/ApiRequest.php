@@ -139,6 +139,24 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getExcludedReferrers';
     }
 
+    public function isExcludedQueryParametersRequest(): bool
+    {
+        return $this->module === 'API'
+            && $this->method === 'SitesManager.getExcludedQueryParameters';
+    }
+
+    public function isGlobalExcludedQueryParametersRequest(): bool
+    {
+        return $this->module === 'API'
+            && $this->method === 'SitesManager.getExcludedQueryParametersGlobal';
+    }
+
+    public function isQueryParameterExclusionTypeRequest(): bool
+    {
+        return $this->module === 'API'
+            && $this->method === 'SitesManager.getExclusionTypeForQueryParams';
+    }
+
     public function isUniqueSiteTimezonesRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getUniqueSiteTimezones';
@@ -199,14 +217,28 @@ final readonly class ApiRequest
 
     private static function siteId(Request $request, string $module, string $method): ?int
     {
-        if ($module !== 'API' || ! in_array($method, [
+        $requiredMethods = [
+            'SitesManager.getExcludedQueryParameters',
             'SitesManager.getExcludedReferrers',
             'SitesManager.getSiteUrlsFromId',
+        ];
+        $optionalMethods = [
+            'SitesManager.getExcludedQueryParametersGlobal',
+            'SitesManager.getExclusionTypeForQueryParams',
+        ];
+
+        if ($module !== 'API' || ! in_array($method, [
+            ...$requiredMethods,
+            ...$optionalMethods,
         ], true)) {
             return null;
         }
 
         $value = self::nullableStringInput($request, 'idSite');
+
+        if (($value === null || $value === '') && in_array($method, $optionalMethods, true)) {
+            return null;
+        }
 
         if ($value === null || $value === '' || (string) (int) $value !== $value) {
             throw new MissingApiParameter('idSite');

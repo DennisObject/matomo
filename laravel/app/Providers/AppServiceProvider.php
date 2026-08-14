@@ -19,10 +19,14 @@ use App\Matomo\Plugins\PluginState;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\ReportingApiIpAllowlist;
+use App\Matomo\Settings\DatabasePolicySettingRepository;
+use App\Matomo\Settings\PolicySettingRepository;
 use App\Matomo\Sites\ConfiguredCurrencyProvider;
+use App\Matomo\Sites\ConfiguredQueryParameterExclusionPolicy;
 use App\Matomo\Sites\ConfiguredSiteRuntimeSettings;
 use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\DatabaseSiteRepository;
+use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
@@ -119,6 +123,29 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            PolicySettingRepository::class,
+            fn (Application $application): PolicySettingRepository => new DatabasePolicySettingRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
+            QueryParameterExclusionPolicy::class,
+            function (Application $application): QueryParameterExclusionPolicy {
+                $installation = $application->make(InstallationConfig::class);
+
+                return new ConfiguredQueryParameterExclusionPolicy(
+                    options: $application->make(OptionRepository::class),
+                    settings: $application->make(PolicySettingRepository::class),
+                    configuredCnilPolicy: $installation->configuredCnilPolicy(),
+                    configuredFilterPiiEnforcement: $installation->configuredFilterPiiEnforcement(),
+                    recommendedPiiParameters: $installation->commonPiiParameters()
+                        ?? $this->defaultCommonPiiParameters(),
+                );
+            },
+        );
+
+        $this->app->singleton(
             PluginState::class,
             fn (Application $application): PluginState => new ConfiguredPluginState(
                 $application->make(InstallationConfig::class),
@@ -165,4 +192,27 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
     public function boot(): void {}
+
+    /**
+     * @return list<string>
+     */
+    private function defaultCommonPiiParameters(): array
+    {
+        $configuration = parse_ini_file(
+            base_path('../config/global.ini.php'),
+            true,
+            INI_SCANNER_RAW,
+        );
+
+        if (! is_array($configuration)
+            || ! is_array($configuration['SitesManager'] ?? null)
+            || ! is_array($configuration['SitesManager']['CommonPIIParams'] ?? null)) {
+            throw new RuntimeException('The Matomo recommended PII parameter list is invalid.');
+        }
+
+        return array_values(array_filter(
+            $configuration['SitesManager']['CommonPIIParams'],
+            is_string(...),
+        ));
+    }
 }

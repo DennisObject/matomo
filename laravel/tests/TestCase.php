@@ -9,6 +9,7 @@ use App\Matomo\Plugins\PluginState;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Sites\CurrencyProvider;
+use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -26,6 +27,18 @@ abstract class TestCase extends BaseTestCase
             public function symbols(): array
             {
                 return [];
+            }
+        });
+        $this->app->instance(QueryParameterExclusionPolicy::class, new class implements QueryParameterExclusionPolicy
+        {
+            public function type(?int $idSite = null): string
+            {
+                return 'common_session_parameters';
+            }
+
+            public function parameters(?int $idSite = null): string
+            {
+                return '';
             }
         });
         $this->app->instance(OptionRepository::class, new class implements OptionRepository
@@ -67,6 +80,11 @@ abstract class TestCase extends BaseTestCase
             }
 
             public function excludedReferrers(int $idSite): ?string
+            {
+                return null;
+            }
+
+            public function excludedParameters(int $idSite): ?string
             {
                 return null;
             }

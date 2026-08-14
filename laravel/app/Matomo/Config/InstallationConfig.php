@@ -31,6 +31,10 @@ final readonly class InstallationConfig
         private array $activatedPlugins,
         /** @var array<string, string> */
         private array $customCurrencies,
+        private ?bool $configuredCnilPolicy,
+        private ?bool $configuredFilterPiiEnforcement,
+        /** @var list<string>|null */
+        private ?array $commonPiiParameters,
     ) {}
 
     public static function fromFile(string $path): self
@@ -48,8 +52,14 @@ final readonly class InstallationConfig
         $database = $configuration['database'] ?? null;
         $general = $configuration['General'] ?? [];
         $plugins = $configuration['Plugins'] ?? [];
+        $cnilPolicy = $configuration['CnilPolicy'] ?? [];
+        $sitesManager = $configuration['SitesManager'] ?? [];
 
-        if (! is_array($database) || ! is_array($general) || ! is_array($plugins)) {
+        if (! is_array($database)
+            || ! is_array($general)
+            || ! is_array($plugins)
+            || ! is_array($cnilPolicy)
+            || ! is_array($sitesManager)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
 
@@ -96,6 +106,12 @@ final readonly class InstallationConfig
             ),
             activatedPlugins: self::stringList($plugins, 'Plugins'),
             customCurrencies: self::stringMap($general, 'currencies'),
+            configuredCnilPolicy: self::nullableBoolean($cnilPolicy, 'cnil_v1_policy_enabled'),
+            configuredFilterPiiEnforcement: self::nullableBoolean(
+                $sitesManager,
+                'FilterPIIParameters_policy_enforced',
+            ),
+            commonPiiParameters: self::nullableStringList($sitesManager, 'CommonPIIParams'),
         );
     }
 
@@ -180,6 +196,24 @@ final readonly class InstallationConfig
     public function customCurrencies(): array
     {
         return $this->customCurrencies;
+    }
+
+    public function configuredCnilPolicy(): ?bool
+    {
+        return $this->configuredCnilPolicy;
+    }
+
+    public function configuredFilterPiiEnforcement(): ?bool
+    {
+        return $this->configuredFilterPiiEnforcement;
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    public function commonPiiParameters(): ?array
+    {
+        return $this->commonPiiParameters;
     }
 
     /**
@@ -288,6 +322,16 @@ final readonly class InstallationConfig
 
     /**
      * @param  array<string, mixed>  $values
+     */
+    private static function nullableBoolean(array $values, string $key): ?bool
+    {
+        return array_key_exists($key, $values)
+            ? self::boolean($values, $key)
+            : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
      * @return list<string>
      */
     private static function stringList(array $values, string $key): array
@@ -302,6 +346,17 @@ final readonly class InstallationConfig
             $value,
             is_string(...),
         ));
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     * @return list<string>|null
+     */
+    private static function nullableStringList(array $values, string $key): ?array
+    {
+        return array_key_exists($key, $values)
+            ? self::stringList($values, $key)
+            : null;
     }
 
     /**

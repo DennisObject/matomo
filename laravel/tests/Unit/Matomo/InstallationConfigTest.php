@@ -43,6 +43,9 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(21, $configuration->websitesCountToDisplay());
         $this->assertSame(['CoreHome', 'SitesManager'], $configuration->activatedPlugins());
         $this->assertSame(['BTC' => 'Bitcoin'], $configuration->customCurrencies());
+        $this->assertTrue($configuration->configuredCnilPolicy());
+        $this->assertFalse($configuration->configuredFilterPiiEnforcement());
+        $this->assertSame(['email', 'password'], $configuration->commonPiiParameters());
     }
 
     public function test_rejects_unsafe_table_prefix(): void
@@ -83,6 +86,14 @@ class InstallationConfigTest extends TestCase
             [Plugins]
             Plugins[] = "CoreHome"
             Plugins[] = "SitesManager"
+
+            [CnilPolicy]
+            cnil_v1_policy_enabled = 1
+
+            [SitesManager]
+            FilterPIIParameters_policy_enforced = 0
+            CommonPIIParams[] = "email"
+            CommonPIIParams[] = "password"
             INI;
 
         $this->assertNotFalse(file_put_contents($path, $content));
