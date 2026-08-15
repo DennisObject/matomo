@@ -39,12 +39,32 @@ final class DatabaseCompliancePolicyStateRepositoryTest extends TestCase
             $table->boolean('json_encoded')->default(false);
             $table->unique(['idsite', 'plugin_name', 'setting_name']);
         });
-        $repository = new DatabaseCompliancePolicyStateRepository($connection);
+        $repository = new DatabaseCompliancePolicyStateRepository($connection, null);
 
         $repository->setActive(null, true);
         $repository->setActive(7, false);
 
         $this->assertSame('0', $connection->table('plugin_setting')->value('setting_value'));
         $this->assertSame('0', $connection->table('site_setting')->value('setting_value'));
+        $this->assertFalse($repository->active(7));
+        $this->assertFalse($repository->configControlled());
+
+        $repository->setActive(7, true);
+        $this->assertTrue($repository->active(7));
+        $this->assertTrue($repository->settingEnforced('DevicesDetection', 'OnlyMajorVersions', 7));
+
+        $connection->table('plugin_setting')->insert([
+            'plugin_name' => 'DevicesDetection',
+            'user_login' => '',
+            'setting_name' => 'OnlyMajorVersions_policy_enforced',
+            'setting_value' => '0',
+            'json_encoded' => 0,
+        ]);
+        $this->assertFalse($repository->settingEnforced('DevicesDetection', 'OnlyMajorVersions', 7));
+
+        $configured = new DatabaseCompliancePolicyStateRepository($connection, true);
+        $this->assertTrue($configured->active(null));
+        $this->assertTrue($configured->configControlled());
+        $this->assertTrue($configured->settingEnforced('DevicesDetection', 'OnlyMajorVersions', 7));
     }
 }

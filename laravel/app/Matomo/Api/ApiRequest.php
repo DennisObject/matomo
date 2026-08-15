@@ -538,6 +538,7 @@ final readonly class ApiRequest
         public ?UsersManagerTokenRequest $usersManagerToken,
         public ?PrivacyPurgeSettingsRequest $privacyPurgeSettings,
         public ?PrivacyComplianceStatusRequest $privacyComplianceStatus,
+        public ?PrivacyComplianceReadRequest $privacyComplianceRead,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -621,6 +622,7 @@ final readonly class ApiRequest
             usersManagerToken: null,
             privacyPurgeSettings: null,
             privacyComplianceStatus: null,
+            privacyComplianceRead: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1233,6 +1235,7 @@ final readonly class ApiRequest
             usersManagerToken: self::usersManagerToken($request, $module, $method),
             privacyPurgeSettings: self::privacyPurgeSettings($request, $module, $method),
             privacyComplianceStatus: self::privacyComplianceStatus($request, $module, $method),
+            privacyComplianceRead: self::privacyComplianceRead($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2773,6 +2776,21 @@ final readonly class ApiRequest
             policy: self::requiredString($request, 'complianceType'),
             enforce: self::requiredBoolean($request, 'enforce'),
             passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    private static function privacyComplianceRead(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?PrivacyComplianceReadRequest {
+        if ($module !== 'API' || $method !== 'PrivacyManager.getComplianceStatus') {
+            return null;
+        }
+
+        return new PrivacyComplianceReadRequest(
+            site: self::requiredString($request, 'idSite'),
+            policy: self::requiredString($request, 'complianceType'),
         );
     }
 

@@ -52,6 +52,8 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(['BTC' => 'Bitcoin'], $configuration->customCurrencies());
         $this->assertTrue($configuration->configuredCnilPolicy());
         $this->assertFalse($configuration->configuredFilterPiiEnforcement());
+        $this->assertFalse($configuration->thirdPartyCookiesEnabled());
+        $this->assertSame(180, $configuration->deleteLogsOlderThan());
         $this->assertSame(['email', 'password'], $configuration->commonPiiParameters());
         $this->assertSame('fr', $configuration->defaultLanguage());
         $this->assertSame('language_cookie', $configuration->languageCookieName());
@@ -137,6 +139,9 @@ class InstallationConfigTest extends TestCase
             campaign_var_name = "campaign"
             campaign_keyword_var_name = "keyword"
             page_maximum_length = 2048
+
+            [Tracker_7]
+            use_third_party_id_cookie = 1
             INI,
         ));
 
@@ -162,6 +167,8 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(['campaign'], $configuration->campaignNameParameters());
         $this->assertSame(['keyword'], $configuration->campaignKeywordParameters());
         $this->assertSame(2048, $configuration->pageMaximumLength());
+        $this->assertTrue($configuration->thirdPartyCookiesEnabled(7));
+        $this->assertFalse($configuration->thirdPartyCookiesEnabled(8));
     }
 
     public function test_loads_site_specific_segment_creation_access(): void

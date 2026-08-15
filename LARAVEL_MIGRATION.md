@@ -120,7 +120,9 @@ Handled reporting API method names:
   exclusions, stable sorting, and superuser-only schema visibility. The public CNIL compliance policy
   catalog keeps the legacy policy identity and response keys with self-contained guidance text.
   Policy enforcement changes preserve superuser access, session password confirmation, instance and
-  site storage semantics, extension events, and tracker-cache invalidation.
+  site storage semantics, extension events, and tracker-cache invalidation. Compliance status reads
+  evaluate all 16 machine-checkable CNIL requirements plus the manual opt-out requirement, with
+  policy enforcement, config control, global and site overrides, and dynamic status notes.
 - `Login`: `unblockBruteForceIPs` in every supported response format.
 - `AIAgents`: `get` in every supported response format, including suffixed column filtering.
 - `AIProviders`: all 4 API methods, including masked credential storage, managed configuration,
@@ -257,7 +259,7 @@ Reporting API module matrix:
 | `MultiSites` | 3 | 3 | 0 |
 | `Overlay` | 2 | 2 | 0 |
 | `PagePerformance` | 1 | 1 | 0 |
-| `PrivacyManager` | 18 | 9 | 9 |
+| `PrivacyManager` | 18 | 10 | 8 |
 | `ProfessionalServices` | 1 | 1 | 0 |
 | `Referrers` | 23 | 23 | 0 |
 | `Resolution` | 2 | 2 | 0 |
@@ -275,7 +277,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **330** | **59** |
+| **Total** | **389** | **331** | **58** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
