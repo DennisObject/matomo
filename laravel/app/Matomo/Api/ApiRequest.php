@@ -554,6 +554,7 @@ final readonly class ApiRequest
         public ?BulkApiRequest $bulk,
         public ?ProcessedReportRequest $processedReport,
         public ?ApiOverviewRequest $apiOverview,
+        public ?SegmentSuggestionsRequest $segmentSuggestions,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -655,6 +656,7 @@ final readonly class ApiRequest
             bulk: null,
             processedReport: null,
             apiOverview: null,
+            segmentSuggestions: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1285,6 +1287,7 @@ final readonly class ApiRequest
             bulk: self::bulk($request, $module, $method),
             processedReport: self::processedReport($request, $module, $method),
             apiOverview: self::apiOverview($request, $module, $method),
+            segmentSuggestions: self::segmentSuggestions($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -3212,6 +3215,18 @@ final readonly class ApiRequest
             date: self::requiredString($request, 'date'),
             segment: self::nullableStringInput($request, 'segment'),
             columns: $columns === null ? [] : array_values(array_filter(explode(',', $columns), static fn (string $column): bool => $column !== '')),
+        );
+    }
+
+    private static function segmentSuggestions(Request $request, string $module, string $method): ?SegmentSuggestionsRequest
+    {
+        if ($module !== 'API' || $method !== 'API.getSuggestedValuesForSegment') {
+            return null;
+        }
+
+        return new SegmentSuggestionsRequest(
+            siteId: self::requiredInteger($request, 'idSite'),
+            segmentName: self::requiredString($request, 'segmentName'),
         );
     }
 
