@@ -49,6 +49,7 @@ use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorMutationApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorReadApiMethodHandler;
+use App\Matomo\Api\Methods\SegmentEditorReportApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorStateApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\TourApiMethodHandler;
@@ -1358,6 +1359,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(SegmentEditorReadApiMethodHandler::class),
                 $application->make(SegmentEditorStateApiMethodHandler::class),
                 $application->make(SegmentEditorMutationApiMethodHandler::class),
+                $application->make(SegmentEditorReportApiMethodHandler::class),
                 $application->make(DashboardApiMethodHandler::class),
                 $application->make(DbStatsApiMethodHandler::class),
                 $application->make(ProfessionalServicesApiMethodHandler::class),

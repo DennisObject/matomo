@@ -26,6 +26,9 @@ interface StoredSegmentRepository
     /** @return StoredSegment|null */
     public function find(int $segmentId): ?array;
 
+    /** @return StoredSegment|null */
+    public function findByDefinition(string $definition): ?array;
+
     /** @return list<StoredSegment> */
     public function visible(string $login, bool $superUser, ?int $siteId): array;
 }

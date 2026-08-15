@@ -13,5 +13,8 @@ final readonly class SegmentEditorRequest
         public ?string $definition,
         public ?bool $autoArchive,
         public ?bool $enabledAllUsers,
+        public ?string $period,
+        public ?string $date,
+        public ?string $segment,
     ) {}
 }
