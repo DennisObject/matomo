@@ -16,6 +16,7 @@ use App\Matomo\Api\Methods\AiAgentsApiMethodHandler;
 use App\Matomo\Api\Methods\AiProvidersApiMethodHandler;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Api\Methods\ContentsApiMethodHandler;
+use App\Matomo\Api\Methods\CoreAdminHomeApiMethodHandler;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
 use App\Matomo\Api\Methods\CustomJsTrackerApiMethodHandler;
 use App\Matomo\Api\Methods\DashboardApiMethodHandler;
@@ -152,6 +153,8 @@ use App\Matomo\Tour\ConfiguredTourSettings;
 use App\Matomo\Tour\DatabaseTourDataRepository;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
+use App\Matomo\TrackingFailures\DatabaseTrackingFailureRepository;
+use App\Matomo\TrackingFailures\TrackingFailureRepository;
 use App\Matomo\Transitions\ConfiguredTransitionsPeriodPolicy;
 use App\Matomo\Transitions\ConfiguredTransitionsSettings;
 use App\Matomo\Transitions\TransitionsPeriodPolicy;
@@ -201,6 +204,12 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(AiProviderCatalog::class, BuiltInAiProviderCatalog::class);
+        $this->app->singleton(
+            TrackingFailureRepository::class,
+            fn (Application $application): TrackingFailureRepository => new DatabaseTrackingFailureRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
         $this->app->singleton(TransitionsSettings::class, ConfiguredTransitionsSettings::class);
         $this->app->singleton(TransitionsPeriodPolicy::class, ConfiguredTransitionsPeriodPolicy::class);
         $this->app->singleton(
@@ -758,6 +767,7 @@ class AppServiceProvider extends ServiceProvider
             ApiMethodDispatcher::class,
             fn (Application $application): ApiMethodDispatcher => new ApiMethodDispatcher([
                 $application->make(CoreApiMethodHandler::class),
+                $application->make(CoreAdminHomeApiMethodHandler::class),
                 $application->make(SitesManagerApiMethodHandler::class),
                 $application->make(VisitsSummaryApiMethodHandler::class),
                 $application->make(VisitFrequencyApiMethodHandler::class),

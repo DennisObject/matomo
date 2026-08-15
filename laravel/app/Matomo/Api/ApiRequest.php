@@ -215,6 +215,13 @@ final readonly class ApiRequest
     ];
 
     /** @var list<string> */
+    private const array CORE_ADMIN_HOME_TRACKING_FAILURE_METHODS = [
+        'CoreAdminHome.deleteAllTrackingFailures',
+        'CoreAdminHome.deleteTrackingFailure',
+        'CoreAdminHome.getTrackingFailures',
+    ];
+
+    /** @var list<string> */
     private const array AI_PROVIDERS_METHODS = [
         'AIProviders.getSettings',
         'AIProviders.saveSettings',
@@ -270,6 +277,7 @@ final readonly class ApiRequest
         public ?string $locationProviderId,
         public ?AiProviderRequest $aiProvider,
         public ?DashboardRequest $dashboard,
+        public ?CoreAdminHomeRequest $coreAdminHome,
         public ?ExampleApiRequest $exampleApi,
         public ?ExamplePluginRequest $examplePlugin,
         public ?ExampleUiRequest $exampleUi,
@@ -323,6 +331,7 @@ final readonly class ApiRequest
             locationProviderId: null,
             aiProvider: null,
             dashboard: null,
+            coreAdminHome: null,
             exampleApi: null,
             examplePlugin: null,
             exampleUi: null,
@@ -686,6 +695,12 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::DASHBOARD_METHODS, true);
     }
 
+    public function isCoreAdminHomeTrackingFailureRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::CORE_ADMIN_HOME_TRACKING_FAILURE_METHODS, true);
+    }
+
     public function isTourRequest(): bool
     {
         return $this->module === 'API'
@@ -750,6 +765,7 @@ final readonly class ApiRequest
             locationProviderId: self::locationProviderId($request, $module, $method),
             aiProvider: self::aiProvider($request, $module, $method),
             dashboard: self::dashboard($request, $module, $method),
+            coreAdminHome: self::coreAdminHome($request, $module, $method),
             exampleApi: self::exampleApi($request, $module, $method),
             examplePlugin: self::examplePlugin($request, $module, $method),
             exampleUi: self::exampleUi($request, $module, $method),
@@ -760,6 +776,32 @@ final readonly class ApiRequest
             languagesManager: self::languagesManager($request, $module, $method),
             transitions: self::transitions($request, $module, $method),
             authentication: $authentication,
+        );
+    }
+
+    private static function coreAdminHome(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?CoreAdminHomeRequest {
+        if ($module !== 'API' || ! in_array($method, self::CORE_ADMIN_HOME_TRACKING_FAILURE_METHODS, true)) {
+            return null;
+        }
+
+        if ($method !== 'CoreAdminHome.deleteTrackingFailure') {
+            return new CoreAdminHomeRequest(null, null);
+        }
+
+        $siteId = self::requiredInteger($request, 'idSite');
+        $failureId = self::inputValue($request, 'idFailure');
+
+        if ($failureId === null || $failureId === '' || ! is_scalar($failureId)) {
+            throw new MissingApiParameter('idFailure');
+        }
+
+        return new CoreAdminHomeRequest(
+            siteId: $siteId,
+            failureId: is_int($failureId) ? $failureId : (string) $failureId,
         );
     }
 

@@ -56,6 +56,7 @@ use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
+use App\Matomo\TrackingFailures\TrackingFailureRepository;
 use App\Matomo\Transitions\TransitionsPeriodPolicy;
 use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -133,6 +134,24 @@ abstract class TestCase extends BaseTestCase
         );
 
         $this->app->instance(AiProviderCentralConfiguration::class, new AiProviderCentralConfiguration);
+        $this->app->instance(TrackingFailureRepository::class, new class implements TrackingFailureRepository
+        {
+            public function all(): array
+            {
+                return [];
+            }
+
+            public function forSites(array $siteIds): array
+            {
+                return [];
+            }
+
+            public function deleteAll(): void {}
+
+            public function deleteForSites(array $siteIds): void {}
+
+            public function delete(int $siteId, int|string $failureId): void {}
+        });
         $this->app->instance(LanguageCatalog::class, new class implements LanguageCatalog
         {
             public function available(bool $ignoreConfig = false): array
