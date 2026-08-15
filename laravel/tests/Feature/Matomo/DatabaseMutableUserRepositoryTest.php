@@ -135,6 +135,24 @@ final class DatabaseMutableUserRepositoryTest extends TestCase
         $this->assertFalse($connection->table('option')->where('option_name', 'like', '%.alice')->exists());
     }
 
+    public function test_create_token_stores_hash_and_security_metadata(): void
+    {
+        $connection = $this->connection();
+        $users = new DatabaseMutableUserRepository($connection, 'salt');
+        $users->create('alice', 'secret1', 'alice@example.test', false, null);
+
+        $result = $users->createToken('alice@example.test', 'Mobile app', '2027-01-01 00:00:00', true);
+
+        $this->assertSame('created', $result['result']);
+        $token = $result['token'] ?? null;
+        $this->assertIsString($token);
+        $stored = $connection->table('user_token_auth')->where('login', 'alice')->first();
+        $this->assertNotNull($stored);
+        $this->assertSame(hash('sha512', $token.'salt'), $stored->password);
+        $this->assertSame(1, $stored->secure_only);
+        $this->assertSame('2027-01-01 00:00:00', $stored->date_expired);
+    }
+
     private function connection(): ConnectionInterface
     {
         $connection = $this->app->make(ConnectionInterface::class);
@@ -163,12 +181,21 @@ final class DatabaseMutableUserRepositoryTest extends TestCase
         });
         $schema->create('user_token_auth', static function (Blueprint $table): void {
             $table->string('login');
+            $table->string('description')->nullable();
+            $table->string('password')->nullable();
+            $table->dateTime('date_created')->nullable();
+            $table->dateTime('date_expired')->nullable();
+            $table->unsignedTinyInteger('system_token')->nullable();
+            $table->string('hash_algo')->nullable();
+            $table->unsignedTinyInteger('secure_only')->nullable();
         });
         $schema->create('plugin_setting', static function (Blueprint $table): void {
             $table->string('user_login');
         });
         $schema->create('option', static function (Blueprint $table): void {
             $table->string('option_name');
+            $table->text('option_value')->nullable();
+            $table->unsignedTinyInteger('autoload')->nullable();
         });
 
         return $connection;

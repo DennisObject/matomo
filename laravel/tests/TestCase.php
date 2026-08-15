@@ -76,6 +76,7 @@ use App\Matomo\Transitions\TransitionsPeriodPolicy;
 use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
 use App\Matomo\UserChanges\UserChangeReadRepository;
 use App\Matomo\Users\MutableUserRepository;
+use App\Matomo\Users\NewsletterSubscriber;
 use App\Matomo\Users\UserInvitationLinkFactory;
 use App\Matomo\Users\UserInvitationNotifier;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -422,6 +423,7 @@ abstract class TestCase extends BaseTestCase
             },
         );
         $this->app->instance(MutableUserRepository::class, $this->createStub(MutableUserRepository::class));
+        $this->app->instance(NewsletterSubscriber::class, $this->createStub(NewsletterSubscriber::class));
         $this->app->instance(
             UserInvitationNotifier::class,
             $this->createStub(UserInvitationNotifier::class),

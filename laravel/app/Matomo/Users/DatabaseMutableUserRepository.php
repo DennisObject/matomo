@@ -304,6 +304,43 @@ final readonly class DatabaseMutableUserRepository implements MutableUserReposit
         });
     }
 
+    public function createToken(
+        string $loginOrEmail,
+        string $description,
+        ?string $expiresAt,
+        bool $secureOnly,
+    ): array {
+        return $this->connection->transaction(function () use (
+            $loginOrEmail,
+            $description,
+            $expiresAt,
+            $secureOnly,
+        ): array {
+            $user = $this->connection->table('user')
+                ->where('login', $loginOrEmail)
+                ->orWhere('email', $loginOrEmail)
+                ->lockForUpdate()
+                ->first();
+            if ($user === null || ! is_string($user->login ?? null)) {
+                return ['result' => 'not-found'];
+            }
+
+            $token = bin2hex(random_bytes(16));
+            $this->connection->table('user_token_auth')->insert([
+                'login' => $user->login,
+                'description' => $description,
+                'password' => hash('sha512', $token.$this->salt),
+                'date_created' => CarbonImmutable::now()->toDateTimeString(),
+                'date_expired' => $expiresAt,
+                'system_token' => 0,
+                'hash_algo' => 'sha512',
+                'secure_only' => $secureOnly ? 1 : 0,
+            ]);
+
+            return ['result' => 'created', 'token' => $token];
+        });
+    }
+
     /** @return 'login-exists'|'email-exists'|'login-is-email'|'email-is-login'|null */
     private function conflict(string $login, string $email): ?string
     {

@@ -49,4 +49,12 @@ interface MutableUserRepository
 
     /** @return 'deleted'|'not-found'|'denied'|'only-superuser' */
     public function delete(string $login, string $requester, bool $requesterIsSuperuser): string;
+
+    /** @return array{result: 'created'|'not-found', token?: string} */
+    public function createToken(
+        string $loginOrEmail,
+        string $description,
+        ?string $expiresAt,
+        bool $secureOnly,
+    ): array;
 }

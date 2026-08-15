@@ -535,6 +535,7 @@ final readonly class ApiRequest
         public ?UsersManagerInviteMaintenanceRequest $usersManagerInviteMaintenance,
         public ?UsersManagerSecurityMutationRequest $usersManagerSecurityMutation,
         public ?UsersManagerUpdateDeleteRequest $usersManagerUpdateDelete,
+        public ?UsersManagerTokenRequest $usersManagerToken,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -615,6 +616,7 @@ final readonly class ApiRequest
             usersManagerInviteMaintenance: null,
             usersManagerSecurityMutation: null,
             usersManagerUpdateDelete: null,
+            usersManagerToken: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1224,6 +1226,7 @@ final readonly class ApiRequest
             usersManagerInviteMaintenance: self::usersManagerInviteMaintenance($request, $module, $method),
             usersManagerSecurityMutation: self::usersManagerSecurityMutation($request, $module, $method),
             usersManagerUpdateDelete: self::usersManagerUpdateDelete($request, $module, $method),
+            usersManagerToken: self::usersManagerToken($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2683,6 +2686,25 @@ final readonly class ApiRequest
             email: $update ? self::nullableStringInput($request, 'email') : null,
             passwordIsHashed: $update && self::booleanInput($request, '_isPasswordHashed', false),
             passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    private static function usersManagerToken(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?UsersManagerTokenRequest {
+        if ($module !== 'API' || $method !== 'UsersManager.createAppSpecificTokenAuth') {
+            return null;
+        }
+
+        return new UsersManagerTokenRequest(
+            login: self::requiredString($request, 'userLogin'),
+            passwordConfirmation: self::requiredString($request, 'passwordConfirmation'),
+            description: self::requiredString($request, 'description'),
+            expireDate: self::nullableStringInput($request, 'expireDate'),
+            expireHours: self::integerInput($request, 'expireHours', 0, 0),
+            secureOnly: self::booleanInput($request, 'secureOnly', false),
         );
     }
 
