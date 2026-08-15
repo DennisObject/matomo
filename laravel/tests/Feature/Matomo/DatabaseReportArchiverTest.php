@@ -6,6 +6,7 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Archiving\ArchiveRecordSet;
 use App\Matomo\Archiving\ArchiveReportRequest;
+use App\Matomo\Archiving\ArchiveVisitQueryFactory;
 use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\DatabaseReportArchiver;
@@ -17,6 +18,7 @@ use App\Matomo\Archiving\Events\ArchiveVisitsQueryBuilding;
 use App\Matomo\Archiving\SegmentConditionQueryApplier;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
 use App\Matomo\Archiving\SegmentExpressionParser;
+use App\Matomo\Archiving\VisitDimensionArchiveCollector;
 use App\Matomo\Geolocation\CountryMetadataProvider;
 use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Reporting\CarbonReportingPeriodFactory;
@@ -75,7 +77,15 @@ class DatabaseReportArchiverTest extends TestCase
             $table->string('config_id');
             $table->string('user_id')->nullable();
             $table->string('config_browser_name')->nullable();
+            $table->string('config_browser_version')->nullable();
             $table->string('config_os')->nullable();
+            $table->string('config_os_version')->nullable();
+            $table->string('config_resolution')->nullable();
+            $table->string('config_device_brand')->nullable();
+            $table->string('config_device_model')->nullable();
+            $table->string('config_browser_engine')->nullable();
+            $table->string('location_provider')->nullable();
+            $table->dateTime('visitor_localtime')->nullable();
             $table->string('custom_var_k1')->nullable();
             $table->string('custom_var_v1')->nullable();
             $table->string('custom_var_k2')->nullable();
@@ -806,6 +816,164 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertTrue($cached->cached);
     }
 
+    public function test_collects_visit_dimension_records_and_aggregates_parent_blobs(): void
+    {
+        $this->insertVisits();
+        $this->connection->table('log_visit')->where('idvisit', 1)->update([
+            'visit_first_action_time' => '2026-08-14 12:00:00',
+            'visitor_localtime' => '2026-08-15 07:00:00',
+            'config_browser_name' => 'FF',
+            'config_browser_version' => '142.0',
+            'config_os' => 'LIN',
+            'config_os_version' => '6.12',
+            'config_resolution' => '1920x1080',
+            'config_device_type' => 0,
+            'config_device_brand' => 'Unknown',
+            'config_device_model' => 'Desktop',
+            'config_browser_engine' => 'Gecko',
+            'location_provider' => 'example.net',
+        ]);
+        $this->connection->table('log_visit')->where('idvisit', 2)->update([
+            'visit_first_action_time' => '2026-08-15 11:00:00',
+            'visitor_localtime' => '2026-08-15 22:00:00',
+            'config_browser_name' => 'CH',
+            'config_browser_version' => '140.0',
+            'config_os' => 'WIN',
+            'config_os_version' => '11',
+            'config_resolution' => '1366x768',
+            'config_device_type' => 1,
+            'config_device_brand' => 'Google',
+            'config_device_model' => 'Pixel',
+            'config_browser_engine' => 'Blink',
+            'location_provider' => 'isp.test',
+        ]);
+        $this->registerVisitDimensionCollector();
+
+        $this->archiver()->archive(new ArchiveReportRequest(1, 'day', '2026-08-15'));
+
+        $period = (new CarbonReportingPeriodFactory)->make(
+            'day',
+            '2026-08-15',
+            'Pacific/Auckland',
+        )[0][0];
+        $repository = new DatabaseBlobArchiveRepository($this->connection);
+        $browserRows = $repository->rows(
+            [1],
+            [$period],
+            '',
+            'DevicesDetection_browserVersions',
+        )[1][$period->rangeKey()];
+        $this->assertSame(['CH;140.0', 'FF;142.0'], array_column(array_column($browserRows, 'columns'), 'label'));
+        $this->assertSame([1, 1], array_column(array_column($browserRows, 'columns'), 'nb_visits'));
+        $localTimeRows = $repository->rows(
+            [1],
+            [$period],
+            '',
+            'VisitTime_localTime',
+        )[1][$period->rangeKey()];
+        $this->assertCount(24, $localTimeRows);
+        $this->assertSame(range(0, 23), array_column(array_column($localTimeRows, 'columns'), 'label'));
+        $this->assertSame(1, $localTimeRows[7]['columns']['nb_visits']);
+        $this->assertSame(1, $localTimeRows[22]['columns']['nb_visits']);
+        $serverTimeRows = $repository->rows(
+            [1],
+            [$period],
+            '',
+            'VisitTime_serverTime',
+        )[1][$period->rangeKey()];
+        $this->assertCount(24, $serverTimeRows);
+        $this->assertSame(1, $serverTimeRows[0]['columns']['nb_visits']);
+        $this->assertSame(1, $serverTimeRows[23]['columns']['nb_visits']);
+        $userRows = $repository->rows(
+            [1],
+            [$period],
+            '',
+            'UserId_users',
+        )[1][$period->rangeKey()];
+        $this->assertSame('alice', $userRows[0]['columns']['label']);
+        $this->assertSame(bin2hex('visitor-a'), $userRows[0]['metadata']['idvisitor']);
+
+        $weekResult = $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'week',
+            date: '2026-08-15',
+            force: true,
+        ));
+        $week = (new CarbonReportingPeriodFactory)->make(
+            'week',
+            '2026-08-15',
+            'Pacific/Auckland',
+        )[0][0];
+        $weekRows = $repository->rows(
+            [1],
+            [$week],
+            '',
+            'DevicesDetection_browserVersions',
+        )[1][$week->rangeKey()];
+        $weekByLabel = [];
+
+        foreach ($weekRows as $row) {
+            $weekByLabel[(string) $row['columns']['label']] = $row['columns'];
+        }
+
+        $this->assertSame(2, $weekByLabel['']['nb_visits']);
+        $this->assertSame(2, $weekByLabel['']['sum_daily_nb_uniq_visitors']);
+        $this->assertSame(1, $weekByLabel['CH;140.0']['nb_visits']);
+        $this->assertSame(1, $weekByLabel['FF;142.0']['sum_daily_nb_uniq_visitors']);
+        $this->assertCount(1, $weekResult->archiveIds);
+    }
+
+    public function test_visit_dimension_records_use_a_bounded_others_row(): void
+    {
+        $visits = [];
+
+        for ($index = 0; $index < 501; $index++) {
+            $visits[] = [
+                ...$this->visit(
+                    1,
+                    '2026-08-15 00:00:00',
+                    'visitor-'.$index,
+                    'config-'.$index,
+                    null,
+                    1,
+                    5,
+                    0,
+                    'nz',
+                ),
+                'config_resolution' => str_pad((string) $index, 6, '0', STR_PAD_LEFT).'x1000',
+            ];
+        }
+
+        foreach (array_chunk($visits, 100) as $chunk) {
+            $this->connection->table('log_visit')->insert($chunk);
+        }
+
+        $this->registerVisitDimensionCollector();
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            plugin: 'Resolution',
+            reports: ['Resolution.getResolution'],
+        ));
+        $period = (new CarbonReportingPeriodFactory)->make(
+            'day',
+            '2026-08-15',
+            'Pacific/Auckland',
+        )[0][0];
+        $rows = (new DatabaseBlobArchiveRepository($this->connection))->rows(
+            [1],
+            [$period],
+            '',
+            'Resolution_resolution',
+        )[1][$period->rangeKey()];
+
+        $this->assertCount(500, $rows);
+        $this->assertSame(-1, $rows[499]['columns']['label']);
+        $this->assertSame(2, $rows[499]['columns']['nb_visits']);
+        $this->assertSame(2, $rows[499]['columns']['nb_uniq_visitors']);
+    }
+
     private function archiver(): DatabaseReportArchiver
     {
         return new DatabaseReportArchiver(
@@ -816,9 +984,27 @@ class DatabaseReportArchiverTest extends TestCase
             sites: new DatabaseSiteRepository($this->connection),
             options: new DatabaseOptionRepository($this->connection),
             segmentValidator: new SegmentDefinitionValidator,
-            visitSegments: $this->visitSegmentApplicator(),
+            visitQueries: new ArchiveVisitQueryFactory(
+                $this->connection,
+                $this->visitSegmentApplicator(),
+                $this->events,
+            ),
             events: $this->events,
         );
+    }
+
+    private function registerVisitDimensionCollector(): void
+    {
+        $visits = $this->visitSegmentApplicator();
+        $collector = new VisitDimensionArchiveCollector(
+            connection: $this->connection,
+            visitQueries: new ArchiveVisitQueryFactory($this->connection, $visits, $this->events),
+            subperiods: new CarbonReportingSubperiodFactory,
+            segments: new DatabaseSegmentHashResolver($this->connection),
+            blobs: new DatabaseBlobArchiveRepository($this->connection),
+            sites: new DatabaseSiteRepository($this->connection),
+        );
+        $this->events->listen(ArchiveReportsCollecting::class, $collector);
     }
 
     private function visitSegmentApplicator(): BuiltInVisitSegmentApplicator

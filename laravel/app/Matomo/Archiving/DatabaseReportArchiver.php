@@ -7,7 +7,6 @@ namespace App\Matomo\Archiving;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\Events\ArchiveReportsCompleted;
 use App\Matomo\Archiving\Events\ArchiveReportsStarting;
-use App\Matomo\Archiving\Events\ArchiveVisitsQueryBuilding;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Reporting\ReportingPeriod;
 use App\Matomo\Reporting\ReportingPeriodFactory;
@@ -57,7 +56,7 @@ final readonly class DatabaseReportArchiver implements ReportArchiver
         private SiteRepository $sites,
         private OptionRepository $options,
         private SegmentDefinitionValidator $segmentValidator,
-        private VisitSegmentApplicator $visitSegments,
+        private ArchiveVisitQueryFactory $visitQueries,
         private Dispatcher $events,
     ) {}
 
@@ -308,7 +307,7 @@ final readonly class DatabaseReportArchiver implements ReportArchiver
         ReportingPeriod $period,
         string $timezone,
     ): array {
-        $query = $this->visitQuery($request, $period, $timezone);
+        $query = $this->visitQueries->make($request, $period, $timezone);
         $row = $query->selectRaw(implode(', ', [
             'COUNT(DISTINCT idvisitor) AS nb_uniq_visitors',
             'COUNT(DISTINCT config_id) AS nb_uniq_fingerprints',
@@ -418,7 +417,7 @@ final readonly class DatabaseReportArchiver implements ReportArchiver
         ReportingPeriod $period,
         string $timezone,
     ): array {
-        $row = $this->visitQuery($request, $period, $timezone)
+        $row = $this->visitQueries->make($request, $period, $timezone)
             ->selectRaw(implode(', ', [
                 'COUNT(DISTINCT idvisitor) AS nb_uniq_visitors',
                 'COUNT(DISTINCT user_id) AS nb_users',
@@ -433,36 +432,6 @@ final readonly class DatabaseReportArchiver implements ReportArchiver
             'nb_uniq_visitors' => $this->numeric($row->nb_uniq_visitors ?? null),
             'nb_users' => $this->numeric($row->nb_users ?? null),
         ];
-    }
-
-    private function visitQuery(
-        ArchiveReportRequest $request,
-        ReportingPeriod $period,
-        string $timezone,
-    ): Builder {
-        $start = CarbonImmutable::parse($period->startDate, $timezone)->startOfDay()->utc();
-        $end = CarbonImmutable::parse($period->endDate, $timezone)->addDay()->startOfDay()->utc();
-        $query = $this->connection
-            ->table('log_visit')
-            ->where('idsite', $request->siteId)
-            ->where('visit_last_action_time', '>=', $start->toDateTimeString())
-            ->where('visit_last_action_time', '<', $end->toDateTimeString());
-        $building = new ArchiveVisitsQueryBuilding($request, $period, $query);
-        $building->segmentApplied = $this->visitSegments->apply(
-            $query,
-            $request->segment,
-            $request->siteId,
-        );
-
-        $this->events->dispatch($building);
-
-        if (! $building->segmentApplied) {
-            throw new InvalidArgumentException(
-                "The segment '{$request->segment}' cannot be archived because no segment handler supports it.",
-            );
-        }
-
-        return $query;
     }
 
     private function numeric(mixed $value): int|float

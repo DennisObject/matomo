@@ -49,13 +49,16 @@ use App\Matomo\Api\Methods\VisitorInterestApiMethodHandler;
 use App\Matomo\Api\Methods\VisitsSummaryApiMethodHandler;
 use App\Matomo\Api\Methods\VisitTimeApiMethodHandler;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
+use App\Matomo\Archiving\ArchiveVisitQueryFactory;
 use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\DatabaseArchiveInvalidationManager;
 use App\Matomo\Archiving\DatabaseReportArchiver;
+use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Archiving\ReportingSubperiodFactory;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
+use App\Matomo\Archiving\VisitDimensionArchiveCollector;
 use App\Matomo\Archiving\VisitSegmentApplicator;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
@@ -636,6 +639,25 @@ class AppServiceProvider extends ServiceProvider
             },
         );
         $this->app->singleton(
+            ArchiveVisitQueryFactory::class,
+            fn (Application $application): ArchiveVisitQueryFactory => new ArchiveVisitQueryFactory(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                segments: $application->make(VisitSegmentApplicator::class),
+                events: $application->make(Dispatcher::class),
+            ),
+        );
+        $this->app->singleton(
+            VisitDimensionArchiveCollector::class,
+            fn (Application $application): VisitDimensionArchiveCollector => new VisitDimensionArchiveCollector(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                visitQueries: $application->make(ArchiveVisitQueryFactory::class),
+                subperiods: $application->make(ReportingSubperiodFactory::class),
+                segments: $application->make(SegmentHashResolver::class),
+                blobs: $application->make(BlobArchiveRepository::class),
+                sites: $application->make(SiteRepository::class),
+            ),
+        );
+        $this->app->singleton(
             ReportArchiver::class,
             fn (Application $application): ReportArchiver => new DatabaseReportArchiver(
                 connection: $application->make(MatomoDatabase::class)->connection(),
@@ -645,7 +667,7 @@ class AppServiceProvider extends ServiceProvider
                 sites: $application->make(SiteRepository::class),
                 options: $application->make(OptionRepository::class),
                 segmentValidator: $application->make(SegmentDefinitionValidator::class),
-                visitSegments: $application->make(VisitSegmentApplicator::class),
+                visitQueries: $application->make(ArchiveVisitQueryFactory::class),
                 events: $application->make(Dispatcher::class),
             ),
         );
@@ -942,7 +964,10 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void {}
+    public function boot(Dispatcher $events): void
+    {
+        $events->listen(ArchiveReportsCollecting::class, VisitDimensionArchiveCollector::class);
+    }
 
     /**
      * @return list<string>
