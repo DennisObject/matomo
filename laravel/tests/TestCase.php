@@ -50,6 +50,7 @@ use App\Matomo\Login\BruteForceUnblocker;
 use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptStatus;
 use App\Matomo\Marketplace\MarketplaceService;
+use App\Matomo\Marketplace\PluginUpdateCounter;
 use App\Matomo\MobileMessaging\MobileMessagingSettingsRepository;
 use App\Matomo\MobileMessaging\SmsProviderGateway;
 use App\Matomo\Options\MutableOptionRepository;
@@ -700,6 +701,13 @@ abstract class TestCase extends BaseTestCase
             public function startFreeTrial(string $pluginName): void {}
 
             public function saveLicenseKey(#[\SensitiveParameter] string $licenseKey): void {}
+        });
+        $this->app->instance(PluginUpdateCounter::class, new class implements PluginUpdateCounter
+        {
+            public function count(): int
+            {
+                return 0;
+            }
         });
         $this->app->instance(MobileMessagingSettingsRepository::class, new class implements MobileMessagingSettingsRepository
         {

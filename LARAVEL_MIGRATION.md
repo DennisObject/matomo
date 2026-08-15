@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 372 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 377 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -253,7 +253,7 @@ Reporting API module matrix:
 | `BotTracking` | 11 | 11 | 0 |
 | `Contents` | 2 | 2 | 0 |
 | `CoreAdminHome` | 13 | 13 | 0 |
-| `CorePluginsAdmin` | 5 | 0 | 5 |
+| `CorePluginsAdmin` | 5 | 5 | 0 |
 | `CustomDimensions` | 7 | 7 | 0 |
 | `CustomJsTracker` | 1 | 1 | 0 |
 | `DBStats` | 11 | 11 | 0 |
@@ -296,7 +296,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **372** | **17** |
+| **Total** | **389** | **377** | **12** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
