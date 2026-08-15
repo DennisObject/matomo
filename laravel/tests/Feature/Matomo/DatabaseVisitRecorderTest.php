@@ -66,7 +66,26 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->text('url');
             $table->double('revenue')->nullable();
             $table->double('revenue_subtotal')->nullable();
+            $table->unsignedSmallInteger('items')->nullable();
             $table->primary(['idvisit', 'idgoal', 'buster']);
+        });
+        $schema->create('log_conversion_item', function (Blueprint $table): void {
+            $table->unsignedInteger('idsite');
+            $table->binary('idvisitor');
+            $table->dateTime('server_time');
+            $table->unsignedBigInteger('idvisit');
+            $table->string('idorder');
+            $table->unsignedInteger('idaction_sku');
+            $table->unsignedInteger('idaction_name');
+            $table->unsignedInteger('idaction_category');
+            $table->unsignedInteger('idaction_category2');
+            $table->unsignedInteger('idaction_category3');
+            $table->unsignedInteger('idaction_category4');
+            $table->unsignedInteger('idaction_category5');
+            $table->double('price');
+            $table->unsignedInteger('quantity');
+            $table->boolean('deleted');
+            $table->primary(['idvisit', 'idorder', 'idaction_sku']);
         });
         $recorder = new DatabaseVisitRecorder($connection);
         $request = $this->request();
@@ -85,6 +104,7 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame(2, $connection->table('log_conversion')->count());
         $this->assertSame(9.5, $connection->table('log_conversion')->where('idgoal', 4)->value('revenue'));
         $this->assertSame('order-17', $connection->table('log_conversion')->where('idgoal', 0)->value('idorder'));
+        $this->assertSame(1, $connection->table('log_conversion_item')->count());
         $this->assertSame(1, $connection->table('log_visit')->value('visit_goal_converted'));
         $this->assertSame(1, $connection->table('log_visit')->value('visit_goal_buyer'));
     }
@@ -117,6 +137,9 @@ final class DatabaseVisitRecorderTest extends TestCase
             ecommerceTax: null,
             ecommerceShipping: null,
             ecommerceDiscount: null,
+            ecommerceItems: $orderId === null ? [] : [[
+                'sku' => 'sku-1', 'name' => 'Shoes', 'categories' => ['Sale'], 'price' => 42.5, 'quantity' => 1,
+            ]],
             userId: null,
             referrerUrl: '',
             referrerType: 1,

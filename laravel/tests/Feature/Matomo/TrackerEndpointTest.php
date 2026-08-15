@@ -200,6 +200,22 @@ final class TrackerEndpointTest extends TestCase
             '&revenue=42.5&ec_st=35&ec_tx=2.5&ec_sh=5')->assertOk();
     }
 
+    public function test_validates_ecommerce_items(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->ecommerceItems === [[
+                'sku' => 'sku-1', 'name' => 'Shoes', 'categories' => ['Sale', 'Footwear'],
+                'price' => 19.95, 'quantity' => 2,
+            ]],
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+        $items = rawurlencode((string) json_encode([['sku-1', 'Shoes', ['Sale', 'Footwear'], 19.95, 2]]));
+
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&ec_id=order-1&revenue=39.9&ec_items='.$items)->assertOk();
+    }
+
     public function test_rejects_invalid_page_performance_timings(): void
     {
         $this->bindSite();

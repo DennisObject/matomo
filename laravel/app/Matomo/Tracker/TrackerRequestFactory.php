@@ -160,6 +160,7 @@ final readonly class TrackerRequestFactory
             $ecommerceValues['ec_tx'],
             $ecommerceValues['ec_sh'],
             $ecommerceValues['ec_dt'],
+            $this->ecommerceItems($request, $orderId),
             $this->optional($request->input('uid'), 200),
             $referrer ?? '',
             $referrerType,
@@ -359,5 +360,53 @@ final readonly class TrackerRequestFactory
         }
 
         return $timings;
+    }
+
+    /** @return list<array{sku: string, name: string, categories: list<string>, price: float, quantity: int}> */
+    private function ecommerceItems(Request $request, ?string $orderId): array
+    {
+        $items = $request->input('ec_items');
+        if (is_string($items) && $items !== '') {
+            $items = json_decode($items, true);
+        }
+
+        if ($items === null || $items === '') {
+            return [];
+        }
+
+        if ($orderId === null || ! is_array($items) || count($items) > 1_000) {
+            throw new InvalidArgumentException('ec_items must be an array attached to an ecommerce order.');
+        }
+
+        $clean = [];
+        foreach ($items as $item) {
+            if (! is_array($item) || ! isset($item[0]) || ! is_scalar($item[0]) || trim((string) $item[0]) === '') {
+                throw new InvalidArgumentException('Every ecommerce item must contain a SKU.');
+            }
+
+            $name = isset($item[1]) && is_scalar($item[1]) ? trim((string) $item[1]) : '';
+            $categories = $item[2] ?? [];
+            $categories = is_array($categories) ? $categories : [$categories];
+            $categories = array_values(array_slice(array_filter(array_map(
+                static fn (mixed $category): string => is_scalar($category) ? trim((string) $category) : '',
+                $categories,
+            )), 0, 5));
+            $price = $item[3] ?? 0;
+            $quantity = $item[4] ?? 1;
+            if (! is_numeric($price) || abs((float) $price) > 1_000_000_000_000
+                || filter_var($quantity, FILTER_VALIDATE_INT) === false || (int) $quantity < 1) {
+                throw new InvalidArgumentException('Ecommerce item price or quantity is invalid.');
+            }
+
+            $clean[] = [
+                'sku' => mb_substr(trim((string) $item[0]), 0, 255),
+                'name' => mb_substr($name, 0, 255),
+                'categories' => array_map(static fn (string $category): string => mb_substr($category, 0, 255), $categories),
+                'price' => (float) $price,
+                'quantity' => (int) $quantity,
+            ];
+        }
+
+        return $clean;
     }
 }

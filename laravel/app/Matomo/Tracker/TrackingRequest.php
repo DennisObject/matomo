@@ -32,6 +32,8 @@ final readonly class TrackingRequest
         public ?float $ecommerceTax,
         public ?float $ecommerceShipping,
         public ?float $ecommerceDiscount,
+        /** @var list<array{sku: string, name: string, categories: list<string>, price: float, quantity: int}> */
+        public array $ecommerceItems,
         public ?string $userId,
         public string $referrerUrl,
         public int $referrerType,

@@ -128,6 +128,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                     'revenue_tax' => $request->ecommerceTax,
                     'revenue_shipping' => $request->ecommerceShipping,
                     'revenue_discount' => $request->ecommerceDiscount,
+                    'items' => array_sum(array_column($request->ecommerceItems, 'quantity')),
                 ];
                 $this->connection->table('log_conversion')->insertOrIgnore(
                     $this->available('log_conversion', [...$conversion, ...$request->visitProperties]),
@@ -138,6 +139,9 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                         'visit_goal_buyer' => $request->ecommerceOrderId === null ? 0 : 1,
                     ]),
                 );
+                if ($request->ecommerceOrderId !== null) {
+                    $this->recordEcommerceItems($request, (int) $visitId, $visitor, $now);
+                }
             }
         });
     }
@@ -148,6 +152,33 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         $id = $this->connection->table('log_action')->where(['type' => $type, 'hash' => $hash, 'name' => $name])->value('idaction');
 
         return is_numeric($id) ? (int) $id : (int) $this->connection->table('log_action')->insertGetId(['name' => $name, 'hash' => $hash, 'type' => $type, 'url_prefix' => 0], 'idaction');
+    }
+
+    private function recordEcommerceItems(TrackingRequest $request, int $visitId, string $visitor, string $now): void
+    {
+        foreach ($request->ecommerceItems as $item) {
+            $categories = array_pad($item['categories'], 5, '');
+            $values = [
+                'idsite' => $request->siteId, 'idvisitor' => $visitor, 'server_time' => $now,
+                'idvisit' => $visitId, 'idorder' => $request->ecommerceOrderId,
+                'idaction_sku' => $this->action($item['sku'], 5),
+                'idaction_name' => $this->actionOrZero($item['name'], 6),
+                'idaction_category' => $this->actionOrZero($categories[0], 7),
+                'idaction_category2' => $this->actionOrZero($categories[1], 7),
+                'idaction_category3' => $this->actionOrZero($categories[2], 7),
+                'idaction_category4' => $this->actionOrZero($categories[3], 7),
+                'idaction_category5' => $this->actionOrZero($categories[4], 7),
+                'price' => $item['price'], 'quantity' => $item['quantity'], 'deleted' => 0,
+            ];
+            $this->connection->table('log_conversion_item')->insertOrIgnore(
+                $this->available('log_conversion_item', $values),
+            );
+        }
+    }
+
+    private function actionOrZero(string $name, int $type): int
+    {
+        return $name === '' ? 0 : $this->action($name, $type);
     }
 
     /**
