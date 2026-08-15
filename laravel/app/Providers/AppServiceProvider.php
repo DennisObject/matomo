@@ -21,6 +21,7 @@ use App\Matomo\Api\Methods\CustomJsTrackerApiMethodHandler;
 use App\Matomo\Api\Methods\DashboardApiMethodHandler;
 use App\Matomo\Api\Methods\DevicePluginsApiMethodHandler;
 use App\Matomo\Api\Methods\DevicesDetectionApiMethodHandler;
+use App\Matomo\Api\Methods\EventsApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
@@ -94,6 +95,7 @@ use App\Matomo\Reporting\DatabaseSegmentHashResolver;
 use App\Matomo\Reporting\DatabaseVisitsSummaryArchiveRepository;
 use App\Matomo\Reporting\DeviceDetectionMetadata;
 use App\Matomo\Reporting\DeviceModelPolicy;
+use App\Matomo\Reporting\HierarchicalBlobArchiveRepository;
 use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Reporting\ReportingPeriodFactory;
 use App\Matomo\Reporting\ReportingSettings;
@@ -309,6 +311,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             BlobArchiveMetadataRepository::class,
             fn (Application $application): BlobArchiveMetadataRepository => new DatabaseBlobArchiveRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
+            HierarchicalBlobArchiveRepository::class,
+            fn (Application $application): HierarchicalBlobArchiveRepository => new DatabaseBlobArchiveRepository(
                 $application->make(MatomoDatabase::class)->connection(),
             ),
         );
@@ -664,6 +673,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ResolutionApiMethodHandler::class),
                 $application->make(DevicePluginsApiMethodHandler::class),
                 $application->make(DevicesDetectionApiMethodHandler::class),
+                $application->make(EventsApiMethodHandler::class),
                 $application->make(PagePerformanceApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),

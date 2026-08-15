@@ -22,5 +22,9 @@ final readonly class VisitsSummaryRequest
         public array $showColumns,
         public array $hideColumns,
         public ?int $idSubtable,
+        public bool $expanded,
+        public ?string $secondaryDimension,
+        public bool $flat,
+        public bool $showDimensions,
     ) {}
 }
