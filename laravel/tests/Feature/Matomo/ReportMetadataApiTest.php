@@ -69,6 +69,26 @@ final class ReportMetadataApiTest extends TestCase
         $this->assertNotContains('nb_hits', $ids);
     }
 
+    public function test_returns_report_page_metadata(): void
+    {
+        $this->bindAccess(true);
+        $pages = $this->get($this->url('API.getReportPagesMetadata').'&idSite=7')->assertOk()->json();
+        $this->assertIsArray($pages);
+        $this->assertNotEmpty($pages);
+        $this->assertArrayHasKey('category', $pages[0]);
+        $this->assertArrayHasKey('widgets', $pages[0]);
+    }
+
+    public function test_returns_widget_metadata(): void
+    {
+        $this->bindAccess(true);
+        $widgets = $this->get($this->url('API.getWidgetMetadata').'&idSite=7')->assertOk()->json();
+        $this->assertIsArray($widgets);
+        $this->assertNotEmpty($widgets);
+        $this->assertArrayHasKey('module', $widgets[0]);
+        $this->assertArrayHasKey('uniqueId', $widgets[0]);
+    }
+
     private function bindAccess(bool $view): void
     {
         $authorizer = $this->createStub(ApiAccessAuthorizer::class);
