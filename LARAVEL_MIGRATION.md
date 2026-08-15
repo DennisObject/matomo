@@ -123,6 +123,8 @@ Handled reporting API method names:
   site storage semantics, extension events, and tracker-cache invalidation. Compliance status reads
   evaluate all 16 machine-checkable CNIL requirements plus the manual opt-out requirement, with
   policy enforcement, config control, global and site overrides, and dynamic status notes.
+  Granular policy settings preserve the legacy feature flag, stable setting identifiers, toggle and
+  external sections, per-setting enforcement, derived policy enforcement, and status vocabulary.
 - `Login`: `unblockBruteForceIPs` in every supported response format.
 - `AIAgents`: `get` in every supported response format, including suffixed column filtering.
 - `AIProviders`: all 4 API methods, including masked credential storage, managed configuration,
@@ -259,7 +261,7 @@ Reporting API module matrix:
 | `MultiSites` | 3 | 3 | 0 |
 | `Overlay` | 2 | 2 | 0 |
 | `PagePerformance` | 1 | 1 | 0 |
-| `PrivacyManager` | 18 | 10 | 8 |
+| `PrivacyManager` | 18 | 11 | 7 |
 | `ProfessionalServices` | 1 | 1 | 0 |
 | `Referrers` | 23 | 23 | 0 |
 | `Resolution` | 2 | 2 | 0 |
@@ -277,7 +279,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **331** | **58** |
+| **Total** | **389** | **332** | **57** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 

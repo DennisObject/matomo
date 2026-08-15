@@ -43,6 +43,7 @@ final readonly class InstallationConfig
         /** @var array<int, bool> */
         private array $siteThirdPartyCookiesEnabled,
         private int $deleteLogsOlderThan,
+        private bool $granularPrivacyComplianceEnabled,
         /** @var list<string>|null */
         private ?array $commonPiiParameters,
         private string $defaultLanguage,
@@ -131,6 +132,7 @@ final readonly class InstallationConfig
         $segments = $configuration['Segments'] ?? [];
         $pagePerformance = $configuration['PagePerformance'] ?? [];
         $deleteLogs = $configuration['Deletelogs'] ?? [];
+        $featureFlags = $configuration['FeatureFlags'] ?? [];
 
         if (! is_array($database)
             || ! is_array($general)
@@ -145,7 +147,8 @@ final readonly class InstallationConfig
             || ! is_array($aiProviders)
             || ! is_array($segments)
             || ! is_array($pagePerformance)
-            || ! is_array($deleteLogs)) {
+            || ! is_array($deleteLogs)
+            || ! is_array($featureFlags)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
 
@@ -208,6 +211,10 @@ final readonly class InstallationConfig
                 'use_third_party_id_cookie',
             ),
             deleteLogsOlderThan: self::positiveInteger($deleteLogs, 'delete_logs_older_than', 180),
+            granularPrivacyComplianceEnabled: self::string(
+                $featureFlags,
+                'GranularPrivacyCompliance_feature',
+            ) === 'enabled',
             commonPiiParameters: self::nullableStringList($sitesManager, 'CommonPIIParams'),
             defaultLanguage: strtolower(self::string($general, 'default_language', 'en')),
             languageCookieName: self::string($general, 'language_cookie_name', 'matomo_lang'),
@@ -514,6 +521,11 @@ final readonly class InstallationConfig
     public function deleteLogsOlderThan(): int
     {
         return $this->deleteLogsOlderThan;
+    }
+
+    public function granularPrivacyComplianceEnabled(): bool
+    {
+        return $this->granularPrivacyComplianceEnabled;
     }
 
     /**

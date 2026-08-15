@@ -539,6 +539,7 @@ final readonly class ApiRequest
         public ?PrivacyPurgeSettingsRequest $privacyPurgeSettings,
         public ?PrivacyComplianceStatusRequest $privacyComplianceStatus,
         public ?PrivacyComplianceReadRequest $privacyComplianceRead,
+        public ?PrivacyGranularComplianceRequest $privacyGranularCompliance,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -623,6 +624,7 @@ final readonly class ApiRequest
             privacyPurgeSettings: null,
             privacyComplianceStatus: null,
             privacyComplianceRead: null,
+            privacyGranularCompliance: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1236,6 +1238,7 @@ final readonly class ApiRequest
             privacyPurgeSettings: self::privacyPurgeSettings($request, $module, $method),
             privacyComplianceStatus: self::privacyComplianceStatus($request, $module, $method),
             privacyComplianceRead: self::privacyComplianceRead($request, $module, $method),
+            privacyGranularCompliance: self::privacyGranularCompliance($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2791,6 +2794,21 @@ final readonly class ApiRequest
         return new PrivacyComplianceReadRequest(
             site: self::requiredString($request, 'idSite'),
             policy: self::requiredString($request, 'complianceType'),
+        );
+    }
+
+    private static function privacyGranularCompliance(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?PrivacyGranularComplianceRequest {
+        if ($module !== 'API' || $method !== 'PrivacyManager.getCompliancePolicySettings') {
+            return null;
+        }
+
+        return new PrivacyGranularComplianceRequest(
+            site: self::requiredString($request, 'idSite'),
+            policy: self::requiredString($request, 'compliancePolicy'),
         );
     }
 
