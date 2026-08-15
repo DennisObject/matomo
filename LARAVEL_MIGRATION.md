@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 351 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 352 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -132,6 +132,8 @@ Handled reporting API method names:
   explicit-site scopes, date ranges, safe schema-column validation, empty-work rejection, requester
   attribution, and the existing asynchronous job-table shape.
 - `Login`: `unblockBruteForceIPs` in every supported response format.
+- `ImageGraph`: `get`, including view access, bounded dimensions, source-report dispatch, line, bar,
+  pie, inline, binary, and file output through an independent GD renderer.
 - `Marketplace`: all 5 API methods, including account creation, license validation and removal,
   trial requests and activation, legacy option storage, access checks, input validation, and
   DNS-pinned outbound requests that reject unsafe targets.
@@ -259,7 +261,7 @@ Reporting API module matrix:
 | `ExampleUI` | 4 | 4 | 0 |
 | `Feedback` | 3 | 3 | 0 |
 | `Goals` | 12 | 12 | 0 |
-| `ImageGraph` | 1 | 0 | 1 |
+| `ImageGraph` | 1 | 1 | 0 |
 | `Insights` | 5 | 5 | 0 |
 | `JsTrackerInstallCheck` | 2 | 2 | 0 |
 | `LanguagesManager` | 9 | 9 | 0 |
@@ -288,7 +290,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **351** | **38** |
+| **Total** | **389** | **352** | **37** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 

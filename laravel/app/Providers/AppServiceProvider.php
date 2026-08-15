@@ -39,6 +39,7 @@ use App\Matomo\Api\Methods\ExampleUiApiMethodHandler;
 use App\Matomo\Api\Methods\FeedbackApiMethodHandler;
 use App\Matomo\Api\Methods\GoalsApiMethodHandler;
 use App\Matomo\Api\Methods\GoalsReportApiMethodHandler;
+use App\Matomo\Api\Methods\ImageGraphApiMethodHandler;
 use App\Matomo\Api\Methods\InsightsCapabilityApiMethodHandler;
 use App\Matomo\Api\Methods\InsightsReportApiMethodHandler;
 use App\Matomo\Api\Methods\JsTrackerInstallCheckApiMethodHandler;
@@ -189,6 +190,8 @@ use App\Matomo\Goals\DatabaseGoalRepository;
 use App\Matomo\Goals\FileSiteTrackerCacheInvalidator;
 use App\Matomo\Goals\GoalRepository;
 use App\Matomo\Goals\SiteTrackerCacheInvalidator;
+use App\Matomo\ImageGraph\GdImageGraphRenderer;
+use App\Matomo\ImageGraph\ImageGraphRenderer;
 use App\Matomo\Insights\BuilderCoreInsightReportReader;
 use App\Matomo\Insights\CoreInsightReportReader;
 use App\Matomo\Insights\CoreInsightSourceReportProvider;
@@ -1642,6 +1645,11 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            ImageGraphRenderer::class,
+            GdImageGraphRenderer::class,
+        );
+
+        $this->app->singleton(
             MarketplaceService::class,
             function (Application $application): MarketplaceService {
                 $endpoint = config('matomo.marketplace_endpoint');
@@ -1698,6 +1706,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(GoalsReportApiMethodHandler::class),
                 $application->make(JsTrackerInstallCheckApiMethodHandler::class),
                 $application->make(LanguagesManagerApiMethodHandler::class),
+                $application->make(ImageGraphApiMethodHandler::class),
                 $application->make(OverlayApiMethodHandler::class),
                 $application->make(PagePerformanceApiMethodHandler::class),
                 $application->make(ReferrersAiApiMethodHandler::class),

@@ -545,6 +545,7 @@ final readonly class ApiRequest
         public ?PrivacyDataSubjectsRequest $privacyDataSubjects,
         public ?PrivacyDataSubjectSearchRequest $privacyDataSubjectSearch,
         public ?PrivacyPurgeExecutionRequest $privacyPurgeExecution,
+        public ?ImageGraphRequest $imageGraph,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -637,6 +638,7 @@ final readonly class ApiRequest
             privacyDataSubjects: null,
             privacyDataSubjectSearch: null,
             privacyPurgeExecution: null,
+            imageGraph: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1258,6 +1260,7 @@ final readonly class ApiRequest
             privacyDataSubjects: self::privacyDataSubjects($request, $module, $method),
             privacyDataSubjectSearch: self::privacyDataSubjectSearch($request, $module, $method),
             privacyPurgeExecution: self::privacyPurgeExecution($request, $module, $method),
+            imageGraph: self::imageGraph($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -2960,6 +2963,48 @@ final readonly class ApiRequest
 
         return new PrivacyPurgeExecutionRequest(
             passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    private static function imageGraph(Request $request, string $module, string $method): ?ImageGraphRequest
+    {
+        if ($module !== 'API' || $method !== 'ImageGraph.get') {
+            return null;
+        }
+
+        $graphType = self::safeStringInput($request, 'graphType', 'evolution');
+        if (! in_array($graphType, ['evolution', 'verticalBar', 'horizontalBar', 'pie', '3dPie'], true)) {
+            throw new InvalidApiParameter('graphType', 'The graph type is invalid.');
+        }
+
+        $idSite = self::requiredInteger($request, 'idSite');
+        if ($idSite < 1) {
+            throw new InvalidApiParameter('idSite', 'idSite must be a positive integer.');
+        }
+
+        $apiModule = self::requiredString($request, 'apiModule');
+        $apiAction = self::requiredString($request, 'apiAction');
+        if (preg_match('/^[A-Za-z][A-Za-z0-9]*$/D', $apiModule) !== 1
+            || preg_match('/^get[A-Za-z0-9]*$/D', $apiAction) !== 1) {
+            throw new InvalidApiParameter('apiAction', 'ImageGraph only accepts read-only report methods.');
+        }
+
+        return new ImageGraphRequest(
+            idSite: $idSite,
+            period: self::requiredString($request, 'period'),
+            date: self::requiredString($request, 'date'),
+            apiModule: $apiModule,
+            apiAction: $apiAction,
+            graphType: $graphType,
+            outputType: self::integerInput($request, 'outputType', 0, 0),
+            columns: self::optionalCommaSeparatedStringList($request, 'columns') ?? [],
+            showLegend: self::booleanInput($request, 'showLegend', true),
+            width: min(2048, self::integerInput($request, 'width', 1044, 1)),
+            height: min(2048, self::integerInput($request, 'height', 290, 1)),
+            fontSize: self::integerInput($request, 'fontSize', 9, 1),
+            textColor: self::safeStringInput($request, 'textColor', '222222'),
+            backgroundColor: self::safeStringInput($request, 'backgroundColor', 'FFFFFF'),
+            gridColor: self::safeStringInput($request, 'gridColor', 'CCCCCC'),
         );
     }
 
