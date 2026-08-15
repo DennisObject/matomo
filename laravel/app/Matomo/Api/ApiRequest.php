@@ -553,6 +553,7 @@ final readonly class ApiRequest
         public ?ReportMetadataRequest $reportMetadata,
         public ?BulkApiRequest $bulk,
         public ?ProcessedReportRequest $processedReport,
+        public ?ApiOverviewRequest $apiOverview,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -653,6 +654,7 @@ final readonly class ApiRequest
             reportMetadata: null,
             bulk: null,
             processedReport: null,
+            apiOverview: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1282,6 +1284,7 @@ final readonly class ApiRequest
             reportMetadata: self::reportMetadata($request, $module, $method),
             bulk: self::bulk($request, $module, $method),
             processedReport: self::processedReport($request, $module, $method),
+            apiOverview: self::apiOverview($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -3192,6 +3195,23 @@ final readonly class ApiRequest
             apiParameters: $apiParameters,
             hideMetricsDocumentation: self::booleanInput($request, 'hideMetricsDoc', false),
             showRawMetrics: self::booleanInput($request, 'showRawMetrics', false),
+        );
+    }
+
+    private static function apiOverview(Request $request, string $module, string $method): ?ApiOverviewRequest
+    {
+        if ($module !== 'API' || $method !== 'API.get') {
+            return null;
+        }
+
+        $columns = self::nullableStringInput($request, 'columns');
+
+        return new ApiOverviewRequest(
+            siteId: self::requiredInteger($request, 'idSite'),
+            period: self::requiredString($request, 'period'),
+            date: self::requiredString($request, 'date'),
+            segment: self::nullableStringInput($request, 'segment'),
+            columns: $columns === null ? [] : array_values(array_filter(explode(',', $columns), static fn (string $column): bool => $column !== '')),
         );
     }
 
