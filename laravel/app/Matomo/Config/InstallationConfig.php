@@ -62,6 +62,7 @@ final readonly class InstallationConfig
         private bool $browserArchivingTriggerEnabled,
         private bool $defaultLocationProviderEnabled,
         private bool $languageToCountryGuessEnabled,
+        private bool $professionalServicesAdsEnabled,
         /** @var array<string, mixed> */
         private array $aiProviders,
     ) {}
@@ -202,6 +203,11 @@ final readonly class InstallationConfig
                 'enable_language_to_country_guess',
                 true,
             ),
+            professionalServicesAdsEnabled: self::boolean(
+                $general,
+                'piwik_professional_support_ads_enabled',
+                true,
+            ) || self::boolean($general, 'piwik_pro_ads_enabled'),
             aiProviders: $aiProviders,
         );
     }
@@ -420,6 +426,11 @@ final readonly class InstallationConfig
     public function languageToCountryGuessEnabled(): bool
     {
         return $this->languageToCountryGuessEnabled;
+    }
+
+    public function professionalServicesAdsEnabled(): bool
+    {
+        return $this->professionalServicesAdsEnabled;
     }
 
     /** @return array<string, mixed> */

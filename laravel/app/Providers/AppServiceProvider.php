@@ -18,6 +18,7 @@ use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Api\Methods\ContentsApiMethodHandler;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
 use App\Matomo\Api\Methods\CustomJsTrackerApiMethodHandler;
+use App\Matomo\Api\Methods\DashboardApiMethodHandler;
 use App\Matomo\Api\Methods\DevicePluginsApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
@@ -39,6 +40,12 @@ use App\Matomo\Authentication\DatabasePasswordConfirmationVerifier;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Config\InstallationConfig;
+use App\Matomo\Dashboard\ConfiguredDashboardLayoutProvider;
+use App\Matomo\Dashboard\DashboardLayoutProvider;
+use App\Matomo\Dashboard\DashboardRecipientPolicy;
+use App\Matomo\Dashboard\DashboardRepository;
+use App\Matomo\Dashboard\DatabaseDashboardRecipientPolicy;
+use App\Matomo\Dashboard\DatabaseDashboardRepository;
 use App\Matomo\Database\MatomoDatabase;
 use App\Matomo\Geolocation\ConfiguredGeolocationProviderRegistry;
 use App\Matomo\Geolocation\ConfiguredGeolocationSettings;
@@ -227,6 +234,31 @@ class AppServiceProvider extends ServiceProvider
             SiteRepository::class,
             fn (Application $application): SiteRepository => new DatabaseSiteRepository(
                 $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
+            DashboardRepository::class,
+            fn (Application $application): DashboardRepository => new DatabaseDashboardRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            DashboardRecipientPolicy::class,
+            fn (Application $application): DashboardRecipientPolicy => new DatabaseDashboardRecipientPolicy(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                authorizer: $application->make(ApiAccessAuthorizer::class),
+            ),
+        );
+        $this->app->singleton(
+            DashboardLayoutProvider::class,
+            fn (Application $application): DashboardLayoutProvider => new ConfiguredDashboardLayoutProvider(
+                dashboards: $application->make(DashboardRepository::class),
+                plugins: $application->make(PluginState::class),
+                authorizer: $application->make(ApiAccessAuthorizer::class),
+                events: $application->make(Dispatcher::class),
+                professionalServicesAdsEnabled: $application->make(InstallationConfig::class)
+                    ->professionalServicesAdsEnabled(),
             ),
         );
 
@@ -617,6 +649,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),
                 $application->make(CustomJsTrackerApiMethodHandler::class),
+                $application->make(DashboardApiMethodHandler::class),
                 $application->make(ProfessionalServicesApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),

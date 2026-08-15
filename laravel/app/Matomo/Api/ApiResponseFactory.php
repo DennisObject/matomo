@@ -84,7 +84,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
+     * @param  list<array<string, mixed>>  $rows
      */
     public function rows(ApiRequest $request, array $rows): Response
     {
@@ -355,7 +355,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
+     * @param  list<array<string, mixed>>  $rows
      */
     private function xmlRows(array $rows): Response
     {
@@ -699,7 +699,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
+     * @param  list<array<string, mixed>>  $rows
      */
     private function spreadsheetRows(ApiRequest $request, array $rows): Response
     {
@@ -864,7 +864,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
+     * @param  list<array<string, mixed>>  $rows
      */
     private function htmlRows(array $rows): Response
     {
@@ -939,7 +939,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
+     * @param  list<array<string, mixed>>  $rows
      */
     private function originalRows(ApiRequest $request, array $rows): Response
     {
@@ -1032,7 +1032,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
+     * @param  list<array<string, mixed>>  $rows
      */
     private function consoleRows(ApiRequest $request, array $rows): Response
     {
@@ -1087,7 +1087,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
+     * @param  list<array<string, mixed>>  $rows
      */
     private function jsonRows(ApiRequest $request, array $rows): Response
     {
@@ -1148,7 +1148,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, array<int, string>|bool|float|int|string|null>>  $rows
+     * @param  list<array<string, mixed>>  $rows
      * @return list<string>
      */
     private function rowColumns(array $rows): array
@@ -1167,7 +1167,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<array-key, array<array-key, float|int|string>|bool|float|int|string|null>  $row
+     * @param  array<array-key, mixed>  $row
      * @return array<string, bool|float|int|string|null>
      */
     private function flattenNestedRow(array $row, string $prefix = ''): array
