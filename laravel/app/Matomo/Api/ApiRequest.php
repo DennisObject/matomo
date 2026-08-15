@@ -178,7 +178,11 @@ final readonly class ApiRequest
 
     private const string OVERLAY_TRANSLATIONS_METHOD = 'Overlay.getTranslations';
 
-    private const string TRANSITIONS_TRANSLATIONS_METHOD = 'Transitions.getTranslations';
+    /** @var list<string> */
+    private const array TRANSITIONS_METHODS = [
+        'Transitions.getTranslations',
+        'Transitions.isPeriodAllowed',
+    ];
 
     /** @var list<string> */
     private const array EXAMPLE_UI_METHODS = [
@@ -260,6 +264,7 @@ final readonly class ApiRequest
         public ?GoalsRequest $goals,
         public ?GoalsReportRequest $goalsReport,
         public ?JsTrackerInstallCheckRequest $jsTrackerInstallCheck,
+        public ?TransitionsRequest $transitions,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -311,6 +316,7 @@ final readonly class ApiRequest
             goals: null,
             goalsReport: null,
             jsTrackerInstallCheck: null,
+            transitions: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -644,9 +650,9 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === self::OVERLAY_TRANSLATIONS_METHOD;
     }
 
-    public function isTransitionsTranslationsRequest(): bool
+    public function isTransitionsRequest(): bool
     {
-        return $this->module === 'API' && $this->method === self::TRANSITIONS_TRANSLATIONS_METHOD;
+        return $this->module === 'API' && in_array($this->method, self::TRANSITIONS_METHODS, true);
     }
 
     public function isAiProvidersRequest(): bool
@@ -730,7 +736,34 @@ final readonly class ApiRequest
             goals: self::goals($request, $module, $method),
             goalsReport: self::goalsReport($request, $module, $method),
             jsTrackerInstallCheck: self::jsTrackerInstallCheck($request, $module, $method),
+            transitions: self::transitions($request, $module, $method),
             authentication: $authentication,
+        );
+    }
+
+    private static function transitions(Request $request, string $module, string $method): ?TransitionsRequest
+    {
+        if ($module !== 'API' || $method !== 'Transitions.isPeriodAllowed') {
+            return null;
+        }
+
+        $siteId = self::requiredInteger($request, 'idSite');
+        $period = self::nullableStringInput($request, 'period');
+
+        if ($period === null) {
+            throw new MissingApiParameter('period');
+        }
+
+        $date = self::nullableStringInput($request, 'date');
+
+        if ($date === null) {
+            throw new MissingApiParameter('date');
+        }
+
+        return new TransitionsRequest(
+            siteId: $siteId,
+            period: $period,
+            date: $date,
         );
     }
 

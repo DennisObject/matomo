@@ -8,8 +8,10 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Localization\MatomoTranslator;
+use App\Matomo\Transitions\TransitionsPeriodPolicy;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use InvalidArgumentException;
 use LogicException;
 
 final readonly class TransitionsApiMethodHandler implements ApiMethodHandler
@@ -60,17 +62,35 @@ final readonly class TransitionsApiMethodHandler implements ApiMethodHandler
         private ApiResponseFactory $responses,
         private LanguageResolver $languages,
         private MatomoTranslator $translator,
+        private TransitionsPeriodPolicy $periods,
     ) {}
 
     public function supports(ApiRequest $request): bool
     {
-        return $request->isTransitionsTranslationsRequest();
+        return $request->isTransitionsRequest();
     }
 
     public function handle(ApiRequest $request, Request $httpRequest): Response
     {
         if (! $this->supports($request)) {
             throw new LogicException('The Transitions API handler does not support this request.');
+        }
+
+        if ($request->method === 'Transitions.isPeriodAllowed') {
+            $parameters = $request->transitions
+                ?? throw new LogicException('The Transitions period parameters were not parsed.');
+
+            try {
+                $allowed = $this->periods->isAllowed(
+                    $parameters->siteId,
+                    $parameters->period,
+                    $parameters->date,
+                );
+            } catch (InvalidArgumentException $invalidArgumentException) {
+                return $this->responses->error($request, $invalidArgumentException->getMessage(), 400);
+            }
+
+            return $this->responses->scalar($request, $allowed);
         }
 
         $language = $this->languages->resolve($httpRequest, $request->authentication);

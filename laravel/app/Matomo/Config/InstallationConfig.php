@@ -67,6 +67,8 @@ final readonly class InstallationConfig
         private bool $defaultLocationProviderEnabled,
         private bool $languageToCountryGuessEnabled,
         private bool $professionalServicesAdsEnabled,
+        /** @var array<int, string> */
+        private array $transitionsMaxPeriodAllowed,
         /** @var array<string, mixed> */
         private array $aiProviders,
     ) {}
@@ -224,6 +226,7 @@ final readonly class InstallationConfig
                 'piwik_professional_support_ads_enabled',
                 true,
             ) || self::boolean($general, 'piwik_pro_ads_enabled'),
+            transitionsMaxPeriodAllowed: self::parseTransitionsMaxPeriodAllowed($configuration),
             aiProviders: $aiProviders,
         );
     }
@@ -469,6 +472,13 @@ final readonly class InstallationConfig
         return $this->professionalServicesAdsEnabled;
     }
 
+    public function transitionsMaxPeriodAllowed(int $idSite): string
+    {
+        return $this->transitionsMaxPeriodAllowed[$idSite]
+            ?? $this->transitionsMaxPeriodAllowed[0]
+            ?? 'all';
+    }
+
     /** @return array<string, mixed> */
     public function aiProviders(): array
     {
@@ -689,6 +699,30 @@ final readonly class InstallationConfig
         }
 
         return $map;
+    }
+
+    /**
+     * @param  array<string, mixed>  $configuration
+     * @return array<int, string>
+     */
+    private static function parseTransitionsMaxPeriodAllowed(array $configuration): array
+    {
+        $periods = [];
+
+        foreach ($configuration as $sectionName => $section) {
+            if (! is_array($section)
+                || preg_match('/^Transitions(?:_([1-9][0-9]*))?$/D', $sectionName, $matches) !== 1) {
+                continue;
+            }
+
+            $period = trim(self::string($section, 'max_period_allowed'));
+
+            if ($period !== '') {
+                $periods[isset($matches[1]) ? (int) $matches[1] : 0] = $period;
+            }
+        }
+
+        return $periods;
     }
 
     /**
