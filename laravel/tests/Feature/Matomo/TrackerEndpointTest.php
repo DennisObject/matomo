@@ -23,6 +23,7 @@ final class TrackerEndpointTest extends TestCase
     public function test_rejects_invalid_tracking_input(): void
     {
         $this->bindSite();
+        $this->bindUnusedRecorder();
         $this->get('/matomo.php?idsite=0&url=javascript%3Aalert%281%29')->assertBadRequest();
     }
 
@@ -56,6 +57,7 @@ final class TrackerEndpointTest extends TestCase
     public function test_rejects_oversized_bulk_request(): void
     {
         $this->bindSite();
+        $this->bindUnusedRecorder();
         $requests = array_fill(0, 51, '?idsite=1&url=https%3A%2F%2Fexample.test');
         $this->post('/matomo.php', ['requests' => $requests])->assertBadRequest();
     }
@@ -73,5 +75,12 @@ final class TrackerEndpointTest extends TestCase
         $sites = $this->createStub(SiteRepository::class);
         $sites->method('details')->willReturn(['idsite' => 1]);
         $this->app->instance(SiteRepository::class, $sites);
+    }
+
+    private function bindUnusedRecorder(): void
+    {
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
     }
 }

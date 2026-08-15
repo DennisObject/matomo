@@ -1542,7 +1542,12 @@ class AppServiceProvider extends ServiceProvider
                 base_path('../matomo.js'),
             ),
         );
-        $this->app->singleton(VisitRecorder::class, DatabaseVisitRecorder::class);
+        $this->app->singleton(
+            VisitRecorder::class,
+            fn (Application $application): VisitRecorder => new DatabaseVisitRecorder(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
 
         $this->app->singleton(
             PromoWidgetDismissalRepository::class,
