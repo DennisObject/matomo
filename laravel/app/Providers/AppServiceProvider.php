@@ -69,6 +69,7 @@ use App\Matomo\Api\Methods\UserCountryApiMethodHandler;
 use App\Matomo\Api\Methods\UserIdApiMethodHandler;
 use App\Matomo\Api\Methods\UserLanguageApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerAccessApiMethodHandler;
+use App\Matomo\Api\Methods\UsersManagerIdentityApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerPreferenceApiMethodHandler;
 use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
 use App\Matomo\Api\Methods\VisitorInterestApiMethodHandler;
@@ -273,7 +274,9 @@ use App\Matomo\UserChanges\DatabaseUserChangeReadRepository;
 use App\Matomo\UserChanges\UserChangeReadRepository;
 use App\Matomo\Users\AccessMetadataProvider;
 use App\Matomo\Users\ConfiguredAccessMetadataProvider;
+use App\Matomo\Users\DatabaseUserIdentityRepository;
 use App\Matomo\Users\DatabaseUserPreferenceRepository;
+use App\Matomo\Users\UserIdentityRepository;
 use App\Matomo\Users\UserPreferenceRepository;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
@@ -523,6 +526,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             UserPreferenceRepository::class,
             fn (Application $application): UserPreferenceRepository => new DatabaseUserPreferenceRepository(
+                $application->make(ConnectionInterface::class),
+            ),
+        );
+        $this->app->singleton(
+            UserIdentityRepository::class,
+            fn (Application $application): UserIdentityRepository => new DatabaseUserIdentityRepository(
                 $application->make(ConnectionInterface::class),
             ),
         );
@@ -1395,6 +1404,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(VisitorInterestApiMethodHandler::class),
                 $application->make(UserLanguageApiMethodHandler::class),
                 $application->make(UsersManagerAccessApiMethodHandler::class),
+                $application->make(UsersManagerIdentityApiMethodHandler::class),
                 $application->make(UsersManagerPreferenceApiMethodHandler::class),
                 $application->make(ResolutionApiMethodHandler::class),
                 $application->make(DevicePluginsApiMethodHandler::class),
