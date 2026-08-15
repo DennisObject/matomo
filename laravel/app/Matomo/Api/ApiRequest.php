@@ -3104,7 +3104,9 @@ final readonly class ApiRequest
 
     private static function reportMetadata(Request $request, string $module, string $method): ?ReportMetadataRequest
     {
-        if ($module !== 'API' || ! in_array($method, ['API.getReportMetadata', 'API.getMetadata'], true)) {
+        if ($module !== 'API' || ! in_array($method, [
+            'API.getReportMetadata', 'API.getMetadata', 'API.getGlossaryReports', 'API.getGlossaryMetrics',
+        ], true)) {
             return null;
         }
 
