@@ -12,7 +12,8 @@
         "laravel/tinker": "^3.0",
         "matomo/device-detector": "~6.0",
         "matomo/ini": "^3.0.1",
-        "matomo/network": "^2.0"
+        "matomo/network": "^2.0",
+        "matomo/searchengine-and-social-list": "dev-master"
     },
     "require-dev": {
         "larastan/larastan": "^3.0",

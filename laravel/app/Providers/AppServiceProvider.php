@@ -186,6 +186,8 @@ use App\Matomo\Plugins\PluginState;
 use App\Matomo\Plugins\TrackerFileAvailability;
 use App\Matomo\ProfessionalServices\DatabasePromoWidgetDismissalRepository;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
+use App\Matomo\Referrers\ReferrerDefinitionCatalog;
+use App\Matomo\Referrers\YamlReferrerDefinitionCatalog;
 use App\Matomo\Reporting\BatchBlobArchiveRepository;
 use App\Matomo\Reporting\BlobArchiveMetadataRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
@@ -1293,6 +1295,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TourSettings::class, ConfiguredTourSettings::class);
         $this->app->singleton(CoreInsightReportReader::class, BuilderCoreInsightReportReader::class);
         $this->app->singleton(InsightSourceReportProvider::class, CoreInsightSourceReportProvider::class);
+        $this->app->singleton(
+            ReferrerDefinitionCatalog::class,
+            fn (): ReferrerDefinitionCatalog => new YamlReferrerDefinitionCatalog(
+                base_path('vendor/matomo/searchengine-and-social-list/Socials.yml'),
+                base_path('vendor/matomo/searchengine-and-social-list/AIAssistants.yml'),
+            ),
+        );
         $this->app->singleton(
             TwoFactorAuthenticationResetter::class,
             fn (Application $application): TwoFactorAuthenticationResetter => new DatabaseTwoFactorAuthenticationResetter(
