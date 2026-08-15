@@ -78,6 +78,13 @@ final readonly class ApiRequest
     private const string USER_ID_METHOD = 'UserId.getUsers';
 
     /** @var list<string> */
+    private const array MULTI_SITES_METHODS = [
+        'MultiSites.getAll',
+        'MultiSites.getOne',
+        'MultiSites.getAllWithGroups',
+    ];
+
+    /** @var list<string> */
     private const array ANNOTATION_METHODS = [
         'Annotations.add',
         'Annotations.save',
@@ -329,6 +336,7 @@ final readonly class ApiRequest
         public ?VisitsSummaryRequest $visitsSummary,
         public ?ActionsRequest $actions,
         public ?AnnotationRequest $annotations,
+        public ?MultiSitesRequest $multiSites,
         public ?TwoFactorAuthRequest $twoFactorAuth,
         public ?string $locationIp,
         public ?string $locationProviderId,
@@ -385,6 +393,7 @@ final readonly class ApiRequest
             visitsSummary: null,
             actions: null,
             annotations: null,
+            multiSites: null,
             twoFactorAuth: null,
             locationIp: null,
             locationProviderId: null,
@@ -670,6 +679,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::ANNOTATION_METHODS, true);
     }
 
+    public function isMultiSitesRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::MULTI_SITES_METHODS, true);
+    }
+
     public function isContentsRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::CONTENTS_METHODS, true);
@@ -831,6 +845,7 @@ final readonly class ApiRequest
             visitsSummary: self::visitsSummary($request, $module, $method),
             actions: self::actions($request, $module, $method),
             annotations: self::annotations($request, $module, $method),
+            multiSites: self::multiSites($request, $module, $method),
             twoFactorAuth: self::twoFactorAuth($request, $module, $method),
             locationIp: self::locationIp($request, $module, $method),
             locationProviderId: self::locationProviderId($request, $module, $method),
@@ -1377,6 +1392,27 @@ final readonly class ApiRequest
         return (int) $value;
     }
 
+    private static function integerInput(
+        Request $request,
+        string $parameter,
+        int $default,
+        int $minimum,
+    ): int {
+        $value = self::inputValue($request, $parameter);
+
+        if ($value === null || $value === '') {
+            return $default;
+        }
+
+        if (! is_scalar($value)
+            || (string) (int) $value !== (string) $value
+            || (int) $value < $minimum) {
+            throw new InvalidApiParameter($parameter);
+        }
+
+        return (int) $value;
+    }
+
     private static function legacySanitizedStringInput(Request $request, string $key): string
     {
         $value = self::stringInput($request, $key);
@@ -1909,6 +1945,72 @@ final readonly class ApiRequest
         }
 
         return (int) $value;
+    }
+
+    private static function multiSites(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?MultiSitesRequest {
+        if ($module !== 'API' || ! in_array($method, self::MULTI_SITES_METHODS, true)) {
+            return null;
+        }
+
+        $usesDefaults = $method === 'MultiSites.getAllWithGroups';
+        $period = self::nullableStringInput($request, 'period');
+        $date = self::nullableStringInput($request, 'date');
+        $period = $period === null || $period === ''
+            ? ($usesDefaults ? 'day' : null)
+            : strtolower($period);
+        $date = $date === null || $date === ''
+            ? ($usesDefaults ? 'today' : null)
+            : $date;
+
+        if ($period === null) {
+            throw new MissingApiParameter('period');
+        }
+
+        if (! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
+            throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
+        }
+
+        if ($date === null) {
+            throw new MissingApiParameter('date');
+        }
+
+        if (! self::validReportDate($date)) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not valid.");
+        }
+
+        if ($period === 'range'
+            && ! str_contains($date, ',')
+            && preg_match('/^(last|previous)[0-9]*$/D', $date) !== 1) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not a valid range.");
+        }
+
+        $segment = trim(self::nullableStringInput($request, 'segment') ?? '');
+        $siteId = $method === 'MultiSites.getOne'
+            ? self::requiredInteger($request, 'idSite')
+            : null;
+
+        if ($siteId !== null && $siteId < 1) {
+            throw new InvalidApiParameter('idSite');
+        }
+
+        return new MultiSitesRequest(
+            siteId: $siteId,
+            period: $period,
+            date: $date,
+            segment: $segment === '' ? null : substr($segment, 0, 8192),
+            enhanced: self::booleanInput($request, 'enhanced', false),
+            pattern: self::nullableStringInput($request, 'pattern'),
+            showColumns: self::reportColumnList($request, 'showColumns') ?? [],
+            filterLimit: self::integerInput($request, 'filter_limit', $usesDefaults ? 0 : -1, -1),
+            filterOffset: self::integerInput($request, 'filter_offset', 0, 0),
+            filterSortColumn: self::stringInput($request, 'filter_sort_column', 'nb_visits'),
+            filterSortOrder: strtolower(self::stringInput($request, 'filter_sort_order', 'desc')),
+            formatMetrics: self::booleanInput($request, 'format_metrics', $usesDefaults),
+        );
     }
 
     private static function actions(Request $request, string $module, string $method): ?ActionsRequest

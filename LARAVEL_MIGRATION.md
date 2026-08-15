@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 197 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 200 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -101,6 +101,9 @@ Handled reporting API method names:
 - `LanguagesManager`: all 9 public API methods, including configured and filesystem language
   discovery, translation coverage and export, localized names, extension events, user language
   storage, 12-hour clock preferences, and self-or-superuser access checks.
+- `MultiSites`: all 3 API methods, including visible-site filtering, site-name matching, current and
+  prior-period archive metrics, evolution fields, enhanced goal and ecommerce metrics, dashboard
+  totals, groups, search, sorting, paging, metric formatting, extension events, and RSS output.
 - `CoreAdminHome`: `getTrackingFailures`, `deleteTrackingFailure`, and
   `deleteAllTrackingFailures`, including site-admin scoping, superuser handling, localized failure
   details, prefixed database access, and extension events; plus
@@ -158,7 +161,7 @@ Reporting API module matrix:
 | `Login` | 1 | 1 | 0 |
 | `Marketplace` | 5 | 0 | 5 |
 | `MobileMessaging` | 12 | 0 | 12 |
-| `MultiSites` | 3 | 0 | 3 |
+| `MultiSites` | 3 | 3 | 0 |
 | `Overlay` | 2 | 1 | 1 |
 | `PagePerformance` | 1 | 1 | 0 |
 | `PrivacyManager` | 18 | 0 | 18 |
@@ -179,7 +182,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **197** | **192** |
+| **Total** | **389** | **200** | **189** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
