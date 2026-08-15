@@ -176,6 +176,10 @@ final readonly class ApiRequest
         'JsTrackerInstallCheck.initiateJsTrackerInstallTest',
     ];
 
+    private const string OVERLAY_TRANSLATIONS_METHOD = 'Overlay.getTranslations';
+
+    private const string TRANSITIONS_TRANSLATIONS_METHOD = 'Transitions.getTranslations';
+
     /** @var list<string> */
     private const array EXAMPLE_UI_METHODS = [
         'ExampleUI.getTemperaturesEvolution',
@@ -633,6 +637,16 @@ final readonly class ApiRequest
     {
         return $this->module === 'API'
             && in_array($this->method, self::JS_TRACKER_INSTALL_CHECK_METHODS, true);
+    }
+
+    public function isOverlayTranslationsRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === self::OVERLAY_TRANSLATIONS_METHOD;
+    }
+
+    public function isTransitionsTranslationsRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === self::TRANSITIONS_TRANSLATIONS_METHOD;
     }
 
     public function isAiProvidersRequest(): bool
