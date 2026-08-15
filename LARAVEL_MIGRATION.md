@@ -43,7 +43,7 @@ Current Laravel entry points:
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
-| Report archivers | `plugins/*/Archiver.php` | 18 archivers | Archive storage, day and parent core metrics, cache reuse, failure markers, extension events, and built-in visit, action, conversion, and ecommerce segment translation ported; built-in reports plus dynamic segments remain |
+| Report archivers | `plugins/*/Archiver.php` | 18 archivers | Archive storage, day and parent core metrics, cache reuse, failure markers, extension events, all bundled segment families, and active site-configured custom dimensions ported; built-in report records remain |
 | Tracker extensions | `plugins/*/Tracker.php`, `plugins/*/Tracker/*.php` | 15 files | Not ported; `matomo.php` and `piwik.php` remain legacy entry points |
 | Update migrations | `core/Updates/*.php`, `plugins/*/Updates/*.php` | 191 update files | Not ported |
 | Installation and updates | `plugins/Installation`, `plugins/CoreUpdater` | 2 lifecycles | Not ported |

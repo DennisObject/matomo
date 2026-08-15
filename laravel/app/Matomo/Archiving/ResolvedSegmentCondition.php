@@ -7,8 +7,9 @@ namespace App\Matomo\Archiving;
 final readonly class ResolvedSegmentCondition
 {
     /**
-     * @param  literal-string  $expression
+     * @param  string  $expression  Fixed registry or validated dynamic column.
      * @param  literal-string  $type
+     * @param  list<string>  $unionExpressions
      */
     public function __construct(
         public SegmentCondition $condition,
@@ -16,6 +17,7 @@ final readonly class ResolvedSegmentCondition
         public string $type,
         public ?ActionSegmentDefinition $action = null,
         public ?ConversionSegmentDefinition $conversion = null,
+        public array $unionExpressions = [],
     ) {}
 
     public function isAction(): bool
@@ -54,7 +56,7 @@ final readonly class ResolvedSegmentCondition
         }
 
         if ($this->action !== null) {
-            return in_array($this->action->source, ['direct', 'type'], true);
+            return in_array($this->action->source, ['direct', 'direct-union', 'type'], true);
         }
 
         return $this->conversion->includeMissingOnEmpty ?? false;

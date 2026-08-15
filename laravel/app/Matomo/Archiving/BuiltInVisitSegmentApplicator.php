@@ -31,7 +31,9 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         'actions' => ['visit_total_actions', 'number'],
         'events' => ['visit_total_events', 'number'],
         'deviceModel' => ['config_device_model', 'text'],
+        'browserName' => ['config_browser_name', 'browser-name'],
         'browserVersion' => ['config_browser_version', 'text'],
+        'operatingSystemName' => ['config_os', 'os-name'],
         'operatingSystemVersion' => ['config_os_version', 'text'],
         'deviceType' => ['config_device_type', 'device-type'],
         'deviceBrand' => ['config_device_brand', 'text'],
@@ -47,6 +49,7 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         'longitude' => ['location_longitude', 'number'],
         'regionCode' => ['location_region', 'text'],
         'countryCode' => ['location_country', 'text'],
+        'countryName' => ['location_country', 'country-name'],
         'continentCode' => ['location_country', 'continent'],
         'provider' => ['location_provider', 'text'],
         'languageCode' => ['location_browser_lang', 'text'],
@@ -131,14 +134,16 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         'actionServerHour' => ['hour', 'number'],
         'actionServerMinute' => ['minute', 'number'],
         'productViewPrice' => ['segment_action.product_price', 'number'],
+        'bandwidth' => ['segment_action.bandwidth', 'number'],
     ];
 
     public function __construct(
         private SegmentExpressionParser $parser,
         private SegmentConditionQueryApplier $conditions,
+        private DynamicSegmentResolver $dynamicSegments,
     ) {}
 
-    public function apply(Builder $query, ?string $segment): bool
+    public function apply(Builder $query, ?string $segment, ?int $siteId = null): bool
     {
         $groups = $this->parser->parse($segment);
 
@@ -185,21 +190,75 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
 
                 $conversion = $this->conversionDefinition($condition->name);
 
-                if ($conversion === null) {
+                if ($conversion !== null) {
+                    if (! $conversion->supports($condition->operator)) {
+                        throw new InvalidArgumentException(
+                            "The '{$condition->name}' segment does not support the {$condition->operator} operator.",
+                        );
+                    }
+
+                    $hasRelated = true;
+                    $resolvedGroup[] = new ResolvedSegmentCondition(
+                        condition: $condition,
+                        expression: $conversion->expression,
+                        type: $conversion->type,
+                        conversion: $conversion,
+                    );
+
+                    continue;
+                }
+
+                $dynamic = $this->dynamicSegments->resolve($query, $condition->name, $siteId);
+
+                if ($dynamic === null) {
                     return false;
                 }
 
-                if (! $conversion->supports($condition->operator)) {
-                    throw new InvalidArgumentException(
-                        "The '{$condition->name}' segment does not support the {$condition->operator} operator.",
+                $expression = $dynamic->expressions[0];
+
+                if ($dynamic->scope === 'visit') {
+                    $resolvedGroup[] = new ResolvedSegmentCondition(
+                        condition: $condition,
+                        expression: $expression,
+                        type: 'text',
+                        unionExpressions: $dynamic->expressions,
                     );
+
+                    continue;
                 }
 
                 $hasRelated = true;
+
+                if ($dynamic->scope === 'action') {
+                    $action = new ActionSegmentDefinition(
+                        source: count($dynamic->expressions) === 1 ? 'direct' : 'direct-union',
+                        expression: $expression,
+                        lookupAlias: '',
+                        actionTypes: [],
+                        type: 'text',
+                        directExpressions: $dynamic->expressions,
+                    );
+                    $resolvedGroup[] = new ResolvedSegmentCondition(
+                        condition: $condition,
+                        expression: $expression,
+                        type: 'text',
+                        action: $action,
+                    );
+
+                    continue;
+                }
+
+                $conversion = new ConversionSegmentDefinition(
+                    scope: 'conversion',
+                    source: 'direct',
+                    expression: $expression,
+                    type: 'text',
+                    includeMissingOnEmpty: true,
+                );
                 $resolvedGroup[] = new ResolvedSegmentCondition(
                     condition: $condition,
-                    expression: $conversion->expression,
-                    type: $conversion->type,
+                    expression: $expression,
+                    type: 'text',
                     conversion: $conversion,
                 );
             }
@@ -217,12 +276,7 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
             $query->where(function (Builder $and) use ($group): void {
                 foreach ($group as $index => $resolvedCondition) {
                     $callback = function (Builder $operand) use ($resolvedCondition): void {
-                        $this->conditions->apply(
-                            $operand,
-                            $resolvedCondition->condition,
-                            $resolvedCondition->expression,
-                            $resolvedCondition->type,
-                        );
+                        $this->applyDirectCondition($operand, $resolvedCondition);
                     };
 
                     if ($index === 0) {
@@ -314,12 +368,7 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
                         return;
                     }
 
-                    $this->conditions->apply(
-                        $operand,
-                        $resolved->condition,
-                        $resolved->expression,
-                        $resolved->type,
-                    );
+                    $this->applyDirectCondition($operand, $resolved);
                 };
 
                 if ($index === 0) {
@@ -673,7 +722,8 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         foreach ($conditions as $resolved) {
             $definition = $resolved->action;
 
-            if ($definition === null || $definition->source === 'direct') {
+            if ($definition === null
+                || in_array($definition->source, ['direct', 'direct-union'], true)) {
                 continue;
             }
 
@@ -709,12 +759,70 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
             return;
         }
 
+        if ($definition->source === 'direct-union') {
+            $query->where(function (Builder $union) use ($resolved, $definition): void {
+                foreach ($definition->directExpressions as $index => $expression) {
+                    $callback = function (Builder $operand) use ($resolved, $expression): void {
+                        $this->conditions->apply(
+                            $operand,
+                            $resolved->condition,
+                            $expression,
+                            $resolved->type,
+                        );
+                    };
+
+                    if ($index === 0) {
+                        $union->where($callback);
+                    } else {
+                        $union->orWhere($callback);
+                    }
+                }
+            });
+
+            return;
+        }
+
         $this->conditions->apply(
             $query,
             $resolved->condition,
             $resolved->expression,
             $resolved->type,
         );
+    }
+
+    private function applyDirectCondition(
+        Builder $query,
+        ResolvedSegmentCondition $resolved,
+    ): void {
+        if (count($resolved->unionExpressions) <= 1) {
+            $this->conditions->apply(
+                $query,
+                $resolved->condition,
+                $resolved->expression,
+                $resolved->type,
+            );
+
+            return;
+        }
+
+        $query->where(function (Builder $union) use ($resolved): void {
+            foreach ($resolved->unionExpressions as $index => $expression) {
+                $callback = function (Builder $operand) use ($resolved, $expression): void {
+                    $this->conditions->apply(
+                        $operand,
+                        $resolved->condition,
+                        $expression,
+                        $resolved->type,
+                    );
+                };
+
+                if ($index === 0) {
+                    $union->where($callback);
+                } else {
+                    $union->orWhere($callback);
+                }
+            }
+        });
     }
 
     private function applyActionLookupCondition(

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Matomo\Archiving;
 
 use App\Matomo\Geolocation\CountryMetadataProvider;
+use DeviceDetector\Parser\Client\Browser;
 use DeviceDetector\Parser\Device\AbstractDeviceParser;
+use DeviceDetector\Parser\OperatingSystem;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Grammars\SQLiteGrammar;
 use InvalidArgumentException;
@@ -50,20 +52,26 @@ final readonly class SegmentConditionQueryApplier
     /** @var array<string, list<string>> */
     private array $countriesByContinent;
 
+    /** @var array<string, string> */
+    private array $countryCodesByName;
+
     public function __construct(CountryMetadataProvider $countries)
     {
         $countriesByContinent = [];
+        $countryCodesByName = [];
 
         foreach ($countries->codes() as $country) {
             $continent = $countries->continentCode($country);
             $countriesByContinent[$continent][] = $country;
+            $countryCodesByName[mb_strtolower($countries->countryName($country, 'en'))] = $country;
         }
 
         $this->countriesByContinent = $countriesByContinent;
+        $this->countryCodesByName = $countryCodesByName;
     }
 
     /**
-     * @param  literal-string  $expression
+     * @param  string  $expression  Fixed registry or validated dynamic column.
      * @param  literal-string  $type
      */
     public function apply(
@@ -72,7 +80,13 @@ final readonly class SegmentConditionQueryApplier
         string $expression,
         string $type,
     ): void {
-        if (preg_match('/^[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*$/D', $expression) === 1) {
+        if ($condition->value !== '' && $type === 'continent') {
+            $this->applyContinentCondition($query, $condition, $expression);
+
+            return;
+        }
+
+        if (preg_match('/^(?:[a-z_][a-z0-9_]*\.)?[a-z_][a-z0-9_]*$/D', $expression) === 1) {
             $this->applyQualifiedCondition($query, $condition, $expression, $type);
 
             return;
@@ -80,12 +94,6 @@ final readonly class SegmentConditionQueryApplier
 
         if ($condition->value === '') {
             $this->applyEmptyCondition($query, $condition->operator, $expression);
-
-            return;
-        }
-
-        if ($type === 'continent') {
-            $this->applyContinentCondition($query, $condition, $expression);
 
             return;
         }
@@ -130,23 +138,31 @@ final readonly class SegmentConditionQueryApplier
         };
     }
 
-    /** @param literal-string $expression */
+    /** @param string $expression Fixed registry or validated dynamic column. */
     private function applyEmptyCondition(Builder $query, string $operator, string $expression): void
     {
         if ($operator === '==') {
             $query->where(function (Builder $empty) use ($expression): void {
-                $empty->whereRaw("{$expression} IS NULL")
-                    ->orWhereRaw("{$expression} = ''")
-                    ->orWhereRaw("{$expression} = '0'");
+                $empty->whereRaw(new TrustedSegmentSqlExpression("{$expression} IS NULL"))
+                    ->whereRaw(
+                        new TrustedSegmentSqlExpression("{$expression} = ''"),
+                        [],
+                        'or',
+                    )
+                    ->whereRaw(
+                        new TrustedSegmentSqlExpression("{$expression} = '0'"),
+                        [],
+                        'or',
+                    );
             });
 
             return;
         }
 
         if ($operator === '!=') {
-            $query->whereRaw("{$expression} IS NOT NULL")
-                ->whereRaw("{$expression} <> ''")
-                ->whereRaw("{$expression} <> '0'");
+            $query->whereRaw(new TrustedSegmentSqlExpression("{$expression} IS NOT NULL"))
+                ->whereRaw(new TrustedSegmentSqlExpression("{$expression} <> ''"))
+                ->whereRaw(new TrustedSegmentSqlExpression("{$expression} <> '0'"));
 
             return;
         }
@@ -155,7 +171,7 @@ final readonly class SegmentConditionQueryApplier
     }
 
     /**
-     * @param  literal-string  $expression
+     * @param  string  $expression  Fixed registry or validated dynamic column.
      * @param  literal-string  $type
      */
     private function applyQualifiedCondition(
@@ -218,7 +234,7 @@ final readonly class SegmentConditionQueryApplier
         };
     }
 
-    /** @param literal-string $expression */
+    /** @param string $expression Fixed registry or validated dynamic column. */
     private function whereQualifiedNegativeComparison(
         Builder $query,
         string $expression,
@@ -236,7 +252,7 @@ final readonly class SegmentConditionQueryApplier
         });
     }
 
-    /** @param literal-string $expression */
+    /** @param string $expression Fixed registry or validated dynamic column. */
     private function whereQualifiedNotContains(
         Builder $query,
         string $expression,
@@ -258,7 +274,7 @@ final readonly class SegmentConditionQueryApplier
     }
 
     /**
-     * @param  literal-string  $expression
+     * @param  string  $expression  Fixed registry or validated dynamic column.
      * @param  'contains'|'ends'|'starts'  $position
      */
     private function whereQualifiedLike(
@@ -285,7 +301,7 @@ final readonly class SegmentConditionQueryApplier
         );
     }
 
-    /** @param literal-string $expression */
+    /** @param string $expression Fixed registry or validated dynamic column. */
     private function applyContinentCondition(
         Builder $query,
         SegmentCondition $condition,
@@ -320,7 +336,7 @@ final readonly class SegmentConditionQueryApplier
     }
 
     /**
-     * @param  literal-string  $expression
+     * @param  string  $expression  Fixed registry or validated dynamic column.
      * @param  '<'|'<='|'<>'|'='|'>'|'>='  $operator
      */
     private function whereComparison(
@@ -331,10 +347,13 @@ final readonly class SegmentConditionQueryApplier
         bool $numeric,
     ): void {
         $placeholder = $numeric ? 'CAST(? AS DECIMAL(65, 20))' : '?';
-        $query->whereRaw("{$expression} {$operator} {$placeholder}", [$value]);
+        $query->whereRaw(
+            new TrustedSegmentSqlExpression("{$expression} {$operator} {$placeholder}"),
+            [$value],
+        );
     }
 
-    /** @param literal-string $expression */
+    /** @param string $expression Fixed registry or validated dynamic column. */
     private function whereNegativeComparison(
         Builder $query,
         string $expression,
@@ -349,14 +368,14 @@ final readonly class SegmentConditionQueryApplier
         }
 
         $query->where(function (Builder $notEqual) use ($expression, $value, $numeric): void {
-            $notEqual->whereRaw("{$expression} IS NULL")
+            $notEqual->whereRaw(new TrustedSegmentSqlExpression("{$expression} IS NULL"))
                 ->orWhere(function (Builder $present) use ($expression, $value, $numeric): void {
                     $this->whereComparison($present, $expression, '<>', $value, $numeric);
                 });
         });
     }
 
-    /** @param literal-string $expression */
+    /** @param string $expression Fixed registry or validated dynamic column. */
     private function whereNotContains(
         Builder $query,
         string $expression,
@@ -370,7 +389,7 @@ final readonly class SegmentConditionQueryApplier
         }
 
         $query->where(function (Builder $notContains) use ($expression, $value): void {
-            $notContains->whereRaw("{$expression} IS NULL")
+            $notContains->whereRaw(new TrustedSegmentSqlExpression("{$expression} IS NULL"))
                 ->orWhere(function (Builder $present) use ($expression, $value): void {
                     $this->whereLike($present, $expression, $value, 'contains', true);
                 });
@@ -378,7 +397,7 @@ final readonly class SegmentConditionQueryApplier
     }
 
     /**
-     * @param  literal-string  $expression
+     * @param  string  $expression  Fixed registry or validated dynamic column.
      * @param  'contains'|'ends'|'starts'  $position
      */
     private function whereLike(
@@ -398,13 +417,19 @@ final readonly class SegmentConditionQueryApplier
         $escape = $query->getGrammar() instanceof SQLiteGrammar
             ? " ESCAPE '\\'"
             : " ESCAPE '\\\\'";
-        $query->whereRaw("{$expression} {$operator} ?{$escape}", [$pattern]);
+        $query->whereRaw(
+            new TrustedSegmentSqlExpression("{$expression} {$operator} ?{$escape}"),
+            [$pattern],
+        );
     }
 
     private function filterValue(string $value, string $type, string $name): mixed
     {
         return match ($type) {
             'text' => $value,
+            'browser-name' => $this->namedCode($value, Browser::getAvailableBrowsers()),
+            'os-name' => $this->namedCode($value, OperatingSystem::getAvailableOperatingSystems()),
+            'country-name' => $this->countryCodesByName[mb_strtolower($value)] ?? 'UNK',
             'number' => $this->numericValue($value, $name),
             'boolean' => match ($value) {
                 '0' => 0,
@@ -426,6 +451,20 @@ final readonly class SegmentConditionQueryApplier
             'action-type' => $this->enumValue($value, self::ACTION_TYPES, $name),
             default => throw new InvalidArgumentException("The '{$name}' segment type '{$type}' is not valid."),
         };
+    }
+
+    /** @param array<string, string> $names */
+    private function namedCode(string $value, array $names): string
+    {
+        $normalized = mb_strtolower($value);
+
+        foreach ($names as $code => $name) {
+            if (mb_strtolower($name) === $normalized) {
+                return $code;
+            }
+        }
+
+        return 'UNK';
     }
 
     private function numericValue(string $value, string $name): string

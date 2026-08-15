@@ -8,5 +8,5 @@ use Illuminate\Database\Query\Builder;
 
 interface VisitSegmentApplicator
 {
-    public function apply(Builder $query, ?string $segment): bool;
+    public function apply(Builder $query, ?string $segment, ?int $siteId = null): bool;
 }

@@ -8,11 +8,12 @@ final readonly class ActionSegmentDefinition
 {
     /**
      * @param  literal-string  $source
-     * @param  literal-string  $expression
+     * @param  string  $expression  Fixed registry or validated dynamic column.
      * @param  literal-string  $lookupAlias
      * @param  list<int>  $actionTypes
      * @param  literal-string  $type
      * @param  list<array{literal-string, literal-string}>  $lookupColumns
+     * @param  list<string>  $directExpressions
      */
     public function __construct(
         public string $source,
@@ -21,9 +22,10 @@ final readonly class ActionSegmentDefinition
         public array $actionTypes,
         public string $type,
         public array $lookupColumns = [],
+        public array $directExpressions = [],
     ) {}
 
-    /** @return list<array{literal-string, literal-string}> */
+    /** @return list<array{string, literal-string}> */
     public function columns(): array
     {
         if ($this->lookupColumns !== []) {

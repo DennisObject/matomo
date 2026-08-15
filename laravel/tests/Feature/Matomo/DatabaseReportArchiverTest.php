@@ -9,6 +9,7 @@ use App\Matomo\Archiving\ArchiveReportRequest;
 use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\DatabaseReportArchiver;
+use App\Matomo\Archiving\DynamicSegmentResolver;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\Events\ArchiveReportsCompleted;
 use App\Matomo\Archiving\Events\ArchiveReportsStarting;
@@ -73,6 +74,19 @@ class DatabaseReportArchiverTest extends TestCase
             $table->string('idvisitor');
             $table->string('config_id');
             $table->string('user_id')->nullable();
+            $table->string('config_browser_name')->nullable();
+            $table->string('config_os')->nullable();
+            $table->string('custom_var_k1')->nullable();
+            $table->string('custom_var_v1')->nullable();
+            $table->string('custom_var_k2')->nullable();
+            $table->string('custom_var_v2')->nullable();
+            $table->string('custom_var_k3')->nullable();
+            $table->string('custom_var_v3')->nullable();
+            $table->string('custom_var_k4')->nullable();
+            $table->string('custom_var_v4')->nullable();
+            $table->string('custom_var_k5')->nullable();
+            $table->string('custom_var_v5')->nullable();
+            $table->string('custom_dimension_1')->nullable();
             $table->unsignedInteger('visit_entry_idaction_url')->nullable();
             $table->unsignedInteger('visit_entry_idaction_name')->nullable();
             $table->unsignedInteger('visit_exit_idaction_url')->nullable();
@@ -125,6 +139,19 @@ class DatabaseReportArchiverTest extends TestCase
             $table->unsignedInteger('search_count')->nullable();
             $table->float('custom_float')->nullable();
             $table->float('product_price')->nullable();
+            $table->unsignedBigInteger('bandwidth')->nullable();
+            $table->string('custom_var_k1')->nullable();
+            $table->string('custom_var_v1')->nullable();
+            $table->string('custom_var_k2')->nullable();
+            $table->string('custom_var_v2')->nullable();
+            $table->string('custom_var_k3')->nullable();
+            $table->string('custom_var_v3')->nullable();
+            $table->string('custom_var_k4')->nullable();
+            $table->string('custom_var_v4')->nullable();
+            $table->string('custom_var_k5')->nullable();
+            $table->string('custom_var_v5')->nullable();
+            $table->string('custom_dimension_2')->nullable();
+            $table->string('custom_dimension_4')->nullable();
             $table->dateTime('server_time');
         });
         $schema->create('goal', static function (Blueprint $table): void {
@@ -138,6 +165,7 @@ class DatabaseReportArchiverTest extends TestCase
             $table->integer('idgoal');
             $table->string('idorder')->nullable();
             $table->float('revenue')->nullable();
+            $table->string('custom_dimension_3')->nullable();
         });
         $schema->create('log_conversion_item', static function (Blueprint $table): void {
             $table->unsignedInteger('idsite');
@@ -151,6 +179,13 @@ class DatabaseReportArchiverTest extends TestCase
             $table->unsignedInteger('idaction_category4')->nullable();
             $table->unsignedInteger('idaction_category5')->nullable();
             $table->float('price')->nullable();
+        });
+        $schema->create('custom_dimensions', static function (Blueprint $table): void {
+            $table->unsignedInteger('idcustomdimension');
+            $table->unsignedInteger('idsite');
+            $table->unsignedSmallInteger('index');
+            $table->string('scope', 10);
+            $table->boolean('active');
         });
         $this->connection->table('site')->insert([
             ['idsite' => 1, 'timezone' => 'Pacific/Auckland'],
@@ -584,6 +619,109 @@ class DatabaseReportArchiverTest extends TestCase
         $this->visitSegmentApplicator()->apply($query, 'revenueOrder!=10');
     }
 
+    public function test_dynamic_dimensions_custom_variables_and_display_aliases_are_supported(): void
+    {
+        $countryMetadata = $this->createMock(CountryMetadataProvider::class);
+        $countryMetadata->method('codes')->willReturn(['nz', 'au']);
+        $countryMetadata->method('continentCode')->willReturn('oce');
+        $countryMetadata->method('countryName')->willReturnCallback(
+            static fn (string $country): string => match ($country) {
+                'nz' => 'New Zealand',
+                'au' => 'Australia',
+                default => $country,
+            },
+        );
+        $this->app->instance(CountryMetadataProvider::class, $countryMetadata);
+        $this->insertVisits();
+        $this->insertActionRows();
+        $this->insertConversionRows();
+        $this->connection->table('custom_dimensions')->insert([
+            ['idcustomdimension' => 1, 'idsite' => 1, 'index' => 1, 'scope' => 'visit', 'active' => 1],
+            ['idcustomdimension' => 2, 'idsite' => 1, 'index' => 2, 'scope' => 'action', 'active' => 1],
+            ['idcustomdimension' => 3, 'idsite' => 1, 'index' => 3, 'scope' => 'conversion', 'active' => 1],
+            ['idcustomdimension' => 4, 'idsite' => 1, 'index' => 4, 'scope' => 'action', 'active' => 1],
+            ['idcustomdimension' => 5, 'idsite' => 1, 'index' => 1, 'scope' => 'visit', 'active' => 0],
+        ]);
+        $this->connection->table('log_visit')->where('idvisit', 1)->update([
+            'config_browser_name' => 'FF',
+            'config_os' => 'WIN',
+            'custom_var_k1' => 'Plan',
+            'custom_var_v1' => 'Gold',
+            'custom_dimension_1' => 'visit-dimension',
+        ]);
+        $this->connection->table('log_visit')->where('idvisit', 2)->update([
+            'config_browser_name' => 'CH',
+            'config_os' => 'LIN',
+            'custom_var_k2' => 'Plan',
+            'custom_var_v2' => 'Silver',
+        ]);
+        $this->connection->table('log_link_visit_action')->where('idlink_va', 1)->update([
+            'custom_var_k1' => 'Category',
+            'custom_var_v1' => 'News',
+            'custom_dimension_2' => 'action-dimension',
+            'custom_dimension_4' => 'pair',
+            'bandwidth' => 1000,
+        ]);
+        $this->connection->table('log_link_visit_action')->where('idlink_va', 2)->update([
+            'custom_var_k2' => 'Audience',
+            'custom_var_v2' => 'Pro',
+            'custom_dimension_2' => 'other-action',
+            'custom_dimension_4' => 'other-pair',
+            'bandwidth' => 2000,
+        ]);
+        $this->connection->table('log_conversion')
+            ->where('idvisit', 2)
+            ->where('idgoal', 0)
+            ->update(['custom_dimension_3' => 'conversion-dimension']);
+        $countryQuery = $this->connection->table('log_visit')->where('idsite', 1);
+        $this->assertTrue($this->visitSegmentApplicator()->apply(
+            $countryQuery,
+            'countryName==New Zealand',
+            1,
+        ));
+        $this->assertContains('nz', $countryQuery->getBindings());
+        $segments = [
+            'dimension1==visit-dimension' => 1,
+            'dimension2==action-dimension' => 1,
+            'dimension3==conversion-dimension' => 1,
+            'dimension2==action-dimension;dimension4==pair' => 1,
+            'dimension2==action-dimension;dimension4==other-pair' => 0,
+            'customVariableName==Plan' => 2,
+            'customVariableName1==Plan' => 1,
+            'customVariableValue==Gold' => 1,
+            'customVariablePageName==Category' => 1,
+            'customVariablePageName==Category;customVariablePageValue==News' => 1,
+            'customVariablePageName==Category;customVariablePageValue==Pro' => 0,
+            'customVariablePageValue!=News' => 1,
+            'bandwidth>=2000' => 1,
+            'browserName==Firefox' => 1,
+            'operatingSystemName==Windows' => 1,
+            'countryName==New Zealand' => 1,
+        ];
+
+        foreach ($segments as $segment => $expectedVisits) {
+            $result = $this->archiver()->archive(new ArchiveReportRequest(
+                siteId: 1,
+                period: 'day',
+                date: '2026-08-15',
+                segment: $segment,
+            ));
+
+            $this->assertSame(
+                $expectedVisits,
+                $result->visits,
+                "The dynamic segment '{$segment}' has the wrong visit count.",
+            );
+        }
+
+        $query = $this->connection->table('log_visit');
+        $sql = $query->toSql();
+        $this->assertFalse($this->visitSegmentApplicator()->apply($query, 'dimension5==hidden', 1));
+        $this->assertSame($sql, $query->toSql());
+        $this->assertFalse($this->visitSegmentApplicator()->apply($query, 'dimension1==other-site', 2));
+        $this->assertSame($sql, $query->toSql());
+    }
+
     public function test_extension_failure_leaves_an_error_marker_and_validation_rejects_bad_inputs(): void
     {
         $this->insertVisits();
@@ -690,6 +828,7 @@ class DatabaseReportArchiverTest extends TestCase
             new SegmentConditionQueryApplier(
                 $this->app->make(CountryMetadataProvider::class),
             ),
+            new DynamicSegmentResolver,
         );
     }
 

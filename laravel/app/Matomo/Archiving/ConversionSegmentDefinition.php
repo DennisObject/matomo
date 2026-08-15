@@ -9,7 +9,7 @@ final readonly class ConversionSegmentDefinition
     /**
      * @param  'conversion'|'item'  $scope
      * @param  'direct'|'goal-name'|'lookup'  $source
-     * @param  literal-string  $expression
+     * @param  string  $expression  Fixed registry or validated dynamic column.
      * @param  literal-string  $type
      * @param  list<array{literal-string, literal-string, int}>  $lookupColumns
      * @param  literal-string|null  $discriminatorColumn
