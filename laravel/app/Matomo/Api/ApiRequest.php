@@ -56,6 +56,18 @@ final readonly class ApiRequest
 
     private const string DEVICE_PLUGINS_METHOD = 'DevicePlugins.getPlugin';
 
+    /** @var list<string> */
+    private const array DEVICES_DETECTION_METHODS = [
+        'DevicesDetection.getType',
+        'DevicesDetection.getBrand',
+        'DevicesDetection.getModel',
+        'DevicesDetection.getOsFamilies',
+        'DevicesDetection.getOsVersions',
+        'DevicesDetection.getBrowsers',
+        'DevicesDetection.getBrowserVersions',
+        'DevicesDetection.getBrowserEngines',
+    ];
+
     private const string PAGE_PERFORMANCE_METHOD = 'PagePerformance.get';
 
     private const string USER_ID_METHOD = 'UserId.getUsers';
@@ -421,6 +433,11 @@ final readonly class ApiRequest
     public function isDevicePluginsRequest(): bool
     {
         return $this->module === 'API' && $this->method === self::DEVICE_PLUGINS_METHOD;
+    }
+
+    public function isDevicesDetectionRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::DEVICES_DETECTION_METHODS, true);
     }
 
     public function isPagePerformanceRequest(): bool
@@ -1025,6 +1042,7 @@ final readonly class ApiRequest
                 && ! in_array($method, self::USER_LANGUAGE_METHODS, true)
                 && ! in_array($method, self::RESOLUTION_METHODS, true)
                 && $method !== self::DEVICE_PLUGINS_METHOD
+                && ! in_array($method, self::DEVICES_DETECTION_METHODS, true)
                 && $method !== self::PAGE_PERFORMANCE_METHOD
                 && $method !== self::USER_ID_METHOD
                 && ! in_array($method, self::CONTENTS_METHODS, true)
