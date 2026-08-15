@@ -67,6 +67,7 @@ final readonly class InstallationConfig
         private bool $defaultLocationProviderEnabled,
         private bool $languageToCountryGuessEnabled,
         private bool $professionalServicesAdsEnabled,
+        private bool $developmentModeEnabled,
         /** @var array<int, string> */
         private array $transitionsMaxPeriodAllowed,
         /** @var array<string, mixed> */
@@ -94,6 +95,7 @@ final readonly class InstallationConfig
         $login = $configuration['Login'] ?? [];
         $proxy = $configuration['proxy'] ?? [];
         $tracker = $configuration['Tracker'] ?? [];
+        $development = $configuration['Development'] ?? [];
         $aiProviders = $configuration['AIProviders'] ?? [];
 
         if (! is_array($database)
@@ -105,6 +107,7 @@ final readonly class InstallationConfig
             || ! is_array($login)
             || ! is_array($proxy)
             || ! is_array($tracker)
+            || ! is_array($development)
             || ! is_array($aiProviders)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
@@ -226,6 +229,7 @@ final readonly class InstallationConfig
                 'piwik_professional_support_ads_enabled',
                 true,
             ) || self::boolean($general, 'piwik_pro_ads_enabled'),
+            developmentModeEnabled: self::boolean($development, 'enabled'),
             transitionsMaxPeriodAllowed: self::parseTransitionsMaxPeriodAllowed($configuration),
             aiProviders: $aiProviders,
         );
@@ -470,6 +474,11 @@ final readonly class InstallationConfig
     public function professionalServicesAdsEnabled(): bool
     {
         return $this->professionalServicesAdsEnabled;
+    }
+
+    public function developmentModeEnabled(): bool
+    {
+        return $this->developmentModeEnabled;
     }
 
     public function transitionsMaxPeriodAllowed(int $idSite): string

@@ -30,6 +30,7 @@ use App\Matomo\Api\Methods\FeedbackApiMethodHandler;
 use App\Matomo\Api\Methods\GoalsApiMethodHandler;
 use App\Matomo\Api\Methods\GoalsReportApiMethodHandler;
 use App\Matomo\Api\Methods\JsTrackerInstallCheckApiMethodHandler;
+use App\Matomo\Api\Methods\LanguagesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\OverlayApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
@@ -87,10 +88,13 @@ use App\Matomo\Goals\GoalRepository;
 use App\Matomo\Goals\SiteTrackerCacheInvalidator;
 use App\Matomo\Localization\ApiLanguageResolver;
 use App\Matomo\Localization\DatabaseLanguagePreferenceRepository;
+use App\Matomo\Localization\FilesystemLanguageCatalog;
 use App\Matomo\Localization\JsonMatomoTranslator;
+use App\Matomo\Localization\LanguageCatalog;
 use App\Matomo\Localization\LanguagePreferenceRepository;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Localization\MatomoTranslator;
+use App\Matomo\Localization\MutableLanguagePreferenceRepository;
 use App\Matomo\Login\BruteForceSettings;
 use App\Matomo\Login\BruteForceUnblocker;
 use App\Matomo\Login\DatabaseBruteForceSettings;
@@ -430,10 +434,31 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
-            LanguagePreferenceRepository::class,
-            fn (Application $application): LanguagePreferenceRepository => new DatabaseLanguagePreferenceRepository(
+            DatabaseLanguagePreferenceRepository::class,
+            fn (Application $application): DatabaseLanguagePreferenceRepository => new DatabaseLanguagePreferenceRepository(
                 $application->make(MatomoDatabase::class)->connection(),
             ),
+        );
+        $this->app->alias(DatabaseLanguagePreferenceRepository::class, LanguagePreferenceRepository::class);
+        $this->app->alias(
+            DatabaseLanguagePreferenceRepository::class,
+            MutableLanguagePreferenceRepository::class,
+        );
+        $this->app->singleton(
+            LanguageCatalog::class,
+            function (Application $application): LanguageCatalog {
+                $installation = $application->make(InstallationConfig::class);
+
+                return new FilesystemLanguageCatalog(
+                    rootDirectory: base_path('..'),
+                    configuredLanguages: $installation->availableLanguages()
+                        ?? $this->defaultAvailableLanguages(),
+                    activatedPlugins: $installation->activatedPlugins(),
+                    bundledPlugins: $this->defaultBundledPlugins(),
+                    developmentEnabled: $installation->developmentModeEnabled(),
+                    events: $application->make(Dispatcher::class),
+                );
+            },
         );
 
         $this->app->singleton(
@@ -751,6 +776,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(GoalsApiMethodHandler::class),
                 $application->make(GoalsReportApiMethodHandler::class),
                 $application->make(JsTrackerInstallCheckApiMethodHandler::class),
+                $application->make(LanguagesManagerApiMethodHandler::class),
                 $application->make(OverlayApiMethodHandler::class),
                 $application->make(PagePerformanceApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
@@ -838,6 +864,47 @@ class AppServiceProvider extends ServiceProvider
             $configuration['Languages']['Languages'],
             is_string(...),
         ));
+    }
+
+    /** @return list<string> */
+    private function defaultBundledPlugins(): array
+    {
+        $configuration = parse_ini_file(
+            base_path('../config/global.ini.php'),
+            true,
+            INI_SCANNER_RAW,
+        );
+
+        if (! is_array($configuration)
+            || ! is_array($configuration['Plugins'] ?? null)
+            || ! is_array($configuration['Plugins']['Plugins'] ?? null)) {
+            throw new RuntimeException('The Matomo bundled plugin list is invalid.');
+        }
+
+        $enabled = array_values(array_filter(
+            $configuration['Plugins']['Plugins'],
+            is_string(...),
+        ));
+
+        return array_values(array_unique([
+            ...$enabled,
+            'ArchivingMetrics',
+            'DBStats',
+            'ExamplePlugin',
+            'ExampleCommand',
+            'ExampleSettingsPlugin',
+            'ExampleUI',
+            'ExampleVisualization',
+            'ExamplePluginTemplate',
+            'ExampleTracker',
+            'ExampleLogTables',
+            'ExampleReport',
+            'ExampleAPI',
+            'ExampleVue',
+            'MobileAppMeasurable',
+            'TagManager',
+            'ExampleTheme',
+        ]));
     }
 
     /** @return list<string> */

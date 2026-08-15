@@ -25,7 +25,10 @@ use App\Matomo\Geolocation\GeolocationProviderRegistry;
 use App\Matomo\Geolocation\GeolocationSettings;
 use App\Matomo\Goals\GoalRepository;
 use App\Matomo\Goals\SiteTrackerCacheInvalidator;
+use App\Matomo\Localization\LanguageCatalog;
+use App\Matomo\Localization\LanguagePreferenceRepository;
 use App\Matomo\Localization\LanguageResolver;
+use App\Matomo\Localization\MutableLanguagePreferenceRepository;
 use App\Matomo\Login\BruteForceUnblocker;
 use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptStatus;
@@ -130,6 +133,67 @@ abstract class TestCase extends BaseTestCase
         );
 
         $this->app->instance(AiProviderCentralConfiguration::class, new AiProviderCentralConfiguration);
+        $this->app->instance(LanguageCatalog::class, new class implements LanguageCatalog
+        {
+            public function available(bool $ignoreConfig = false): array
+            {
+                return ['en'];
+            }
+
+            public function isAvailable(string $languageCode, bool $ignoreConfig = false): bool
+            {
+                return $languageCode === 'en';
+            }
+
+            public function names(bool $ignoreConfig = false): array
+            {
+                return [];
+            }
+
+            public function information(bool $excludeNonCorePlugins = true, bool $ignoreConfig = false): array
+            {
+                return [];
+            }
+
+            public function translations(string $languageCode): ?array
+            {
+                return null;
+            }
+        });
+        $languagePreferences = new class implements MutableLanguagePreferenceRepository
+        {
+            /** @var array<string, string> */
+            private array $languages = [];
+
+            /** @var array<string, bool> */
+            private array $clocks = [];
+
+            public function forLogin(string $login): ?string
+            {
+                return $this->languages[$login] ?? null;
+            }
+
+            public function setLanguage(string $login, string $language): bool
+            {
+                $this->languages[$login] = $language;
+
+                return true;
+            }
+
+            public function uses12HourClock(string $login): bool
+            {
+                return $this->clocks[$login] ?? false;
+            }
+
+            public function set12HourClock(string $login, bool $use12HourClock): bool
+            {
+                $this->clocks[$login] = $use12HourClock;
+
+                return true;
+            }
+        };
+        $this->app->instance(LanguagePreferenceRepository::class, $languagePreferences);
+        $this->app->instance(MutableLanguagePreferenceRepository::class, $languagePreferences);
         $this->app->instance(TransitionsPeriodPolicy::class, new class implements TransitionsPeriodPolicy
         {
             public function isAllowed(int $siteId, string $period, string $date): bool

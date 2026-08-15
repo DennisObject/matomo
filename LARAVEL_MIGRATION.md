@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 152 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 161 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Not ported |
@@ -90,6 +90,9 @@ Handled reporting API method names:
   tracker-cache invalidation, ecommerce item reports, goal metrics, and conversion-range reports.
 - `JsTrackerInstallCheck`: both API methods, including short-lived nonce reuse, result lookup,
   main-URL fallback, URL validation, and site view-access checks.
+- `LanguagesManager`: all 9 public API methods, including configured and filesystem language
+  discovery, translation coverage and export, localized names, extension events, user language
+  storage, 12-hour clock preferences, and self-or-superuser access checks.
 - `Overlay`: `getTranslations`, with the existing localized client key contract.
 - `Tour`: all 3 API methods, including localized challenge state, extension events, and legacy per-user progress storage.
 - `Transitions`: `getTranslations` and `isPeriodAllowed`, including the complete localized metric
@@ -126,7 +129,7 @@ Reporting API module matrix:
 | `ImageGraph` | 1 | 0 | 1 |
 | `Insights` | 5 | 0 | 5 |
 | `JsTrackerInstallCheck` | 2 | 2 | 0 |
-| `LanguagesManager` | 9 | 0 | 9 |
+| `LanguagesManager` | 9 | 9 | 0 |
 | `Live` | 7 | 0 | 7 |
 | `Login` | 1 | 1 | 0 |
 | `Marketplace` | 5 | 0 | 5 |
@@ -152,7 +155,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **152** | **237** |
+| **Total** | **389** | **161** | **228** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
