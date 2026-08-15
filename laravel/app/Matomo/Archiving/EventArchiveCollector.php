@@ -13,12 +13,6 @@ use Illuminate\Database\Query\JoinClause;
 use stdClass;
 
 /**
- * @phpstan-type ArchiveValue float|int|string|null
- * @phpstan-type Columns array<string, ArchiveValue>
- * @phpstan-type ColumnRows array<string, Columns>
- * @phpstan-type ReportRow array{columns: Columns, children: ColumnRows}
- * @phpstan-type Report array<string, ReportRow>
- * @phpstan-type Reports array<string, Report>
  * @phpstan-type SourceRow array{
  *     eventCategory: string,
  *     eventAction: string,
@@ -91,13 +85,17 @@ final readonly class EventArchiveCollector
             : $this->parentReports($event);
 
         foreach (self::RECORDS as $recordName => $_dimensions) {
-            foreach ($this->serializedReport($reports[$recordName] ?? []) as $suffix => $blob) {
+            foreach ($reports[$recordName]->serialized(
+                self::ROW_LIMIT,
+                self::ROW_LIMIT,
+                'nb_visits',
+            ) as $suffix => $blob) {
                 $event->records->addBlob($recordName.$suffix, $blob);
             }
         }
     }
 
-    /** @return Reports */
+    /** @return array<string, HierarchicalArchiveTable> */
     private function dayReports(ArchiveReportsCollecting $event, string $timezone): array
     {
         $reports = $this->emptyReports();
@@ -111,12 +109,7 @@ final readonly class EventArchiveCollector
 
             foreach (self::RECORDS as $recordName => [$mainDimension, $subDimension]) {
                 $mainLabel = $this->mainLabel($source[$mainDimension], $mainDimension);
-                $rootKey = $this->rowKey($mainLabel);
-                $reports[$recordName][$rootKey] ??= [
-                    'columns' => ['label' => $mainLabel],
-                    'children' => [],
-                ];
-                $this->mergeMetrics($reports[$recordName][$rootKey]['columns'], $metrics);
+                $reports[$recordName]->mergeRoot($mainLabel, $metrics);
                 $subLabel = $source[$subDimension];
 
                 if ($subLabel === '' || $subLabel === '0') {
@@ -124,8 +117,8 @@ final readonly class EventArchiveCollector
                 }
 
                 $subLabel = $this->storedLabel($subLabel);
-                $this->mergeColumnRow(
-                    $reports[$recordName][$rootKey]['children'],
+                $reports[$recordName]->mergeChild(
+                    $mainLabel,
                     $subLabel,
                     $metrics,
                 );
@@ -135,7 +128,7 @@ final readonly class EventArchiveCollector
         return $reports;
     }
 
-    /** @return Reports */
+    /** @return array<string, HierarchicalArchiveTable> */
     private function parentReports(ArchiveReportsCollecting $event): array
     {
         $reports = $this->emptyReports();
@@ -161,15 +154,7 @@ final readonly class EventArchiveCollector
                         continue;
                     }
 
-                    $rootKey = $this->rowKey($label);
-                    $reports[$recordName][$rootKey] ??= [
-                        'columns' => ['label' => $label],
-                        'children' => [],
-                    ];
-                    $this->mergeMetrics(
-                        $reports[$recordName][$rootKey]['columns'],
-                        $root['columns'],
-                    );
+                    $reports[$recordName]->mergeRoot($label, $root['columns']);
                     $subtableId = $root['subtableId'];
 
                     if ($subtableId === null) {
@@ -183,8 +168,8 @@ final readonly class EventArchiveCollector
                             continue;
                         }
 
-                        $this->mergeColumnRow(
-                            $reports[$recordName][$rootKey]['children'],
+                        $reports[$recordName]->mergeChild(
+                            $label,
                             $subLabel,
                             $subrow['columns'],
                         );
@@ -313,7 +298,7 @@ final readonly class EventArchiveCollector
     }
 
     /** @param SourceRow $row
-     * @return Columns
+     * @return array<string, float|int|null>
      */
     private function metrics(array $row): array
     {
@@ -347,179 +332,19 @@ final readonly class EventArchiveCollector
         );
     }
 
-    /** @param Columns $target
-     * @param  Columns  $metrics
-     */
-    private function mergeMetrics(array &$target, array $metrics): void
-    {
-        foreach ($metrics as $metric => $value) {
-            if ($metric === 'label') {
-                continue;
-            }
-
-            if ($metric === 'min_event_value') {
-                $target[$metric] = $this->minimum($target[$metric] ?? null, $value);
-
-                continue;
-            }
-
-            if ($metric === 'max_event_value') {
-                $target[$metric] = $this->maximum($target[$metric] ?? null, $value);
-
-                continue;
-            }
-
-            if (is_float($value) || is_int($value)) {
-                $target[$metric] = $this->numeric(
-                    (float) ($target[$metric] ?? 0) + $value,
-                );
-            }
-        }
-    }
-
-    /** @param ColumnRows $rows
-     * @param  Columns  $metrics
-     */
-    private function mergeColumnRow(array &$rows, float|int|string $label, array $metrics): void
-    {
-        $key = $this->rowKey($label);
-        $rows[$key] ??= ['label' => $label];
-        $this->mergeMetrics($rows[$key], $metrics);
-    }
-
-    /**
-     * @param  Report  $report
-     * @return array<string, string>
-     */
-    private function serializedReport(array $report): array
-    {
-        $report = $this->truncateReport($report);
-        $root = [];
-        $serialized = [];
-        $subtableId = 0;
-
-        foreach ($report as $row) {
-            $children = $this->truncateColumnRows($row['children']);
-            $id = null;
-
-            if ($children !== []) {
-                $id = ++$subtableId;
-                $serialized['_'.$id] = serialize(array_map(
-                    static fn (array $columns): array => [
-                        0 => $columns,
-                        1 => [],
-                        3 => null,
-                    ],
-                    array_values($children),
-                ));
-            }
-
-            $root[] = [
-                0 => $row['columns'],
-                1 => [],
-                3 => $id,
-            ];
-        }
-
-        return ['' => serialize($root), ...$serialized];
-    }
-
-    /** @param Report $report
-     * @return Report
-     */
-    private function truncateReport(array $report): array
-    {
-        if (count($report) <= self::ROW_LIMIT) {
-            return $report;
-        }
-
-        $summary = null;
-
-        foreach ($report as $key => $row) {
-            if ($this->isSummary($row['columns']['label'] ?? null)) {
-                $summary = $row['columns'];
-                unset($report[$key]);
-            }
-        }
-
-        uasort($report, $this->reportSorter(...));
-        $kept = array_slice($report, 0, self::ROW_LIMIT - 1, true);
-        $remainder = array_slice($report, self::ROW_LIMIT - 1, null, true);
-        $summary ??= ['label' => -1];
-
-        foreach ($remainder as $row) {
-            $this->mergeMetrics($summary, $row['columns']);
-        }
-
-        $kept[$this->rowKey(-1)] = ['columns' => $summary, 'children' => []];
-
-        return $kept;
-    }
-
-    /** @param ColumnRows $rows
-     * @return ColumnRows
-     */
-    private function truncateColumnRows(array $rows): array
-    {
-        if (count($rows) <= self::ROW_LIMIT) {
-            return $rows;
-        }
-
-        $summary = null;
-
-        foreach ($rows as $key => $row) {
-            if ($this->isSummary($row['label'] ?? null)) {
-                $summary = $row;
-                unset($rows[$key]);
-            }
-        }
-
-        uasort($rows, $this->columnSorter(...));
-        $kept = array_slice($rows, 0, self::ROW_LIMIT - 1, true);
-        $remainder = array_slice($rows, self::ROW_LIMIT - 1, null, true);
-        $summary ??= ['label' => -1];
-
-        foreach ($remainder as $row) {
-            $this->mergeMetrics($summary, $row);
-        }
-
-        $kept[$this->rowKey(-1)] = $summary;
-
-        return $kept;
-    }
-
-    /** @param ReportRow $left
-     * @param  ReportRow  $right
-     */
-    private function reportSorter(array $left, array $right): int
-    {
-        return $this->columnsSorter($left['columns'], $right['columns']);
-    }
-
-    /** @param Columns $left
-     * @param  Columns  $right
-     */
-    private function columnSorter(array $left, array $right): int
-    {
-        return $this->columnsSorter($left, $right);
-    }
-
-    /** @param Columns $left
-     * @param  Columns  $right
-     */
-    private function columnsSorter(array $left, array $right): int
-    {
-        $visits = (float) ($right['nb_visits'] ?? 0) <=> (float) ($left['nb_visits'] ?? 0);
-
-        return $visits !== 0
-            ? $visits
-            : strnatcasecmp((string) ($left['label'] ?? ''), (string) ($right['label'] ?? ''));
-    }
-
-    /** @return Reports */
+    /** @return array<string, HierarchicalArchiveTable> */
     private function emptyReports(): array
     {
-        return array_fill_keys(array_keys(self::RECORDS), []);
+        $reports = [];
+
+        foreach (array_keys(self::RECORDS) as $recordName) {
+            $reports[$recordName] = new HierarchicalArchiveTable([
+                'min_event_value' => 'min',
+                'max_event_value' => 'max',
+            ]);
+        }
+
+        return $reports;
     }
 
     private function requested(ArchiveReportsCollecting $event): bool
@@ -573,16 +398,6 @@ final readonly class EventArchiveCollector
     private function archiveLabel(mixed $label): float|int|string|null
     {
         return is_float($label) || is_int($label) || is_string($label) ? $label : null;
-    }
-
-    private function isSummary(mixed $label): bool
-    {
-        return in_array($label, [-1, '-1'], true);
-    }
-
-    private function rowKey(float|int|string $label): string
-    {
-        return get_debug_type($label).':'.$label;
     }
 
     private function text(mixed $value): ?string
