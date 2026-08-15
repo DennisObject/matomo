@@ -544,6 +544,7 @@ final readonly class ApiRequest
         public ?PrivacyRawAnonymisationRequest $privacyRawAnonymisation,
         public ?PrivacyDataSubjectsRequest $privacyDataSubjects,
         public ?PrivacyDataSubjectSearchRequest $privacyDataSubjectSearch,
+        public ?PrivacyPurgeExecutionRequest $privacyPurgeExecution,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -633,6 +634,7 @@ final readonly class ApiRequest
             privacyRawAnonymisation: null,
             privacyDataSubjects: null,
             privacyDataSubjectSearch: null,
+            privacyPurgeExecution: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1251,6 +1253,7 @@ final readonly class ApiRequest
             privacyRawAnonymisation: self::privacyRawAnonymisation($request, $module, $method),
             privacyDataSubjects: self::privacyDataSubjects($request, $module, $method),
             privacyDataSubjectSearch: self::privacyDataSubjectSearch($request, $module, $method),
+            privacyPurgeExecution: self::privacyPurgeExecution($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2937,6 +2940,20 @@ final readonly class ApiRequest
             siteIds: $siteIds,
             allSites: $allSites,
             segment: self::requiredString($request, 'segment'),
+        );
+    }
+
+    private static function privacyPurgeExecution(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?PrivacyPurgeExecutionRequest {
+        if ($module !== 'API' || $method !== 'PrivacyManager.executeDataPurge') {
+            return null;
+        }
+
+        return new PrivacyPurgeExecutionRequest(
+            passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
         );
     }
 
