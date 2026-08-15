@@ -351,6 +351,8 @@ use App\Matomo\Tour\ConfiguredTourSettings;
 use App\Matomo\Tour\DatabaseTourDataRepository;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
+use App\Matomo\Tracker\DatabaseVisitRecorder;
+use App\Matomo\Tracker\VisitRecorder;
 use App\Matomo\TrackingFailures\DatabaseTrackingFailureRepository;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
 use App\Matomo\Transitions\ConfiguredTransitionsPeriodPolicy;
@@ -1540,6 +1542,7 @@ class AppServiceProvider extends ServiceProvider
                 base_path('../matomo.js'),
             ),
         );
+        $this->app->singleton(VisitRecorder::class, DatabaseVisitRecorder::class);
 
         $this->app->singleton(
             PromoWidgetDismissalRepository::class,
