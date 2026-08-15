@@ -120,6 +120,15 @@ class DatabaseSiteRepositoryTest extends TestCase
             $sites->idsForUrls(['https://www.example.test'], [3, 8]),
         );
         $this->assertSame([], $sites->idsForUrls(['https://www.example.test'], [8]));
+        $this->assertSame(
+            ['https://new.example.test', 'https://example.test/new'],
+            $sites->replaceAliasUrls(3, ['https://new.example.test', 'https://example.test/new']),
+        );
+        $this->assertSame([
+            'https://example.test',
+            'https://new.example.test',
+            'https://example.test/new',
+        ], $sites->urls(3));
         $this->assertSame('site.test,shared.test', $sites->excludedReferrers(3));
         $this->assertNull($sites->excludedReferrers(99));
         $this->assertSame('session,token', $sites->excludedParameters(3));

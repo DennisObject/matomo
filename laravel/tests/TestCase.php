@@ -867,6 +867,11 @@ abstract class TestCase extends BaseTestCase
                 return [];
             }
 
+            public function replaceAliasUrls(int $idSite, array $urls): array
+            {
+                return $urls;
+            }
+
             public function excludedReferrers(int $idSite): ?string
             {
                 return null;
