@@ -121,6 +121,21 @@ final class TrackerEndpointTest extends TestCase
         $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&pf_net=12&pf_srv=34&pf_onl=56')->assertOk();
     }
 
+    public function test_records_site_search_parameters(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->actionType === 8
+                && $request->actionName === 'blue shoes'
+                && $request->searchCategory === 'products'
+                && $request->searchCount === 12,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test%2Fsearch&search=blue%20shoes&search_cat=products&search_count=12')->assertOk();
+    }
+
     public function test_rejects_invalid_page_performance_timings(): void
     {
         $this->bindSite();

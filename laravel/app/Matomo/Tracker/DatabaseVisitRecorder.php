@@ -21,8 +21,10 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
 
         $now = CarbonImmutable::now('UTC')->format('Y-m-d H:i:s');
         $this->connection->transaction(function () use ($request, $visitor, $ip, $now): void {
-            $url = $this->action($request->url, $request->actionType);
-            $name = $request->actionName === '' ? null : $this->action($request->actionName, 4);
+            $url = $this->action($request->url, $request->actionType === 8 ? 1 : $request->actionType);
+            $name = $request->actionType === 8
+                ? $this->action($request->actionName, 8)
+                : ($request->actionName === '' ? null : $this->action($request->actionName, 4));
             $visitId = $this->connection->table('log_visit')->where('idsite', $request->siteId)->where('idvisitor', $visitor)->where('visit_last_action_time', '>=', CarbonImmutable::parse($now)->subMinutes(30)->format('Y-m-d H:i:s'))->value('idvisit');
             if (! is_numeric($visitId)) {
                 $visit = [
@@ -32,7 +34,8 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                     'visit_entry_idaction_name' => $name ?? 0, 'visit_exit_idaction_url' => $url,
                     'visit_exit_idaction_name' => $name ?? 0, 'visit_total_actions' => 1,
                     'visit_total_events' => $request->actionType === 10 ? 1 : 0, 'visit_total_time' => 0,
-                    'visit_total_searches' => 0, 'visit_goal_converted' => 0, 'visit_goal_buyer' => 0,
+                    'visit_total_searches' => $request->actionType === 8 ? 1 : 0,
+                    'visit_goal_converted' => 0, 'visit_goal_buyer' => 0,
                     'visitor_returning' => 0, 'visitor_count_visits' => 1, 'visitor_days_since_last' => 0,
                     'visitor_days_since_first' => 0, 'visitor_days_since_order' => 0,
                     'config_windowsmedia' => 0, 'config_silverlight' => 0,
@@ -60,6 +63,10 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 if ($request->actionType === 10) {
                     $query->increment('visit_total_events');
                 }
+
+                if ($request->actionType === 8) {
+                    $query->increment('visit_total_searches');
+                }
             }
 
             $action = [
@@ -72,6 +79,11 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 $action['idaction_event_action'] = $this->action($request->eventAction, 11);
                 $action['idaction_event_name'] = $request->eventName === null ? null : $this->action($request->eventName, 12);
                 $action['custom_float'] = $request->eventValue;
+            }
+
+            if ($request->actionType === 8) {
+                $action['search_cat'] = $request->searchCategory;
+                $action['search_count'] = $request->searchCount;
             }
 
             $this->connection->table('log_link_visit_action')->insert(
