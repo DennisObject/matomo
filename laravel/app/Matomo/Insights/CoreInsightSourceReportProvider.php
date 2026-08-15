@@ -1,0 +1,120 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Matomo\Insights;
+
+use App\Matomo\Localization\MatomoTranslator;
+use App\Matomo\Reporting\ReportingPeriod;
+
+final readonly class CoreInsightSourceReportProvider implements InsightSourceReportProvider
+{
+    /** @var array<string, array{method: string, name: string, flat: bool}> */
+    private const array ACTION_REPORTS = [
+        'Actions_getPageUrls' => [
+            'method' => 'Actions.getPageUrls',
+            'name' => 'Actions_PageUrls',
+            'flat' => false,
+        ],
+        'Actions_getPageTitles' => [
+            'method' => 'Actions.getPageTitles',
+            'name' => 'Actions_PageTitles',
+            'flat' => false,
+        ],
+        'Actions_getDownloads' => [
+            'method' => 'Actions.getDownloads',
+            'name' => 'General_Downloads',
+            'flat' => true,
+        ],
+    ];
+
+    public function __construct(
+        private CoreInsightReportReader $reports,
+        private MatomoTranslator $translator,
+    ) {}
+
+    public function report(
+        string $reportUniqueId,
+        int $siteId,
+        ReportingPeriod $period,
+        string $segmentHash,
+        string $language,
+    ): ?InsightSourceReport {
+        if ($reportUniqueId === 'UserCountry_getCountry') {
+            $rows = $this->reports->countries($siteId, $period, $segmentHash, $language);
+
+            return $this->source(
+                $rows,
+                'UserCountry',
+                'getCountry',
+                $this->translator->translate('UserCountry_Country', $language),
+                $reportUniqueId,
+                $language,
+            );
+        }
+
+        $configuration = self::ACTION_REPORTS[$reportUniqueId] ?? null;
+
+        if ($configuration === null) {
+            return null;
+        }
+
+        $rows = $this->reports->actions(
+            $configuration['method'],
+            $configuration['flat'],
+            $siteId,
+            $period,
+            $segmentHash,
+            $language,
+        );
+        [$module, $action] = explode('.', $configuration['method'], 2);
+
+        return $this->source(
+            $rows,
+            $module,
+            $action,
+            $this->translator->translate($configuration['name'], $language),
+            $reportUniqueId,
+            $language,
+        );
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $rows
+     */
+    private function source(
+        array $rows,
+        string $module,
+        string $action,
+        string $name,
+        string $uniqueId,
+        string $language,
+    ): InsightSourceReport {
+        $normalized = [];
+        $total = 0;
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $normalized[] = $row;
+            $value = $row['nb_visits'] ?? 0;
+
+            if (is_int($value) || is_float($value) || is_numeric($value)) {
+                $total += (int) $value;
+            }
+        }
+
+        return new InsightSourceReport($normalized, [
+            'module' => $module,
+            'action' => $action,
+            'name' => $name,
+            'uniqueId' => $uniqueId,
+            'parameters' => [],
+            'metrics' => [
+                'nb_visits' => $this->translator->translate('General_ColumnNbVisits', $language),
+            ],
+        ], $total);
+    }
+}
