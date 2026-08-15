@@ -536,6 +536,7 @@ final readonly class ApiRequest
         public ?UsersManagerSecurityMutationRequest $usersManagerSecurityMutation,
         public ?UsersManagerUpdateDeleteRequest $usersManagerUpdateDelete,
         public ?UsersManagerTokenRequest $usersManagerToken,
+        public ?PrivacyPurgeSettingsRequest $privacyPurgeSettings,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -617,6 +618,7 @@ final readonly class ApiRequest
             usersManagerSecurityMutation: null,
             usersManagerUpdateDelete: null,
             usersManagerToken: null,
+            privacyPurgeSettings: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1227,6 +1229,7 @@ final readonly class ApiRequest
             usersManagerSecurityMutation: self::usersManagerSecurityMutation($request, $module, $method),
             usersManagerUpdateDelete: self::usersManagerUpdateDelete($request, $module, $method),
             usersManagerToken: self::usersManagerToken($request, $module, $method),
+            privacyPurgeSettings: self::privacyPurgeSettings($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2705,6 +2708,51 @@ final readonly class ApiRequest
             expireDate: self::nullableStringInput($request, 'expireDate'),
             expireHours: self::integerInput($request, 'expireHours', 0, 0),
             secureOnly: self::booleanInput($request, 'secureOnly', false),
+        );
+    }
+
+    private static function privacyPurgeSettings(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?PrivacyPurgeSettingsRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'PrivacyManager.setScheduleReportDeletionSettings',
+            'PrivacyManager.setDeleteLogsSettings',
+            'PrivacyManager.setDeleteReportsSettings',
+        ], true)) {
+            return null;
+        }
+
+        $values = match ($method) {
+            'PrivacyManager.setScheduleReportDeletionSettings' => [
+                'delete_logs_schedule_lowest_interval' => self::integerInput(
+                    $request,
+                    'deleteLowestInterval',
+                    7,
+                    0,
+                ),
+            ],
+            'PrivacyManager.setDeleteLogsSettings' => [
+                'delete_logs_enable' => self::booleanInput($request, 'enableDeleteLogs', false) ? 1 : 0,
+                'delete_logs_older_than' => max(1, self::integerInput($request, 'deleteLogsOlderThan', 180, 0)),
+            ],
+            default => [
+                'delete_reports_enable' => self::booleanInput($request, 'enableDeleteReports', false) ? 1 : 0,
+                'delete_reports_older_than' => max(2, self::integerInput($request, 'deleteReportsOlderThan', 3, 0)),
+                'delete_reports_keep_basic_metrics' => self::integerInput($request, 'keepBasic', 0, 0),
+                'delete_reports_keep_day_reports' => self::integerInput($request, 'keepDay', 0, 0),
+                'delete_reports_keep_week_reports' => self::integerInput($request, 'keepWeek', 0, 0),
+                'delete_reports_keep_month_reports' => self::integerInput($request, 'keepMonth', 0, 0),
+                'delete_reports_keep_year_reports' => self::integerInput($request, 'keepYear', 0, 0),
+                'delete_reports_keep_range_reports' => self::integerInput($request, 'keepRange', 0, 0),
+                'delete_reports_keep_segment_reports' => self::integerInput($request, 'keepSegments', 0, 0),
+            ],
+        };
+
+        return new PrivacyPurgeSettingsRequest(
+            values: $values,
+            passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
         );
     }
 

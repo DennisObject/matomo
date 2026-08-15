@@ -47,6 +47,7 @@ use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\MultiSitesApiMethodHandler;
 use App\Matomo\Api\Methods\OverlayApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
+use App\Matomo\Api\Methods\PrivacyManagerSettingsApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersAiApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersCampaignApiMethodHandler;
@@ -1551,6 +1552,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(DashboardApiMethodHandler::class),
                 $application->make(DbStatsApiMethodHandler::class),
                 $application->make(ProfessionalServicesApiMethodHandler::class),
+                $application->make(PrivacyManagerSettingsApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),
                 $application->make(AiProvidersApiMethodHandler::class),

@@ -114,6 +114,8 @@ Handled reporting API method names:
   variant score recomputation, and unscored ranked tails.
 - `CustomJsTracker`: `doesIncludePluginTrackersAutomatically` in every supported response format.
 - `ProfessionalServices`: `dismissWidget` in every supported response format.
+- `PrivacyManager`: Do Not Track toggles and scheduled raw-log/report deletion settings preserve
+  superuser access, password confirmation, legacy minimum normalization, option storage, and tracker-cache invalidation.
 - `Login`: `unblockBruteForceIPs` in every supported response format.
 - `AIAgents`: `get` in every supported response format, including suffixed column filtering.
 - `AIProviders`: all 4 API methods, including masked credential storage, managed configuration,
@@ -250,7 +252,7 @@ Reporting API module matrix:
 | `MultiSites` | 3 | 3 | 0 |
 | `Overlay` | 2 | 2 | 0 |
 | `PagePerformance` | 1 | 1 | 0 |
-| `PrivacyManager` | 18 | 0 | 18 |
+| `PrivacyManager` | 18 | 5 | 13 |
 | `ProfessionalServices` | 1 | 1 | 0 |
 | `Referrers` | 23 | 23 | 0 |
 | `Resolution` | 2 | 2 | 0 |
@@ -268,7 +270,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **321** | **68** |
+| **Total** | **389** | **326** | **63** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
