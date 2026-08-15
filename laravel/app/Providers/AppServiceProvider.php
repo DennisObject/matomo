@@ -65,9 +65,11 @@ use App\Matomo\Archiving\DatabaseArchiveInvalidationManager;
 use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\EcommerceItemArchiveCollector;
 use App\Matomo\Archiving\EventArchiveCollector;
+use App\Matomo\Archiving\Events\ActionArchiveMetricsCollecting;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\ExamplePluginArchiveCollector;
 use App\Matomo\Archiving\GoalArchiveCollector;
+use App\Matomo\Archiving\PagePerformanceActionArchiveMetrics;
 use App\Matomo\Archiving\PagePerformanceArchiveCollector;
 use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Archiving\ReportingSubperiodFactory;
@@ -809,6 +811,14 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(
+            PagePerformanceActionArchiveMetrics::class,
+            fn (Application $application): PagePerformanceActionArchiveMetrics => new PagePerformanceActionArchiveMetrics(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                plugins: $application->make(PluginState::class),
+                caps: $application->make(InstallationConfig::class)->pagePerformanceTimingCaps(),
+            ),
+        );
+        $this->app->singleton(
             ActionArchiveCollector::class,
             fn (Application $application): ActionArchiveCollector => new ActionArchiveCollector(
                 connection: $application->make(MatomoDatabase::class)->connection(),
@@ -1138,6 +1148,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(Dispatcher $events): void
     {
+        $events->listen(ActionArchiveMetricsCollecting::class, PagePerformanceActionArchiveMetrics::class);
         $events->listen(ArchiveReportsCollecting::class, VisitDimensionArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, VisitAggregateArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, GoalArchiveCollector::class);

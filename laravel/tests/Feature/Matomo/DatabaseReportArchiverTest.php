@@ -30,6 +30,7 @@ use App\Matomo\Archiving\Events\ArchiveReportsStarting;
 use App\Matomo\Archiving\Events\ArchiveVisitsQueryBuilding;
 use App\Matomo\Archiving\ExamplePluginArchiveCollector;
 use App\Matomo\Archiving\GoalArchiveCollector;
+use App\Matomo\Archiving\PagePerformanceActionArchiveMetrics;
 use App\Matomo\Archiving\PagePerformanceArchiveCollector;
 use App\Matomo\Archiving\SegmentConditionQueryApplier;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
@@ -2398,6 +2399,16 @@ class DatabaseReportArchiverTest extends TestCase
             'pageviews_before' => 4,
             'server_time' => '2026-08-14 13:04:00',
         ]);
+        $this->connection->table('log_link_visit_action')
+            ->where('idaction_url', 30)
+            ->update([
+                'time_network' => 100,
+                'time_server' => 2_000,
+                'time_transfer' => 300,
+                'time_dom_processing' => 400,
+                'time_dom_completion' => 500,
+                'time_on_load' => 600,
+            ]);
         $this->events->listen(
             ActionArchiveMetricsCollecting::class,
             static function (ActionArchiveMetricsCollecting $event): void {
@@ -2406,6 +2417,20 @@ class DatabaseReportArchiverTest extends TestCase
                     new TrustedSegmentSqlExpression('COUNT(*) * 2'),
                 );
             },
+        );
+        $this->events->listen(
+            ActionArchiveMetricsCollecting::class,
+            new PagePerformanceActionArchiveMetrics(
+                $this->connection,
+                new class implements PluginState
+                {
+                    public function isActivated(string $pluginName): bool
+                    {
+                        return $pluginName === 'PagePerformance';
+                    }
+                },
+                ['time_server' => 1_000],
+            ),
         );
         $this->registerActionCollector(new ActionArchiveConfiguration(flatLimit: 500));
         $request = new ArchiveReportRequest(
@@ -2440,6 +2465,11 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertSame(1, $docs['/start']['columns']['entry_nb_visits']);
         $this->assertSame(1, $docs['/next']['columns']['exit_nb_visits']);
         $this->assertSame(2, $docs['/start']['columns']['extension_hits']);
+        $this->assertSame(0.1, $docs['/start']['columns']['sum_time_network']);
+        $this->assertSame(0.1, $docs['/start']['columns']['min_time_network']);
+        $this->assertSame(0.1, $docs['/start']['columns']['max_time_network']);
+        $this->assertSame(1, $docs['/start']['columns']['sum_time_server']);
+        $this->assertSame(1, $docs['/start']['columns']['nb_hits_with_time_server']);
         $this->assertSame(1, $docs['/start']['columns']['goal_1_nb_conversions']);
         $this->assertSame(40, $docs['/start']['columns']['goal_1_revenue']);
         $this->assertSame(4, $docs['/start']['columns']['goal_1_nb_conv_pages_before']);

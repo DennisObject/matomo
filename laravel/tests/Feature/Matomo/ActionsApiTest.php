@@ -190,6 +190,18 @@ class ActionsApiTest extends TestCase
                 'sum_time_spent' => 21,
                 'sum_time_generation' => 3,
                 'nb_hits_with_time_generation' => 2,
+                'sum_time_network' => 2,
+                'nb_hits_with_time_network' => 2,
+                'sum_time_server' => 4,
+                'nb_hits_with_time_server' => 2,
+                'sum_time_transfer' => 6,
+                'nb_hits_with_time_transfer' => 2,
+                'sum_time_dom_processing' => 8,
+                'nb_hits_with_time_dom_processing' => 2,
+                'sum_time_dom_completion' => 10,
+                'nb_hits_with_time_dom_completion' => 2,
+                'sum_time_on_load' => 12,
+                'nb_hits_with_time_on_load' => 2,
                 'entry_nb_visits' => 2,
                 'entry_bounce_count' => 1,
                 'exit_nb_visits' => 1,
@@ -211,6 +223,7 @@ class ActionsApiTest extends TestCase
             ->assertJsonPath('0.subtable.0.segment', 'pageUrl==https%253A%252F%252Fexample.test%252Fdocs%252Fguide')
             ->assertJsonPath('0.subtable.0.avg_time_on_page', 5)
             ->assertJsonPath('0.subtable.0.avg_time_generation', 1.5)
+            ->assertJsonPath('0.subtable.0.avg_page_load_time', 21)
             ->assertJsonPath('0.subtable.0.bounce_rate', '50%')
             ->assertJsonPath('0.subtable.0.exit_rate', '33%')
             ->assertJsonPath('0.subtable.0.nb_hits_percent_of_total', '80%')

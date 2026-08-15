@@ -776,6 +776,22 @@ final readonly class ActionsReportBuilder
             $row[$name] = $this->numeric($count == 0 ? 0 : round($sum / $count, $precision));
         }
 
+        $pageLoadMetrics = [
+            'avg_time_network',
+            'avg_time_server',
+            'avg_time_transfer',
+            'avg_time_dom_processing',
+            'avg_time_dom_completion',
+            'avg_time_on_load',
+        ];
+
+        if (array_diff($pageLoadMetrics, array_keys($row)) === []) {
+            $row['avg_page_load_time'] = $this->numeric(array_sum(array_map(
+                static fn (string $metric): float => (float) $row[$metric],
+                $pageLoadMetrics,
+            )));
+        }
+
         $entryVisits = $row['entry_nb_visits'] ?? null;
         $entryBounces = $row['entry_bounce_count'] ?? null;
 
