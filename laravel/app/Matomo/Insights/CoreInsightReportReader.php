@@ -25,4 +25,12 @@ interface CoreInsightReportReader
         string $segmentHash,
         string $language,
     ): array;
+
+    /** @return list<array<string, mixed>> */
+    public function referrers(
+        string $recordName,
+        int $siteId,
+        ReportingPeriod $period,
+        string $segmentHash,
+    ): array;
 }
