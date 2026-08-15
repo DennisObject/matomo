@@ -20,6 +20,23 @@ use Tests\TestCase;
 
 class VersionApiTest extends TestCase
 {
+    public function test_available_measurable_types_are_localized_and_follow_plugin_state(): void
+    {
+        $this->bindAuthorizer('token', false, true);
+        $plugins = $this->createStub(PluginState::class);
+        $plugins->method('isActivated')->willReturnCallback(
+            static fn (string $plugin): bool => in_array($plugin, ['WebsiteMeasurable', 'MobileAppMeasurable'], true),
+        );
+        $this->app->instance(PluginState::class, $plugins);
+
+        $this->get('/index.php?module=API&method=API.getAvailableMeasurableTypes&format=json&token_auth=token')
+            ->assertOk()
+            ->assertJsonCount(2)
+            ->assertJsonPath('0.id', 'website')
+            ->assertJsonPath('0.settings', [])
+            ->assertJsonPath('1.id', 'mobileapp');
+    }
+
     public function test_plugin_activation_uses_configured_plugins_and_view_access(): void
     {
         $this->bindAuthorizer('token', false, true);
