@@ -87,8 +87,27 @@ final readonly class TrackerRequestFactory
         }
 
         $goalRevenue = $request->input('revenue');
-        if ($goalRevenue !== null && ! is_numeric($goalRevenue)) {
+        if ($goalRevenue !== null && (! is_numeric($goalRevenue) || abs((float) $goalRevenue) > 1_000_000_000_000)) {
             throw new InvalidArgumentException('revenue must be numeric.');
+        }
+
+        $orderId = $this->optionalTrimmed($request->input('ec_id'), 100);
+        if ($orderId !== null && $goal !== null) {
+            throw new InvalidArgumentException('A request cannot record a goal and an ecommerce order together.');
+        }
+
+        if ($orderId !== null && $goalRevenue === null) {
+            throw new InvalidArgumentException('revenue is required for ecommerce orders.');
+        }
+
+        $ecommerceValues = [];
+        foreach (['ec_st', 'ec_tx', 'ec_sh', 'ec_dt'] as $parameter) {
+            $value = $request->input($parameter);
+            if ($value !== null && (! is_numeric($value) || abs((float) $value) > 1_000_000_000_000)) {
+                throw new InvalidArgumentException('Ecommerce revenue values must be valid numbers.');
+            }
+
+            $ecommerceValues[$parameter] = $value === null ? null : (float) $value;
         }
 
         $referrer = $this->optional($request->input('urlref'), 4096);
@@ -132,8 +151,15 @@ final readonly class TrackerRequestFactory
             $this->optionalTrimmed($request->input('c_t'), 4096),
             $this->optionalTrimmed($request->input('c_i'), 255),
             $goal === null ? null : (int) $goalId,
-            $goal === null ? null : ($goalRevenue === null ? (float) ($goal['revenue'] ?? 0) : (float) $goalRevenue),
+            $orderId !== null
+                ? (float) $goalRevenue
+                : ($goal === null ? null : ($goalRevenue === null ? (float) ($goal['revenue'] ?? 0) : (float) $goalRevenue)),
             (int) ($goal['allow_multiple'] ?? 0) === 1,
+            $orderId,
+            $ecommerceValues['ec_st'],
+            $ecommerceValues['ec_tx'],
+            $ecommerceValues['ec_sh'],
+            $ecommerceValues['ec_dt'],
             $this->optional($request->input('uid'), 200),
             $referrer ?? '',
             $referrerType,

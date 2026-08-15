@@ -33,6 +33,7 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedSmallInteger('visit_total_actions');
             $table->unsignedSmallInteger('visit_total_events');
             $table->boolean('visit_goal_converted')->default(false);
+            $table->boolean('visit_goal_buyer')->default(false);
         });
         $schema->create('log_action', function (Blueprint $table): void {
             $table->id('idaction');
@@ -61,8 +62,10 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedBigInteger('idlink_va')->nullable();
             $table->integer('idgoal');
             $table->unsignedInteger('buster');
+            $table->string('idorder')->nullable();
             $table->text('url');
             $table->double('revenue')->nullable();
+            $table->double('revenue_subtotal')->nullable();
             $table->primary(['idvisit', 'idgoal', 'buster']);
         });
         $recorder = new DatabaseVisitRecorder($connection);
@@ -74,16 +77,19 @@ final class DatabaseVisitRecorderTest extends TestCase
         $heartbeat = $this->request(true);
         $recorder->record($heartbeat);
         $recorder->record($this->request(goalId: 4));
+        $recorder->record($this->request(orderId: 'order-17'));
 
         $this->assertSame(1, $connection->table('log_visit')->count());
-        $this->assertSame(3, $connection->table('log_link_visit_action')->count());
-        $this->assertSame(3, $connection->table('log_visit')->value('visit_total_actions'));
-        $this->assertSame(1, $connection->table('log_conversion')->count());
-        $this->assertSame(9.5, $connection->table('log_conversion')->value('revenue'));
+        $this->assertSame(4, $connection->table('log_link_visit_action')->count());
+        $this->assertSame(4, $connection->table('log_visit')->value('visit_total_actions'));
+        $this->assertSame(2, $connection->table('log_conversion')->count());
+        $this->assertSame(9.5, $connection->table('log_conversion')->where('idgoal', 4)->value('revenue'));
+        $this->assertSame('order-17', $connection->table('log_conversion')->where('idgoal', 0)->value('idorder'));
         $this->assertSame(1, $connection->table('log_visit')->value('visit_goal_converted'));
+        $this->assertSame(1, $connection->table('log_visit')->value('visit_goal_buyer'));
     }
 
-    private function request(bool $heartbeat = false, ?int $goalId = null): TrackingRequest
+    private function request(bool $heartbeat = false, ?int $goalId = null, ?string $orderId = null): TrackingRequest
     {
         return new TrackingRequest(
             siteId: 1,
@@ -104,8 +110,13 @@ final class DatabaseVisitRecorderTest extends TestCase
             contentTarget: null,
             contentInteraction: null,
             goalId: $goalId,
-            goalRevenue: $goalId === null ? null : 9.5,
+            goalRevenue: $goalId === null && $orderId === null ? null : ($goalId === null ? 42.5 : 9.5),
             goalAllowsMultiple: false,
+            ecommerceOrderId: $orderId,
+            ecommerceSubtotal: $orderId === null ? null : 35.0,
+            ecommerceTax: null,
+            ecommerceShipping: null,
+            ecommerceDiscount: null,
             userId: null,
             referrerUrl: '',
             referrerType: 1,

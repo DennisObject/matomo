@@ -116,19 +116,27 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 ]),
                 'idlink_va',
             );
-            if ($request->goalId !== null) {
+            if ($request->goalId !== null || $request->ecommerceOrderId !== null) {
                 $buster = $request->goalAllowsMultiple ? random_int(1, 4_294_967_295) : 0;
                 $conversion = [
                     'idvisit' => (int) $visitId, 'idsite' => $request->siteId, 'idvisitor' => $visitor,
                     'server_time' => $now, 'idaction_url' => $url, 'idlink_va' => (int) $actionId,
-                    'idgoal' => $request->goalId, 'buster' => $buster, 'url' => $request->url,
+                    'idgoal' => $request->ecommerceOrderId === null ? $request->goalId : 0,
+                    'buster' => $buster, 'idorder' => $request->ecommerceOrderId, 'url' => $request->url,
                     'revenue' => $request->goalRevenue,
+                    'revenue_subtotal' => $request->ecommerceSubtotal,
+                    'revenue_tax' => $request->ecommerceTax,
+                    'revenue_shipping' => $request->ecommerceShipping,
+                    'revenue_discount' => $request->ecommerceDiscount,
                 ];
                 $this->connection->table('log_conversion')->insertOrIgnore(
                     $this->available('log_conversion', [...$conversion, ...$request->visitProperties]),
                 );
                 $this->connection->table('log_visit')->where('idvisit', (int) $visitId)->update(
-                    $this->available('log_visit', ['visit_goal_converted' => 1]),
+                    $this->available('log_visit', [
+                        'visit_goal_converted' => 1,
+                        'visit_goal_buyer' => $request->ecommerceOrderId === null ? 0 : 1,
+                    ]),
                 );
             }
         });
