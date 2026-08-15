@@ -254,6 +254,8 @@ class BotTrackingOverviewArchiveCollectorTest extends TestCase
         $this->assertSame(250, $configuration->rootLimit);
         $this->assertSame(250, $configuration->subtableLimit);
         $this->assertSame(50_000, $configuration->rankingLimit);
+        $this->assertSame(50_000, $configuration->contentLimit);
+        $this->assertSame(50_000, $configuration->contentRankingLimit);
     }
 
     private function collect(
@@ -377,7 +379,7 @@ class BotTrackingOverviewArchiveCollectorTest extends TestCase
 
     /**
      * @param  list<array{0: array<string, mixed>, 1: array<mixed>, 3: int|null}>  $rows
-     * @return array<string, array{0: array<string, mixed>, 1: array<mixed>, 3: int|null}>
+     * @return array<int|string, array{0: array<string, mixed>, 1: array<mixed>, 3: int|null}>
      */
     private function rowsByLabel(array $rows): array
     {
