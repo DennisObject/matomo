@@ -56,7 +56,9 @@ final class UserPresenter
 
         foreach (['role', 'capabilities', 'superuser_access', 'last_seen', 'invited_by'] as $key) {
             if (array_key_exists($key, $user)) {
-                $visible[$key] = $user[$key];
+                $visible[$key] = $key === 'role' && $user[$key] === 'superuser'
+                    ? 'admin'
+                    : $user[$key];
             }
         }
 

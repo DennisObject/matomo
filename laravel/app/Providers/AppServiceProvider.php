@@ -72,6 +72,7 @@ use App\Matomo\Api\Methods\UsersManagerAccessApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerIdentityApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerPreferenceApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerReadApiMethodHandler;
+use App\Matomo\Api\Methods\UsersManagerRoleDirectoryApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerSiteAccessApiMethodHandler;
 use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
 use App\Matomo\Api\Methods\VisitorInterestApiMethodHandler;
@@ -279,11 +280,13 @@ use App\Matomo\Users\ConfiguredAccessMetadataProvider;
 use App\Matomo\Users\DatabaseUserDirectoryRepository;
 use App\Matomo\Users\DatabaseUserIdentityRepository;
 use App\Matomo\Users\DatabaseUserPreferenceRepository;
+use App\Matomo\Users\DatabaseUserRoleDirectoryRepository;
 use App\Matomo\Users\DatabaseUserSiteAccessRepository;
 use App\Matomo\Users\UserDirectoryRepository;
 use App\Matomo\Users\UserIdentityRepository;
 use App\Matomo\Users\UserPreferenceRepository;
 use App\Matomo\Users\UserPresenter;
+use App\Matomo\Users\UserRoleDirectoryRepository;
 use App\Matomo\Users\UserSiteAccessRepository;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
@@ -552,6 +555,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             UserSiteAccessRepository::class,
             fn (Application $application): UserSiteAccessRepository => new DatabaseUserSiteAccessRepository(
+                $application->make(ConnectionInterface::class),
+            ),
+        );
+        $this->app->singleton(
+            UserRoleDirectoryRepository::class,
+            fn (Application $application): UserRoleDirectoryRepository => new DatabaseUserRoleDirectoryRepository(
                 $application->make(ConnectionInterface::class),
             ),
         );
@@ -1428,6 +1437,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(UsersManagerPreferenceApiMethodHandler::class),
                 $application->make(UsersManagerReadApiMethodHandler::class),
                 $application->make(UsersManagerSiteAccessApiMethodHandler::class),
+                $application->make(UsersManagerRoleDirectoryApiMethodHandler::class),
                 $application->make(ResolutionApiMethodHandler::class),
                 $application->make(DevicePluginsApiMethodHandler::class),
                 $application->make(DevicesDetectionApiMethodHandler::class),
