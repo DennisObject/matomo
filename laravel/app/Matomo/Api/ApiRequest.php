@@ -141,6 +141,8 @@ final readonly class ApiRequest
         'ExamplePlugin.getExampleArchivedMetric',
     ];
 
+    private const string EXAMPLE_REPORT_METHOD = 'ExampleReport.getExampleReport';
+
     /** @var list<string> */
     private const array DASHBOARD_METHODS = [
         'Dashboard.getDashboards',
@@ -547,6 +549,11 @@ final readonly class ApiRequest
     public function isExamplePluginRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::EXAMPLE_PLUGIN_METHODS, true);
+    }
+
+    public function isExampleReportRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === self::EXAMPLE_REPORT_METHOD;
     }
 
     public function isAiProvidersRequest(): bool
@@ -1161,6 +1168,7 @@ final readonly class ApiRequest
                 && $method !== self::PAGE_PERFORMANCE_METHOD
                 && $method !== self::USER_ID_METHOD
                 && ! in_array($method, self::EXAMPLE_PLUGIN_REPORT_METHODS, true)
+                && $method !== self::EXAMPLE_REPORT_METHOD
                 && ! in_array($method, self::EVENTS_METHODS, true)
                 && ! in_array($method, self::CONTENTS_METHODS, true)
                 && $method !== self::AI_AGENTS_METHOD

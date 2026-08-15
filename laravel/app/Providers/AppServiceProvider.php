@@ -24,6 +24,7 @@ use App\Matomo\Api\Methods\DevicesDetectionApiMethodHandler;
 use App\Matomo\Api\Methods\EventsApiMethodHandler;
 use App\Matomo\Api\Methods\ExampleApiMethodHandler;
 use App\Matomo\Api\Methods\ExamplePluginApiMethodHandler;
+use App\Matomo\Api\Methods\ExampleReportApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
@@ -678,6 +679,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(EventsApiMethodHandler::class),
                 $application->make(ExampleApiMethodHandler::class),
                 $application->make(ExamplePluginApiMethodHandler::class),
+                $application->make(ExampleReportApiMethodHandler::class),
                 $application->make(PagePerformanceApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),
