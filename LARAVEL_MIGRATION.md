@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 190 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 197 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -66,6 +66,8 @@ Handled reporting API method names:
 - `Actions`: all 18 API methods and their archive producers, including numeric totals,
   hierarchical and pre-flattened reports, bounded expansion, direct action lookup, entry and exit
   reports, search reports, metadata, segment values, goal attribution, and processed page metrics.
+- `Annotations`: all 7 API methods, including site-scoped create, read, update, delete, range
+  queries, period counts, note truncation and output escaping, and write-access decoration.
 - `Contents`: both API methods and archive producers, including bounded root and subtable records,
   interaction-only filtering, parent aggregation, subtable IDs, and every supported response format.
 - `CustomJsTracker`: `doesIncludePluginTrackersAutomatically` in every supported response format.
@@ -130,7 +132,7 @@ Reporting API module matrix:
 | `AIProviders` | 4 | 4 | 0 |
 | `API` | 19 | 6 | 13 |
 | `Actions` | 18 | 18 | 0 |
-| `Annotations` | 7 | 0 | 7 |
+| `Annotations` | 7 | 7 | 0 |
 | `BotTracking` | 11 | 0 | 11 |
 | `Contents` | 2 | 2 | 0 |
 | `CoreAdminHome` | 13 | 11 | 2 |
@@ -177,7 +179,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **172** | **217** |
+| **Total** | **389** | **197** | **192** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
