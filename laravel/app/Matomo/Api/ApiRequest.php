@@ -247,6 +247,9 @@ final readonly class ApiRequest
 
     /** @var list<string> */
     private const array TRANSITIONS_METHODS = [
+        'Transitions.getTransitionsForPageTitle',
+        'Transitions.getTransitionsForPageUrl',
+        'Transitions.getTransitionsForAction',
         'Transitions.getTranslations',
         'Transitions.isPeriodAllowed',
     ];
@@ -1106,27 +1109,116 @@ final readonly class ApiRequest
 
     private static function transitions(Request $request, string $module, string $method): ?TransitionsRequest
     {
-        if ($module !== 'API' || $method !== 'Transitions.isPeriodAllowed') {
+        if ($module !== 'API' || ! in_array($method, self::TRANSITIONS_METHODS, true)) {
+            return null;
+        }
+
+        if ($method === 'Transitions.getTranslations') {
             return null;
         }
 
         $siteId = self::requiredInteger($request, 'idSite');
+
+        if ($siteId < 1) {
+            throw new InvalidApiParameter('idSite');
+        }
+
         $period = self::nullableStringInput($request, 'period');
 
-        if ($period === null) {
+        if ($period === null || $period === '') {
             throw new MissingApiParameter('period');
+        }
+
+        $period = strtolower($period);
+
+        if (! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
+            throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
         }
 
         $date = self::nullableStringInput($request, 'date');
 
-        if ($date === null) {
+        if ($date === null || $date === '') {
             throw new MissingApiParameter('date');
         }
+
+        if (! self::validReportDate($date)) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not valid.");
+        }
+
+        if ($period === 'range'
+            && ! str_contains($date, ',')
+            && preg_match('/^(last|previous)[0-9]*$/D', $date) !== 1) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not a valid range.");
+        }
+
+        if ($method === 'Transitions.isPeriodAllowed') {
+            return new TransitionsRequest(
+                siteId: $siteId,
+                period: $period,
+                date: $date,
+            );
+        }
+
+        [$actionParameter, $actionType] = match ($method) {
+            'Transitions.getTransitionsForPageTitle' => ['pageTitle', 'title'],
+            'Transitions.getTransitionsForPageUrl' => ['pageUrl', 'url'],
+            default => ['actionName', strtolower(self::stringInput($request, 'actionType'))],
+        };
+        $actionName = self::nullableStringInput($request, $actionParameter);
+
+        if ($actionName === null) {
+            throw new MissingApiParameter($actionParameter);
+        }
+
+        if (! in_array($actionType, ['url', 'title'], true)) {
+            throw new InvalidApiParameter('actionType', 'Unknown action type');
+        }
+
+        $limit = self::inputValue($request, 'limitBeforeGrouping');
+
+        if (in_array($limit, [null, '', false], true)) {
+            $limitBeforeGrouping = 0;
+        } elseif (! is_scalar($limit) || ! is_numeric($limit)) {
+            throw new InvalidApiParameter(
+                'limitBeforeGrouping',
+                'limitBeforeGrouping has to be an integer.',
+            );
+        } else {
+            $limitBeforeGrouping = (int) $limit;
+        }
+
+        $partsValue = $method === 'Transitions.getTransitionsForAction'
+            ? self::stringInput($request, 'parts', 'all')
+            : 'all';
+        $allParts = $partsValue === 'all';
+        $parts = [];
+
+        if (! $allParts) {
+            foreach (explode(',', $partsValue) as $part) {
+                if (in_array($part, [
+                    'externalReferrers',
+                    'followingActions',
+                    'internalReferrers',
+                ], true)) {
+                    $parts[] = $part;
+                }
+            }
+
+            $parts = array_values(array_unique($parts));
+        }
+
+        $segment = trim(self::nullableStringInput($request, 'segment') ?? '');
 
         return new TransitionsRequest(
             siteId: $siteId,
             period: $period,
             date: $date,
+            actionName: $actionName,
+            actionType: $actionType,
+            segment: $segment === '' ? null : substr($segment, 0, 8192),
+            limitBeforeGrouping: $limitBeforeGrouping,
+            parts: $parts,
+            allParts: $allParts,
         );
     }
 

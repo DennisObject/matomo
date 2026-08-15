@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 200 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 203 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -122,8 +122,9 @@ Handled reporting API method names:
   task collection, veto, start, and completion events.
 - `Overlay`: `getTranslations`, with the existing localized client key contract.
 - `Tour`: all 3 API methods, including localized challenge state, extension events, and legacy per-user progress storage.
-- `Transitions`: `getTranslations` and `isPeriodAllowed`, including the complete localized metric
-  and client key contract plus global and per-site period limits from the existing Matomo configuration.
+- `Transitions`: all 5 API methods, including URL and title action lookup, site-scoped access checks,
+  period limits, live-log segment filtering, previous and following actions, loops, exits, entry
+  referrers, per-type row grouping, partial reports, and the localized client key contract.
 - `TwoFactorAuth`: `resetTwoFactorAuth`, including password confirmation and transactional recovery-code removal.
 - `UserCountry`: all 8 API methods, including archive reports, localized location metadata, IP geolocation through the default, MaxMind database, or server-module provider, and protected provider selection.
 
@@ -172,7 +173,7 @@ Reporting API module matrix:
 | `SegmentEditor` | 9 | 0 | 9 |
 | `SitesManager` | 55 | 39 | 16 |
 | `Tour` | 3 | 3 | 0 |
-| `Transitions` | 5 | 2 | 3 |
+| `Transitions` | 5 | 5 | 0 |
 | `TwoFactorAuth` | 1 | 1 | 0 |
 | `UserCountry` | 8 | 8 | 0 |
 | `UserId` | 1 | 1 | 0 |
@@ -182,7 +183,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **200** | **189** |
+| **Total** | **389** | **203** | **186** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
