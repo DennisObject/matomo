@@ -545,6 +545,7 @@ final readonly class ApiRequest
         public ?PrivacyDataSubjectsRequest $privacyDataSubjects,
         public ?PrivacyDataSubjectSearchRequest $privacyDataSubjectSearch,
         public ?PrivacyPurgeExecutionRequest $privacyPurgeExecution,
+        public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
         public ApiAuthentication $authentication,
@@ -636,6 +637,7 @@ final readonly class ApiRequest
             privacyDataSubjects: null,
             privacyDataSubjectSearch: null,
             privacyPurgeExecution: null,
+            marketplace: null,
             live: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
@@ -1256,6 +1258,7 @@ final readonly class ApiRequest
             privacyDataSubjects: self::privacyDataSubjects($request, $module, $method),
             privacyDataSubjectSearch: self::privacyDataSubjectSearch($request, $module, $method),
             privacyPurgeExecution: self::privacyPurgeExecution($request, $module, $method),
+            marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
@@ -2957,6 +2960,27 @@ final readonly class ApiRequest
 
         return new PrivacyPurgeExecutionRequest(
             passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    private static function marketplace(Request $request, string $module, string $method): ?MarketplaceRequest
+    {
+        if ($module !== 'API' || ! in_array($method, [
+            'Marketplace.createAccount',
+            'Marketplace.deleteLicenseKey',
+            'Marketplace.requestTrial',
+            'Marketplace.startFreeTrial',
+            'Marketplace.saveLicenseKey',
+        ], true)) {
+            return null;
+        }
+
+        return new MarketplaceRequest(
+            email: $method === 'Marketplace.createAccount' ? self::requiredString($request, 'email') : null,
+            pluginName: in_array($method, ['Marketplace.requestTrial', 'Marketplace.startFreeTrial'], true)
+                ? self::requiredString($request, 'pluginName') : null,
+            licenseKey: $method === 'Marketplace.saveLicenseKey'
+                ? self::requiredString($request, 'licenseKey') : null,
         );
     }
 

@@ -13,4 +13,9 @@ return [
     'ai_providers' => [],
     'user_preference_names' => [],
     'newsletter_endpoint' => env('MATOMO_NEWSLETTER_ENDPOINT', ''),
+    'marketplace_endpoint' => env('MATOMO_MARKETPLACE_ENDPOINT', 'https://plugins.matomo.org/api/2.0'),
+    'allowed_email_domains' => array_values(array_filter(array_map(
+        trim(...),
+        explode(',', (string) env('MATOMO_ALLOWED_EMAIL_DOMAINS', '')),
+    ))),
 ];
