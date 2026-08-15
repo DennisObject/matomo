@@ -101,6 +101,7 @@ final readonly class TrackerRequestFactory
             $request->boolean('cookie', false),
             $visitProperties,
             $actionProperties,
+            $this->performanceTimings($request),
         );
     }
 
@@ -254,5 +255,33 @@ final readonly class TrackerRequestFactory
         }
 
         return null;
+    }
+
+    /** @return array<string, int> */
+    private function performanceTimings(Request $request): array
+    {
+        $parameters = [
+            'pf_net' => 'time_network',
+            'pf_srv' => 'time_server',
+            'pf_tfr' => 'time_transfer',
+            'pf_dm1' => 'time_dom_processing',
+            'pf_dm2' => 'time_dom_completion',
+            'pf_onl' => 'time_on_load',
+        ];
+        $timings = [];
+        foreach ($parameters as $parameter => $column) {
+            $value = $request->input($parameter);
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            if (filter_var($value, FILTER_VALIDATE_INT) === false || (int) $value < 0 || (int) $value > 3_600_000) {
+                throw new InvalidArgumentException('Page performance timings must be non-negative milliseconds.');
+            }
+
+            $timings[$column] = (int) $value;
+        }
+
+        return $timings;
     }
 }

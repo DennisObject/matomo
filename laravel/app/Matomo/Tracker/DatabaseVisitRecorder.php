@@ -75,7 +75,11 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             }
 
             $this->connection->table('log_link_visit_action')->insert(
-                $this->available('log_link_visit_action', [...$action, ...$request->actionProperties]),
+                $this->available('log_link_visit_action', [
+                    ...$action,
+                    ...$request->actionProperties,
+                    ...$request->performanceTimings,
+                ]),
             );
         });
     }

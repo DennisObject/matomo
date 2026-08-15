@@ -105,6 +105,30 @@ final class TrackerEndpointTest extends TestCase
         $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&urlref=https%3A%2F%2Fnews.example%2Fstory')->assertOk();
     }
 
+    public function test_records_page_performance_timings(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->performanceTimings === [
+                'time_network' => 12,
+                'time_server' => 34,
+                'time_on_load' => 56,
+            ],
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&pf_net=12&pf_srv=34&pf_onl=56')->assertOk();
+    }
+
+    public function test_rejects_invalid_page_performance_timings(): void
+    {
+        $this->bindSite();
+        $this->bindUnusedRecorder();
+
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&pf_net=-1')->assertBadRequest();
+    }
+
     public function test_rejects_oversized_bulk_request(): void
     {
         $this->bindSite();
