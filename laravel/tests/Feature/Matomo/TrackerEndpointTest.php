@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\CustomDimensions\CustomDimensionRepository;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Tracker\TrackingRequest;
 use App\Matomo\Tracker\VisitRecorder;
@@ -71,6 +72,23 @@ final class TrackerEndpointTest extends TestCase
         ]])->assertOk()->assertHeader('Content-Type', 'image/gif');
     }
 
+    public function test_records_scoped_custom_dimensions_and_variables(): void
+    {
+        $this->bindSite([
+            ['index' => 1, 'scope' => 'visit', 'active' => true],
+            ['index' => 2, 'scope' => 'action', 'active' => true],
+        ]);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->visitProperties === [
+                'custom_var_k1' => 'Plan', 'custom_var_v1' => 'Pro', 'custom_dimension_1' => 'Account',
+            ] && $request->actionProperties === ['custom_dimension_2' => 'Article'],
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test'.
+            '&_cvar=%7B%221%22%3A%5B%22Plan%22%2C%22Pro%22%5D%7D&dimension1=Account&dimension2=Article')->assertOk();
+    }
+
     public function test_rejects_oversized_bulk_request(): void
     {
         $this->bindSite();
@@ -87,11 +105,15 @@ final class TrackerEndpointTest extends TestCase
         $this->withHeader('DNT', '1')->get('/piwik.php')->assertOk();
     }
 
-    private function bindSite(): void
+    /** @param list<array<string, mixed>> $dimensions */
+    private function bindSite(array $dimensions = []): void
     {
         $sites = $this->createStub(SiteRepository::class);
         $sites->method('details')->willReturn(['idsite' => 1]);
         $this->app->instance(SiteRepository::class, $sites);
+        $customDimensions = $this->createStub(CustomDimensionRepository::class);
+        $customDimensions->method('configuredForSite')->willReturn($dimensions);
+        $this->app->instance(CustomDimensionRepository::class, $customDimensions);
     }
 
     private function bindUnusedRecorder(): void

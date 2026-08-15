@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Matomo\Tracker;
 
+use App\Matomo\CustomDimensions\CustomDimensionRepository;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Sites\SiteRepository;
 use Illuminate\Http\Request;
@@ -11,7 +12,11 @@ use InvalidArgumentException;
 
 final readonly class TrackerRequestFactory
 {
-    public function __construct(private ClientIpResolver $ips, private SiteRepository $sites) {}
+    public function __construct(
+        private ClientIpResolver $ips,
+        private SiteRepository $sites,
+        private CustomDimensionRepository $dimensions,
+    ) {}
 
     public function make(Request $request): TrackingRequest
     {
@@ -64,6 +69,8 @@ final readonly class TrackerRequestFactory
             throw new InvalidArgumentException('res must be a screen resolution such as 1920x1080.');
         }
 
+        [$visitProperties, $actionProperties] = $this->customProperties($request, (int) $siteId);
+
         return new TrackingRequest(
             (int) $siteId,
             $url,
@@ -82,6 +89,8 @@ final readonly class TrackerRequestFactory
             sprintf('%02d:%02d:%02d', $hour, $minute, $second),
             $resolution,
             $request->boolean('cookie', false),
+            $visitProperties,
+            $actionProperties,
         );
     }
 
@@ -135,5 +144,64 @@ final readonly class TrackerRequestFactory
         }
 
         return (int) $value;
+    }
+
+    /** @return array{array<string, string>, array<string, string>} */
+    private function customProperties(Request $request, int $siteId): array
+    {
+        $visit = $this->customVariables($request->input('_cvar'));
+        $action = $this->customVariables($request->input('cvar'));
+        foreach ($this->dimensions->configuredForSite($siteId) as $dimension) {
+            if (! ($dimension['active'] ?? false)) {
+                continue;
+            }
+
+            $index = $dimension['index'] ?? null;
+            $scope = $dimension['scope'] ?? null;
+            if (! is_numeric($index) || ! in_array($scope, ['visit', 'action'], true)) {
+                continue;
+            }
+
+            $value = $this->optional($request->input('dimension'.(int) $index), 255);
+            if ($value !== null) {
+                $column = 'custom_dimension_'.(int) $index;
+                if ($scope === 'visit') {
+                    $visit[$column] = $value;
+                } else {
+                    $action[$column] = $value;
+                }
+            }
+        }
+
+        return [$visit, $action];
+    }
+
+    /** @return array<string, string> */
+    private function customVariables(mixed $input): array
+    {
+        if (is_string($input) && $input !== '') {
+            $input = json_decode($input, true);
+        }
+
+        if ($input === null || $input === '') {
+            return [];
+        }
+
+        if (! is_array($input)) {
+            throw new InvalidArgumentException('Custom variables must be a JSON object.');
+        }
+
+        $properties = [];
+        foreach ($input as $index => $pair) {
+            if (filter_var($index, FILTER_VALIDATE_INT) === false || (int) $index < 1 || (int) $index > 5
+                || ! is_array($pair) || ! isset($pair[0], $pair[1]) || ! is_string($pair[0]) || ! is_scalar($pair[1])) {
+                throw new InvalidArgumentException('Custom variable entries are invalid.');
+            }
+
+            $properties['custom_var_k'.(int) $index] = mb_substr($pair[0], 0, 200);
+            $properties['custom_var_v'.(int) $index] = mb_substr((string) $pair[1], 0, 200);
+        }
+
+        return $properties;
     }
 }

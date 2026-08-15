@@ -43,14 +43,17 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                     'visitor_localtime' => $request->localTime, 'referer_url' => $request->referrerUrl,
                     'user_id' => $request->userId, 'config_resolution' => $request->resolution,
                 ];
-                $visitId = $this->connection->table('log_visit')->insertGetId($this->available('log_visit', $visit), 'idvisit');
+                $visitId = $this->connection->table('log_visit')->insertGetId(
+                    $this->available('log_visit', [...$visit, ...$request->visitProperties]),
+                    'idvisit',
+                );
             } else {
                 $updates = [
                     'visit_last_action_time' => $now, 'visit_exit_idaction_url' => $url,
                     'visit_exit_idaction_name' => $name ?? 0, 'user_id' => $request->userId,
                 ];
                 $query = $this->connection->table('log_visit')->where('idvisit', (int) $visitId);
-                $query->update($this->available('log_visit', $updates));
+                $query->update($this->available('log_visit', [...$updates, ...$request->visitProperties]));
                 $query->increment('visit_total_actions');
                 if ($request->actionType === 10) {
                     $query->increment('visit_total_events');
@@ -69,7 +72,9 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 $action['custom_float'] = $request->eventValue;
             }
 
-            $this->connection->table('log_link_visit_action')->insert($this->available('log_link_visit_action', $action));
+            $this->connection->table('log_link_visit_action')->insert(
+                $this->available('log_link_visit_action', [...$action, ...$request->actionProperties]),
+            );
         });
     }
 
