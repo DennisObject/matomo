@@ -58,6 +58,7 @@ use App\Matomo\Archiving\ConversionSegmentApplicator;
 use App\Matomo\Archiving\DatabaseArchiveInvalidationManager;
 use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
+use App\Matomo\Archiving\GoalArchiveCollector;
 use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Archiving\ReportingSubperiodFactory;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
@@ -135,6 +136,7 @@ use App\Matomo\Plugins\PluginState;
 use App\Matomo\Plugins\TrackerFileAvailability;
 use App\Matomo\ProfessionalServices\DatabasePromoWidgetDismissalRepository;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
+use App\Matomo\Reporting\BatchBlobArchiveRepository;
 use App\Matomo\Reporting\BlobArchiveMetadataRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\CarbonReportingPeriodFactory;
@@ -439,6 +441,13 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            BatchBlobArchiveRepository::class,
+            fn (Application $application): BatchBlobArchiveRepository => new DatabaseBlobArchiveRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
             BlobArchiveMetadataRepository::class,
             fn (Application $application): BlobArchiveMetadataRepository => new DatabaseBlobArchiveRepository(
                 $application->make(MatomoDatabase::class)->connection(),
@@ -691,6 +700,19 @@ class AppServiceProvider extends ServiceProvider
                 subperiods: $application->make(ReportingSubperiodFactory::class),
                 segments: $application->make(SegmentHashResolver::class),
                 blobs: $application->make(BlobArchiveRepository::class),
+                sites: $application->make(SiteRepository::class),
+            ),
+        );
+        $this->app->singleton(
+            GoalArchiveCollector::class,
+            fn (Application $application): GoalArchiveCollector => new GoalArchiveCollector(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                conversionQueries: $application->make(ArchiveConversionQueryFactory::class),
+                subperiods: $application->make(ReportingSubperiodFactory::class),
+                segments: $application->make(SegmentHashResolver::class),
+                blobs: $application->make(BatchBlobArchiveRepository::class),
+                numbers: $application->make(NumericArchiveRepository::class),
+                goals: $application->make(GoalRepository::class),
                 sites: $application->make(SiteRepository::class),
             ),
         );
@@ -1006,6 +1028,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $events->listen(ArchiveReportsCollecting::class, VisitDimensionArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, VisitAggregateArchiveCollector::class);
+        $events->listen(ArchiveReportsCollecting::class, GoalArchiveCollector::class);
     }
 
     /**
