@@ -100,7 +100,9 @@ Handled reporting API method names:
   timestamps, cache clearing, update events, and compatible queued rearchive entries; plus the
   preprocessed segment summary with current and previous-period visits, actions, evolution, and icons.
 - `Insights`: `canGenerateInsights`, including some-site view access and fixed-period, range, and
-  unsupported multi-period date detection.
+  unsupported multi-period date detection; plus both direct insight reports with site access,
+  segmented current and comparison archives, mover, new, and disappeared rows, impact and growth
+  filters, ordering, limits, and mover-and-shaker marking.
 - `DevicesDetection`: all 8 API methods, including device, brand, model, operating-system, browser,
   and engine reports, legacy archive fallback, metadata, and compliance-policy filtering.
 - `Events`: all 9 API methods and their six archive producers, including secondary dimensions,
@@ -186,7 +188,7 @@ Reporting API module matrix:
 | `Feedback` | 3 | 3 | 0 |
 | `Goals` | 12 | 12 | 0 |
 | `ImageGraph` | 1 | 0 | 1 |
-| `Insights` | 5 | 1 | 4 |
+| `Insights` | 5 | 3 | 2 |
 | `JsTrackerInstallCheck` | 2 | 2 | 0 |
 | `LanguagesManager` | 9 | 9 | 0 |
 | `Live` | 7 | 0 | 7 |
@@ -214,7 +216,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **245** | **144** |
+| **Total** | **389** | **247** | **142** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 

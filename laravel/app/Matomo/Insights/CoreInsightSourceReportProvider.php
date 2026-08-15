@@ -106,7 +106,7 @@ final readonly class CoreInsightSourceReportProvider implements InsightSourceRep
             }
         }
 
-        return new InsightSourceReport($normalized, [
+        return new InsightSourceReport(array_slice($normalized, 0, 1000), [
             'module' => $module,
             'action' => $action,
             'name' => $name,

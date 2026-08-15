@@ -23,7 +23,7 @@ final readonly class InsightsCapabilityApiMethodHandler implements ApiMethodHand
 
     public function supports(ApiRequest $request): bool
     {
-        return $request->isInsightsRequest();
+        return $request->method === 'Insights.canGenerateInsights';
     }
 
     public function handle(ApiRequest $request, Request $httpRequest): Response
