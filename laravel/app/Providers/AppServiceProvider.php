@@ -53,6 +53,7 @@ use App\Matomo\Api\Methods\PrivacyManagerComplianceApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceReadApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceStatusApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerGranularComplianceApiMethodHandler;
+use App\Matomo\Api\Methods\PrivacyManagerRawAnonymisationApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerSettingsApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersAiApiMethodHandler;
@@ -221,8 +222,10 @@ use App\Matomo\Privacy\DatabaseAnonymisationSettingsRepository;
 use App\Matomo\Privacy\DatabaseAnonymizableColumnProvider;
 use App\Matomo\Privacy\DatabaseCompliancePolicyStateRepository;
 use App\Matomo\Privacy\DatabaseComplianceStatusProvider;
+use App\Matomo\Privacy\DatabaseRawAnonymisationScheduler;
 use App\Matomo\Privacy\GranularComplianceSettingsProvider;
 use App\Matomo\Privacy\PrivacyFeatureFlags;
+use App\Matomo\Privacy\RawAnonymisationScheduler;
 use App\Matomo\ProfessionalServices\DatabasePromoWidgetDismissalRepository;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Referrers\ReferrerDefinitionCatalog;
@@ -1303,6 +1306,12 @@ class AppServiceProvider extends ServiceProvider
             CnilGranularComplianceSettingsProvider::class,
         );
         $this->app->singleton(PrivacyFeatureFlags::class, ConfiguredPrivacyFeatureFlags::class);
+        $this->app->singleton(
+            RawAnonymisationScheduler::class,
+            fn (Application $application): RawAnonymisationScheduler => new DatabaseRawAnonymisationScheduler(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
 
         $this->app->singleton(
             QueryParameterExclusionPolicy::class,
@@ -1614,6 +1623,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(PrivacyManagerComplianceReadApiMethodHandler::class),
                 $application->make(PrivacyManagerComplianceStatusApiMethodHandler::class),
                 $application->make(PrivacyManagerGranularComplianceApiMethodHandler::class),
+                $application->make(PrivacyManagerRawAnonymisationApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),
                 $application->make(AiProvidersApiMethodHandler::class),

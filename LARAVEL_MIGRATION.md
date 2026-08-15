@@ -128,6 +128,9 @@ Handled reporting API method names:
   Anonymisation settings reads and writes preserve global and site fallback, site override removal,
   access boundaries, password confirmation for config-ID randomisation, policy metadata, tracker
   file details, valid referrer modes, custom tracker update events, and cache invalidation.
+  Manual raw-data anonymisation scheduling preserves superuser and password protection, all-site and
+  explicit-site scopes, date ranges, safe schema-column validation, empty-work rejection, requester
+  attribution, and the existing asynchronous job-table shape.
 - `Login`: `unblockBruteForceIPs` in every supported response format.
 - `AIAgents`: `get` in every supported response format, including suffixed column filtering.
 - `AIProviders`: all 4 API methods, including masked credential storage, managed configuration,
@@ -264,7 +267,7 @@ Reporting API module matrix:
 | `MultiSites` | 3 | 3 | 0 |
 | `Overlay` | 2 | 2 | 0 |
 | `PagePerformance` | 1 | 1 | 0 |
-| `PrivacyManager` | 18 | 13 | 5 |
+| `PrivacyManager` | 18 | 14 | 4 |
 | `ProfessionalServices` | 1 | 1 | 0 |
 | `Referrers` | 23 | 23 | 0 |
 | `Resolution` | 2 | 2 | 0 |
@@ -282,7 +285,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **334** | **55** |
+| **Total** | **389** | **335** | **54** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
