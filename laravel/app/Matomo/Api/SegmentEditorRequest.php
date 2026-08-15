@@ -9,5 +9,9 @@ final readonly class SegmentEditorRequest
     public function __construct(
         public ?int $segmentId,
         public ?int $siteId,
+        public ?string $name,
+        public ?string $definition,
+        public ?bool $autoArchive,
+        public ?bool $enabledAllUsers,
     ) {}
 }

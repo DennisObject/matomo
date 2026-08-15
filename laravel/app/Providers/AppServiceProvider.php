@@ -47,6 +47,7 @@ use App\Matomo\Api\Methods\OverlayApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
+use App\Matomo\Api\Methods\SegmentEditorMutationApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorReadApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorStateApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
@@ -205,11 +206,16 @@ use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\EgressHostResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
+use App\Matomo\Segments\ConfiguredSegmentEditorSettings;
 use App\Matomo\Segments\DatabaseStoredSegmentRepository;
 use App\Matomo\Segments\LaravelSegmentCacheInvalidator;
 use App\Matomo\Segments\MutableStoredSegmentRepository;
+use App\Matomo\Segments\OptionSegmentRearchiveScheduler;
 use App\Matomo\Segments\SegmentCacheInvalidator;
+use App\Matomo\Segments\SegmentCreationAuthorizer;
 use App\Matomo\Segments\SegmentCreationPolicy;
+use App\Matomo\Segments\SegmentEditorSettings;
+use App\Matomo\Segments\SegmentRearchiveScheduler;
 use App\Matomo\Segments\StoredSegmentRepository;
 use App\Matomo\Settings\DatabasePolicySettingRepository;
 use App\Matomo\Settings\PolicySettingRepository;
@@ -310,10 +316,24 @@ class AppServiceProvider extends ServiceProvider
         );
         $this->app->singleton(SegmentCacheInvalidator::class, LaravelSegmentCacheInvalidator::class);
         $this->app->singleton(
+            SegmentEditorSettings::class,
+            fn (Application $application): SegmentEditorSettings => new ConfiguredSegmentEditorSettings(
+                fn (): InstallationConfig => $application->make(InstallationConfig::class),
+                $application->make(OptionRepository::class),
+            ),
+        );
+        $this->app->singleton(SegmentRearchiveScheduler::class, OptionSegmentRearchiveScheduler::class);
+        $this->app->singleton(
             SegmentCreationPolicy::class,
             fn (Application $application): SegmentCreationPolicy => new SegmentCreationPolicy(
                 $application->make(ApiAccessAuthorizer::class),
                 fn (): InstallationConfig => $application->make(InstallationConfig::class),
+            ),
+        );
+        $this->app->singleton(
+            SegmentCreationAuthorizer::class,
+            fn (Application $application): SegmentCreationAuthorizer => $application->make(
+                SegmentCreationPolicy::class,
             ),
         );
         $this->app->singleton(
@@ -1337,6 +1357,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(CustomDimensionsMutationApiMethodHandler::class),
                 $application->make(SegmentEditorReadApiMethodHandler::class),
                 $application->make(SegmentEditorStateApiMethodHandler::class),
+                $application->make(SegmentEditorMutationApiMethodHandler::class),
                 $application->make(DashboardApiMethodHandler::class),
                 $application->make(DbStatsApiMethodHandler::class),
                 $application->make(ProfessionalServicesApiMethodHandler::class),

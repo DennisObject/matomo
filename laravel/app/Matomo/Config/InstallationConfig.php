@@ -95,6 +95,10 @@ final readonly class InstallationConfig
         private string $segmentCreationAccess,
         /** @var array<int, string> */
         private array $siteSegmentCreationAccess,
+        private bool $segmentAllSitesAllowed,
+        private bool $realtimeSegmentsAllowed,
+        private bool $browserArchivingAvailableForSegments,
+        private string $processNewSegmentsFrom,
     ) {}
 
     public static function fromFile(string $path): self
@@ -344,6 +348,25 @@ final readonly class InstallationConfig
             ),
             segmentCreationAccess: self::parsedSegmentCreationAccess($general),
             siteSegmentCreationAccess: self::siteSegmentCreationAccess($configuration),
+            segmentAllSitesAllowed: self::boolean(
+                $general,
+                'allow_adding_segments_for_all_websites',
+                true,
+            ),
+            realtimeSegmentsAllowed: self::boolean(
+                $general,
+                'enable_create_realtime_segments',
+                true,
+            ),
+            browserArchivingAvailableForSegments: ! self::boolean(
+                $general,
+                'browser_archiving_disabled_enforce',
+            ),
+            processNewSegmentsFrom: self::string(
+                $general,
+                'process_new_segments_from',
+                'beginning_of_time',
+            ),
         );
     }
 
@@ -691,12 +714,32 @@ final readonly class InstallationConfig
         return $this->segmentCreationAccess;
     }
 
+    public function segmentAllSitesAllowed(): bool
+    {
+        return $this->segmentAllSitesAllowed;
+    }
+
+    public function realtimeSegmentsAllowed(): bool
+    {
+        return $this->realtimeSegmentsAllowed;
+    }
+
+    public function browserArchivingAvailableForSegments(): bool
+    {
+        return $this->browserArchivingAvailableForSegments;
+    }
+
+    public function processNewSegmentsFrom(): string
+    {
+        return $this->processNewSegmentsFrom;
+    }
+
     /** @param array<string, mixed> $general */
     private static function parsedSegmentCreationAccess(array $general): string
     {
         $access = strtolower(self::string($general, 'adding_segment_requires_access', 'view'));
 
-        return in_array($access, ['view', 'write', 'admin'], true) ? $access : 'none';
+        return in_array($access, ['view', 'write', 'admin', 'superuser'], true) ? $access : 'none';
     }
 
     /**

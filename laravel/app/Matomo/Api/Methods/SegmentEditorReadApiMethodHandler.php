@@ -7,7 +7,7 @@ namespace App\Matomo\Api\Methods;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
-use App\Matomo\Segments\SegmentCreationPolicy;
+use App\Matomo\Segments\SegmentCreationAuthorizer;
 use App\Matomo\Segments\StoredSegmentReader;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -25,7 +25,7 @@ final readonly class SegmentEditorReadApiMethodHandler implements ApiMethodHandl
         private ApiAccessAuthorizer $authorizer,
         private ApiResponseFactory $responses,
         private StoredSegmentReader $segments,
-        private SegmentCreationPolicy $creation,
+        private SegmentCreationAuthorizer $creation,
     ) {}
 
     public function supports(ApiRequest $request): bool

@@ -170,6 +170,10 @@ class InstallationConfigTest extends TestCase
             tablesPrefix: 'matomo_',
             extraGeneral: <<<'INI'
             adding_segment_requires_access = "write"
+            allow_adding_segments_for_all_websites = 0
+            enable_create_realtime_segments = 0
+            browser_archiving_disabled_enforce = 1
+            process_new_segments_from = "editLast12"
 
             [General_7]
             adding_segment_requires_access = "admin"
@@ -179,6 +183,10 @@ class InstallationConfigTest extends TestCase
         $this->assertSame('write', $configuration->segmentCreationAccess());
         $this->assertSame('write', $configuration->segmentCreationAccess(6));
         $this->assertSame('admin', $configuration->segmentCreationAccess(7));
+        $this->assertFalse($configuration->segmentAllSitesAllowed());
+        $this->assertFalse($configuration->realtimeSegmentsAllowed());
+        $this->assertFalse($configuration->browserArchivingAvailableForSegments());
+        $this->assertSame('editLast12', $configuration->processNewSegmentsFrom());
     }
 
     public function test_rejects_unknown_segment_creation_access(): void

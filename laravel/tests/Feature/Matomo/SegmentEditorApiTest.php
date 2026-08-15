@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Segments\Events\SegmentDeactivating;
+use App\Matomo\Segments\Events\SegmentUpdating;
 use App\Matomo\Segments\MutableStoredSegmentRepository;
 use App\Matomo\Segments\SegmentCacheInvalidator;
+use App\Matomo\Segments\SegmentCreationAuthorizer;
+use App\Matomo\Segments\SegmentEditorSettings;
+use App\Matomo\Segments\SegmentRearchiveScheduler;
 use App\Matomo\Segments\StoredSegmentRepository;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -16,6 +21,8 @@ use Tests\TestCase;
 class SegmentEditorApiTest extends TestCase
 {
     private FakeStoredSegmentRepository $segments;
+
+    private FakeSegmentEditorSettings $settings;
 
     protected function setUp(): void
     {
@@ -26,11 +33,17 @@ class SegmentEditorApiTest extends TestCase
         $authorizer->method('hasSomeViewAccess')->willReturn(true);
         $authorizer->method('hasViewAccessToSite')->willReturn(true);
         $authorizer->method('siteIdsWithAtLeastViewAccess')->willReturn([1]);
+        $authorizer->method('siteIdsWithMinimumRole')->willReturn([1]);
         $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
         $this->segments = new FakeStoredSegmentRepository;
         $this->app->instance(StoredSegmentRepository::class, $this->segments);
         $this->app->instance(MutableStoredSegmentRepository::class, $this->segments);
         $this->app->instance(SegmentCacheInvalidator::class, new FakeSegmentCacheInvalidator);
+        $this->app->instance(SegmentCreationAuthorizer::class, new FakeSegmentCreationAuthorizer);
+
+        $this->settings = new FakeSegmentEditorSettings;
+        $this->app->instance(SegmentEditorSettings::class, $this->settings);
+        $this->app->instance(SegmentRearchiveScheduler::class, new FakeSegmentRearchiveScheduler);
     }
 
     public function test_returns_a_visible_stored_segment(): void
@@ -156,6 +169,83 @@ class SegmentEditorApiTest extends TestCase
             ->assertJsonPath('message', 'Requested segment not found');
     }
 
+    public function test_adds_a_site_segment_with_legacy_encoding_and_cache_clear(): void
+    {
+        $cache = new FakeSegmentCacheInvalidator;
+        $this->app->instance(SegmentCacheInvalidator::class, $cache);
+
+        $this->get($this->url('add', [
+            'name' => '<Mine>',
+            'definition' => "pageUrl==example.test/a#b&c'd",
+            'idSite' => 1,
+            'autoArchive' => 0,
+            'enabledAllUsers' => 0,
+        ]))
+            ->assertOk()
+            ->assertExactJson(['value' => 10]);
+
+        self::assertSame('&lt;Mine&gt;', $this->segments->created['name'] ?? null);
+        self::assertSame(
+            'pageUrl==example.test/a%23b%26c%27d',
+            $this->segments->created['definition'] ?? null,
+        );
+        self::assertSame('alice', $this->segments->created['login'] ?? null);
+        self::assertTrue($cache->cleared);
+    }
+
+    public function test_updates_and_schedules_a_changed_preprocessed_segment(): void
+    {
+        Event::fake([SegmentUpdating::class]);
+        $scheduler = new FakeSegmentRearchiveScheduler;
+        $this->app->instance(SegmentRearchiveScheduler::class, $scheduler);
+        $this->segments->rows = [$this->segment(1, 'Mine', 'alice', 0, 1)];
+
+        $this->get($this->url('update', [
+            'idSegment' => 1,
+            'name' => 'Changed',
+            'definition' => 'browserCode==CH',
+            'idSite' => 1,
+            'autoArchive' => 1,
+            'enabledAllUsers' => 0,
+        ]))
+            ->assertOk()
+            ->assertExactJson(['result' => 'success', 'message' => 'ok']);
+
+        self::assertSame('Changed', $this->segments->updated['name'] ?? null);
+        self::assertSame(1, $this->segments->updated['auto_archive'] ?? null);
+        self::assertSame('browserCode==CH', $scheduler->segment['definition'] ?? null);
+        Event::assertDispatched(SegmentUpdating::class);
+    }
+
+    public function test_enforces_shared_realtime_and_browser_archiving_rules(): void
+    {
+        $this->get($this->url('add', [
+            'name' => 'Shared',
+            'definition' => 'browserCode==FF',
+            'idSite' => 1,
+            'enabledAllUsers' => 1,
+        ]))->assertBadRequest()->assertJsonPath(
+            'message',
+            'enabledAllUsers=1 requires Super User access',
+        );
+
+        $this->settings->realtime = false;
+        $this->get($this->url('add', [
+            'name' => 'Realtime',
+            'definition' => 'browserCode==FF',
+            'idSite' => 1,
+        ]))->assertBadRequest();
+
+        $this->settings->realtime = true;
+        $this->settings->browserTrigger = true;
+        $this->get($this->url('add', [
+            'name' => 'Preprocessed',
+            'definition' => 'browserCode==FF',
+            'idSite' => 1,
+            'autoArchive' => 1,
+        ]))->assertBadRequest();
+    }
+
     /** @return StoredSegment */
     private function segment(
         int $id,
@@ -209,6 +299,9 @@ final class FakeStoredSegmentRepository implements MutableStoredSegmentRepositor
     /** @var array<string, bool|int|string|null> */
     public array $updated = [];
 
+    /** @var array<string, bool|int|string|null> */
+    public array $created = [];
+
     public function find(int $segmentId): ?array
     {
         foreach ($this->rows as $row) {
@@ -231,11 +324,126 @@ final class FakeStoredSegmentRepository implements MutableStoredSegmentRepositor
         $this->deletedAt = $editedAt;
     }
 
+    public function create(array $values): int
+    {
+        $this->created = $values;
+        $this->rows[] = [
+            'idsegment' => 10,
+            'name' => (string) ($values['name'] ?? ''),
+            'definition' => (string) ($values['definition'] ?? ''),
+            'hash' => md5(urldecode((string) ($values['definition'] ?? ''))),
+            'login' => (string) ($values['login'] ?? ''),
+            'enable_all_users' => (int) ($values['enable_all_users'] ?? 0),
+            'enable_only_idsite' => (int) ($values['enable_only_idsite'] ?? 0),
+            'auto_archive' => (int) ($values['auto_archive'] ?? 0),
+            'ts_created' => is_string($values['ts_created'] ?? null) ? $values['ts_created'] : null,
+            'ts_last_edit' => null,
+            'deleted' => 0,
+            'starred' => 0,
+            'starred_by' => null,
+        ];
+
+        return 10;
+    }
+
     public function update(int $segmentId, array $values): bool
     {
         $this->updated = $values;
 
+        foreach ($this->rows as $index => $row) {
+            if ($row['idsegment'] === $segmentId) {
+                $row['name'] = is_string($values['name'] ?? null) ? $values['name'] : $row['name'];
+                $row['definition'] = is_string($values['definition'] ?? null)
+                    ? $values['definition']
+                    : $row['definition'];
+                $row['hash'] = isset($values['definition']) && is_string($values['definition'])
+                    ? md5(urldecode($values['definition']))
+                    : $row['hash'];
+                $row['enable_all_users'] = isset($values['enable_all_users'])
+                    ? (int) $values['enable_all_users']
+                    : $row['enable_all_users'];
+                $row['enable_only_idsite'] = isset($values['enable_only_idsite'])
+                    ? (int) $values['enable_only_idsite']
+                    : $row['enable_only_idsite'];
+                $row['auto_archive'] = isset($values['auto_archive'])
+                    ? (int) $values['auto_archive']
+                    : $row['auto_archive'];
+                $row['ts_last_edit'] = is_string($values['ts_last_edit'] ?? null)
+                    ? $values['ts_last_edit']
+                    : $row['ts_last_edit'];
+                $row['deleted'] = isset($values['deleted']) ? (int) $values['deleted'] : $row['deleted'];
+                $row['starred'] = isset($values['starred']) ? (int) $values['starred'] : $row['starred'];
+
+                if (array_key_exists('starred_by', $values)) {
+                    $row['starred_by'] = is_string($values['starred_by'])
+                        ? $values['starred_by']
+                        : null;
+                }
+
+                $this->rows[$index] = $row;
+            }
+        }
+
         return true;
+    }
+}
+
+final class FakeSegmentEditorSettings implements SegmentEditorSettings
+{
+    public bool $allSites = true;
+
+    public bool $realtime = true;
+
+    public bool $browserTrigger = false;
+
+    public bool $browserAvailable = true;
+
+    public string $processFrom = 'beginning_of_time';
+
+    public function allSitesAllowed(): bool
+    {
+        return $this->allSites;
+    }
+
+    public function realtimeAllowed(): bool
+    {
+        return $this->realtime;
+    }
+
+    public function browserTriggerEnabled(): bool
+    {
+        return $this->browserTrigger;
+    }
+
+    public function browserArchivingAvailable(): bool
+    {
+        return $this->browserAvailable;
+    }
+
+    public function processNewSegmentsFrom(): string
+    {
+        return $this->processFrom;
+    }
+}
+
+final class FakeSegmentCreationAuthorizer implements SegmentCreationAuthorizer
+{
+    public bool $allowed = true;
+
+    public function allowed(ApiAuthentication $authentication, ?int $siteId): bool
+    {
+        return $this->allowed;
+    }
+}
+
+final class FakeSegmentRearchiveScheduler implements SegmentRearchiveScheduler
+{
+    /** @var array<string, bool|int|string|null> */
+    public array $segment = [];
+
+    public function schedule(array $segment): void
+    {
+        $this->segment = $segment;
     }
 }
 

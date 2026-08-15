@@ -54,6 +54,19 @@ final readonly class DatabaseStoredSegmentRepository implements MutableStoredSeg
         ]);
     }
 
+    public function create(array $values): int
+    {
+        $definition = $values['definition'] ?? null;
+
+        if (! is_string($definition)) {
+            return 0;
+        }
+
+        $values['hash'] = md5(urldecode($definition));
+
+        return (int) $this->connection()->table('segment')->insertGetId($values, 'idsegment');
+    }
+
     public function update(int $segmentId, array $values): bool
     {
         if (isset($values['definition']) && is_string($values['definition'])) {
