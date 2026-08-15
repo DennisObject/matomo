@@ -26,6 +26,20 @@ final class TrackerEndpointTest extends TestCase
         $this->get('/matomo.php?idsite=0&url=javascript%3Aalert%281%29')->assertBadRequest();
     }
 
+    public function test_records_event_parameters(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->actionType === 10
+                && $request->eventCategory === 'Video'
+                && $request->eventAction === 'Play'
+                && $request->eventValue === 2.5,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&e_c=Video&e_a=Play&e_v=2.5')->assertOk();
+    }
+
     public function test_respects_do_not_track(): void
     {
         $recorder = $this->createMock(VisitRecorder::class);

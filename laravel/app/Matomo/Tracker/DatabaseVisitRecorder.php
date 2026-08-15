@@ -31,12 +31,20 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 $this->connection->table('log_visit')->where('idvisit', (int) $visitId)->update(['visit_last_action_time' => $now]);
             }
 
-            $url = $this->action($request->url, 1);
+            $url = $this->action($request->url, $request->actionType);
             $name = $request->actionName === '' ? null : $this->action($request->actionName, 4);
-            $this->connection->table('log_link_visit_action')->insert([
+            $action = [
                 'idsite' => $request->siteId, 'idvisitor' => $visitor, 'idvisit' => (int) $visitId,
                 'idaction_url' => $url, 'idaction_name' => $name, 'server_time' => $now, 'idaction_url_ref' => 0,
-            ]);
+            ];
+            if ($request->eventCategory !== null && $request->eventAction !== null) {
+                $action['idaction_event_category'] = $this->action($request->eventCategory, 10);
+                $action['idaction_event_action'] = $this->action($request->eventAction, 11);
+                $action['idaction_event_name'] = $request->eventName === null ? null : $this->action($request->eventName, 12);
+                $action['custom_float'] = $request->eventValue;
+            }
+
+            $this->connection->table('log_link_visit_action')->insert($action);
         });
     }
 
