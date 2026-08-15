@@ -117,6 +117,17 @@ final readonly class ApiRequest
         'Referrers.getKeywordsFromSearchEngineId',
     ];
 
+    /** @var list<string> */
+    private const array REFERRERS_SOCIAL_METHODS = [
+        'Referrers.getSocials',
+        'Referrers.getUrlsForSocial',
+    ];
+
+    /** @var list<string> */
+    private const array REFERRERS_OPTIONAL_SUBTABLE_METHODS = [
+        'Referrers.getUrlsForSocial',
+    ];
+
     private const string USER_ID_METHOD = 'UserId.getUsers';
 
     /** @var list<string> */
@@ -778,6 +789,12 @@ final readonly class ApiRequest
     {
         return $this->module === 'API'
             && in_array($this->method, self::REFERRERS_SEARCH_METHODS, true);
+    }
+
+    public function isReferrersSocialRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::REFERRERS_SOCIAL_METHODS, true);
     }
 
     public function isVisitFrequencyRequest(): bool
@@ -2506,6 +2523,7 @@ final readonly class ApiRequest
                 && ! in_array($method, self::REFERRERS_CAMPAIGN_METHODS, true)
                 && ! in_array($method, self::REFERRERS_WEBSITE_METHODS, true)
                 && ! in_array($method, self::REFERRERS_SEARCH_METHODS, true)
+                && ! in_array($method, self::REFERRERS_SOCIAL_METHODS, true)
                 && $method !== self::USER_ID_METHOD
                 && ! in_array($method, self::ACTIONS_METHODS, true)
                 && ! in_array($method, self::EXAMPLE_PLUGIN_REPORT_METHODS, true)
@@ -2582,6 +2600,7 @@ final readonly class ApiRequest
             && ! in_array($method, self::ACTIONS_SUBTABLE_METHODS, true)
             && ! in_array($method, self::BOT_TRACKING_SUBTABLE_METHODS, true)
             && ! in_array($method, self::REFERRERS_REQUIRED_SUBTABLE_METHODS, true)
+            && ! in_array($method, self::REFERRERS_OPTIONAL_SUBTABLE_METHODS, true)
             && $method !== 'CustomDimensions.getCustomDimension') {
             return null;
         }

@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 263 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 265 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -168,7 +168,9 @@ Handled reporting API method names:
   website-URL APIs include expanded and flat hierarchy reads, path grouping, decoded URL metadata,
   dimensions, and URL segments. Keyword and search-engine APIs include both archive orientations,
   direct and expanded subtables, flat dimensions, localized hidden keywords, canonical search URLs,
-  logos, backlinks, and search segments.
+  logos, backlinks, and search segments. Social and social-URL APIs include dedicated archives,
+  ordered definition IDs, normalized names, expansion, flat dimensions, metadata, URL segments, and
+  conditional fallback to legacy website archives.
 
 Reporting API module matrix:
 
@@ -209,7 +211,7 @@ Reporting API module matrix:
 | `PagePerformance` | 1 | 1 | 0 |
 | `PrivacyManager` | 18 | 0 | 18 |
 | `ProfessionalServices` | 1 | 1 | 0 |
-| `Referrers` | 23 | 16 | 7 |
+| `Referrers` | 23 | 18 | 5 |
 | `Resolution` | 2 | 2 | 0 |
 | `ScheduledReports` | 7 | 0 | 7 |
 | `SegmentEditor` | 9 | 9 | 0 |
@@ -225,7 +227,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **263** | **126** |
+| **Total** | **389** | **265** | **124** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 

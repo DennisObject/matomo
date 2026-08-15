@@ -14,9 +14,14 @@ final class YamlReferrerDefinitionCatalog implements ReferrerDefinitionCatalog
     /** @var array<string, string>|null */
     private ?array $aiAssistants = null;
 
+    /** @var list<string>|null */
+    private ?array $socialOrder = null;
+
     public function __construct(
         private readonly string $socialsFile,
         private readonly string $aiAssistantsFile,
+        private readonly string $socialIconsDirectory = '',
+        private readonly string $aiAssistantIconsDirectory = '',
     ) {}
 
     public function socialName(string $url): ?string
@@ -29,6 +34,41 @@ final class YamlReferrerDefinitionCatalog implements ReferrerDefinitionCatalog
         return $this->match(
             $url,
             $this->aiAssistants ??= $this->definitions($this->aiAssistantsFile),
+        );
+    }
+
+    public function socialUrl(string $name): ?string
+    {
+        return $this->firstDomain($name, $this->socials ??= $this->definitions($this->socialsFile));
+    }
+
+    public function aiAssistantUrl(string $name): ?string
+    {
+        return $this->firstDomain(
+            $name,
+            $this->aiAssistants ??= $this->definitions($this->aiAssistantsFile),
+        );
+    }
+
+    public function socialNameAtPosition(int $position): ?string
+    {
+        $this->socials ??= $this->definitions($this->socialsFile);
+        $this->socialOrder ??= array_values($this->socials);
+
+        return $position < 1 ? null : ($this->socialOrder[$position - 1] ?? null);
+    }
+
+    public function socialLogo(string $name): string
+    {
+        return $this->logo($name, $this->socials ??= $this->definitions($this->socialsFile), 'socials');
+    }
+
+    public function aiAssistantLogo(string $name): string
+    {
+        return $this->logo(
+            $name,
+            $this->aiAssistants ??= $this->definitions($this->aiAssistantsFile),
+            'aiAssistants',
         );
     }
 
@@ -72,5 +112,33 @@ final class YamlReferrerDefinitionCatalog implements ReferrerDefinitionCatalog
         }
 
         return null;
+    }
+
+    /** @param array<string, string> $definitions */
+    private function firstDomain(string $name, array $definitions): ?string
+    {
+        foreach ($definitions as $domain => $definitionName) {
+            if ($definitionName === $name) {
+                return $domain;
+            }
+        }
+
+        return null;
+    }
+
+    /** @param array<string, string> $definitions */
+    private function logo(string $name, array $definitions, string $directory): string
+    {
+        $iconsDirectory = $directory === 'socials'
+            ? $this->socialIconsDirectory
+            : $this->aiAssistantIconsDirectory;
+
+        foreach ($definitions as $domain => $definitionName) {
+            if ($definitionName === $name && is_file($iconsDirectory.'/'.$domain.'.png')) {
+                return 'plugins/Morpheus/icons/dist/'.$directory.'/'.$domain.'.png';
+            }
+        }
+
+        return 'plugins/Morpheus/icons/dist/'.$directory.'/xx.png';
     }
 }
