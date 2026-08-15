@@ -195,6 +195,17 @@ final readonly class ApiRequest
     private const string AI_AGENTS_METHOD = 'AIAgents.get';
 
     /** @var list<string> */
+    private const array CUSTOM_DIMENSIONS_METHODS = [
+        'CustomDimensions.getCustomDimension',
+        'CustomDimensions.configureNewCustomDimension',
+        'CustomDimensions.configureExistingCustomDimension',
+        'CustomDimensions.getConfiguredCustomDimensions',
+        'CustomDimensions.getConfiguredCustomDimensionsHavingScope',
+        'CustomDimensions.getAvailableScopes',
+        'CustomDimensions.getAvailableExtractionDimensions',
+    ];
+
+    /** @var list<string> */
     private const array DB_STATS_METHODS = [
         'DBStats.getGeneralInformation',
         'DBStats.getDBStatus',
@@ -404,6 +415,7 @@ final readonly class ApiRequest
         public ?OverlayRequest $overlay,
         public ?TransitionsRequest $transitions,
         public ?BotTrackingRealtimeRequest $botTrackingRealtime,
+        public ?CustomDimensionsRequest $customDimensions,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -464,6 +476,7 @@ final readonly class ApiRequest
             overlay: null,
             transitions: null,
             botTrackingRealtime: null,
+            customDimensions: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -782,6 +795,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::DB_STATS_METHODS, true);
     }
 
+    public function isCustomDimensionsRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::CUSTOM_DIMENSIONS_METHODS, true);
+    }
+
     public function isExampleApiRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::EXAMPLE_API_METHODS, true);
@@ -946,9 +964,46 @@ final readonly class ApiRequest
             overlay: self::overlay($request, $module, $method),
             transitions: self::transitions($request, $module, $method),
             botTrackingRealtime: self::botTrackingRealtime($request, $module, $method),
+            customDimensions: self::customDimensions($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
+    }
+
+    private static function customDimensions(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?CustomDimensionsRequest {
+        if ($module !== 'API' || ! in_array($method, self::CUSTOM_DIMENSIONS_METHODS, true)) {
+            return null;
+        }
+
+        $needsSite = $method !== 'CustomDimensions.getAvailableExtractionDimensions';
+        $needsDimension = in_array($method, [
+            'CustomDimensions.getCustomDimension',
+            'CustomDimensions.configureExistingCustomDimension',
+        ], true);
+        $siteId = $needsSite ? self::requiredInteger($request, 'idSite') : null;
+        $dimensionId = $needsDimension ? self::requiredInteger($request, 'idDimension') : null;
+
+        if ($siteId !== null && $siteId < 1) {
+            throw new InvalidApiParameter('idSite');
+        }
+
+        if ($dimensionId !== null && $dimensionId < 1) {
+            throw new InvalidApiParameter('idDimension');
+        }
+
+        $scope = $method === 'CustomDimensions.getConfiguredCustomDimensionsHavingScope'
+            ? strtolower(self::requiredString($request, 'scope'))
+            : null;
+
+        if ($scope !== null && ! in_array($scope, ['visit', 'action', 'conversion'], true)) {
+            throw new InvalidApiParameter('scope');
+        }
+
+        return new CustomDimensionsRequest($siteId, $dimensionId, $scope);
     }
 
     private static function botTrackingRealtime(

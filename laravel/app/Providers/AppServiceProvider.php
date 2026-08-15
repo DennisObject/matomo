@@ -23,6 +23,7 @@ use App\Matomo\Api\Methods\BotTrackingApiMethodHandler;
 use App\Matomo\Api\Methods\ContentsApiMethodHandler;
 use App\Matomo\Api\Methods\CoreAdminHomeApiMethodHandler;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
+use App\Matomo\Api\Methods\CustomDimensionsApiMethodHandler;
 use App\Matomo\Api\Methods\CustomJsTrackerApiMethodHandler;
 use App\Matomo\Api\Methods\DashboardApiMethodHandler;
 use App\Matomo\Api\Methods\DbStatsApiMethodHandler;
@@ -105,6 +106,9 @@ use App\Matomo\CoreAdmin\IniTrustedHostConfiguration;
 use App\Matomo\CoreAdmin\OptOutEmbedCodeGenerator;
 use App\Matomo\CoreAdmin\TranslatedOptOutEmbedCodeGenerator;
 use App\Matomo\CoreAdmin\TrustedHostConfiguration;
+use App\Matomo\CustomDimensions\CustomDimensionCatalog;
+use App\Matomo\CustomDimensions\CustomDimensionRepository;
+use App\Matomo\CustomDimensions\DatabaseCustomDimensionRepository;
 use App\Matomo\Dashboard\ConfiguredDashboardLayoutProvider;
 use App\Matomo\Dashboard\DashboardLayoutProvider;
 use App\Matomo\Dashboard\DashboardRecipientPolicy;
@@ -524,6 +528,19 @@ class AppServiceProvider extends ServiceProvider
             DatabaseMetadataProvider::class,
             fn (Application $application): DatabaseMetadataProvider => new MySqlDatabaseMetadataProvider(
                 fn (): Connection => $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            CustomDimensionRepository::class,
+            fn (Application $application): CustomDimensionRepository => new DatabaseCustomDimensionRepository(
+                fn (): Connection => $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            CustomDimensionCatalog::class,
+            fn (Application $application): CustomDimensionCatalog => new CustomDimensionCatalog(
+                dimensions: $application->make(CustomDimensionRepository::class),
+                translator: $application->make(MatomoTranslator::class),
             ),
         );
         $this->app->singleton(
@@ -1279,6 +1296,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ContentsApiMethodHandler::class),
                 $application->make(BotTrackingApiMethodHandler::class),
                 $application->make(CustomJsTrackerApiMethodHandler::class),
+                $application->make(CustomDimensionsApiMethodHandler::class),
                 $application->make(DashboardApiMethodHandler::class),
                 $application->make(DbStatsApiMethodHandler::class),
                 $application->make(ProfessionalServicesApiMethodHandler::class),
