@@ -6,6 +6,7 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Archiving\ArchiveRecordSet;
 use App\Matomo\Archiving\ArchiveReportRequest;
+use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
@@ -13,6 +14,8 @@ use App\Matomo\Archiving\Events\ArchiveReportsCompleted;
 use App\Matomo\Archiving\Events\ArchiveReportsStarting;
 use App\Matomo\Archiving\Events\ArchiveVisitsQueryBuilding;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
+use App\Matomo\Archiving\SegmentExpressionParser;
+use App\Matomo\Geolocation\CountryMetadataProvider;
 use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Reporting\CarbonReportingPeriodFactory;
 use App\Matomo\Reporting\DatabaseBlobArchiveRepository;
@@ -69,10 +72,23 @@ class DatabaseReportArchiverTest extends TestCase
             $table->string('idvisitor');
             $table->string('config_id');
             $table->string('user_id')->nullable();
+            $table->dateTime('visit_first_action_time')->nullable();
             $table->dateTime('visit_last_action_time');
             $table->unsignedInteger('visit_total_actions');
+            $table->unsignedInteger('visit_total_interactions')->nullable();
+            $table->unsignedInteger('visit_total_searches')->nullable();
+            $table->unsignedInteger('visit_total_events')->nullable();
             $table->unsignedInteger('visit_total_time');
             $table->boolean('visit_goal_converted');
+            $table->unsignedTinyInteger('visitor_returning')->nullable();
+            $table->unsignedTinyInteger('visit_goal_buyer')->nullable();
+            $table->unsignedInteger('visitor_seconds_since_first')->nullable();
+            $table->unsignedInteger('visitor_seconds_since_last')->nullable();
+            $table->unsignedInteger('visitor_seconds_since_order')->nullable();
+            $table->unsignedTinyInteger('config_device_type')->nullable();
+            $table->string('referer_name')->nullable();
+            $table->string('referer_url')->nullable();
+            $table->binary('location_ip')->nullable();
             $table->string('location_country', 3)->nullable();
         });
         $this->connection->table('site')->insert([
@@ -226,7 +242,7 @@ class DatabaseReportArchiverTest extends TestCase
             ->all());
     }
 
-    public function test_segment_query_must_be_handled_and_can_apply_bound_filters(): void
+    public function test_built_in_segments_apply_bound_filters_and_unknown_segments_fail_closed(): void
     {
         $this->insertVisits();
         $request = new ArchiveReportRequest(
@@ -235,15 +251,31 @@ class DatabaseReportArchiverTest extends TestCase
             date: '2026-08-15',
             segment: 'countryCode==nz',
         );
+        $result = $this->archiver()->archive($request);
+
+        $this->assertSame([1], $result->archiveIds);
+        $this->assertSame(1, $result->visits);
+        $this->assertSame(1, (int) $this->connection
+            ->table('archive_numeric_2026_08')
+            ->where('idarchive', 1)
+            ->where('name', 'done'.md5('countryCode==nz'))
+            ->value('value'));
+
+        $unsupported = new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: 'extensionDimension==nz',
+        );
 
         try {
-            $this->archiver()->archive($request);
+            $this->archiver()->archive($unsupported);
             $this->fail('An unsupported segment must not create a successful archive.');
         } catch (InvalidArgumentException $invalidArgumentException) {
             $this->assertStringContainsString('no segment handler supports it', $invalidArgumentException->getMessage());
         }
 
-        $hash = md5('countryCode==nz');
+        $hash = md5('extensionDimension==nz');
         $this->assertSame(2, (int) $this->connection
             ->table('archive_numeric_2026_08')
             ->where('name', 'done'.$hash)
@@ -251,21 +283,121 @@ class DatabaseReportArchiverTest extends TestCase
         $this->events->listen(ArchiveVisitsQueryBuilding::class, static function (
             ArchiveVisitsQueryBuilding $event,
         ): void {
-            if ($event->request->segment === 'countryCode==nz') {
+            if ($event->request->segment === 'extensionDimension==nz') {
                 $event->query->where('location_country', 'nz');
                 $event->segmentApplied = true;
             }
         });
 
-        $result = $this->archiver()->archive($request);
+        $result = $this->archiver()->archive($unsupported);
 
-        $this->assertSame([2], $result->archiveIds);
+        $this->assertSame([3], $result->archiveIds);
         $this->assertSame(1, $result->visits);
         $this->assertSame(1, (int) $this->connection
             ->table('archive_numeric_2026_08')
-            ->where('idarchive', 2)
+            ->where('idarchive', 3)
             ->where('name', 'done'.$hash)
             ->value('value'));
+    }
+
+    public function test_visit_segment_labels_groups_functions_and_binary_values_match_legacy_behavior(): void
+    {
+        $countryMetadata = $this->createMock(CountryMetadataProvider::class);
+        $countryMetadata->method('codes')->willReturn(['nz', 'au', 'fr']);
+        $countryMetadata->method('continentCode')->willReturnCallback(
+            static fn (string $country): string => match ($country) {
+                'nz', 'au' => 'oce',
+                'fr' => 'eur',
+                default => 'unk',
+            },
+        );
+        $this->app->instance(CountryMetadataProvider::class, $countryMetadata);
+        $this->insertVisits();
+        $visitorId = '34c31e04394bdc63';
+        $this->connection->table('log_visit')
+            ->where('idvisitor', 'visitor-b')
+            ->update([
+                'idvisitor' => hex2bin($visitorId),
+                'visit_first_action_time' => '2026-08-15 08:30:00',
+                'visitor_returning' => 1,
+                'visit_goal_buyer' => 1,
+                'visitor_seconds_since_first' => 172_800,
+                'config_device_type' => 2,
+                'referer_name' => 'weekly newsletter',
+                'location_ip' => inet_pton('80.229.12.34'),
+            ]);
+        $segment = implode(';', [
+            'visitorType==returning,deviceType==tablet',
+            'visitEcommerceStatus==ordered',
+            'referrerName=@newsletter',
+            'visitStartServerHour>=8',
+            'daysSinceFirstVisit==2',
+            'continentCode==oce',
+            'visitEndServerDate==2026-08-15',
+            "visitorId=={$visitorId}",
+            'visitIp>=80.229.0.0',
+            'visitIp<=80.229.255.255',
+        ]);
+        $applicator = $this->visitSegmentApplicator();
+        $conditions = explode(';', $segment);
+
+        foreach (array_keys($conditions) as $index) {
+            $partial = implode(';', array_slice($conditions, 0, $index + 1));
+            $query = $this->connection->table('log_visit')->where('idsite', 1);
+            $this->assertTrue($applicator->apply($query, $partial));
+            $this->assertSame(1, $query->count(), "The segment '{$partial}' must match one visit.");
+        }
+
+        $result = $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $segment,
+        ));
+
+        $this->assertSame(1, $result->visits);
+        $this->assertSame(1.0, $this->connection
+            ->table('archive_numeric_2026_08')
+            ->where('idarchive', $result->archiveIds[0])
+            ->where('name', 'nb_visits')
+            ->value('value'));
+    }
+
+    public function test_visit_segment_string_and_empty_operators_keep_null_and_escape_semantics(): void
+    {
+        $this->insertVisits();
+        $this->connection->table('log_visit')
+            ->where('idvisitor', 'visitor-b')
+            ->update([
+                'referer_name' => 'weekly_news%letter',
+                'visitor_returning' => 1,
+            ]);
+        $this->connection->table('log_visit')
+            ->where('idvisitor', 'outside-b')
+            ->update(['location_country' => null]);
+        $expectedCounts = [
+            'referrerName=@news%2525letter' => 1,
+            'referrerName!@news' => 3,
+            'referrerName=^weekly%255F' => 1,
+            'referrerName=$letter' => 1,
+            'referrerName==' => 3,
+            'referrerName!=' => 1,
+            'countryCode==' => 1,
+            'countryCode!=' => 3,
+            'userId!=bob' => 4,
+            'userId!@alice' => 3,
+            'referrerName!=0' => 1,
+            'referrerName!@0' => 1,
+            'visitorType!=new' => 1,
+            "referrerName==x' OR 1=1 --" => 0,
+        ];
+        $applicator = $this->visitSegmentApplicator();
+
+        foreach ($expectedCounts as $segment => $expected) {
+            $query = $this->connection->table('log_visit')->where('idsite', 1);
+            $this->assertTrue($applicator->apply($query, $segment));
+            $this->assertSame($expected, $query->count(), "The segment '{$segment}' has the wrong result.");
+        }
     }
 
     public function test_extension_failure_leaves_an_error_marker_and_validation_rejects_bad_inputs(): void
@@ -362,7 +494,16 @@ class DatabaseReportArchiverTest extends TestCase
             sites: new DatabaseSiteRepository($this->connection),
             options: new DatabaseOptionRepository($this->connection),
             segmentValidator: new SegmentDefinitionValidator,
+            visitSegments: $this->visitSegmentApplicator(),
             events: $this->events,
+        );
+    }
+
+    private function visitSegmentApplicator(): BuiltInVisitSegmentApplicator
+    {
+        return new BuiltInVisitSegmentApplicator(
+            new SegmentExpressionParser,
+            $this->app->make(CountryMetadataProvider::class),
         );
     }
 

@@ -57,6 +57,7 @@ final readonly class DatabaseReportArchiver implements ReportArchiver
         private SiteRepository $sites,
         private OptionRepository $options,
         private SegmentDefinitionValidator $segmentValidator,
+        private VisitSegmentApplicator $visitSegments,
         private Dispatcher $events,
     ) {}
 
@@ -447,6 +448,8 @@ final readonly class DatabaseReportArchiver implements ReportArchiver
             ->where('visit_last_action_time', '>=', $start->toDateTimeString())
             ->where('visit_last_action_time', '<', $end->toDateTimeString());
         $building = new ArchiveVisitsQueryBuilding($request, $period, $query);
+        $building->segmentApplied = $this->visitSegments->apply($query, $request->segment);
+
         $this->events->dispatch($building);
 
         if (! $building->segmentApplied) {
