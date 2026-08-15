@@ -126,6 +126,15 @@ final readonly class ApiRequest
     /** @var list<string> */
     private const array REFERRERS_OPTIONAL_SUBTABLE_METHODS = [
         'Referrers.getUrlsForSocial',
+        'Referrers.getEntryPageUrlsForAIAssistant',
+        'Referrers.getEntryPageTitlesForAIAssistant',
+    ];
+
+    /** @var list<string> */
+    private const array REFERRERS_AI_METHODS = [
+        'Referrers.getAIAssistants',
+        'Referrers.getEntryPageUrlsForAIAssistant',
+        'Referrers.getEntryPageTitlesForAIAssistant',
     ];
 
     private const string USER_ID_METHOD = 'UserId.getUsers';
@@ -795,6 +804,12 @@ final readonly class ApiRequest
     {
         return $this->module === 'API'
             && in_array($this->method, self::REFERRERS_SOCIAL_METHODS, true);
+    }
+
+    public function isReferrersAiRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::REFERRERS_AI_METHODS, true);
     }
 
     public function isVisitFrequencyRequest(): bool
@@ -2524,6 +2539,7 @@ final readonly class ApiRequest
                 && ! in_array($method, self::REFERRERS_WEBSITE_METHODS, true)
                 && ! in_array($method, self::REFERRERS_SEARCH_METHODS, true)
                 && ! in_array($method, self::REFERRERS_SOCIAL_METHODS, true)
+                && ! in_array($method, self::REFERRERS_AI_METHODS, true)
                 && $method !== self::USER_ID_METHOD
                 && ! in_array($method, self::ACTIONS_METHODS, true)
                 && ! in_array($method, self::EXAMPLE_PLUGIN_REPORT_METHODS, true)
@@ -2811,6 +2827,7 @@ final readonly class ApiRequest
             'Events.getAction' => ['eventName', 'eventCategory'],
             'Events.getName' => ['eventAction', 'eventCategory'],
             'BotTracking.getAIChatbotRequests' => ['pages', 'documents'],
+            'Referrers.getAIAssistants' => ['entryPageTitle', 'entryPageUrl'],
             default => null,
         };
 
