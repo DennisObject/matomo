@@ -77,6 +77,7 @@ use App\Matomo\Api\Methods\ReferrersSocialApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersTypeApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersWebsiteApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
+use App\Matomo\Api\Methods\RowEvolutionApiMethodHandler;
 use App\Matomo\Api\Methods\ScheduledReportsApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorMutationApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorReadApiMethodHandler;
@@ -1773,6 +1774,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ProcessedReportApiMethodHandler::class),
                 $application->make(ApiOverviewMethodHandler::class),
                 $application->make(SegmentSuggestionsApiMethodHandler::class),
+                $application->make(RowEvolutionApiMethodHandler::class),
                 $application->make(CorePluginsAdminApiMethodHandler::class),
                 $application->make(CoreAdminHomeApiMethodHandler::class),
                 $application->make(SitesManagerApiMethodHandler::class),

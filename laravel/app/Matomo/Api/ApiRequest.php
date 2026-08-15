@@ -555,6 +555,7 @@ final readonly class ApiRequest
         public ?ProcessedReportRequest $processedReport,
         public ?ApiOverviewRequest $apiOverview,
         public ?SegmentSuggestionsRequest $segmentSuggestions,
+        public ?RowEvolutionRequest $rowEvolution,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -657,6 +658,7 @@ final readonly class ApiRequest
             processedReport: null,
             apiOverview: null,
             segmentSuggestions: null,
+            rowEvolution: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1288,6 +1290,7 @@ final readonly class ApiRequest
             processedReport: self::processedReport($request, $module, $method),
             apiOverview: self::apiOverview($request, $module, $method),
             segmentSuggestions: self::segmentSuggestions($request, $module, $method),
+            rowEvolution: self::rowEvolution($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -3227,6 +3230,24 @@ final readonly class ApiRequest
         return new SegmentSuggestionsRequest(
             siteId: self::requiredInteger($request, 'idSite'),
             segmentName: self::requiredString($request, 'segmentName'),
+        );
+    }
+
+    private static function rowEvolution(Request $request, string $module, string $method): ?RowEvolutionRequest
+    {
+        if ($module !== 'API' || $method !== 'API.getRowEvolution') {
+            return null;
+        }
+
+        return new RowEvolutionRequest(
+            siteId: self::requiredInteger($request, 'idSite'),
+            period: self::requiredString($request, 'period'),
+            date: self::requiredString($request, 'date'),
+            apiModule: self::requiredString($request, 'apiModule'),
+            apiAction: self::requiredString($request, 'apiAction'),
+            label: self::nullableStringInput($request, 'label'),
+            segment: self::nullableStringInput($request, 'segment'),
+            column: self::nullableStringInput($request, 'column'),
         );
     }
 
