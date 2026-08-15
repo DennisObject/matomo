@@ -15,6 +15,10 @@ use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Dashboard\DashboardLayoutProvider;
 use App\Matomo\Dashboard\DashboardRecipientPolicy;
 use App\Matomo\Dashboard\DashboardRepository;
+use App\Matomo\Feedback\FeedbackFeatureNameResolver;
+use App\Matomo\Feedback\FeedbackMailer;
+use App\Matomo\Feedback\FeedbackSettings;
+use App\Matomo\Feedback\FeedbackStore;
 use App\Matomo\Geolocation\CountryMetadataProvider;
 use App\Matomo\Geolocation\GeolocationProviderRegistry;
 use App\Matomo\Geolocation\GeolocationSettings;
@@ -54,6 +58,43 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->app->instance(FeedbackStore::class, new class implements FeedbackStore
+        {
+            public function emailForLogin(string $login): string
+            {
+                return '';
+            }
+
+            public function setNextReminder(string $login, string $date): void {}
+        });
+        $this->app->instance(FeedbackMailer::class, new class implements FeedbackMailer
+        {
+            public function send(
+                string $recipient,
+                string $replyTo,
+                string $subject,
+                string $body,
+                string $host,
+            ): void {}
+        });
+        $this->app->instance(
+            FeedbackFeatureNameResolver::class,
+            new class implements FeedbackFeatureNameResolver
+            {
+                public function englishName(string $name, string $language): string
+                {
+                    return $name;
+                }
+            },
+        );
+        $this->app->instance(FeedbackSettings::class, new class implements FeedbackSettings
+        {
+            public function recipient(): string
+            {
+                return 'feedback@matomo.org';
+            }
+        });
 
         $this->app->instance(AiProviderCentralConfiguration::class, new AiProviderCentralConfiguration);
         $this->app->instance(

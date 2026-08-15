@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 132 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 135 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Not ported |
@@ -84,6 +84,8 @@ Handled reporting API method names:
   view-access checks.
 - `ExampleUI`: all 4 API methods, including hourly and evolution temperature series, localized
   period labels, planet ratios, and optional logo and URL metadata.
+- `Feedback`: all 3 API methods, including localized validation, English feedback labels, configured
+  plain-text email delivery, permission checks, and legacy per-user reminder storage.
 - `Tour`: all 3 API methods, including localized challenge state, extension events, and legacy per-user progress storage.
 - `TwoFactorAuth`: `resetTwoFactorAuth`, including password confirmation and transactional recovery-code removal.
 - `UserCountry`: all 8 API methods, including archive reports, localized location metadata, IP geolocation through the default, MaxMind database, or server-module provider, and protected provider selection.
@@ -112,7 +114,7 @@ Reporting API module matrix:
 | `ExamplePlugin` | 4 | 4 | 0 |
 | `ExampleReport` | 1 | 1 | 0 |
 | `ExampleUI` | 4 | 4 | 0 |
-| `Feedback` | 3 | 0 | 3 |
+| `Feedback` | 3 | 3 | 0 |
 | `Goals` | 12 | 0 | 12 |
 | `ImageGraph` | 1 | 0 | 1 |
 | `Insights` | 5 | 0 | 5 |

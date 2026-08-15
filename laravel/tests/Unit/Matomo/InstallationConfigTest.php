@@ -55,6 +55,10 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(['email', 'password'], $configuration->commonPiiParameters());
         $this->assertSame('fr', $configuration->defaultLanguage());
         $this->assertSame('language_cookie', $configuration->languageCookieName());
+        $this->assertSame('product@example.test', $configuration->feedbackEmailAddress());
+        $this->assertFalse($configuration->emailsEnabled());
+        $this->assertSame('reports@{DOMAIN}', $configuration->noReplyEmailAddress());
+        $this->assertSame('Analytics Reports', $configuration->noReplyEmailName());
         $this->assertSame(['en', 'fr'], $configuration->availableLanguages());
         $this->assertTrue($configuration->uniqueVisitorsEnabled('day'));
         $this->assertFalse($configuration->uniqueVisitorsEnabled('year'));
@@ -172,6 +176,10 @@ class InstallationConfigTest extends TestCase
             currencies[BTC] = "Bitcoin"
             default_language = "fr"
             language_cookie_name = "language_cookie"
+            feedback_email_address = "product@example.test"
+            emails_enabled = 0
+            noreply_email_address = "reports@{DOMAIN}"
+            noreply_email_name = "Analytics Reports"
             {$extraGeneral}
 
             [Plugins]
