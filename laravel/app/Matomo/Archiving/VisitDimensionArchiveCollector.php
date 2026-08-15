@@ -12,6 +12,7 @@ use App\Matomo\Sites\SiteRepository;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
+use InvalidArgumentException;
 use stdClass;
 
 final readonly class VisitDimensionArchiveCollector
@@ -38,6 +39,7 @@ final readonly class VisitDimensionArchiveCollector
      *     reports: list<string>,
      *     columns: list<string>,
      *     kind?: 'browser-language'|'city'|'concat-null'|'hour-local'|'hour-server'|'os-version'|'region'|'resolution'|'user-id',
+     *     conversions?: bool,
      *     metadata?: 'city-coordinates',
      *     limit?: int
      * }>
@@ -48,6 +50,7 @@ final readonly class VisitDimensionArchiveCollector
             'reports' => ['VisitTime.getVisitInformationPerServerTime'],
             'columns' => ['visit_first_action_time'],
             'kind' => 'hour-server',
+            'conversions' => true,
         ],
         'VisitTime_localTime' => [
             'plugin' => 'VisitTime',
@@ -93,12 +96,14 @@ final readonly class VisitDimensionArchiveCollector
                 'UserCountry.getNumberOfDistinctCountries',
             ],
             'columns' => ['location_country'],
+            'conversions' => true,
         ],
         'UserCountry_region' => [
             'plugin' => 'UserCountry',
             'reports' => ['UserCountry.getRegion'],
             'columns' => ['location_region', 'location_country'],
             'kind' => 'region',
+            'conversions' => true,
         ],
         'UserCountry_city' => [
             'plugin' => 'UserCountry',
@@ -106,22 +111,26 @@ final readonly class VisitDimensionArchiveCollector
             'columns' => ['location_city', 'location_region', 'location_country'],
             'kind' => 'city',
             'metadata' => 'city-coordinates',
+            'conversions' => true,
         ],
         'DevicesDetection_types' => [
             'plugin' => 'DevicesDetection',
             'reports' => ['DevicesDetection.getType'],
             'columns' => ['config_device_type'],
+            'conversions' => true,
         ],
         'DevicesDetection_brands' => [
             'plugin' => 'DevicesDetection',
             'reports' => ['DevicesDetection.getBrand'],
             'columns' => ['config_device_brand'],
+            'conversions' => true,
         ],
         'DevicesDetection_models' => [
             'plugin' => 'DevicesDetection',
             'reports' => ['DevicesDetection.getModel'],
             'columns' => ['config_device_brand', 'config_device_model'],
             'kind' => 'concat-null',
+            'conversions' => true,
         ],
         'DevicesDetection_os' => [
             'plugin' => 'DevicesDetection',
@@ -138,6 +147,7 @@ final readonly class VisitDimensionArchiveCollector
             'plugin' => 'DevicesDetection',
             'reports' => ['DevicesDetection.getBrowsers'],
             'columns' => ['config_browser_name'],
+            'conversions' => true,
         ],
         'DevicesDetection_browserEngines' => [
             'plugin' => 'DevicesDetection',
@@ -155,6 +165,7 @@ final readonly class VisitDimensionArchiveCollector
     public function __construct(
         private Connection $connection,
         private ArchiveVisitQueryFactory $visitQueries,
+        private ArchiveConversionQueryFactory $conversionQueries,
         private ReportingSubperiodFactory $subperiods,
         private SegmentHashResolver $segments,
         private BlobArchiveRepository $blobs,
@@ -190,8 +201,8 @@ final readonly class VisitDimensionArchiveCollector
     }
 
     /**
-     * @param  array{plugin: string, reports: list<string>, columns: list<string>, kind?: string, metadata?: string, limit?: int}  $definition
-     * @return list<array{0: array<string, float|int|string|null>, 1: array<string, float|int|string|null>}>
+     * @param  array{plugin: string, reports: list<string>, columns: list<string>, kind?: string, conversions?: bool, metadata?: string, limit?: int}  $definition
+     * @return list<array{0: array<int|string, mixed>, 1: array<string, float|int|string|null>}>
      */
     private function dayRows(
         ArchiveReportsCollecting $event,
@@ -257,6 +268,44 @@ final readonly class VisitDimensionArchiveCollector
             );
         }
 
+        if (($definition['conversions'] ?? false)
+            && $this->conversionColumnsExist($definition['columns'], $kind)) {
+            $conversionQuery = $this->conversionQueries->make(
+                $event->request,
+                $event->period,
+                $timezone,
+            );
+            $this->selectConversionDimensions($conversionQuery, $definition['columns'], $kind);
+            $conversionQuery
+                ->addSelect('log_conversion.idgoal')
+                ->selectRaw($this->conversionMetricSelect())
+                ->addSelect($this->conversionVisitCountSelect())
+                ->groupBy('log_conversion.idgoal');
+
+            foreach ($conversionQuery->cursor() as $result) {
+                $label = $this->label(
+                    $result,
+                    $definition['columns'],
+                    $kind,
+                    $event->period,
+                    $timezone,
+                );
+
+                if ($label === null) {
+                    continue;
+                }
+
+                $this->mergeBoundedRow(
+                    $rows,
+                    $summary,
+                    $label,
+                    $this->conversionMetrics($result),
+                    [],
+                    $limit,
+                );
+            }
+        }
+
         if ($summary !== []) {
             $rows += $summary;
         }
@@ -273,7 +322,7 @@ final readonly class VisitDimensionArchiveCollector
     }
 
     /**
-     * @return list<array{0: array<string, float|int|string|null>, 1: array<string, float|int|string|null>}>
+     * @return list<array{0: array<int|string, mixed>, 1: array<string, float|int|string|null>}>
      */
     private function parentRows(ArchiveReportsCollecting $event, string $recordName): array
     {
@@ -359,6 +408,31 @@ final readonly class VisitDimensionArchiveCollector
             ->groupByRaw('HOUR(visit_first_action_time)');
     }
 
+    /** @param list<string> $columns */
+    private function selectConversionDimensions(Builder $query, array $columns, string $kind): void
+    {
+        if ($kind === 'hour-server') {
+            if ($this->connection->getDriverName() === 'sqlite') {
+                $query->selectRaw("CAST(strftime('%H', server_time) AS INTEGER) AS dimension_0")
+                    ->groupByRaw("CAST(strftime('%H', server_time) AS INTEGER)");
+            } else {
+                $query->selectRaw('HOUR(server_time) AS dimension_0')
+                    ->groupByRaw('HOUR(server_time)');
+            }
+
+            return;
+        }
+
+        foreach ($columns as $index => $column) {
+            $query->addSelect("log_conversion.{$column} AS dimension_{$index}");
+        }
+
+        $query->groupBy(array_map(
+            static fn (string $column): string => 'log_conversion.'.$column,
+            $columns,
+        ));
+    }
+
     /** @return literal-string */
     private function metricSelect(): string
     {
@@ -372,6 +446,44 @@ final readonly class VisitDimensionArchiveCollector
             'COALESCE(SUM(CASE WHEN visit_total_actions IN (0, 1) THEN 1 ELSE 0 END), 0) AS bounce_count',
             'COALESCE(SUM(CASE WHEN visit_goal_converted = 1 THEN 1 ELSE 0 END), 0) AS nb_visits_converted',
         ]);
+    }
+
+    /** @return literal-string */
+    private function conversionMetricSelect(): string
+    {
+        return implode(', ', [
+            'COUNT(*) AS nb_conversions',
+            $this->boundedRevenueSelect('revenue'),
+            $this->boundedRevenueSelect('revenue_subtotal'),
+            $this->boundedRevenueSelect('revenue_tax'),
+            $this->boundedRevenueSelect('revenue_shipping'),
+            $this->boundedRevenueSelect('revenue_discount'),
+            'COALESCE(SUM(items), 0) AS items',
+        ]);
+    }
+
+    private function conversionVisitCountSelect(): TrustedSegmentSqlExpression
+    {
+        $idVisit = $this->connection->getQueryGrammar()->wrap('log_conversion.idvisit');
+
+        return new TrustedSegmentSqlExpression(
+            "COUNT(DISTINCT {$idVisit}) AS nb_visits_converted",
+        );
+    }
+
+    /** @return literal-string */
+    private function boundedRevenueSelect(string $column): string
+    {
+        return match ($column) {
+            'revenue' => 'ROUND(SUM(CASE WHEN ABS(revenue) > 1000000000000 THEN 0 ELSE COALESCE(revenue, 0) END), 2) AS revenue',
+            'revenue_subtotal' => 'ROUND(SUM(CASE WHEN ABS(revenue_subtotal) > 1000000000000 THEN 0 ELSE COALESCE(revenue_subtotal, 0) END), 2) AS revenue_subtotal',
+            'revenue_tax' => 'ROUND(SUM(CASE WHEN ABS(revenue_tax) > 1000000000000 THEN 0 ELSE COALESCE(revenue_tax, 0) END), 2) AS revenue_tax',
+            'revenue_shipping' => 'ROUND(SUM(CASE WHEN ABS(revenue_shipping) > 1000000000000 THEN 0 ELSE COALESCE(revenue_shipping, 0) END), 2) AS revenue_shipping',
+            'revenue_discount' => 'ROUND(SUM(CASE WHEN ABS(revenue_discount) > 1000000000000 THEN 0 ELSE COALESCE(revenue_discount, 0) END), 2) AS revenue_discount',
+            default => throw new InvalidArgumentException(
+                "The conversion revenue column '{$column}' is not supported.",
+            ),
+        };
     }
 
     /**
@@ -456,6 +568,38 @@ final readonly class VisitDimensionArchiveCollector
         return $metrics;
     }
 
+    /** @return array<string, int|float> */
+    private function conversionMetrics(stdClass $row): array
+    {
+        $goalId = (int) ($row->idgoal ?? 0);
+        $metrics = [
+            'nb_visits' => 0,
+            "goal_{$goalId}_nb_conversions" => $this->numeric($row->nb_conversions ?? null),
+            "goal_{$goalId}_revenue" => $this->numeric($row->revenue ?? null),
+            "goal_{$goalId}_nb_visits_converted" => $this->numeric($row->nb_visits_converted ?? null),
+        ];
+
+        if ($goalId <= 0) {
+            $metrics["goal_{$goalId}_items"] = $this->numeric($row->items ?? null);
+        }
+
+        if ($goalId === 0) {
+            $metrics += [
+                'goal_0_revenue_subtotal' => $this->numeric($row->revenue_subtotal ?? null),
+                'goal_0_revenue_tax' => $this->numeric($row->revenue_tax ?? null),
+                'goal_0_revenue_shipping' => $this->numeric($row->revenue_shipping ?? null),
+                'goal_0_revenue_discount' => $this->numeric($row->revenue_discount ?? null),
+            ];
+        }
+
+        if ($goalId >= 0) {
+            $metrics['nb_conversions'] = $metrics["goal_{$goalId}_nb_conversions"];
+            $metrics['revenue'] = $metrics["goal_{$goalId}_revenue"];
+        }
+
+        return $metrics;
+    }
+
     /**
      * @param  array<string, array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>}>  $rows
      * @param  array<string, float|int|string|null>  $columns
@@ -533,7 +677,7 @@ final readonly class VisitDimensionArchiveCollector
 
     /**
      * @param  array<string, array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>}>  $rows
-     * @return list<array{0: array<string, float|int|string|null>, 1: array<string, float|int|string|null>}>
+     * @return list<array{0: array<int|string, mixed>, 1: array<string, float|int|string|null>}>
      */
     private function serializableRows(array $rows, int $limit, bool $sortByLabel): array
     {
@@ -575,7 +719,10 @@ final readonly class VisitDimensionArchiveCollector
         }
 
         return array_map(
-            static fn (array $row): array => [$row['columns'], $row['metadata']],
+            static fn (array $row): array => [
+                ArchiveGoalMetrics::nest($row['columns']),
+                $row['metadata'],
+            ],
             $rows,
         );
     }
@@ -607,6 +754,25 @@ final readonly class VisitDimensionArchiveCollector
     private function columnsExist(array $columns): bool
     {
         return $this->connection->getSchemaBuilder()->hasColumns('log_visit', $columns);
+    }
+
+    /** @param list<string> $columns */
+    private function conversionColumnsExist(array $columns, string $kind): bool
+    {
+        $dimensionColumns = $kind === 'hour-server' ? [] : $columns;
+
+        return $this->connection->getSchemaBuilder()->hasColumns('log_conversion', [
+            ...$dimensionColumns,
+            'idgoal',
+            'idvisit',
+            'server_time',
+            'revenue',
+            'revenue_subtotal',
+            'revenue_tax',
+            'revenue_shipping',
+            'revenue_discount',
+            'items',
+        ]);
     }
 
     private function numeric(mixed $value): int|float

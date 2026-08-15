@@ -18,7 +18,13 @@ final readonly class ResolvedSegmentCondition
         public ?ActionSegmentDefinition $action = null,
         public ?ConversionSegmentDefinition $conversion = null,
         public array $unionExpressions = [],
+        public bool $conversionRoot = false,
     ) {}
+
+    public function isDirectConversion(): bool
+    {
+        return $this->conversionRoot && $this->conversion?->scope === 'conversion';
+    }
 
     public function isAction(): bool
     {
@@ -40,6 +46,7 @@ final readonly class ResolvedSegmentCondition
     public function isNegativeConversion(): bool
     {
         return $this->conversion !== null
+            && ! $this->isDirectConversion()
             && $this->condition->value !== ''
             && in_array($this->condition->operator, ['!=', '!@'], true);
     }
@@ -51,6 +58,10 @@ final readonly class ResolvedSegmentCondition
 
     public function requiresMissingRelationBranch(): bool
     {
+        if ($this->isDirectConversion()) {
+            return false;
+        }
+
         if ($this->condition->operator !== '==' || $this->condition->value !== '') {
             return false;
         }
@@ -74,6 +85,6 @@ final readonly class ResolvedSegmentCondition
             return 'action';
         }
 
-        return $this->conversion?->scope;
+        return $this->isDirectConversion() ? null : $this->conversion?->scope;
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\Archiving\ArchiveConversionQueryFactory;
 use App\Matomo\Archiving\ArchiveRecordSet;
 use App\Matomo\Archiving\ArchiveReportRequest;
 use App\Matomo\Archiving\ArchiveVisitQueryFactory;
@@ -12,6 +13,7 @@ use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\DynamicSegmentResolver;
+use App\Matomo\Archiving\Events\ArchiveConversionsQueryBuilding;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\Events\ArchiveReportsCompleted;
 use App\Matomo\Archiving\Events\ArchiveReportsStarting;
@@ -191,6 +193,19 @@ class DatabaseReportArchiverTest extends TestCase
             $table->integer('idgoal');
             $table->string('idorder')->nullable();
             $table->float('revenue')->nullable();
+            $table->float('revenue_subtotal')->nullable();
+            $table->float('revenue_tax')->nullable();
+            $table->float('revenue_shipping')->nullable();
+            $table->float('revenue_discount')->nullable();
+            $table->unsignedInteger('items')->nullable();
+            $table->dateTime('server_time')->nullable();
+            $table->string('config_device_type')->nullable();
+            $table->string('config_device_brand')->nullable();
+            $table->string('config_device_model')->nullable();
+            $table->string('config_browser_name')->nullable();
+            $table->string('location_country')->nullable();
+            $table->string('location_region')->nullable();
+            $table->string('location_city')->nullable();
             $table->string('custom_dimension_3')->nullable();
         });
         $schema->create('log_conversion_item', static function (Blueprint $table): void {
@@ -575,6 +590,12 @@ class DatabaseReportArchiverTest extends TestCase
         $this->insertVisits();
         $this->insertActionRows();
         $this->insertConversionRows();
+        $this->connection->table('log_visit')->where('idvisit', 1)->update([
+            'visit_first_action_time' => '2026-08-14 12:00:00',
+        ]);
+        $this->connection->table('log_visit')->where('idvisit', 2)->update([
+            'visit_first_action_time' => '2026-08-15 10:00:00',
+        ]);
         $this->connection->table('log_visit')->insert(
             $this->visit(1, '2026-08-15 10:30:00', 'visitor-c', 'config-c', null, 1, 5, 0, 'nz'),
         );
@@ -633,6 +654,62 @@ class DatabaseReportArchiverTest extends TestCase
                 "The conversion segment '{$segment}' has the wrong visit count.",
             );
         }
+
+        $period = (new CarbonReportingPeriodFactory)->make(
+            'day',
+            '2026-08-15',
+            'Pacific/Auckland',
+        )[0][0];
+        $conversionQueries = new ArchiveConversionQueryFactory(
+            $this->connection,
+            $this->visitSegmentApplicator(),
+            $this->events,
+        );
+        $conversionSegments = [
+            'visitConvertedGoalId==1' => 1,
+            'visitConvertedGoalName==Newsletter' => 1,
+            'visitConvertedGoalId==2,orderId==ORDER-2' => 2,
+            'visitConvertedGoalId==0;orderId==ORDER-2' => 1,
+            'productName==Widget' => 1,
+            'productName==Widget,visitConvertedGoalId==2' => 2,
+            'countryCode==au' => 3,
+            'visitConvertedGoalId==1,countryCode==au' => 4,
+            'visitStartServerHour==12' => 1,
+        ];
+
+        foreach ($conversionSegments as $segment => $expectedConversions) {
+            $count = $conversionQueries->make(
+                new ArchiveReportRequest(1, 'day', '2026-08-15', segment: $segment),
+                $period,
+                'Pacific/Auckland',
+            )->count();
+
+            $this->assertSame(
+                $expectedConversions,
+                $count,
+                "The conversion archive segment '{$segment}' has the wrong conversion count.",
+            );
+        }
+
+        $this->events->listen(ArchiveConversionsQueryBuilding::class, static function (
+            ArchiveConversionsQueryBuilding $event,
+        ): void {
+            if ($event->request->segment === 'extensionConversion==one') {
+                $event->query->where('log_conversion.idgoal', 1);
+                $event->segmentApplied = true;
+            }
+        });
+        $extensionCount = $conversionQueries->make(
+            new ArchiveReportRequest(
+                1,
+                'day',
+                '2026-08-15',
+                segment: 'extensionConversion==one',
+            ),
+            $period,
+            'Pacific/Auckland',
+        )->count();
+        $this->assertSame(1, $extensionCount);
     }
 
     public function test_revenue_segments_reject_legacy_unsupported_operators(): void
@@ -739,6 +816,27 @@ class DatabaseReportArchiverTest extends TestCase
                 "The dynamic segment '{$segment}' has the wrong visit count.",
             );
         }
+
+        $period = (new CarbonReportingPeriodFactory)->make(
+            'day',
+            '2026-08-15',
+            'Pacific/Auckland',
+        )[0][0];
+        $conversionCount = (new ArchiveConversionQueryFactory(
+            $this->connection,
+            $this->visitSegmentApplicator(),
+            $this->events,
+        ))->make(
+            new ArchiveReportRequest(
+                1,
+                'day',
+                '2026-08-15',
+                segment: 'dimension3==conversion-dimension',
+            ),
+            $period,
+            'Pacific/Auckland',
+        )->count();
+        $this->assertSame(1, $conversionCount);
 
         $query = $this->connection->table('log_visit');
         $sql = $query->toSql();
@@ -883,6 +981,88 @@ class DatabaseReportArchiverTest extends TestCase
             'config_java' => 1,
             'config_pdf' => 0,
         ]);
+        $this->connection->table('log_conversion')->insert([
+            [
+                'idsite' => 1,
+                'idvisit' => 1,
+                'idgoal' => 1,
+                'idorder' => null,
+                'revenue' => 50,
+                'revenue_subtotal' => null,
+                'revenue_tax' => null,
+                'revenue_shipping' => null,
+                'revenue_discount' => null,
+                'items' => null,
+                'server_time' => '2026-08-14 13:30:00',
+                'config_device_type' => 0,
+                'config_device_brand' => 'Unknown',
+                'config_device_model' => 'Desktop',
+                'config_browser_name' => 'FF',
+                'location_country' => 'nz',
+                'location_region' => 'AUK',
+                'location_city' => 'Auckland',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 1,
+                'idgoal' => 2,
+                'idorder' => null,
+                'revenue' => 1_000_000_000_001,
+                'revenue_subtotal' => null,
+                'revenue_tax' => null,
+                'revenue_shipping' => null,
+                'revenue_discount' => null,
+                'items' => null,
+                'server_time' => '2026-08-14 13:45:00',
+                'config_device_type' => 0,
+                'config_device_brand' => 'Unknown',
+                'config_device_model' => 'Desktop',
+                'config_browser_name' => 'OP',
+                'location_country' => 'nz',
+                'location_region' => 'AUK',
+                'location_city' => 'Auckland',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idgoal' => 0,
+                'idorder' => 'ORDER-2',
+                'revenue' => 125,
+                'revenue_subtotal' => 100,
+                'revenue_tax' => 10,
+                'revenue_shipping' => 15,
+                'revenue_discount' => 0,
+                'items' => 3,
+                'server_time' => '2026-08-15 10:00:00',
+                'config_device_type' => 1,
+                'config_device_brand' => 'Google',
+                'config_device_model' => 'Pixel',
+                'config_browser_name' => 'CH',
+                'location_country' => 'au',
+                'location_region' => 'NSW',
+                'location_city' => 'Sydney',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idgoal' => -1,
+                'idorder' => null,
+                'revenue' => 45,
+                'revenue_subtotal' => null,
+                'revenue_tax' => null,
+                'revenue_shipping' => null,
+                'revenue_discount' => null,
+                'items' => 2,
+                'server_time' => '2026-08-15 10:30:00',
+                'config_device_type' => 1,
+                'config_device_brand' => 'Google',
+                'config_device_model' => 'Pixel',
+                'config_browser_name' => 'CH',
+                'location_country' => 'au',
+                'location_region' => 'NSW',
+                'location_city' => 'Sydney',
+            ],
+        ]);
         $this->registerVisitDimensionCollector();
 
         $this->archiver()->archive(new ArchiveReportRequest(1, 'day', '2026-08-15'));
@@ -901,6 +1081,30 @@ class DatabaseReportArchiverTest extends TestCase
         )[1][$period->rangeKey()];
         $this->assertSame(['CH;140.0', 'FF;142.0'], array_column(array_column($browserRows, 'columns'), 'label'));
         $this->assertSame([1, 1], array_column(array_column($browserRows, 'columns'), 'nb_visits'));
+        $browserFamilyRows = $repository->rows(
+            [1],
+            [$period],
+            '',
+            'DevicesDetection_browsers',
+        )[1][$period->rangeKey()];
+        $browsersByLabel = [];
+
+        foreach ($browserFamilyRows as $row) {
+            $browsersByLabel[(string) $row['columns']['label']] = $row['columns'];
+        }
+
+        $this->assertSame(1, $browsersByLabel['CH']['nb_conversions']);
+        $this->assertSame(125, $browsersByLabel['CH']['revenue']);
+        $this->assertSame(1, $browsersByLabel['CH']['goal_0_nb_conversions']);
+        $this->assertSame(3, $browsersByLabel['CH']['goal_0_items']);
+        $this->assertSame(100, $browsersByLabel['CH']['goal_0_revenue_subtotal']);
+        $this->assertSame(1, $browsersByLabel['CH']['goal_-1_nb_conversions']);
+        $this->assertSame(2, $browsersByLabel['CH']['goal_-1_items']);
+        $this->assertSame(1, $browsersByLabel['FF']['nb_conversions']);
+        $this->assertSame(50, $browsersByLabel['FF']['revenue']);
+        $this->assertSame(0, $browsersByLabel['OP']['nb_visits']);
+        $this->assertSame(1, $browsersByLabel['OP']['nb_conversions']);
+        $this->assertSame(0, $browsersByLabel['OP']['goal_2_revenue']);
         $localTimeRows = $repository->rows(
             [1],
             [$period],
@@ -920,6 +1124,8 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertCount(24, $serverTimeRows);
         $this->assertSame(1, $serverTimeRows[0]['columns']['nb_visits']);
         $this->assertSame(1, $serverTimeRows[23]['columns']['nb_visits']);
+        $this->assertSame(2, $serverTimeRows[1]['columns']['nb_conversions']);
+        $this->assertSame(1, $serverTimeRows[22]['columns']['nb_conversions']);
         $userRows = $repository->rows(
             [1],
             [$period],
@@ -978,6 +1184,26 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertSame(2, $pluginsByLabel['java']);
         $this->assertSame(1, $pluginsByLabel['pdf']);
 
+        $goalSegment = 'visitConvertedGoalId==1';
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $goalSegment,
+            plugin: 'DevicesDetection',
+            reports: ['DevicesDetection.getBrowsers'],
+        ));
+        $goalSegmentRows = $repository->rows(
+            [1],
+            [$period],
+            (new DatabaseSegmentHashResolver($this->connection))->resolve($goalSegment),
+            'DevicesDetection_browsers',
+        )[1][$period->rangeKey()];
+        $this->assertCount(1, $goalSegmentRows);
+        $this->assertSame('FF', $goalSegmentRows[0]['columns']['label']);
+        $this->assertSame(1, $goalSegmentRows[0]['columns']['goal_1_nb_conversions']);
+        $this->assertArrayNotHasKey('goal_2_nb_conversions', $goalSegmentRows[0]['columns']);
+
         $weekResult = $this->archiver()->archive(new ArchiveReportRequest(
             siteId: 1,
             period: 'week',
@@ -1005,6 +1231,24 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertSame(2, $weekByLabel['']['sum_daily_nb_uniq_visitors']);
         $this->assertSame(1, $weekByLabel['CH;140.0']['nb_visits']);
         $this->assertSame(1, $weekByLabel['FF;142.0']['sum_daily_nb_uniq_visitors']);
+        $weekBrowserRows = $repository->rows(
+            [1],
+            [$week],
+            '',
+            'DevicesDetection_browsers',
+        )[1][$week->rangeKey()];
+        $weekBrowsersByLabel = [];
+
+        foreach ($weekBrowserRows as $row) {
+            $weekBrowsersByLabel[(string) $row['columns']['label']] = $row['columns'];
+        }
+
+        $this->assertSame(1, $weekBrowsersByLabel['CH']['nb_conversions']);
+        $this->assertSame(125, $weekBrowsersByLabel['CH']['revenue']);
+        $this->assertSame(1, $weekBrowsersByLabel['CH']['goal_0_nb_conversions']);
+        $this->assertSame(1, $weekBrowsersByLabel['FF']['goal_1_nb_conversions']);
+        $this->assertSame(0, $weekBrowsersByLabel['OP']['nb_visits']);
+        $this->assertSame(1, $weekBrowsersByLabel['OP']['goal_2_nb_conversions']);
         $weekPluginRows = $repository->rows(
             [1],
             [$week],
@@ -1097,6 +1341,7 @@ class DatabaseReportArchiverTest extends TestCase
         $collector = new VisitDimensionArchiveCollector(
             connection: $this->connection,
             visitQueries: new ArchiveVisitQueryFactory($this->connection, $visits, $this->events),
+            conversionQueries: new ArchiveConversionQueryFactory($this->connection, $visits, $this->events),
             subperiods: new CarbonReportingSubperiodFactory,
             segments: new DatabaseSegmentHashResolver($this->connection),
             blobs: new DatabaseBlobArchiveRepository($this->connection),
@@ -1243,10 +1488,10 @@ class DatabaseReportArchiverTest extends TestCase
             ['idsite' => 2, 'idgoal' => 1, 'name' => 'Other Site Goal'],
         ]);
         $this->connection->table('log_conversion')->insert([
-            ['idsite' => 1, 'idvisit' => 1, 'idgoal' => 1, 'idorder' => null, 'revenue' => 50],
-            ['idsite' => 1, 'idvisit' => 2, 'idgoal' => 0, 'idorder' => 'ORDER-2', 'revenue' => 125],
-            ['idsite' => 1, 'idvisit' => 2, 'idgoal' => -1, 'idorder' => null, 'revenue' => 45],
-            ['idsite' => 1, 'idvisit' => 2, 'idgoal' => 2, 'idorder' => null, 'revenue' => 10],
+            ['idsite' => 1, 'idvisit' => 1, 'idgoal' => 1, 'idorder' => null, 'revenue' => 50, 'server_time' => '2026-08-14 13:00:00'],
+            ['idsite' => 1, 'idvisit' => 2, 'idgoal' => 0, 'idorder' => 'ORDER-2', 'revenue' => 125, 'server_time' => '2026-08-15 10:00:00'],
+            ['idsite' => 1, 'idvisit' => 2, 'idgoal' => -1, 'idorder' => null, 'revenue' => 45, 'server_time' => '2026-08-15 10:05:00'],
+            ['idsite' => 1, 'idvisit' => 2, 'idgoal' => 2, 'idorder' => null, 'revenue' => 10, 'server_time' => '2026-08-15 10:10:00'],
         ]);
         $this->connection->table('log_conversion_item')->insert([
             [

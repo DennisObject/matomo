@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Matomo\Reporting;
 
+use App\Matomo\Archiving\ArchiveGoalMetrics;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
 use stdClass;
@@ -426,6 +427,21 @@ final readonly class DatabaseBlobArchiveRepository implements BlobArchiveMetadat
         $result = [];
 
         foreach ($values as $name => $value) {
+            if ((is_int($name) ? $name === ArchiveGoalMetrics::GOALS_COLUMN : $name === 'goals')
+                && is_array($value)) {
+                $goalColumns = ArchiveGoalMetrics::flatten($value);
+
+                if ($goalColumns === null) {
+                    return null;
+                }
+
+                foreach ($goalColumns as $goalName => $goalValue) {
+                    $result[$goalName] = $goalValue;
+                }
+
+                continue;
+            }
+
             if (! is_float($value) && ! is_int($value) && ! is_string($value) && $value !== null) {
                 return null;
             }

@@ -48,11 +48,13 @@ use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
 use App\Matomo\Api\Methods\VisitorInterestApiMethodHandler;
 use App\Matomo\Api\Methods\VisitsSummaryApiMethodHandler;
 use App\Matomo\Api\Methods\VisitTimeApiMethodHandler;
+use App\Matomo\Archiving\ArchiveConversionQueryFactory;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Archiving\ArchiveVisitQueryFactory;
 use App\Matomo\Archiving\BrowserLanguageArchiveLabeler;
 use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
+use App\Matomo\Archiving\ConversionSegmentApplicator;
 use App\Matomo\Archiving\DatabaseArchiveInvalidationManager;
 use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
@@ -649,6 +651,14 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(
+            ArchiveConversionQueryFactory::class,
+            fn (Application $application): ArchiveConversionQueryFactory => new ArchiveConversionQueryFactory(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                segments: $application->make(ConversionSegmentApplicator::class),
+                events: $application->make(Dispatcher::class),
+            ),
+        );
+        $this->app->singleton(
             BrowserLanguageArchiveLabeler::class,
             fn (Application $application): BrowserLanguageArchiveLabeler => new BrowserLanguageArchiveLabeler(
                 languageCodes: $this->stringResourceKeys(
@@ -665,6 +675,7 @@ class AppServiceProvider extends ServiceProvider
             fn (Application $application): VisitDimensionArchiveCollector => new VisitDimensionArchiveCollector(
                 connection: $application->make(MatomoDatabase::class)->connection(),
                 visitQueries: $application->make(ArchiveVisitQueryFactory::class),
+                conversionQueries: $application->make(ArchiveConversionQueryFactory::class),
                 subperiods: $application->make(ReportingSubperiodFactory::class),
                 segments: $application->make(SegmentHashResolver::class),
                 blobs: $application->make(BlobArchiveRepository::class),
@@ -698,6 +709,7 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(VisitSegmentApplicator::class, BuiltInVisitSegmentApplicator::class);
+        $this->app->singleton(ConversionSegmentApplicator::class, BuiltInVisitSegmentApplicator::class);
         $this->app->singleton(
             ReportingSubperiodFactory::class,
             CarbonReportingSubperiodFactory::class,
