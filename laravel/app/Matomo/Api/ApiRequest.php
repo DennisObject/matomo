@@ -180,6 +180,12 @@ final readonly class ApiRequest
         'BotTracking.getDocumentUrlsForAIChatbot',
     ];
 
+    /** @var list<string> */
+    private const array BOT_TRACKING_REALTIME_METHODS = [
+        'BotTracking.getAIChatbotsRealTime',
+        'BotTracking.getTopPageUrlsRealTime',
+    ];
+
     private const string CUSTOM_JS_TRACKER_METHOD = 'CustomJsTracker.doesIncludePluginTrackersAutomatically';
 
     private const string PROFESSIONAL_SERVICES_METHOD = 'ProfessionalServices.dismissWidget';
@@ -382,6 +388,7 @@ final readonly class ApiRequest
         public ?LanguagesManagerRequest $languagesManager,
         public ?OverlayRequest $overlay,
         public ?TransitionsRequest $transitions,
+        public ?BotTrackingRealtimeRequest $botTrackingRealtime,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -440,6 +447,7 @@ final readonly class ApiRequest
             languagesManager: null,
             overlay: null,
             transitions: null,
+            botTrackingRealtime: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -726,6 +734,12 @@ final readonly class ApiRequest
             && in_array($this->method, self::BOT_TRACKING_ARCHIVE_METHODS, true);
     }
 
+    public function isBotTrackingRealtimeRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::BOT_TRACKING_REALTIME_METHODS, true);
+    }
+
     public function isCustomJsTrackerRequest(): bool
     {
         return $this->module === 'API' && $this->method === self::CUSTOM_JS_TRACKER_METHOD;
@@ -909,8 +923,37 @@ final readonly class ApiRequest
             languagesManager: self::languagesManager($request, $module, $method),
             overlay: self::overlay($request, $module, $method),
             transitions: self::transitions($request, $module, $method),
+            botTrackingRealtime: self::botTrackingRealtime($request, $module, $method),
             authentication: $authentication,
         );
+    }
+
+    private static function botTrackingRealtime(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?BotTrackingRealtimeRequest {
+        if ($module !== 'API' || ! in_array($method, self::BOT_TRACKING_REALTIME_METHODS, true)) {
+            return null;
+        }
+
+        [$siteIds, $allSites] = self::reportSiteIds($request);
+        $lastMinutes = self::inputValue($request, 'lastMinutes');
+
+        if ($lastMinutes === null || $lastMinutes === '') {
+            $lastMinutes = 30;
+        }
+
+        if ((! is_int($lastMinutes) && (! is_string($lastMinutes) || ! ctype_digit($lastMinutes)))
+            || (int) $lastMinutes < 1
+            || (int) $lastMinutes > 720) {
+            throw new InvalidApiParameter(
+                'lastMinutes',
+                'lastMinutes only accepts values between 1 and 720',
+            );
+        }
+
+        return new BotTrackingRealtimeRequest($siteIds, $allSites, (int) $lastMinutes);
     }
 
     private static function coreAdminHome(
