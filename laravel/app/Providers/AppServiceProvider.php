@@ -48,6 +48,7 @@ use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
 use App\Matomo\Api\Methods\VisitorInterestApiMethodHandler;
 use App\Matomo\Api\Methods\VisitsSummaryApiMethodHandler;
 use App\Matomo\Api\Methods\VisitTimeApiMethodHandler;
+use App\Matomo\Archiving\ArchiveActionQueryFactory;
 use App\Matomo\Archiving\ArchiveConversionQueryFactory;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Archiving\ArchiveVisitQueryFactory;
@@ -57,6 +58,7 @@ use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\ConversionSegmentApplicator;
 use App\Matomo\Archiving\DatabaseArchiveInvalidationManager;
 use App\Matomo\Archiving\DatabaseReportArchiver;
+use App\Matomo\Archiving\EcommerceItemArchiveCollector;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\GoalArchiveCollector;
 use App\Matomo\Archiving\ReportArchiver;
@@ -660,6 +662,14 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(
+            ArchiveActionQueryFactory::class,
+            fn (Application $application): ArchiveActionQueryFactory => new ArchiveActionQueryFactory(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                segments: $application->make(VisitSegmentApplicator::class),
+                events: $application->make(Dispatcher::class),
+            ),
+        );
+        $this->app->singleton(
             ArchiveConversionQueryFactory::class,
             fn (Application $application): ArchiveConversionQueryFactory => new ArchiveConversionQueryFactory(
                 connection: $application->make(MatomoDatabase::class)->connection(),
@@ -713,6 +723,17 @@ class AppServiceProvider extends ServiceProvider
                 blobs: $application->make(BatchBlobArchiveRepository::class),
                 numbers: $application->make(NumericArchiveRepository::class),
                 goals: $application->make(GoalRepository::class),
+                sites: $application->make(SiteRepository::class),
+            ),
+        );
+        $this->app->singleton(
+            EcommerceItemArchiveCollector::class,
+            fn (Application $application): EcommerceItemArchiveCollector => new EcommerceItemArchiveCollector(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                actionQueries: $application->make(ArchiveActionQueryFactory::class),
+                subperiods: $application->make(ReportingSubperiodFactory::class),
+                segments: $application->make(SegmentHashResolver::class),
+                blobs: $application->make(BatchBlobArchiveRepository::class),
                 sites: $application->make(SiteRepository::class),
             ),
         );
@@ -1029,6 +1050,7 @@ class AppServiceProvider extends ServiceProvider
         $events->listen(ArchiveReportsCollecting::class, VisitDimensionArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, VisitAggregateArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, GoalArchiveCollector::class);
+        $events->listen(ArchiveReportsCollecting::class, EcommerceItemArchiveCollector::class);
     }
 
     /**

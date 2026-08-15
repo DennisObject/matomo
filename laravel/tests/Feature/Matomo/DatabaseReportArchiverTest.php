@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\Archiving\ArchiveActionQueryFactory;
 use App\Matomo\Archiving\ArchiveConversionQueryFactory;
 use App\Matomo\Archiving\ArchiveRecordSet;
 use App\Matomo\Archiving\ArchiveReportRequest;
@@ -13,6 +14,8 @@ use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\DynamicSegmentResolver;
+use App\Matomo\Archiving\EcommerceItemArchiveCollector;
+use App\Matomo\Archiving\Events\ArchiveActionsQueryBuilding;
 use App\Matomo\Archiving\Events\ArchiveConversionsQueryBuilding;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\Events\ArchiveReportsCompleted;
@@ -67,6 +70,7 @@ class DatabaseReportArchiverTest extends TestCase
         $schema->create('site', static function (Blueprint $table): void {
             $table->unsignedInteger('idsite')->primary();
             $table->string('timezone');
+            $table->boolean('ecommerce')->default(false);
         });
         $schema->create('option', static function (Blueprint $table): void {
             $table->string('option_name')->primary();
@@ -226,6 +230,9 @@ class DatabaseReportArchiverTest extends TestCase
             $table->unsignedInteger('idaction_category4')->nullable();
             $table->unsignedInteger('idaction_category5')->nullable();
             $table->float('price')->nullable();
+            $table->unsignedInteger('quantity')->default(1);
+            $table->boolean('deleted')->default(false);
+            $table->dateTime('server_time')->nullable();
         });
         $schema->create('custom_dimensions', static function (Blueprint $table): void {
             $table->unsignedInteger('idcustomdimension');
@@ -1477,6 +1484,171 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertSame(1, $weekVisits['9-14']);
     }
 
+    public function test_collects_ecommerce_item_views_carts_segments_and_parent_records(): void
+    {
+        $this->insertVisits();
+        $this->insertActionRows();
+        $this->insertConversionRows();
+        $this->connection->table('site')->where('idsite', 1)->update(['ecommerce' => 1]);
+        $this->connection->table('log_conversion_item')->where('idaction_sku', 21)->update([
+            'quantity' => 2,
+            'server_time' => '2026-08-15 10:00:00',
+        ]);
+        $this->connection->table('log_conversion_item')->where('idaction_sku', 25)->update([
+            'quantity' => 1,
+            'server_time' => '2026-08-15 10:00:00',
+        ]);
+        $this->connection->table('log_conversion_item')->insert([
+            'idsite' => 1,
+            'idvisit' => 2,
+            'idorder' => '0',
+            'idaction_sku' => 21,
+            'idaction_name' => 20,
+            'idaction_category' => 22,
+            'idaction_category2' => 23,
+            'price' => 20,
+            'quantity' => 3,
+            'server_time' => '2026-08-15 10:05:00',
+        ]);
+        $this->connection->table('log_conversion_item')->insert([
+            'idsite' => 1,
+            'idvisit' => 2,
+            'idorder' => 'OVERFLOW',
+            'idaction_sku' => 25,
+            'idaction_name' => 24,
+            'price' => 2_000_000_000_000,
+            'quantity' => 1,
+            'server_time' => '2026-08-15 10:06:00',
+        ]);
+        $this->connection->table('log_action')->insert([
+            'idaction' => 30,
+            'name' => '',
+            'type' => 5,
+        ]);
+        $this->connection->table('log_conversion_item')->insert([
+            'idsite' => 1,
+            'idvisit' => 2,
+            'idorder' => 'UNDEFINED',
+            'idaction_sku' => 30,
+            'idaction_name' => 24,
+            'price' => 5,
+            'quantity' => 1,
+            'server_time' => '2026-08-15 10:07:00',
+        ]);
+        $this->registerEcommerceItemCollector();
+
+        $this->archiver()->archive(new ArchiveReportRequest(1, 'day', '2026-08-15'));
+
+        $periods = new CarbonReportingPeriodFactory;
+        $day = $periods->make('day', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $blobs = new DatabaseBlobArchiveRepository($this->connection);
+        $skuRows = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$day],
+            '',
+            'Goals_ItemsSku',
+        )[1][$day->rangeKey()]);
+        $this->assertSame(99.9, $skuRows['SKU-2']['revenue']);
+        $this->assertSame(2, $skuRows['SKU-2']['quantity']);
+        $this->assertSame(49.95, $skuRows['SKU-2']['price']);
+        $this->assertSame(1, $skuRows['SKU-2']['orders']);
+        $this->assertSame(10, $skuRows['OTHER']['revenue']);
+        $this->assertSame(10, $skuRows['OTHER']['price']);
+        $this->assertSame(2, $skuRows['OTHER']['quantity']);
+        $this->assertSame(2, $skuRows['OTHER']['orders']);
+        $this->assertSame(5, $skuRows['Value not defined']['revenue']);
+        $this->assertSame(1, $skuRows['VIEW-SKU']['nb_uniq_visitors']);
+        $this->assertSame(1, $skuRows['VIEW-SKU']['nb_visits']);
+        $this->assertSame(1, $skuRows['VIEW-SKU']['nb_actions']);
+        $this->assertSame(42.5, $skuRows['VIEW-SKU']['avg_price_viewed']);
+        $cartRows = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$day],
+            '',
+            'Goals_ItemsSku_Cart',
+        )[1][$day->rangeKey()]);
+        $this->assertSame(60, $cartRows['SKU-2']['revenue']);
+        $this->assertSame(3, $cartRows['SKU-2']['quantity']);
+        $this->assertSame(20, $cartRows['SKU-2']['price']);
+        $this->assertSame(1, $cartRows['SKU-2']['orders']);
+        $this->assertSame(42.5, $cartRows['VIEW-SKU']['avg_price_viewed']);
+        $categoryRows = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$day],
+            '',
+            'Goals_ItemsCategory',
+        )[1][$day->rangeKey()]);
+        $this->assertSame(99.9, $categoryRows['Tools']['revenue']);
+        $this->assertSame(99.9, $categoryRows['Sale']['revenue']);
+        $this->assertSame(1, $categoryRows['Viewed Tools']['nb_actions']);
+        $this->assertSame(1, $categoryRows['Featured']['nb_actions']);
+
+        $segment = 'countryCode==nz';
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $segment,
+            plugin: 'Goals',
+        ));
+        $segmentRows = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$day],
+            (new DatabaseSegmentHashResolver($this->connection))->resolve($segment),
+            'Goals_ItemsSku',
+        )[1][$day->rangeKey()]);
+        $this->assertArrayHasKey('SKU-2', $segmentRows);
+        $this->assertArrayNotHasKey('VIEW-SKU', $segmentRows);
+
+        $this->events->listen(ArchiveActionsQueryBuilding::class, static function (
+            ArchiveActionsQueryBuilding $event,
+        ): void {
+            if ($event->request->segment === 'extensionAction==view') {
+                $event->query->where('log_link_visit_action.product_price', 42.5);
+                $event->segmentApplied = true;
+            }
+        });
+        $this->events->listen(ArchiveVisitsQueryBuilding::class, static function (
+            ArchiveVisitsQueryBuilding $event,
+        ): void {
+            if ($event->request->segment === 'extensionAction==view') {
+                $event->query->where('log_visit.idvisit', 2);
+                $event->segmentApplied = true;
+            }
+        });
+        $extensionSegment = 'extensionAction==view';
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $extensionSegment,
+            plugin: 'Goals',
+        ));
+        $extensionRows = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$day],
+            (new DatabaseSegmentHashResolver($this->connection))->resolve($extensionSegment),
+            'Goals_ItemsSku',
+        )[1][$day->rangeKey()]);
+        $this->assertSame(1, $extensionRows['VIEW-SKU']['nb_actions']);
+
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'week',
+            date: '2026-08-15',
+            force: true,
+        ));
+        $week = $periods->make('week', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $weekRows = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$week],
+            '',
+            'Goals_ItemsSku',
+        )[1][$week->rangeKey()]);
+        $this->assertSame(99.9, $weekRows['SKU-2']['revenue']);
+        $this->assertSame(1, $weekRows['VIEW-SKU']['nb_actions']);
+    }
+
     private function archiver(): DatabaseReportArchiver
     {
         return new DatabaseReportArchiver(
@@ -1541,6 +1713,41 @@ class DatabaseReportArchiverTest extends TestCase
             goals: new DatabaseGoalRepository($this->connection),
             sites: new DatabaseSiteRepository($this->connection),
         ));
+    }
+
+    private function registerEcommerceItemCollector(): void
+    {
+        $this->events->listen(ArchiveReportsCollecting::class, new EcommerceItemArchiveCollector(
+            connection: $this->connection,
+            actionQueries: new ArchiveActionQueryFactory(
+                $this->connection,
+                $this->visitSegmentApplicator(),
+                $this->events,
+            ),
+            subperiods: new CarbonReportingSubperiodFactory,
+            segments: new DatabaseSegmentHashResolver($this->connection),
+            blobs: new DatabaseBlobArchiveRepository($this->connection),
+            sites: new DatabaseSiteRepository($this->connection),
+        ));
+    }
+
+    /**
+     * @param  list<array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>}>  $rows
+     * @return array<string, array<string, float|int|string|null>>
+     */
+    private function blobRowsByLabel(array $rows): array
+    {
+        $values = [];
+
+        foreach ($rows as $row) {
+            $label = $row['columns']['label'] ?? null;
+
+            if (is_float($label) || is_int($label) || is_string($label)) {
+                $values[(string) $label] = $row['columns'];
+            }
+        }
+
+        return $values;
     }
 
     /**
