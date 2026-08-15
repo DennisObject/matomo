@@ -99,12 +99,22 @@ final readonly class ApiRequest
     private const array REFERRERS_REQUIRED_SUBTABLE_METHODS = [
         'Referrers.getKeywordsFromCampaignId',
         'Referrers.getUrlsFromWebsiteId',
+        'Referrers.getSearchEnginesFromKeywordId',
+        'Referrers.getKeywordsFromSearchEngineId',
     ];
 
     /** @var list<string> */
     private const array REFERRERS_WEBSITE_METHODS = [
         'Referrers.getWebsites',
         'Referrers.getUrlsFromWebsiteId',
+    ];
+
+    /** @var list<string> */
+    private const array REFERRERS_SEARCH_METHODS = [
+        'Referrers.getKeywords',
+        'Referrers.getSearchEnginesFromKeywordId',
+        'Referrers.getSearchEngines',
+        'Referrers.getKeywordsFromSearchEngineId',
     ];
 
     private const string USER_ID_METHOD = 'UserId.getUsers';
@@ -762,6 +772,12 @@ final readonly class ApiRequest
     {
         return $this->module === 'API'
             && in_array($this->method, self::REFERRERS_WEBSITE_METHODS, true);
+    }
+
+    public function isReferrersSearchRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::REFERRERS_SEARCH_METHODS, true);
     }
 
     public function isVisitFrequencyRequest(): bool
@@ -2489,6 +2505,7 @@ final readonly class ApiRequest
                 && $method !== self::REFERRERS_OVERVIEW_METHOD
                 && ! in_array($method, self::REFERRERS_CAMPAIGN_METHODS, true)
                 && ! in_array($method, self::REFERRERS_WEBSITE_METHODS, true)
+                && ! in_array($method, self::REFERRERS_SEARCH_METHODS, true)
                 && $method !== self::USER_ID_METHOD
                 && ! in_array($method, self::ACTIONS_METHODS, true)
                 && ! in_array($method, self::EXAMPLE_PLUGIN_REPORT_METHODS, true)
