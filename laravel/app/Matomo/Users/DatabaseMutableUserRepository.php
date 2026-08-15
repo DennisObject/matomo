@@ -146,6 +146,61 @@ final readonly class DatabaseMutableUserRepository implements MutableUserReposit
         });
     }
 
+    public function setSuperuser(string $login, bool $enabled): string
+    {
+        return $this->connection->transaction(function () use ($login, $enabled): string {
+            $user = $this->connection->table('user')->where('login', $login)->lockForUpdate()->first();
+            if ($user === null) {
+                return 'not-found';
+            }
+
+            if (! $enabled && (int) ($user->superuser_access ?? 0) === 1) {
+                $superusers = $this->connection->table('user')
+                    ->where('superuser_access', 1)->lockForUpdate()->count();
+                if ($superusers === 1) {
+                    return 'only-superuser';
+                }
+            }
+
+            $this->connection->table('access')->where('login', $login)->delete();
+            $this->connection->table('user')->where('login', $login)->update([
+                'superuser_access' => $enabled ? 1 : 0,
+            ]);
+
+            return 'updated';
+        });
+    }
+
+    public function deleteSessions(string $login): bool
+    {
+        if (! $this->connection->table('user')->where('login', $login)->exists()) {
+            return false;
+        }
+
+        $serialized = strlen('user.name').':"user.name";s:'.strlen($login).':"'.$login.'"';
+        $remainder = strlen($serialized) % 3;
+        if ($remainder === 1) {
+            $serialized = 's:'.$serialized;
+        } elseif ($remainder === 2) {
+            $serialized = ':'.$serialized;
+        }
+
+        $patterns = [
+            '%'.base64_encode($serialized).'%',
+            '%'.base64_encode(substr($serialized, 1).';').'%',
+            '%'.base64_encode(substr($serialized, 2).';s').'%',
+            '%'.base64_encode(substr($serialized, 2).';i').'%',
+        ];
+        $query = $this->connection->table('session');
+        $query->where(static function ($builder) use ($patterns): void {
+            foreach ($patterns as $pattern) {
+                $builder->orWhere('data', 'like', $pattern);
+            }
+        })->delete();
+
+        return true;
+    }
+
     /** @return 'login-exists'|'email-exists'|'login-is-email'|'email-is-login'|null */
     private function conflict(string $login, string $email): ?string
     {

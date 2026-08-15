@@ -533,6 +533,7 @@ final readonly class ApiRequest
         public ?UsersManagerAccessMutationRequest $usersManagerAccessMutation,
         public ?UsersManagerCreateRequest $usersManagerCreate,
         public ?UsersManagerInviteMaintenanceRequest $usersManagerInviteMaintenance,
+        public ?UsersManagerSecurityMutationRequest $usersManagerSecurityMutation,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -611,6 +612,7 @@ final readonly class ApiRequest
             usersManagerAccessMutation: null,
             usersManagerCreate: null,
             usersManagerInviteMaintenance: null,
+            usersManagerSecurityMutation: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1218,6 +1220,7 @@ final readonly class ApiRequest
             usersManagerAccessMutation: self::usersManagerAccessMutation($request, $module, $method),
             usersManagerCreate: self::usersManagerCreate($request, $module, $method),
             usersManagerInviteMaintenance: self::usersManagerInviteMaintenance($request, $module, $method),
+            usersManagerSecurityMutation: self::usersManagerSecurityMutation($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2633,6 +2636,26 @@ final readonly class ApiRequest
         return new UsersManagerInviteMaintenanceRequest(
             login: self::requiredString($request, 'userLogin'),
             expiryDays: self::integerInput($request, 'expiryInDays', 7, 1),
+            passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    private static function usersManagerSecurityMutation(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?UsersManagerSecurityMutationRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'UsersManager.setSuperUserAccess',
+            'UsersManager.logoutUser',
+        ], true)) {
+            return null;
+        }
+
+        return new UsersManagerSecurityMutationRequest(
+            login: self::requiredString($request, 'userLogin'),
+            superuserEnabled: $method === 'UsersManager.setSuperUserAccess'
+                ? self::requiredBoolean($request, 'hasSuperUserAccess') : null,
             passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
         );
     }
