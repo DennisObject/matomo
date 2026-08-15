@@ -540,6 +540,7 @@ final readonly class ApiRequest
         public ?PrivacyComplianceStatusRequest $privacyComplianceStatus,
         public ?PrivacyComplianceReadRequest $privacyComplianceRead,
         public ?PrivacyGranularComplianceRequest $privacyGranularCompliance,
+        public ?PrivacyAnonymisationSettingsRequest $privacyAnonymisationSettings,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -625,6 +626,7 @@ final readonly class ApiRequest
             privacyComplianceStatus: null,
             privacyComplianceRead: null,
             privacyGranularCompliance: null,
+            privacyAnonymisationSettings: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1239,6 +1241,7 @@ final readonly class ApiRequest
             privacyComplianceStatus: self::privacyComplianceStatus($request, $module, $method),
             privacyComplianceRead: self::privacyComplianceRead($request, $module, $method),
             privacyGranularCompliance: self::privacyGranularCompliance($request, $module, $method),
+            privacyAnonymisationSettings: self::privacyAnonymisationSettings($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2809,6 +2812,40 @@ final readonly class ApiRequest
         return new PrivacyGranularComplianceRequest(
             site: self::requiredString($request, 'idSite'),
             policy: self::requiredString($request, 'compliancePolicy'),
+        );
+    }
+
+    private static function privacyAnonymisationSettings(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?PrivacyAnonymisationSettingsRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'PrivacyManager.getAnonymisationSettings',
+            'PrivacyManager.setAnonymizeIpSettings',
+        ], true)) {
+            return null;
+        }
+
+        $mutation = $method === 'PrivacyManager.setAnonymizeIpSettings';
+
+        return new PrivacyAnonymisationSettingsRequest(
+            idSite: self::nullablePositiveIntegerInput($request, 'idSiteSpecific'),
+            mutation: $mutation,
+            ipEnabled: $mutation ? self::requiredBoolean($request, 'anonymizeIPEnable') : null,
+            maskLength: $mutation ? self::requiredInteger($request, 'ipAddressMaskLength') : null,
+            useAnonymizedIpForEnrichment: $mutation
+                ? self::requiredBoolean($request, 'useAnonymizedIpForVisitEnrichment') : null,
+            anonymizeUserId: $mutation && self::booleanInput($request, 'anonymizeUserId', false),
+            anonymizeOrderId: $mutation && self::booleanInput($request, 'anonymizeOrderId', false),
+            anonymizeReferrer: $mutation ? self::safeStringInput($request, 'anonymizeReferrer') : '',
+            forceCookielessTracking: $mutation
+                && self::booleanInput($request, 'forceCookielessTracking', false),
+            randomizeConfigId: $mutation && self::booleanInput($request, 'randomizeConfigId', false),
+            useSiteSpecificSettings: $mutation
+                && self::booleanInput($request, 'useSiteSpecificSettings', false),
+            passwordConfirmation: $mutation
+                ? self::nullableStringInput($request, 'passwordConfirmation') : null,
         );
     }
 
