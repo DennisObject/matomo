@@ -13,6 +13,7 @@ use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\Events\ArchiveReportsCompleted;
 use App\Matomo\Archiving\Events\ArchiveReportsStarting;
 use App\Matomo\Archiving\Events\ArchiveVisitsQueryBuilding;
+use App\Matomo\Archiving\SegmentConditionQueryApplier;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
 use App\Matomo\Archiving\SegmentExpressionParser;
 use App\Matomo\Geolocation\CountryMetadataProvider;
@@ -686,7 +687,9 @@ class DatabaseReportArchiverTest extends TestCase
     {
         return new BuiltInVisitSegmentApplicator(
             new SegmentExpressionParser,
-            $this->app->make(CountryMetadataProvider::class),
+            new SegmentConditionQueryApplier(
+                $this->app->make(CountryMetadataProvider::class),
+            ),
         );
     }
 
