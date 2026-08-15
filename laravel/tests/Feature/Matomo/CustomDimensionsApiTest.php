@@ -6,6 +6,8 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\CustomDimensions\CustomDimensionRepository;
+use App\Matomo\Geolocation\TrackerCacheInvalidator;
+use App\Matomo\Goals\SiteTrackerCacheInvalidator;
 use App\Matomo\Reporting\HierarchicalBlobArchiveRepository;
 use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
 use App\Matomo\Sites\SiteRepository;
@@ -15,6 +17,8 @@ class CustomDimensionsApiTest extends TestCase
 {
     private ApiAccessAuthorizer $authorizer;
 
+    private FakeCustomDimensionRepository $dimensions;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -23,7 +27,8 @@ class CustomDimensionsApiTest extends TestCase
         $this->authorizer->method('hasViewAccessToSite')->willReturn(true);
         $this->authorizer->method('hasSomeAdminAccess')->willReturn(true);
         $this->app->instance(ApiAccessAuthorizer::class, $this->authorizer);
-        $this->app->instance(CustomDimensionRepository::class, new FakeCustomDimensionRepository);
+        $this->dimensions = new FakeCustomDimensionRepository;
+        $this->app->instance(CustomDimensionRepository::class, $this->dimensions);
 
         $visitMetrics = $this->createStub(VisitsSummaryArchiveRepository::class);
         $visitMetrics->method('metrics')->willReturn([]);
@@ -177,6 +182,83 @@ class CustomDimensionsApiTest extends TestCase
         ]))->assertOk()->assertJsonPath('0.nb_users', 0);
     }
 
+    public function test_creates_a_custom_dimension_and_clears_tracker_caches(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('siteIdsWithMinimumRole')->willReturn([1]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $siteCache = $this->createMock(SiteTrackerCacheInvalidator::class);
+        $siteCache->expects($this->once())->method('clear')->with(1);
+        $generalCache = $this->createMock(TrackerCacheInvalidator::class);
+        $generalCache->expects($this->once())->method('clearGeneral');
+        $this->app->instance(SiteTrackerCacheInvalidator::class, $siteCache);
+        $this->app->instance(TrackerCacheInvalidator::class, $generalCache);
+
+        $this->get($this->url('configureNewCustomDimension', [
+            'idSite' => 1,
+            'name' => 'Section',
+            'scope' => 'action',
+            'active' => 1,
+            'caseSensitive' => 0,
+            'description' => 'Page section',
+            'extractions' => [['dimension' => 'url', 'pattern' => '/section/(.+)']],
+        ]))->assertOk()->assertExactJson(['value' => 3]);
+
+        self::assertSame('Section', $this->dimensions->created['name'] ?? null);
+        self::assertSame(1, $this->dimensions->created['index'] ?? null);
+        self::assertFalse($this->dimensions->created['caseSensitive'] ?? true);
+    }
+
+    public function test_updates_a_dimension_and_preserves_optional_values(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('siteIdsWithMinimumRole')->willReturn([1]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteTrackerCacheInvalidator::class, $this->createStub(SiteTrackerCacheInvalidator::class));
+        $this->app->instance(TrackerCacheInvalidator::class, $this->createStub(TrackerCacheInvalidator::class));
+
+        $this->get($this->url('configureExistingCustomDimension', [
+            'idDimension' => 2,
+            'idSite' => 1,
+            'name' => 'Page section',
+            'active' => 0,
+            'extractions' => [],
+        ]))->assertOk()->assertExactJson(['result' => 'success', 'message' => 'ok']);
+
+        self::assertSame('Category from URL', $this->dimensions->updated['description'] ?? null);
+        self::assertFalse($this->dimensions->updated['caseSensitive'] ?? true);
+        self::assertFalse($this->dimensions->updated['active'] ?? true);
+    }
+
+    public function test_rejects_invalid_mutations_before_writing(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('siteIdsWithMinimumRole')->willReturn([1]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get($this->url('configureNewCustomDimension', [
+            'idSite' => 1,
+            'name' => 'Bad/name',
+            'scope' => 'visit',
+            'active' => 1,
+            'extractions' => [['dimension' => 'url', 'pattern' => '(.+)']],
+        ]))->assertBadRequest();
+
+        self::assertSame([], $this->dimensions->created);
+    }
+
+    public function test_rejects_mutations_without_site_write_access(): void
+    {
+        $this->get($this->url('configureNewCustomDimension', [
+            'idSite' => 1,
+            'name' => 'Section',
+            'scope' => 'action',
+            'active' => 1,
+        ]))->assertUnauthorized();
+
+        self::assertSame([], $this->dimensions->created);
+    }
+
     /** @return array<int, array<string, array<string, list<array{columns: array<string, int|string>, metadata: array{}, subtableId: int|null}>>>> */
     private function archiveRecords(): array
     {
@@ -225,7 +307,7 @@ class CustomDimensionsApiTest extends TestCase
         ]]];
     }
 
-    /** @param array<string, int|string> $parameters */
+    /** @param array<string, mixed> $parameters */
     private function url(string $method, array $parameters = []): string
     {
         return '/index.php?'.http_build_query([
@@ -240,6 +322,12 @@ class CustomDimensionsApiTest extends TestCase
 
 final class FakeCustomDimensionRepository implements CustomDimensionRepository
 {
+    /** @var array<string, mixed> */
+    public array $created = [];
+
+    /** @var array<string, mixed> */
+    public array $updated = [];
+
     public function configuredForSite(int $siteId): array
     {
         return [
@@ -296,5 +384,56 @@ final class FakeCustomDimensionRepository implements CustomDimensionRepository
     public function installedIndexes(string $scope): array
     {
         return $scope === 'visit' ? [1, 2] : [1, 2, 3];
+    }
+
+    public function create(
+        int $siteId,
+        string $name,
+        string $scope,
+        bool $active,
+        array $extractions,
+        bool $caseSensitive,
+        string $description,
+    ): int {
+        $used = array_map(
+            static fn (array $dimension): int => (int) $dimension['index'],
+            array_filter(
+                $this->configuredForSite($siteId),
+                static fn (array $dimension): bool => $dimension['scope'] === $scope,
+            ),
+        );
+        $index = array_values(array_diff($this->installedIndexes($scope), $used))[0];
+        $this->created = compact(
+            'siteId',
+            'name',
+            'scope',
+            'active',
+            'extractions',
+            'caseSensitive',
+            'description',
+            'index',
+        );
+
+        return 3;
+    }
+
+    public function update(
+        int $siteId,
+        int $dimensionId,
+        string $name,
+        bool $active,
+        array $extractions,
+        bool $caseSensitive,
+        string $description,
+    ): void {
+        $this->updated = compact(
+            'siteId',
+            'dimensionId',
+            'name',
+            'active',
+            'extractions',
+            'caseSensitive',
+            'description',
+        );
     }
 }

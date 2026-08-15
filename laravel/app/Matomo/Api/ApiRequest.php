@@ -995,7 +995,10 @@ final readonly class ApiRequest
             throw new InvalidApiParameter('idDimension');
         }
 
-        $scope = $method === 'CustomDimensions.getConfiguredCustomDimensionsHavingScope'
+        $scope = in_array($method, [
+            'CustomDimensions.getConfiguredCustomDimensionsHavingScope',
+            'CustomDimensions.configureNewCustomDimension',
+        ], true)
             ? strtolower(self::requiredString($request, 'scope'))
             : null;
 
@@ -1003,7 +1006,109 @@ final readonly class ApiRequest
             throw new InvalidApiParameter('scope');
         }
 
-        return new CustomDimensionsRequest($siteId, $dimensionId, $scope);
+        $writes = in_array($method, [
+            'CustomDimensions.configureNewCustomDimension',
+            'CustomDimensions.configureExistingCustomDimension',
+        ], true);
+        $name = $writes ? self::requiredString($request, 'name') : null;
+        $active = $writes ? self::strictBooleanInput($request, 'active', null) : null;
+
+        if ($writes && $active === null) {
+            throw new InvalidApiParameter('active', "Invalid value for 'active' specified. Allowed values: '0' or '1'");
+        }
+
+        $extractions = $writes ? self::customDimensionExtractions($request) : null;
+        $caseSensitive = $writes
+            ? self::strictBooleanInput(
+                $request,
+                'caseSensitive',
+                $method === 'CustomDimensions.configureNewCustomDimension' ? true : null,
+            )
+            : null;
+        $caseSensitiveInput = $writes ? self::inputValue($request, 'caseSensitive') : null;
+
+        if ($writes
+            && ! in_array($caseSensitiveInput, [null, ''], true)
+            && $caseSensitive === null) {
+            throw new InvalidApiParameter(
+                'caseSensitive',
+                "Invalid value for 'caseSensitive' specified. Allowed values: '0' or '1'",
+            );
+        }
+
+        $description = $writes
+            ? self::safeNullableStringInput($request, 'description')
+            : null;
+
+        if ($writes
+            && self::inputValue($request, 'description') !== null
+            && $description === null) {
+            throw new InvalidApiParameter('description');
+        }
+
+        if ($method === 'CustomDimensions.configureNewCustomDimension') {
+            $description ??= '';
+        }
+
+        return new CustomDimensionsRequest(
+            $siteId,
+            $dimensionId,
+            $scope,
+            $name,
+            $active,
+            $extractions,
+            $caseSensitive,
+            $description,
+        );
+    }
+
+    /** @return list<array{dimension: string, pattern: string}> */
+    private static function customDimensionExtractions(Request $request): array
+    {
+        $value = self::inputValue($request, 'extractions');
+
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        if (! is_array($value)) {
+            throw new InvalidApiParameter('extractions', 'extractions has to be an array');
+        }
+
+        $result = [];
+
+        foreach ($value as $extraction) {
+            if (! is_array($extraction)
+                || count($extraction) !== 2
+                || ! array_key_exists('dimension', $extraction)
+                || ! array_key_exists('pattern', $extraction)
+                || ! is_scalar($extraction['dimension'])
+                || ! is_scalar($extraction['pattern'])) {
+                throw new InvalidApiParameter(
+                    'extractions',
+                    'Each extraction must contain only string dimension and pattern values.',
+                );
+            }
+
+            $result[] = [
+                'dimension' => str_replace("\0", '', (string) $extraction['dimension']),
+                'pattern' => str_replace("\0", '', (string) $extraction['pattern']),
+            ];
+        }
+
+        return $result;
+    }
+
+    private static function strictBooleanInput(Request $request, string $key, ?bool $default): ?bool
+    {
+        $value = self::inputValue($request, $key);
+
+        return match ($value) {
+            true, 1, '1' => true,
+            false, 0, '0' => false,
+            null, '' => $default,
+            default => null,
+        };
     }
 
     private static function botTrackingRealtime(

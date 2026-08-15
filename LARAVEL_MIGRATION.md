@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 233 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 235 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -87,7 +87,9 @@ Handled reporting API method names:
 - `CustomDimensions`: 4 read APIs for configured dimensions, hidden scope filtering, installed visit
   and action capacity, extraction metadata, localized labels, and view or write access checks; plus
   the archived custom-dimension report with active checks, processed metrics, segments, subtables,
-  expanded and flat output, and multi-period response shapes.
+  expanded and flat output, and multi-period response shapes; plus both configuration writes with
+  transactional slot allocation, legacy validation, optional-value preservation, and tracker-cache
+  invalidation.
 - `DBStats`: all 11 API methods, including general and server status, storage-family totals, tracker,
   numeric archive, blob archive, annual archive, admin-table, and cached per-record summaries,
   physical table prefixes, legacy grouping and cache formats, and strict superuser access.
@@ -162,7 +164,7 @@ Reporting API module matrix:
 | `Contents` | 2 | 2 | 0 |
 | `CoreAdminHome` | 13 | 13 | 0 |
 | `CorePluginsAdmin` | 5 | 0 | 5 |
-| `CustomDimensions` | 7 | 5 | 2 |
+| `CustomDimensions` | 7 | 7 | 0 |
 | `CustomJsTracker` | 1 | 1 | 0 |
 | `DBStats` | 11 | 11 | 0 |
 | `Dashboard` | 5 | 5 | 0 |
@@ -204,7 +206,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **233** | **156** |
+| **Total** | **389** | **235** | **154** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
