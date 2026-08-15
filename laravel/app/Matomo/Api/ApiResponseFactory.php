@@ -35,7 +35,7 @@ final class ApiResponseFactory
         };
     }
 
-    public function scalar(ApiRequest $request, bool|int|string $value): Response
+    public function scalar(ApiRequest $request, bool|float|int|string $value): Response
     {
         return match ($request->format) {
             'console' => $this->console($request, $value),
@@ -47,6 +47,19 @@ final class ApiResponseFactory
             'xml' => $this->xmlScalar($value),
             default => throw new LogicException('The API response format is not supported.'),
         };
+    }
+
+    public function object(ApiRequest $request, object $value): Response
+    {
+        if ($request->format !== 'original') {
+            return $this->error($request, 'The API cannot handle this data structure.', 200);
+        }
+
+        return $this->response(
+            $request->serialize ? serialize($value) : var_export($value, true),
+            200,
+            'text/plain; charset=utf-8',
+        );
     }
 
     /**
@@ -133,6 +146,12 @@ final class ApiResponseFactory
             ),
             default => throw new LogicException('The API response format is not supported.'),
         };
+    }
+
+    /** @param array<array-key, mixed> $values */
+    public function unsupportedStructure(ApiRequest $request, array $values): Response
+    {
+        return $this->error($request, $this->nestedArrayFormatError($values), 500);
     }
 
     public function report(ApiRequest $request, ApiReport $report): Response
@@ -241,7 +260,7 @@ final class ApiResponseFactory
         return $this->response($content, 200, 'text/xml; charset=utf-8');
     }
 
-    private function xmlScalar(bool|int|string $value): Response
+    private function xmlScalar(bool|float|int|string $value): Response
     {
         $value = $this->scalarText($value, false);
 
@@ -929,7 +948,7 @@ final class ApiResponseFactory
         return $this->response($content, 200, 'text/html; charset=utf-8');
     }
 
-    private function original(ApiRequest $request, bool|int|string $value): Response
+    private function original(ApiRequest $request, bool|float|int|string $value): Response
     {
         return $this->response(
             $request->serialize ? serialize($value) : $this->scalarText($value, true),
