@@ -7,6 +7,7 @@ namespace Tests\Feature\Matomo;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Insights\InsightSourceReport;
 use App\Matomo\Insights\InsightSourceReportProvider;
+use App\Matomo\Reporting\ReportingPeriod;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
 use App\Matomo\Sites\SiteRepository;
@@ -84,6 +85,60 @@ class InsightsReportApiTest extends TestCase
         $this->app->instance(InsightSourceReportProvider::class, $sources);
 
         $this->get($this->url('Insights.getInsights'))->assertUnauthorized();
+    }
+
+    public function test_aggregates_available_core_reports_in_the_overview(): void
+    {
+        $this->bindAccess(true);
+        $this->bindContext();
+        $sources = $this->createStub(InsightSourceReportProvider::class);
+        $sources->method('supports')->willReturnCallback(static fn (string $uniqueId): bool => in_array(
+            $uniqueId,
+            [
+                'Actions_getPageUrls',
+                'Actions_getPageTitles',
+                'Actions_getDownloads',
+                'UserCountry_getCountry',
+            ],
+            true,
+        ));
+        $sources->method('report')->willReturnCallback(function (
+            string $uniqueId,
+            int $siteId,
+            ReportingPeriod $period,
+        ): ?InsightSourceReport {
+            if (! in_array($uniqueId, [
+                'Actions_getPageUrls',
+                'Actions_getPageTitles',
+                'Actions_getDownloads',
+                'UserCountry_getCountry',
+            ], true)) {
+                return null;
+            }
+
+            $current = $period->startDate === '2026-08-14';
+
+            return new InsightSourceReport(
+                [['label' => $uniqueId, 'nb_visits' => $current ? 50 : 20]],
+                [
+                    'name' => $uniqueId,
+                    'metrics' => ['nb_visits' => 'Visits'],
+                ],
+                $current ? 50 : 20,
+            );
+        });
+        $this->app->instance(InsightSourceReportProvider::class, $sources);
+
+        $response = $this->get($this->url('Insights.getInsightsOverview'))
+            ->assertOk()
+            ->json();
+
+        $this->assertSame([
+            'Actions_getPageUrls',
+            'Actions_getPageTitles',
+            'Actions_getDownloads',
+            'UserCountry_getCountry',
+        ], array_keys($response));
     }
 
     private function bindAccess(bool $allowed): void

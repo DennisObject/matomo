@@ -8,6 +8,8 @@ use App\Matomo\Reporting\ReportingPeriod;
 
 interface InsightSourceReportProvider
 {
+    public function supports(string $reportUniqueId): bool;
+
     public function report(
         string $reportUniqueId,
         int $siteId,

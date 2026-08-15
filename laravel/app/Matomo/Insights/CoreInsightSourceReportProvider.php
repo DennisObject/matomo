@@ -33,6 +33,12 @@ final readonly class CoreInsightSourceReportProvider implements InsightSourceRep
         private MatomoTranslator $translator,
     ) {}
 
+    public function supports(string $reportUniqueId): bool
+    {
+        return $reportUniqueId === 'UserCountry_getCountry'
+            || isset(self::ACTION_REPORTS[$reportUniqueId]);
+    }
+
     public function report(
         string $reportUniqueId,
         int $siteId,

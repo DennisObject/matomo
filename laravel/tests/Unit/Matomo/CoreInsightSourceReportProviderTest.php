@@ -104,6 +104,13 @@ class CoreInsightSourceReportProviderTest extends TestCase
         ));
     }
 
+    public function test_reports_supported_source_ids(): void
+    {
+        $this->assertTrue($this->provider->supports('Actions_getPageUrls'));
+        $this->assertTrue($this->provider->supports('UserCountry_getCountry'));
+        $this->assertFalse($this->provider->supports('Referrers_getWebsites'));
+    }
+
     public function test_limits_comparison_rows_but_keeps_the_full_metric_total(): void
     {
         $rows = [];
