@@ -219,6 +219,8 @@ final readonly class ApiRequest
         'CoreAdminHome.deleteAllTrackingFailures',
         'CoreAdminHome.deleteTrackingFailure',
         'CoreAdminHome.getTrackingFailures',
+        'CoreAdminHome.setArchiveSettings',
+        'CoreAdminHome.setTrustedHosts',
         'CoreAdminHome.whatIsNewMarkAllChangesReadForCurrentUser',
     ];
 
@@ -790,6 +792,64 @@ final readonly class ApiRequest
         }
 
         if ($method !== 'CoreAdminHome.deleteTrackingFailure') {
+            if ($method === 'CoreAdminHome.setArchiveSettings') {
+                $browserTrigger = self::inputValue($request, 'enableBrowserTriggerArchiving');
+
+                if ($browserTrigger === null) {
+                    throw new MissingApiParameter('enableBrowserTriggerArchiving');
+                }
+
+                if (! is_scalar($browserTrigger)) {
+                    throw new InvalidApiParameter('enableBrowserTriggerArchiving');
+                }
+
+                $timeToLive = self::inputValue($request, 'todayArchiveTimeToLive');
+
+                if ($timeToLive === null) {
+                    throw new MissingApiParameter('todayArchiveTimeToLive');
+                }
+
+                if (! is_scalar($timeToLive)) {
+                    throw new InvalidApiParameter('todayArchiveTimeToLive');
+                }
+
+                return new CoreAdminHomeRequest(
+                    siteId: null,
+                    failureId: null,
+                    browserTriggerArchivingEnabled: self::booleanFromArray(
+                        $request->query->all(),
+                        'enableBrowserTriggerArchiving',
+                    ) ?? self::booleanFromArray(
+                        $request->request->all(),
+                        'enableBrowserTriggerArchiving',
+                    ) ?? false,
+                    todayArchiveTimeToLive: (int) $timeToLive,
+                );
+            }
+
+            if ($method === 'CoreAdminHome.setTrustedHosts') {
+                $trustedHosts = self::inputValue($request, 'trustedHosts');
+
+                if ($trustedHosts === null) {
+                    throw new MissingApiParameter('trustedHosts');
+                }
+
+                $values = is_array($trustedHosts)
+                    ? $trustedHosts
+                    : explode(',', (string) $trustedHosts);
+                $hosts = [];
+
+                foreach ($values as $host) {
+                    if (! is_scalar($host)) {
+                        throw new InvalidApiParameter('trustedHosts');
+                    }
+
+                    $hosts[] = str_replace("\0", '', (string) $host);
+                }
+
+                return new CoreAdminHomeRequest(null, null, trustedHosts: $hosts);
+            }
+
             return new CoreAdminHomeRequest(null, null);
         }
 

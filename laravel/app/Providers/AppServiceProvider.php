@@ -54,6 +54,10 @@ use App\Matomo\Authentication\DatabasePasswordConfirmationVerifier;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Config\InstallationConfig;
+use App\Matomo\CoreAdmin\ConfiguredCoreAdminSettings;
+use App\Matomo\CoreAdmin\CoreAdminSettings;
+use App\Matomo\CoreAdmin\IniTrustedHostConfiguration;
+use App\Matomo\CoreAdmin\TrustedHostConfiguration;
 use App\Matomo\Dashboard\ConfiguredDashboardLayoutProvider;
 use App\Matomo\Dashboard\DashboardLayoutProvider;
 use App\Matomo\Dashboard\DashboardRecipientPolicy;
@@ -206,6 +210,22 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(AiProviderCatalog::class, BuiltInAiProviderCatalog::class);
+        $this->app->singleton(
+            TrustedHostConfiguration::class,
+            function (Application $application): TrustedHostConfiguration {
+                $path = $application->make(Repository::class)->get('matomo.config_path');
+
+                if (! is_string($path) || $path === '') {
+                    throw new RuntimeException('The Matomo configuration path is invalid.');
+                }
+
+                return new IniTrustedHostConfiguration(
+                    $path,
+                    $application->make(Dispatcher::class),
+                );
+            },
+        );
+        $this->app->singleton(CoreAdminSettings::class, ConfiguredCoreAdminSettings::class);
         $this->app->singleton(
             TrackingFailureRepository::class,
             fn (Application $application): TrackingFailureRepository => new DatabaseTrackingFailureRepository(

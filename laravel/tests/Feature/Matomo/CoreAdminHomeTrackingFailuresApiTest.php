@@ -6,6 +6,7 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
+use App\Matomo\CoreAdmin\CoreAdminSettings;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\TrackingFailures\Events\TrackingFailuresMakingHumanReadable;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
@@ -160,6 +161,103 @@ class CoreAdminHomeTrackingFailuresApiTest extends TestCase
         $this->post($this->url('whatIsNewMarkAllChangesReadForCurrentUser'))
             ->assertStatus(401)
             ->assertJsonPath('message', 'You must be logged in to access this functionality.');
+    }
+
+    public function test_superuser_can_update_archive_settings_and_trusted_hosts(): void
+    {
+        $this->authenticate(true);
+        $settings = $this->createMock(CoreAdminSettings::class);
+        $settings->expects($this->exactly(2))->method('generalSettingsAdminEnabled')->willReturn(true);
+        $settings->expects($this->once())->method('configureArchiving')->with(false, 7200);
+        $settings->expects($this->once())->method('replaceTrustedHosts')->with([
+            'analytics.example',
+            'reports.example:8443',
+        ]);
+        $this->app->instance(CoreAdminSettings::class, $settings);
+
+        $this->post($this->url('setArchiveSettings'), [
+            'enableBrowserTriggerArchiving' => '0',
+            'todayArchiveTimeToLive' => '7200',
+        ])->assertOk()->assertExactJson(['value' => true]);
+        $this->post($this->url('setTrustedHosts'), [
+            'trustedHosts' => ['analytics.example', 'reports.example:8443'],
+        ])->assertOk()->assertExactJson(['value' => true]);
+    }
+
+    public function test_archive_settings_reject_invalid_time_to_live_before_writing(): void
+    {
+        $this->authenticate(true);
+        $settings = $this->createMock(CoreAdminSettings::class);
+        $settings->method('generalSettingsAdminEnabled')->willReturn(true);
+        $settings->expects($this->never())->method('configureArchiving');
+        $this->app->instance(CoreAdminSettings::class, $settings);
+
+        $this->post($this->url('setArchiveSettings'), [
+            'enableBrowserTriggerArchiving' => '1',
+            'todayArchiveTimeToLive' => '0',
+        ])->assertBadRequest()->assertJsonPath(
+            'message',
+            'Today archive time to live must be a number of seconds greater than zero',
+        );
+    }
+
+    public function test_settings_updates_require_superuser_and_enabled_admin_setting(): void
+    {
+        $this->authenticate(false);
+        $settings = $this->createMock(CoreAdminSettings::class);
+        $settings->expects($this->never())->method('replaceTrustedHosts');
+        $this->app->instance(CoreAdminSettings::class, $settings);
+
+        $this->post($this->url('setTrustedHosts'), [
+            'trustedHosts' => ['analytics.example'],
+        ])->assertStatus(401)->assertJsonPath(
+            'message',
+            "You can't access this resource as it requires a 'superuser' access.",
+        );
+    }
+
+    public function test_settings_updates_stop_when_general_admin_is_disabled(): void
+    {
+        $this->authenticate(true);
+        $settings = $this->createMock(CoreAdminSettings::class);
+        $settings->method('generalSettingsAdminEnabled')->willReturn(false);
+        $settings->expects($this->never())->method('replaceTrustedHosts');
+        $this->app->instance(CoreAdminSettings::class, $settings);
+
+        $this->post($this->url('setTrustedHosts'), [
+            'trustedHosts' => ['analytics.example'],
+        ])->assertBadRequest()->assertJsonPath(
+            'message',
+            'General settings admin is not enabled',
+        );
+    }
+
+    public function test_settings_updates_require_all_parameters(): void
+    {
+        $this->authenticate(true);
+
+        $this->post($this->url('setArchiveSettings'))
+            ->assertBadRequest()
+            ->assertJsonPath(
+                'message',
+                "Please specify a value for 'enableBrowserTriggerArchiving'.",
+            );
+        $this->post($this->url('setArchiveSettings'), [
+            'enableBrowserTriggerArchiving' => '1',
+        ])->assertBadRequest()->assertJsonPath(
+            'message',
+            "Please specify a value for 'todayArchiveTimeToLive'.",
+        );
+        $this->post($this->url('setTrustedHosts'))
+            ->assertBadRequest()
+            ->assertJsonPath('message', "Please specify a value for 'trustedHosts'.");
+        $this->post($this->url('setArchiveSettings'), [
+            'enableBrowserTriggerArchiving' => ['nested'],
+            'todayArchiveTimeToLive' => '7200',
+        ])->assertBadRequest();
+        $this->post($this->url('setTrustedHosts'), [
+            'trustedHosts' => [['nested']],
+        ])->assertBadRequest();
     }
 
     /** @param list<int> $adminSiteIds */

@@ -8,7 +8,9 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
+use App\Matomo\CoreAdmin\CoreAdminSettings;
 use App\Matomo\Localization\LanguageResolver;
+use App\Matomo\Localization\MatomoTranslator;
 use App\Matomo\Localization\MutableLanguagePreferenceRepository;
 use App\Matomo\TrackingFailures\TrackingFailurePresenter;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
@@ -27,6 +29,8 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         private LanguageResolver $languages,
         private MutableLanguagePreferenceRepository $preferences,
         private UserChangeReadRepository $userChanges,
+        private CoreAdminSettings $settings,
+        private MatomoTranslator $translator,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -42,6 +46,13 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
 
         if ($request->method === 'CoreAdminHome.whatIsNewMarkAllChangesReadForCurrentUser') {
             return $this->markChangesRead($request);
+        }
+
+        if (in_array($request->method, [
+            'CoreAdminHome.setArchiveSettings',
+            'CoreAdminHome.setTrustedHosts',
+        ], true)) {
+            return $this->updateSettings($request, $httpRequest);
         }
 
         if ($request->method === 'CoreAdminHome.deleteTrackingFailure') {
@@ -134,5 +145,50 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         }
 
         return $this->responses->scalar($request, $this->userChanges->markAllRead($login));
+    }
+
+    private function updateSettings(ApiRequest $request, Request $httpRequest): Response
+    {
+        if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+            return $this->responses->error(
+                $request,
+                "You can't access this resource as it requires a 'superuser' access.",
+                401,
+            );
+        }
+
+        if (! $this->settings->generalSettingsAdminEnabled()) {
+            return $this->responses->error($request, 'General settings admin is not enabled', 400);
+        }
+
+        $parameters = $request->coreAdminHome
+            ?? throw new LogicException('The CoreAdminHome API parameters were not parsed.');
+
+        if ($request->method === 'CoreAdminHome.setTrustedHosts') {
+            $this->settings->replaceTrustedHosts($parameters->trustedHosts);
+
+            return $this->responses->scalar($request, true);
+        }
+
+        $timeToLive = $parameters->todayArchiveTimeToLive
+            ?? throw new LogicException('The archive time to live was not parsed.');
+
+        if ($timeToLive <= 0) {
+            return $this->responses->error(
+                $request,
+                $this->translator->translate(
+                    'General_ExceptionInvalidArchiveTimeToLive',
+                    $this->languages->resolve($httpRequest, $request->authentication),
+                ),
+                400,
+            );
+        }
+
+        $this->settings->configureArchiving(
+            $parameters->browserTriggerArchivingEnabled ?? false,
+            $timeToLive,
+        );
+
+        return $this->responses->scalar($request, true);
     }
 }

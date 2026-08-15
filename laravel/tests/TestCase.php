@@ -13,6 +13,7 @@ use App\Matomo\AiProviders\AiProviderStoredSettings;
 use App\Matomo\Api\GoalDefinition;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
+use App\Matomo\CoreAdmin\CoreAdminSettings;
 use App\Matomo\Dashboard\DashboardLayoutProvider;
 use App\Matomo\Dashboard\DashboardRecipientPolicy;
 use App\Matomo\Dashboard\DashboardRepository;
@@ -135,6 +136,17 @@ abstract class TestCase extends BaseTestCase
         );
 
         $this->app->instance(AiProviderCentralConfiguration::class, new AiProviderCentralConfiguration);
+        $this->app->instance(CoreAdminSettings::class, new class implements CoreAdminSettings
+        {
+            public function generalSettingsAdminEnabled(): bool
+            {
+                return true;
+            }
+
+            public function configureArchiving(bool $browserTriggerEnabled, int $todayTimeToLive): void {}
+
+            public function replaceTrustedHosts(array $hosts): void {}
+        });
         $this->app->instance(TrackingFailureRepository::class, new class implements TrackingFailureRepository
         {
             public function all(): array
