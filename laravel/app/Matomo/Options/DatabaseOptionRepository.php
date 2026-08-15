@@ -35,4 +35,9 @@ final readonly class DatabaseOptionRepository implements MutableOptionRepository
             ]);
         }
     }
+
+    public function delete(string $name): void
+    {
+        $this->connection->table('option')->where('option_name', $name)->delete();
+    }
 }

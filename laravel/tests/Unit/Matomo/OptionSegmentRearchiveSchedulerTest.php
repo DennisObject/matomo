@@ -111,6 +111,11 @@ final class MemorySegmentOptionRepository implements MutableOptionRepository
     {
         $this->values[$name] = $value;
     }
+
+    public function delete(string $name): void
+    {
+        unset($this->values[$name]);
+    }
 }
 
 final class SchedulerSegmentSettings implements SegmentEditorSettings

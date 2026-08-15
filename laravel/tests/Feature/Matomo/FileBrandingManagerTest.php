@@ -54,6 +54,8 @@ class FileBrandingManagerTest extends TestCase
             {
                 $this->writes[] = compact('name', 'value', 'autoload');
             }
+
+            public function delete(string $name): void {}
         };
         $changed = [];
         Event::listen(CustomLogoChanged::class, static function (CustomLogoChanged $event) use (&$changed): void {

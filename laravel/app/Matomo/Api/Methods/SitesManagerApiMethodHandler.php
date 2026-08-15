@@ -8,6 +8,7 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
+use App\Matomo\Geolocation\TrackerCacheInvalidator;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
@@ -76,6 +77,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private SiteRepository $sites,
         private OptionRepository $options,
         private MutableOptionRepository $mutableOptions,
+        private TrackerCacheInvalidator $trackerCache,
         private SiteRuntimeSettings $runtime,
         private CurrencyProvider $currencies,
         private QueryParameterExclusionPolicy $queryParameterExclusions,
@@ -120,6 +122,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isSiteIdsFromTimezonesRequest()
             || $request->isIpRangeRequest()
             || $request->isSiteIdFromUrlRequest()
+            || $request->isSitesManagerGlobalSettingsRequest()
             || $this->globalOption($request) !== null;
     }
 
@@ -127,6 +130,10 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
     {
         if (! $this->supports($request)) {
             throw new LogicException('The SitesManager API handler does not support this method.');
+        }
+
+        if ($request->isSitesManagerGlobalSettingsRequest()) {
+            return $this->setGlobalSettings($request);
         }
 
         if ($request->isCurrencySymbolsRequest()) {
@@ -697,6 +704,125 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         }
 
         return $this->responses->values($request, $this->sites->allIds());
+    }
+
+    private function setGlobalSettings(ApiRequest $request): Response
+    {
+        if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+            return $this->responses->error(
+                $request,
+                "You can't access this resource as it requires a 'superuser' access.",
+                401,
+            );
+        }
+
+        $settings = $request->sitesManagerGlobalSettings
+            ?? throw new LogicException('The global site settings were not parsed.');
+        $returnsValue = false;
+
+        if ($request->method === 'SitesManager.setGlobalExcludedIps') {
+            $ips = $this->commaSeparated($settings->excludedIps ?? '');
+
+            foreach ($ips === '' ? [] : explode(',', $ips) as $ip) {
+                if (IPUtils::getIPRangeBounds($ip) === null) {
+                    return $this->responses->error(
+                        $request,
+                        "The IP to exclude \"{$ip}\" does not have a valid IP format (eg. 1.2.3.4, 1.2.3.*, or 1.2.3.4/5).",
+                        400,
+                    );
+                }
+            }
+
+            $this->mutableOptions->set('SitesManager_ExcludedIpsGlobal', $ips);
+            $returnsValue = true;
+        } elseif ($request->method === 'SitesManager.setGlobalSearchParameters') {
+            $this->mutableOptions->set(
+                'SitesManager_SearchKeywordParameters',
+                $settings->searchKeywordParameters ?? '',
+            );
+            $this->mutableOptions->set(
+                'SitesManager_SearchCategoryParameters',
+                $settings->searchCategoryParameters ?? '',
+            );
+            $returnsValue = true;
+        } elseif ($request->method === 'SitesManager.setGlobalExcludedUserAgents') {
+            $this->mutableOptions->set(
+                'SitesManager_ExcludedUserAgentsGlobal',
+                $this->commaSeparated($settings->excludedUserAgents ?? ''),
+            );
+        } elseif ($request->method === 'SitesManager.setGlobalExcludedReferrers') {
+            $referrers = $this->commaSeparated($settings->excludedReferrers ?? '');
+
+            foreach ($referrers === '' ? [] : explode(',', $referrers) as $referrer) {
+                $host = parse_url('https://'.ltrim(preg_replace('#^https?://#', '', $referrer) ?? '', '.'), PHP_URL_HOST);
+
+                if (! is_string($host) || $host === '' || str_contains($host, ' ')) {
+                    return $this->responses->error(
+                        $request,
+                        "The url '{$referrer}' is not a valid URL.",
+                        400,
+                    );
+                }
+            }
+
+            $this->mutableOptions->set('SitesManager_ExcludedReferrersGlobal', $referrers);
+        } elseif ($request->method === 'SitesManager.setGlobalQueryParamExclusion') {
+            $type = $settings->queryParameterExclusionType ?? '';
+            $parameters = $this->commaSeparated($settings->queryParametersToExclude ?? '');
+
+            if (! in_array($type, ['common_session_parameters', 'matomo_recommended_pii', 'custom'], true)) {
+                return $this->responses->error(
+                    $request,
+                    "The value '{$type}' is not allowed for the field exclusionType.",
+                    400,
+                );
+            }
+
+            if ($type === 'custom' && $parameters === '') {
+                return $this->responses->error(
+                    $request,
+                    'Query parameters to exclude must be provided when exclusion type is custom',
+                    400,
+                );
+            }
+
+            if ($type !== 'custom' && $parameters !== '') {
+                return $this->responses->error(
+                    $request,
+                    'Query parameters to exclude must not be provided when exclusion type is not custom',
+                    400,
+                );
+            }
+
+            $this->mutableOptions->set('SitesManager_ExcludeTypeQueryParamsGlobal', $type);
+
+            if ($type === 'custom') {
+                $this->mutableOptions->set('SitesManager_ExcludedQueryParameters', $parameters);
+            } else {
+                $this->mutableOptions->delete('SitesManager_ExcludedQueryParameters');
+            }
+        } else {
+            $this->mutableOptions->set(
+                'SitesManager_KeepURLFragmentsGlobal',
+                $settings->keepUrlFragments === true ? '1' : '0',
+            );
+        }
+
+        $this->trackerCache->clearGeneral();
+
+        return $returnsValue
+            ? $this->responses->scalar($request, true)
+            : $this->responses->success($request);
+    }
+
+    private function commaSeparated(string $value): string
+    {
+        $values = array_values(array_unique(array_filter(
+            array_map(trim(...), explode(',', trim($value))),
+            static fn (string $item): bool => $item !== '',
+        )));
+
+        return implode(',', $values);
     }
 
     private function optionOrDefault(string $name, string $default): string

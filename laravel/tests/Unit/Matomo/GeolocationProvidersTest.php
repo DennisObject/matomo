@@ -261,6 +261,11 @@ class GeolocationProvidersTest extends TestCase
             {
                 $this->values[$name] = $value;
             }
+
+            public function delete(string $name): void
+            {
+                unset($this->values[$name]);
+            }
         };
     }
 

@@ -594,6 +594,11 @@ abstract class TestCase extends BaseTestCase
             {
                 $this->values[$name] = $value;
             }
+
+            public function delete(string $name): void
+            {
+                unset($this->values[$name]);
+            }
         };
         $this->app->instance(MutableOptionRepository::class, $options);
         $this->app->instance(OptionRepository::class, $options);

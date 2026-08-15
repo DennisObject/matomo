@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 274 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 279 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -55,6 +55,8 @@ Handled reporting API method names:
 - `API`: `getIpFromHeader`, `getMatomoVersion`, `getPagesComparisonsDisabledFor`, `getPhpVersion`, `getPiwikVersion`, `isPluginActivated`.
 - `SitesManager`: `detectConsentManager`, `getAllSites`, `getAllSitesId`, `getCurrencyList`, `getCurrencySymbols`, `getDefaultCurrency`, `getDefaultTimezone`, `getExcludedIpsGlobal`, `getExcludedQueryParameters`, `getExcludedQueryParametersGlobal`, `getExcludedReferrers`, `getExcludedReferrersGlobal`, `getExcludedUserAgentsGlobal`, `getExclusionTypeForQueryParams`, `getIpsForRange`, `getKeepURLFragmentsGlobal`, `getMessagesToWarnOnSiteRemoval`, `getNumWebsitesToDisplayPerPage`, `getPatternMatchSites`, `getSearchCategoryParametersGlobal`, `getSearchKeywordParametersGlobal`, `getSiteFromId`, `getSiteUrlsFromId`, `getSitesFromGroup`, `getSitesGroups`, `getSitesIdFromSiteUrl`, `getSitesIdFromTimezones`, `getSitesIdWithAdminAccess`, `getSitesIdWithAtLeastViewAccess`, `getSitesIdWithViewAccess`, `getSitesIdWithWriteAccess`, `getSitesWithAdminAccess`, `getSitesWithAtLeastViewAccess`, `getSitesWithMinimumAccess`, `getSitesWithViewAccess`, `getTimezoneName`, `getTimezonesList`, `getUniqueSiteTimezones`, `isTimezoneSupportEnabled`.
   The default currency and timezone writes also preserve superuser access, legacy validation, and option storage.
+  Global IP, search, user-agent, referrer, URL-fragment, and query-parameter exclusion writes preserve
+  input normalization, custom-mode invariants, stale-option deletion, and tracker-cache invalidation.
 - `VisitsSummary`: all 10 API methods in every supported response format.
 - `VisitFrequency`: `get` in every supported response format.
 - `VisitTime`: all 3 API methods in every supported response format.
@@ -221,7 +223,7 @@ Reporting API module matrix:
 | `Resolution` | 2 | 2 | 0 |
 | `ScheduledReports` | 7 | 0 | 7 |
 | `SegmentEditor` | 9 | 9 | 0 |
-| `SitesManager` | 55 | 41 | 14 |
+| `SitesManager` | 55 | 46 | 9 |
 | `Tour` | 3 | 3 | 0 |
 | `Transitions` | 5 | 5 | 0 |
 | `TwoFactorAuth` | 1 | 1 | 0 |
@@ -233,7 +235,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **274** | **115** |
+| **Total** | **389** | **279** | **110** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
