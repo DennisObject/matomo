@@ -12,6 +12,7 @@ use App\Matomo\AiProviders\AiProviderSettingsRepository;
 use App\Matomo\AiProviders\BuiltInAiProviderCatalog;
 use App\Matomo\AiProviders\DatabaseAiProviderSettingsRepository;
 use App\Matomo\AiProviders\HttpAiProviderConnectionTester;
+use App\Matomo\Api\Methods\ActionsApiMethodHandler;
 use App\Matomo\Api\Methods\AiAgentsApiMethodHandler;
 use App\Matomo\Api\Methods\AiProvidersApiMethodHandler;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
@@ -1103,6 +1104,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ResolutionApiMethodHandler::class),
                 $application->make(DevicePluginsApiMethodHandler::class),
                 $application->make(DevicesDetectionApiMethodHandler::class),
+                $application->make(ActionsApiMethodHandler::class),
                 $application->make(EventsApiMethodHandler::class),
                 $application->make(ExampleApiMethodHandler::class),
                 $application->make(ExamplePluginApiMethodHandler::class),

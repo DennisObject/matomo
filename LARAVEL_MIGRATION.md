@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 172 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 190 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -63,6 +63,9 @@ Handled reporting API method names:
 - `DevicePlugins`: `getPlugin` in every supported response format.
 - `PagePerformance`: `get` in every supported response format.
 - `UserId`: `getUsers` in every supported response format.
+- `Actions`: all 18 API methods and their archive producers, including numeric totals,
+  hierarchical and pre-flattened reports, bounded expansion, direct action lookup, entry and exit
+  reports, search reports, metadata, segment values, goal attribution, and processed page metrics.
 - `Contents`: both API methods and archive producers, including bounded root and subtable records,
   interaction-only filtering, parent aggregation, subtable IDs, and every supported response format.
 - `CustomJsTracker`: `doesIncludePluginTrackersAutomatically` in every supported response format.
@@ -126,7 +129,7 @@ Reporting API module matrix:
 | `AIAgents` | 1 | 1 | 0 |
 | `AIProviders` | 4 | 4 | 0 |
 | `API` | 19 | 6 | 13 |
-| `Actions` | 18 | 0 | 18 |
+| `Actions` | 18 | 18 | 0 |
 | `Annotations` | 7 | 0 | 7 |
 | `BotTracking` | 11 | 0 | 11 |
 | `Contents` | 2 | 2 | 0 |
