@@ -40,6 +40,26 @@ final class TrackerEndpointTest extends TestCase
         $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&e_c=Video&e_a=Play&e_v=2.5')->assertOk();
     }
 
+    public function test_records_bulk_tracking_requests(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->exactly(2))->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->post('/matomo.php', ['requests' => [
+            '?idsite=1&url=https%3A%2F%2Fexample.test%2Fa',
+            '?idsite=1&url=https%3A%2F%2Fexample.test%2Fb',
+        ]])->assertOk()->assertHeader('Content-Type', 'image/gif');
+    }
+
+    public function test_rejects_oversized_bulk_request(): void
+    {
+        $this->bindSite();
+        $requests = array_fill(0, 51, '?idsite=1&url=https%3A%2F%2Fexample.test');
+        $this->post('/matomo.php', ['requests' => $requests])->assertBadRequest();
+    }
+
     public function test_respects_do_not_track(): void
     {
         $recorder = $this->createMock(VisitRecorder::class);

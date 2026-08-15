@@ -19,7 +19,9 @@ final class TrackerController extends Controller
     {
         if ($request->header('DNT') !== '1' && $request->cookie('matomo_ignore') === null) {
             try {
-                $visits->record($requests->make($request));
+                foreach ($requests->many($request) as $trackingRequest) {
+                    $visits->record($trackingRequest);
+                }
             } catch (InvalidArgumentException $exception) {
                 return response($exception->getMessage(), 400)->header('Content-Type', 'text/plain; charset=utf-8');
             }

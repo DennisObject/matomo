@@ -65,6 +65,40 @@ final readonly class TrackerRequestFactory
         );
     }
 
+    /** @return list<TrackingRequest> */
+    public function many(Request $request): array
+    {
+        $payload = $request->input('requests');
+        if ($payload === null) {
+            return [$this->make($request)];
+        }
+
+        if (is_string($payload)) {
+            $payload = json_decode($payload, true);
+        }
+
+        if (is_array($payload) && isset($payload['requests'])) {
+            $payload = $payload['requests'];
+        }
+
+        if (! is_array($payload) || count($payload) > 50) {
+            throw new InvalidArgumentException('requests must contain at most 50 tracking query strings.');
+        }
+
+        $tracking = [];
+        foreach ($payload as $query) {
+            if (! is_string($query)) {
+                throw new InvalidArgumentException('Every bulk tracking request must be a query string.');
+            }
+
+            parse_str(ltrim($query, '?'), $parameters);
+            $nested = Request::create('/matomo.php', 'POST', $parameters, $request->cookies->all(), [], $request->server->all());
+            $tracking[] = $this->make($nested);
+        }
+
+        return $tracking;
+    }
+
     private function optional(mixed $value, int $length): ?string
     {
         return is_string($value) && $value !== '' ? mb_substr($value, 0, $length) : null;
