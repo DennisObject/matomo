@@ -12,6 +12,8 @@ final readonly class BotTrackingArchiveConfiguration
         public int $rankingLimit = 50_000,
         public int $contentLimit = 50_000,
         public int $contentRankingLimit = 50_000,
+        public int $favouredPagesLimit = 50_000,
+        public int $favouredPagesRankingLimit = 50_000,
     ) {}
 
     public static function fromFiles(string $defaultsPath, string $installationPath): self
@@ -41,6 +43,11 @@ final readonly class BotTrackingArchiveConfiguration
             'datatable_archiving_maximum_rows_ai_chatbot_content',
             50_000,
         );
+        $favouredPagesLimit = self::nonNegativeInteger(
+            $values,
+            'datatable_archiving_maximum_rows_ai_chatbot_favoured_pages',
+            50_000,
+        );
 
         return new self(
             rootLimit: $rootLimit,
@@ -50,6 +57,11 @@ final readonly class BotTrackingArchiveConfiguration
                 : max($rankingLimit, $rootLimit, $subtableLimit),
             contentLimit: $contentLimit,
             contentRankingLimit: max($configuredRankingLimit, $contentLimit),
+            favouredPagesLimit: $favouredPagesLimit,
+            favouredPagesRankingLimit: max(
+                $configuredRankingLimit,
+                $favouredPagesLimit,
+            ),
         );
     }
 
