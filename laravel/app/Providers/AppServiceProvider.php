@@ -54,8 +54,10 @@ use App\Matomo\Authentication\DatabasePasswordConfirmationVerifier;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Config\InstallationConfig;
+use App\Matomo\CoreAdmin\BrandingManager;
 use App\Matomo\CoreAdmin\ConfiguredCoreAdminSettings;
 use App\Matomo\CoreAdmin\CoreAdminSettings;
+use App\Matomo\CoreAdmin\FileBrandingManager;
 use App\Matomo\CoreAdmin\IniTrustedHostConfiguration;
 use App\Matomo\CoreAdmin\TrustedHostConfiguration;
 use App\Matomo\Dashboard\ConfiguredDashboardLayoutProvider;
@@ -173,6 +175,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\ServiceProvider;
 use Psr\Log\LoggerInterface;
@@ -226,6 +229,32 @@ class AppServiceProvider extends ServiceProvider
             },
         );
         $this->app->singleton(CoreAdminSettings::class, ConfiguredCoreAdminSettings::class);
+        $this->app->singleton(
+            BrandingManager::class,
+            function (Application $application): BrandingManager {
+                $installation = $application->make(InstallationConfig::class);
+                $path = $application->make(Repository::class)->get('matomo.config_path');
+
+                if (! is_string($path) || $path === '') {
+                    throw new RuntimeException('The Matomo configuration path is invalid.');
+                }
+
+                $instancePath = $installation->instanceId() === ''
+                    ? ''
+                    : '/'.$installation->instanceId();
+                $temporaryPath = trim($installation->temporaryPath(), '/');
+                $userRoot = dirname($path, 2);
+
+                return new FileBrandingManager(
+                    options: $application->make(MutableOptionRepository::class),
+                    files: $application->make(Filesystem::class),
+                    events: $application->make(Dispatcher::class),
+                    publicDirectory: base_path('../misc/user').$instancePath,
+                    publicRelativeDirectory: 'misc/user'.$instancePath,
+                    temporaryLogosDirectory: $userRoot.'/'.$temporaryPath.$instancePath.'/logos',
+                );
+            },
+        );
         $this->app->singleton(
             TrackingFailureRepository::class,
             fn (Application $application): TrackingFailureRepository => new DatabaseTrackingFailureRepository(

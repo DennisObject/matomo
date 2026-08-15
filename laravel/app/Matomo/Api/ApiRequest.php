@@ -220,6 +220,7 @@ final readonly class ApiRequest
         'CoreAdminHome.deleteTrackingFailure',
         'CoreAdminHome.getTrackingFailures',
         'CoreAdminHome.setArchiveSettings',
+        'CoreAdminHome.setBrandingSettings',
         'CoreAdminHome.setTrustedHosts',
         'CoreAdminHome.whatIsNewMarkAllChangesReadForCurrentUser',
     ];
@@ -793,16 +794,10 @@ final readonly class ApiRequest
 
         if ($method !== 'CoreAdminHome.deleteTrackingFailure') {
             if ($method === 'CoreAdminHome.setArchiveSettings') {
-                $browserTrigger = self::inputValue($request, 'enableBrowserTriggerArchiving');
-
-                if ($browserTrigger === null) {
-                    throw new MissingApiParameter('enableBrowserTriggerArchiving');
-                }
-
-                if (! is_scalar($browserTrigger)) {
-                    throw new InvalidApiParameter('enableBrowserTriggerArchiving');
-                }
-
+                $browserTrigger = self::requiredBoolean(
+                    $request,
+                    'enableBrowserTriggerArchiving',
+                );
                 $timeToLive = self::inputValue($request, 'todayArchiveTimeToLive');
 
                 if ($timeToLive === null) {
@@ -816,14 +811,18 @@ final readonly class ApiRequest
                 return new CoreAdminHomeRequest(
                     siteId: null,
                     failureId: null,
-                    browserTriggerArchivingEnabled: self::booleanFromArray(
-                        $request->query->all(),
-                        'enableBrowserTriggerArchiving',
-                    ) ?? self::booleanFromArray(
-                        $request->request->all(),
-                        'enableBrowserTriggerArchiving',
-                    ) ?? false,
+                    browserTriggerArchivingEnabled: $browserTrigger,
                     todayArchiveTimeToLive: (int) $timeToLive,
+                );
+            }
+
+            if ($method === 'CoreAdminHome.setBrandingSettings') {
+                return new CoreAdminHomeRequest(
+                    siteId: null,
+                    failureId: null,
+                    useCustomLogo: self::requiredBoolean($request, 'useCustomLogo'),
+                    hasCustomLogo: self::requiredBoolean($request, 'hasCustomLogo'),
+                    hasCustomFavicon: self::requiredBoolean($request, 'hasCustomFavicon'),
                 );
             }
 
@@ -1901,6 +1900,23 @@ final readonly class ApiRequest
         $post = $request->request->all();
 
         return $post[$key] ?? null;
+    }
+
+    private static function requiredBoolean(Request $request, string $key): bool
+    {
+        $value = self::inputValue($request, $key);
+
+        if ($value === null) {
+            throw new MissingApiParameter($key);
+        }
+
+        if (! is_scalar($value)) {
+            throw new InvalidApiParameter($key);
+        }
+
+        return self::booleanFromArray($request->query->all(), $key)
+            ?? self::booleanFromArray($request->request->all(), $key)
+            ?? false;
     }
 
     private static function supportsSiteListFilters(string $module, string $method): bool

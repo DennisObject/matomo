@@ -13,6 +13,7 @@ use App\Matomo\AiProviders\AiProviderStoredSettings;
 use App\Matomo\Api\GoalDefinition;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
+use App\Matomo\CoreAdmin\BrandingManager;
 use App\Matomo\CoreAdmin\CoreAdminSettings;
 use App\Matomo\Dashboard\DashboardLayoutProvider;
 use App\Matomo\Dashboard\DashboardRecipientPolicy;
@@ -146,6 +147,17 @@ abstract class TestCase extends BaseTestCase
             public function configureArchiving(bool $browserTriggerEnabled, int $todayTimeToLive): void {}
 
             public function replaceTrustedHosts(array $hosts): void {}
+        });
+        $this->app->instance(BrandingManager::class, new class implements BrandingManager
+        {
+            public function update(
+                string $login,
+                bool $useCustomLogo,
+                bool $hasCustomLogo,
+                bool $hasCustomFavicon,
+            ): array {
+                return ['useCustomLogo' => false];
+            }
         });
         $this->app->instance(TrackingFailureRepository::class, new class implements TrackingFailureRepository
         {

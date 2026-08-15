@@ -6,6 +6,7 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
+use App\Matomo\CoreAdmin\BrandingManager;
 use App\Matomo\CoreAdmin\CoreAdminSettings;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\TrackingFailures\Events\TrackingFailuresMakingHumanReadable;
@@ -257,6 +258,72 @@ class CoreAdminHomeTrackingFailuresApiTest extends TestCase
         ])->assertBadRequest();
         $this->post($this->url('setTrustedHosts'), [
             'trustedHosts' => [['nested']],
+        ])->assertBadRequest();
+    }
+
+    public function test_superuser_can_publish_branding_settings(): void
+    {
+        $this->authenticate(true);
+        $branding = $this->createMock(BrandingManager::class);
+        $branding->expects($this->once())->method('update')->with(
+            'alice',
+            true,
+            true,
+            false,
+        )->willReturn([
+            'useCustomLogo' => true,
+            'customLogoPath' => 'misc/user/logo.png',
+        ]);
+        $this->app->instance(BrandingManager::class, $branding);
+
+        $this->post($this->url('setBrandingSettings'), [
+            'useCustomLogo' => '1',
+            'hasCustomLogo' => '1',
+            'hasCustomFavicon' => '0',
+        ])->assertOk()->assertExactJson([
+            'useCustomLogo' => true,
+            'customLogoPath' => 'misc/user/logo.png',
+        ]);
+    }
+
+    public function test_branding_settings_require_superuser_and_all_boolean_parameters(): void
+    {
+        $this->authenticate(false);
+        $branding = $this->createMock(BrandingManager::class);
+        $branding->expects($this->never())->method('update');
+        $this->app->instance(BrandingManager::class, $branding);
+
+        $this->post($this->url('setBrandingSettings'), [
+            'useCustomLogo' => '1',
+            'hasCustomLogo' => '1',
+            'hasCustomFavicon' => '0',
+        ])->assertStatus(401);
+    }
+
+    public function test_branding_settings_reject_missing_and_nested_boolean_parameters(): void
+    {
+        $this->authenticate(true);
+
+        $this->post($this->url('setBrandingSettings'))
+            ->assertBadRequest()
+            ->assertJsonPath('message', "Please specify a value for 'useCustomLogo'.");
+        $this->post($this->url('setBrandingSettings'), [
+            'useCustomLogo' => '1',
+        ])->assertBadRequest()->assertJsonPath(
+            'message',
+            "Please specify a value for 'hasCustomLogo'.",
+        );
+        $this->post($this->url('setBrandingSettings'), [
+            'useCustomLogo' => '1',
+            'hasCustomLogo' => '1',
+        ])->assertBadRequest()->assertJsonPath(
+            'message',
+            "Please specify a value for 'hasCustomFavicon'.",
+        );
+        $this->post($this->url('setBrandingSettings'), [
+            'useCustomLogo' => ['nested'],
+            'hasCustomLogo' => '1',
+            'hasCustomFavicon' => '1',
         ])->assertBadRequest();
     }
 

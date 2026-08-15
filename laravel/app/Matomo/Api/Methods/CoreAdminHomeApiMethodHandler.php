@@ -8,6 +8,7 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
+use App\Matomo\CoreAdmin\BrandingManager;
 use App\Matomo\CoreAdmin\CoreAdminSettings;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Localization\MatomoTranslator;
@@ -31,6 +32,7 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         private UserChangeReadRepository $userChanges,
         private CoreAdminSettings $settings,
         private MatomoTranslator $translator,
+        private BrandingManager $branding,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -53,6 +55,10 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
             'CoreAdminHome.setTrustedHosts',
         ], true)) {
             return $this->updateSettings($request, $httpRequest);
+        }
+
+        if ($request->method === 'CoreAdminHome.setBrandingSettings') {
+            return $this->updateBranding($request);
         }
 
         if ($request->method === 'CoreAdminHome.deleteTrackingFailure') {
@@ -190,5 +196,29 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         );
 
         return $this->responses->scalar($request, true);
+    }
+
+    private function updateBranding(ApiRequest $request): Response
+    {
+        if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+            return $this->responses->error(
+                $request,
+                "You can't access this resource as it requires a 'superuser' access.",
+                401,
+            );
+        }
+
+        $parameters = $request->coreAdminHome
+            ?? throw new LogicException('The CoreAdminHome API parameters were not parsed.');
+
+        return $this->responses->row(
+            $request,
+            $this->branding->update(
+                $this->authorizer->authenticatedLogin($request->authentication) ?? '',
+                $parameters->useCustomLogo ?? false,
+                $parameters->hasCustomLogo ?? false,
+                $parameters->hasCustomFavicon ?? false,
+            ),
+        );
     }
 }

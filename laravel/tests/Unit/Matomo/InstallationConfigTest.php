@@ -77,6 +77,8 @@ class InstallationConfigTest extends TestCase
         $this->assertTrue($configuration->languageToCountryGuessEnabled());
         $this->assertTrue($configuration->professionalServicesAdsEnabled());
         $this->assertFalse($configuration->developmentModeEnabled());
+        $this->assertSame('tenant.example', $configuration->instanceId());
+        $this->assertSame('/custom-tmp', $configuration->temporaryPath());
         $this->assertSame('month', $configuration->transitionsMaxPeriodAllowed(2));
         $this->assertSame('week', $configuration->transitionsMaxPeriodAllowed(7));
         $this->assertSame([
@@ -183,6 +185,8 @@ class InstallationConfigTest extends TestCase
             emails_enabled = 0
             noreply_email_address = "reports@{DOMAIN}"
             noreply_email_name = "Analytics Reports"
+            instance_id = "tenant.example/< >"
+            tmp_path = "/custom-tmp"
             {$extraGeneral}
 
             [Plugins]

@@ -81,14 +81,16 @@ INI);
                 $this->writes[] = $hosts;
             }
         };
+        $installation = InstallationConfig::fromFile($this->configPath);
         $settings = new ConfiguredCoreAdminSettings(
-            InstallationConfig::fromFile($this->configPath),
+            $installation,
             $options,
             $cache,
             $trustedHosts,
         );
 
         $this->assertTrue($settings->generalSettingsAdminEnabled());
+        $this->assertSame('/tmp', $installation->temporaryPath());
         $settings->configureArchiving(false, 7200);
         $settings->replaceTrustedHosts(['analytics.example', '', 'reports.example']);
         $settings->replaceTrustedHosts(['']);

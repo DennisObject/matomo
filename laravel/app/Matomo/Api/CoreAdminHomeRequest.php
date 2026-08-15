@@ -13,5 +13,8 @@ final readonly class CoreAdminHomeRequest
         public ?int $todayArchiveTimeToLive = null,
         /** @var list<string> */
         public array $trustedHosts = [],
+        public ?bool $useCustomLogo = null,
+        public ?bool $hasCustomLogo = null,
+        public ?bool $hasCustomFavicon = null,
     ) {}
 }

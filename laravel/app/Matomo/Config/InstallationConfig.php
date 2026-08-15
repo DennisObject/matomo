@@ -68,6 +68,8 @@ final readonly class InstallationConfig
         private bool $languageToCountryGuessEnabled,
         private bool $professionalServicesAdsEnabled,
         private bool $developmentModeEnabled,
+        private string $instanceId,
+        private string $temporaryPath,
         /** @var array<int, string> */
         private array $transitionsMaxPeriodAllowed,
         /** @var array<string, mixed> */
@@ -230,6 +232,12 @@ final readonly class InstallationConfig
                 true,
             ) || self::boolean($general, 'piwik_pro_ads_enabled'),
             developmentModeEnabled: self::boolean($development, 'enabled'),
+            instanceId: preg_replace(
+                '/[^\w.-]/',
+                '',
+                self::string($general, 'instance_id'),
+            ) ?? '',
+            temporaryPath: self::parsedTemporaryPath($general),
             transitionsMaxPeriodAllowed: self::parseTransitionsMaxPeriodAllowed($configuration),
             aiProviders: $aiProviders,
         );
@@ -481,6 +489,16 @@ final readonly class InstallationConfig
         return $this->developmentModeEnabled;
     }
 
+    public function instanceId(): string
+    {
+        return $this->instanceId;
+    }
+
+    public function temporaryPath(): string
+    {
+        return $this->temporaryPath;
+    }
+
     public function transitionsMaxPeriodAllowed(int $idSite): string
     {
         return $this->transitionsMaxPeriodAllowed[$idSite]
@@ -492,6 +510,14 @@ final readonly class InstallationConfig
     public function aiProviders(): array
     {
         return $this->aiProviders;
+    }
+
+    /** @param array<string, mixed> $general */
+    private static function parsedTemporaryPath(array $general): string
+    {
+        $path = self::string($general, 'tmp_path');
+
+        return $path === '' ? '/tmp' : $path;
     }
 
     /**

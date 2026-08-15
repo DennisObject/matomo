@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 167 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 168 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Not ported |
@@ -99,7 +99,9 @@ Handled reporting API method names:
   `whatIsNewMarkAllChangesReadForCurrentUser`, including viewer and login checks, recent-change
   filtering, extension filtering, and per-user read state; plus `setArchiveSettings` and
   `setTrustedHosts`, including superuser and feature-switch checks, option persistence, tracker-cache
-  invalidation, safe INI rewriting through Matomo's INI component, and configuration events.
+  invalidation, safe INI rewriting through Matomo's INI component, and configuration events; plus
+  `setBrandingSettings`, including per-instance and per-user file paths, staged logo and favicon
+  publishing, cleanup, the branding option, and logo-change events.
 - `Overlay`: `getTranslations`, with the existing localized client key contract.
 - `Tour`: all 3 API methods, including localized challenge state, extension events, and legacy per-user progress storage.
 - `Transitions`: `getTranslations` and `isPeriodAllowed`, including the complete localized metric
@@ -118,7 +120,7 @@ Reporting API module matrix:
 | `Annotations` | 7 | 0 | 7 |
 | `BotTracking` | 11 | 0 | 11 |
 | `Contents` | 2 | 2 | 0 |
-| `CoreAdminHome` | 13 | 6 | 7 |
+| `CoreAdminHome` | 13 | 7 | 6 |
 | `CorePluginsAdmin` | 5 | 0 | 5 |
 | `CustomDimensions` | 7 | 0 | 7 |
 | `CustomJsTracker` | 1 | 1 | 0 |
@@ -162,7 +164,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **167** | **222** |
+| **Total** | **389** | **168** | **221** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
