@@ -6,6 +6,7 @@ namespace App\Matomo\Api\Methods;
 
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
+use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\CoreAdmin\BrandingManager;
@@ -36,6 +37,7 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         private MatomoTranslator $translator,
         private BrandingManager $branding,
         private OptOutEmbedCodeGenerator $optOutEmbedCodes,
+        private ArchiveInvalidationManager $archiveInvalidations,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -69,6 +71,10 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
             'CoreAdminHome.getOptOutSelfContainedEmbedCode',
         ], true)) {
             return $this->optOutEmbedCode($request, $httpRequest);
+        }
+
+        if ($request->method === 'CoreAdminHome.invalidateArchivedReports') {
+            return $this->invalidateArchives($request);
         }
 
         if ($request->method === 'CoreAdminHome.deleteTrackingFailure') {
@@ -249,5 +255,52 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         }
 
         return $this->responses->scalar($request, $code);
+    }
+
+    private function invalidateArchives(ApiRequest $request): Response
+    {
+        $parameters = $request->coreAdminHome->archiveInvalidation
+            ?? throw new LogicException('The CoreAdminHome archive invalidation parameters were not parsed.');
+        $siteIds = $parameters->allSites
+            ? $this->authorizer->siteIdsWithAtLeastViewAccess($request->authentication)
+            : $parameters->siteIds;
+
+        if ($siteIds === []) {
+            return $this->responses->error(
+                $request,
+                "Specify a value for &idSites= as a comma separated list of website IDs, for which your token_auth has 'admin' permission",
+                400,
+            );
+        }
+
+        $adminSiteIds = $this->authorizer->siteIdsWithRole(
+            $request->authentication,
+            SiteAccessRole::Admin,
+        );
+
+        foreach ($siteIds as $siteId) {
+            if (! in_array($siteId, $adminSiteIds, true)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires 'admin' access for the website id = {$siteId}.",
+                    401,
+                );
+            }
+        }
+
+        try {
+            $logs = $this->archiveInvalidations->invalidate(
+                $siteIds,
+                $parameters->dates,
+                $parameters->period,
+                $parameters->segment,
+                $parameters->cascadeDown,
+                $parameters->forceInvalidateNonexistent,
+            );
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            return $this->responses->error($request, $invalidArgumentException->getMessage(), 400);
+        }
+
+        return $this->responses->values($request, $logs);
     }
 }

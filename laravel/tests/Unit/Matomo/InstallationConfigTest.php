@@ -63,6 +63,10 @@ class InstallationConfigTest extends TestCase
         $this->assertTrue($configuration->uniqueVisitorsEnabled('day'));
         $this->assertFalse($configuration->uniqueVisitorsEnabled('year'));
         $this->assertTrue($configuration->reportingPeriodEnabled('range'));
+        $this->assertSame(
+            ['countryCode==fr', 'browserCode==FF'],
+            $configuration->autoArchiveSegments(),
+        );
         $this->assertTrue($configuration->anonymousSegmentsEnabled());
         $this->assertSame(12, $configuration->configuredLoginMaxAllowedRetries());
         $this->assertSame(45, $configuration->configuredLoginAllowedRetriesTimeRange());
@@ -225,6 +229,10 @@ class InstallationConfigTest extends TestCase
             [AIProviders]
             defaultProvider = "openai"
             openaiApiKey = "managed-key"
+
+            [Segments]
+            Segments[] = "countryCode==fr"
+            Segments[] = "browserCode==FF"
 
             [Transitions]
             max_period_allowed = "month"

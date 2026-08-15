@@ -53,6 +53,8 @@ final readonly class InstallationConfig
         private array $uniqueVisitorsByPeriod,
         /** @var list<string> */
         private array $enabledReportingPeriods,
+        /** @var list<string> */
+        private array $autoArchiveSegments,
         private bool $anonymousSegmentsEnabled,
         private ?int $configuredLoginMaxAllowedRetries,
         private ?int $configuredLoginAllowedRetriesTimeRange,
@@ -102,6 +104,7 @@ final readonly class InstallationConfig
         $tracker = $configuration['Tracker'] ?? [];
         $development = $configuration['Development'] ?? [];
         $aiProviders = $configuration['AIProviders'] ?? [];
+        $segments = $configuration['Segments'] ?? [];
 
         if (! is_array($database)
             || ! is_array($general)
@@ -113,7 +116,8 @@ final readonly class InstallationConfig
             || ! is_array($proxy)
             || ! is_array($tracker)
             || ! is_array($development)
-            || ! is_array($aiProviders)) {
+            || ! is_array($aiProviders)
+            || ! is_array($segments)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
 
@@ -191,6 +195,7 @@ final readonly class InstallationConfig
                 'enabled_periods_API',
                 ['day', 'week', 'month', 'year', 'range'],
             ),
+            autoArchiveSegments: self::stringList($segments, 'Segments'),
             anonymousSegmentsEnabled: self::boolean(
                 $general,
                 'anonymous_user_enable_use_segments_API',
@@ -421,6 +426,12 @@ final readonly class InstallationConfig
     public function reportingPeriodEnabled(string $period): bool
     {
         return in_array($period, $this->enabledReportingPeriods, true);
+    }
+
+    /** @return list<string> */
+    public function autoArchiveSegments(): array
+    {
+        return $this->autoArchiveSegments;
     }
 
     public function anonymousSegmentsEnabled(): bool

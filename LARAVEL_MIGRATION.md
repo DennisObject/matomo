@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 170 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 171 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Not ported |
@@ -103,7 +103,10 @@ Handled reporting API method names:
   `setBrandingSettings`, including per-instance and per-user file paths, staged logo and favicon
   publishing, cleanup, the branding option, and logo-change events; plus both opt-out embed-code
   methods, including trusted-host checks, validated styles, localized privacy text, consent-cookie
-  settings, and encoded HTML and JavaScript boundaries.
+  settings, and encoded HTML and JavaScript boundaries; plus `invalidateArchivedReports`, including
+  site-admin checks, extension-controlled site selection, strict date and range parsing, parent and
+  child period expansion, automatic-segment re-archiving queues, old-log limits, and safe archive
+  status updates through bound queries.
 - `Overlay`: `getTranslations`, with the existing localized client key contract.
 - `Tour`: all 3 API methods, including localized challenge state, extension events, and legacy per-user progress storage.
 - `Transitions`: `getTranslations` and `isPeriodAllowed`, including the complete localized metric
@@ -122,7 +125,7 @@ Reporting API module matrix:
 | `Annotations` | 7 | 0 | 7 |
 | `BotTracking` | 11 | 0 | 11 |
 | `Contents` | 2 | 2 | 0 |
-| `CoreAdminHome` | 13 | 9 | 4 |
+| `CoreAdminHome` | 13 | 10 | 3 |
 | `CorePluginsAdmin` | 5 | 0 | 5 |
 | `CustomDimensions` | 7 | 0 | 7 |
 | `CustomJsTracker` | 1 | 1 | 0 |
@@ -166,7 +169,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **170** | **219** |
+| **Total** | **389** | **171** | **218** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 

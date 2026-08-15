@@ -48,6 +48,8 @@ use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
 use App\Matomo\Api\Methods\VisitorInterestApiMethodHandler;
 use App\Matomo\Api\Methods\VisitsSummaryApiMethodHandler;
 use App\Matomo\Api\Methods\VisitTimeApiMethodHandler;
+use App\Matomo\Archiving\ArchiveInvalidationManager;
+use App\Matomo\Archiving\DatabaseArchiveInvalidationManager;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabasePasswordConfirmationVerifier;
@@ -602,6 +604,25 @@ class AppServiceProvider extends ServiceProvider
             fn (Application $application): MutableOptionRepository => $application->make(
                 DatabaseOptionRepository::class,
             ),
+        );
+        $this->app->singleton(
+            ArchiveInvalidationManager::class,
+            function (Application $application): ArchiveInvalidationManager {
+                $configuration = $application->make(InstallationConfig::class);
+
+                return new DatabaseArchiveInvalidationManager(
+                    connection: $application->make(MatomoDatabase::class)->connection(),
+                    periods: $application->make(ReportingPeriodFactory::class),
+                    segments: $application->make(SegmentHashResolver::class),
+                    options: $application->make(MutableOptionRepository::class),
+                    events: $application->make(Dispatcher::class),
+                    enabledReportingPeriods: array_values(array_filter(
+                        ['day', 'week', 'month', 'year', 'range'],
+                        $configuration->reportingPeriodEnabled(...),
+                    )),
+                    configuredAutoArchiveSegments: $configuration->autoArchiveSegments(),
+                );
+            },
         );
 
         $this->app->singleton(

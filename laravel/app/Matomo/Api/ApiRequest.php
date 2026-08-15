@@ -221,6 +221,7 @@ final readonly class ApiRequest
         'CoreAdminHome.getOptOutJSEmbedCode',
         'CoreAdminHome.getOptOutSelfContainedEmbedCode',
         'CoreAdminHome.getTrackingFailures',
+        'CoreAdminHome.invalidateArchivedReports',
         'CoreAdminHome.setArchiveSettings',
         'CoreAdminHome.setBrandingSettings',
         'CoreAdminHome.setTrustedHosts',
@@ -859,6 +860,76 @@ final readonly class ApiRequest
                         cookieSameSite: $javascript
                             ? 'Lax'
                             : self::stringInput($request, 'cookieSameSite', 'Lax'),
+                    ),
+                );
+            }
+
+            if ($method === 'CoreAdminHome.invalidateArchivedReports') {
+                $siteIds = self::requiredStringList($request, 'idSites');
+                $dateInput = self::inputValue($request, 'dates');
+
+                if ($dateInput === null) {
+                    throw new MissingApiParameter('dates');
+                }
+
+                $allSites = count($siteIds) === 1 && strtolower($siteIds[0]) === 'all';
+                $parsedSiteIds = [];
+
+                if (! $allSites) {
+                    foreach ($siteIds as $siteId) {
+                        if ($siteId === '') {
+                            continue;
+                        }
+
+                        if (! is_numeric($siteId)
+                            || (string) (int) $siteId !== $siteId
+                            || (int) $siteId <= 0) {
+                            throw new InvalidApiParameter(
+                                'idSites',
+                                "The parameter 'idSite=' contains an invalid value.",
+                            );
+                        }
+
+                        $parsedSiteIds[] = (int) $siteId;
+                    }
+                }
+
+                $period = self::nullableStringInput($request, 'period');
+                $period = in_array(strtolower($period ?? ''), ['', '0', 'false'], true)
+                    ? null
+                    : strtolower($period ?? '');
+
+                if ($period !== null && ! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
+                    throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
+                }
+
+                $dates = self::stringList(
+                    $dateInput,
+                    'dates',
+                    splitCommaSeparated: $period !== 'range',
+                );
+
+                $segment = self::nullableStringInput($request, 'segment');
+                $segment = trim($segment ?? '');
+                $segment = in_array(strtolower($segment), ['', '0', 'false'], true)
+                    ? null
+                    : substr($segment, 0, 8192);
+
+                return new CoreAdminHomeRequest(
+                    siteId: null,
+                    failureId: null,
+                    archiveInvalidation: new ArchiveInvalidationRequest(
+                        siteIds: array_values(array_unique($parsedSiteIds)),
+                        allSites: $allSites,
+                        dates: $dates,
+                        period: $period,
+                        segment: $segment,
+                        cascadeDown: self::booleanInput($request, 'cascadeDown', false),
+                        forceInvalidateNonexistent: self::booleanInput(
+                            $request,
+                            '_forceInvalidateNonexistent',
+                            false,
+                        ),
                     ),
                 );
             }
@@ -1960,6 +2031,44 @@ final readonly class ApiRequest
     {
         return self::nullableStringInput($request, $key)
             ?? throw new MissingApiParameter($key);
+    }
+
+    /** @return list<string> */
+    private static function requiredStringList(Request $request, string $key): array
+    {
+        $value = self::inputValue($request, $key);
+
+        if ($value === null) {
+            throw new MissingApiParameter($key);
+        }
+
+        return self::stringList($value, $key);
+    }
+
+    /** @return list<string> */
+    private static function stringList(
+        mixed $value,
+        string $key,
+        bool $splitCommaSeparated = true,
+    ): array {
+        if (! is_array($value) && ! is_scalar($value)) {
+            throw new InvalidApiParameter($key);
+        }
+
+        $values = is_array($value)
+            ? $value
+            : ($splitCommaSeparated ? explode(',', (string) $value) : [$value]);
+        $result = [];
+
+        foreach ($values as $item) {
+            if (! is_scalar($item)) {
+                throw new InvalidApiParameter($key);
+            }
+
+            $result[] = trim(str_replace("\0", '', (string) $item));
+        }
+
+        return array_values(array_unique($result));
     }
 
     private static function supportsSiteListFilters(string $module, string $method): bool

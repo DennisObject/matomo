@@ -12,6 +12,7 @@ use App\Matomo\AiProviders\AiProviderSettingsRepository;
 use App\Matomo\AiProviders\AiProviderStoredSettings;
 use App\Matomo\Api\GoalDefinition;
 use App\Matomo\Api\OptOutEmbedRequest;
+use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\CoreAdmin\BrandingManager;
@@ -171,6 +172,19 @@ abstract class TestCase extends BaseTestCase
             public function selfContained(OptOutEmbedRequest $options, string $language): string
             {
                 return '<script>optOut()</script>';
+            }
+        });
+        $this->app->instance(ArchiveInvalidationManager::class, new class implements ArchiveInvalidationManager
+        {
+            public function invalidate(
+                array $siteIds,
+                array $dates,
+                ?string $period,
+                ?string $segment,
+                bool $cascadeDown,
+                bool $forceInvalidateNonexistent,
+            ): array {
+                return [];
             }
         });
         $this->app->instance(TrackingFailureRepository::class, new class implements TrackingFailureRepository

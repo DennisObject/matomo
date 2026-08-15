@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\Api\OptOutEmbedRequest;
+use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\CoreAdmin\BrandingManager;
@@ -415,13 +416,83 @@ class CoreAdminHomeTrackingFailuresApiTest extends TestCase
         );
     }
 
-    /** @param list<int> $adminSiteIds */
+    public function test_admin_can_invalidate_archive_ranges_with_all_options(): void
+    {
+        $this->authenticate(false, true, [7, 8]);
+        $invalidations = $this->createMock(ArchiveInvalidationManager::class);
+        $invalidations->expects($this->once())->method('invalidate')->with(
+            [7, 8],
+            ['2026-08-01,2026-08-31'],
+            'range',
+            'countryCode==fr',
+            true,
+            true,
+        )->willReturn(['Success.']);
+        $this->app->instance(ArchiveInvalidationManager::class, $invalidations);
+
+        $this->post($this->url('invalidateArchivedReports'), [
+            'idSites' => '7,8',
+            'dates' => '2026-08-01,2026-08-31',
+            'period' => 'range',
+            'segment' => 'countryCode==fr',
+            'cascadeDown' => '1',
+            '_forceInvalidateNonexistent' => '1',
+        ])->assertOk()->assertExactJson(['Success.']);
+    }
+
+    public function test_archive_invalidation_resolves_all_sites_and_requires_admin_access(): void
+    {
+        $this->authenticate(false, true, [7], viewSiteIds: [7, 8]);
+        $invalidations = $this->createMock(ArchiveInvalidationManager::class);
+        $invalidations->expects($this->never())->method('invalidate');
+        $this->app->instance(ArchiveInvalidationManager::class, $invalidations);
+
+        $this->post($this->url('invalidateArchivedReports'), [
+            'idSites' => 'all',
+            'dates' => '2026-08-15',
+        ])->assertStatus(401)->assertJsonPath(
+            'message',
+            "You can't access this resource as it requires 'admin' access for the website id = 8.",
+        );
+    }
+
+    public function test_archive_invalidation_rejects_invalid_sites_and_missing_dates(): void
+    {
+        $this->authenticate(false, true, [7]);
+
+        $this->post($this->url('invalidateArchivedReports'), [
+            'idSites' => '7,nope',
+            'dates' => '2026-08-15',
+        ])->assertBadRequest()->assertJsonPath(
+            'message',
+            "The parameter 'idSite=' contains an invalid value.",
+        );
+        $this->post($this->url('invalidateArchivedReports'), [
+            'idSites' => '7',
+        ])->assertBadRequest()->assertJsonPath(
+            'message',
+            "Please specify a value for 'dates'.",
+        );
+        $this->post($this->url('invalidateArchivedReports'), [
+            'idSites' => ',,',
+            'dates' => '2026-08-15',
+        ])->assertBadRequest()->assertJsonPath(
+            'message',
+            "Specify a value for &idSites= as a comma separated list of website IDs, for which your token_auth has 'admin' permission",
+        );
+    }
+
+    /**
+     * @param  list<int>  $adminSiteIds
+     * @param  list<int>  $viewSiteIds
+     */
     private function authenticate(
         bool $superuser,
         bool $hasSomeAdminAccess = false,
         array $adminSiteIds = [],
         bool $hasSomeViewAccess = false,
         string $login = 'alice',
+        array $viewSiteIds = [],
     ): void {
         $authorizer = $this->createStub(ApiAccessAuthorizer::class);
         $authorizer->method('authenticatedLogin')->willReturn($login);
@@ -432,6 +503,7 @@ class CoreAdminHomeTrackingFailuresApiTest extends TestCase
             $this->anything(),
             SiteAccessRole::Admin,
         )->willReturn($adminSiteIds);
+        $authorizer->method('siteIdsWithAtLeastViewAccess')->willReturn($viewSiteIds);
         $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
     }
 
