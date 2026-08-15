@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Tracker\TrackingRequest;
 use App\Matomo\Tracker\VisitRecorder;
 use Tests\TestCase;
@@ -12,6 +13,7 @@ final class TrackerEndpointTest extends TestCase
 {
     public function test_records_valid_page_view_and_returns_pixel(): void
     {
+        $this->bindSite();
         $recorder = $this->createMock(VisitRecorder::class);
         $recorder->expects($this->once())->method('record')->with($this->callback(static fn (TrackingRequest $request): bool => $request->siteId === 1 && $request->visitorId === '0123456789abcdef'));
         $this->app->instance(VisitRecorder::class, $recorder);
@@ -20,6 +22,7 @@ final class TrackerEndpointTest extends TestCase
 
     public function test_rejects_invalid_tracking_input(): void
     {
+        $this->bindSite();
         $this->get('/matomo.php?idsite=0&url=javascript%3Aalert%281%29')->assertBadRequest();
     }
 
@@ -29,5 +32,12 @@ final class TrackerEndpointTest extends TestCase
         $recorder->expects($this->never())->method('record');
         $this->app->instance(VisitRecorder::class, $recorder);
         $this->withHeader('DNT', '1')->get('/piwik.php')->assertOk();
+    }
+
+    private function bindSite(): void
+    {
+        $sites = $this->createStub(SiteRepository::class);
+        $sites->method('details')->willReturn(['idsite' => 1]);
+        $this->app->instance(SiteRepository::class, $sites);
     }
 }

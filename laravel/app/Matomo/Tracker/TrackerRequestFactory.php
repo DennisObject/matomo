@@ -5,18 +5,23 @@ declare(strict_types=1);
 namespace App\Matomo\Tracker;
 
 use App\Matomo\Security\ClientIpResolver;
+use App\Matomo\Sites\SiteRepository;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 
 final readonly class TrackerRequestFactory
 {
-    public function __construct(private ClientIpResolver $ips) {}
+    public function __construct(private ClientIpResolver $ips, private SiteRepository $sites) {}
 
     public function make(Request $request): TrackingRequest
     {
         $siteId = filter_var($request->input('idsite'), FILTER_VALIDATE_INT);
         if ($siteId === false || $siteId < 1) {
             throw new InvalidArgumentException('idsite must be a positive integer.');
+        }
+
+        if ($this->sites->details((int) $siteId) === []) {
+            throw new InvalidArgumentException('The requested website does not exist.');
         }
 
         $url = $request->input('url', '');
