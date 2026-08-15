@@ -16,6 +16,7 @@ final readonly class TrackerRequestFactory
         private ClientIpResolver $ips,
         private SiteRepository $sites,
         private CustomDimensionRepository $dimensions,
+        private TrackerSettings $settings,
     ) {}
 
     public function make(Request $request): TrackingRequest
@@ -61,6 +62,12 @@ final readonly class TrackerRequestFactory
             throw new InvalidArgumentException('urlref must be a valid HTTP or HTTPS URL.');
         }
 
+        [$referrerType, $referrerName, $referrerKeyword] = $this->referrerAttribution(
+            $request,
+            $url,
+            $referrer ?? '',
+        );
+
         $hour = $this->boundedInteger($request->input('h'), 0, 23);
         $minute = $this->boundedInteger($request->input('m'), 0, 59);
         $second = $this->boundedInteger($request->input('s'), 0, 59);
@@ -85,6 +92,9 @@ final readonly class TrackerRequestFactory
             $eventValue === null ? null : (float) $eventValue,
             $this->optional($request->input('uid'), 200),
             $referrer ?? '',
+            $referrerType,
+            $referrerName,
+            $referrerKeyword,
             $this->optional($request->input('lang'), 20) ?? '',
             sprintf('%02d:%02d:%02d', $hour, $minute, $second),
             $resolution,
@@ -203,5 +213,46 @@ final readonly class TrackerRequestFactory
         }
 
         return $properties;
+    }
+
+    /** @return array{int, string, string} */
+    private function referrerAttribution(Request $request, string $url, string $referrer): array
+    {
+        $campaign = $this->optional($request->input('_rcn'), 70)
+            ?? $this->queryValue($url, $this->settings->campaignNameParameters(), 70);
+        $keyword = $this->optional($request->input('_rck'), 255)
+            ?? $this->queryValue($url, $this->settings->campaignKeywordParameters(), 255)
+            ?? '';
+        if ($campaign !== null) {
+            return [6, $campaign, $keyword];
+        }
+
+        $referrerHost = parse_url($referrer, PHP_URL_HOST);
+        $currentHost = parse_url($url, PHP_URL_HOST);
+        if (! is_string($referrerHost) || $referrerHost === ''
+            || (is_string($currentHost) && strcasecmp($referrerHost, $currentHost) === 0)) {
+            return [1, '', ''];
+        }
+
+        return [3, mb_substr(strtolower($referrerHost), 0, 70), ''];
+    }
+
+    /** @param list<string> $parameters */
+    private function queryValue(string $url, array $parameters, int $length): ?string
+    {
+        $query = parse_url($url, PHP_URL_QUERY);
+        if (! is_string($query) || $query === '') {
+            return null;
+        }
+
+        parse_str($query, $values);
+        foreach ($parameters as $parameter) {
+            $value = $values[$parameter] ?? null;
+            if (is_string($value) && $value !== '') {
+                return mb_substr($value, 0, $length);
+            }
+        }
+
+        return null;
     }
 }

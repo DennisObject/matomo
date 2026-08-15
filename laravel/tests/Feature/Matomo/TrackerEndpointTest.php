@@ -6,6 +6,7 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\CustomDimensions\CustomDimensionRepository;
 use App\Matomo\Sites\SiteRepository;
+use App\Matomo\Tracker\TrackerSettings;
 use App\Matomo\Tracker\TrackingRequest;
 use App\Matomo\Tracker\VisitRecorder;
 use Tests\TestCase;
@@ -89,6 +90,21 @@ final class TrackerEndpointTest extends TestCase
             '&_cvar=%7B%221%22%3A%5B%22Plan%22%2C%22Pro%22%5D%7D&dimension1=Account&dimension2=Article')->assertOk();
     }
 
+    public function test_attributes_campaigns_and_external_referrers(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->exactly(2))->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->referrerType === 6
+                ? $request->referrerName === 'summer' && $request->referrerKeyword === 'shoes'
+                : $request->referrerType === 3 && $request->referrerName === 'news.example',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test%2F%3Futm_campaign%3Dsummer%26utm_term%3Dshoes')->assertOk();
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&urlref=https%3A%2F%2Fnews.example%2Fstory')->assertOk();
+    }
+
     public function test_rejects_oversized_bulk_request(): void
     {
         $this->bindSite();
@@ -99,6 +115,7 @@ final class TrackerEndpointTest extends TestCase
 
     public function test_respects_do_not_track(): void
     {
+        $this->bindSite();
         $recorder = $this->createMock(VisitRecorder::class);
         $recorder->expects($this->never())->method('record');
         $this->app->instance(VisitRecorder::class, $recorder);
@@ -114,6 +131,10 @@ final class TrackerEndpointTest extends TestCase
         $customDimensions = $this->createStub(CustomDimensionRepository::class);
         $customDimensions->method('configuredForSite')->willReturn($dimensions);
         $this->app->instance(CustomDimensionRepository::class, $customDimensions);
+        $settings = $this->createStub(TrackerSettings::class);
+        $settings->method('campaignNameParameters')->willReturn(['utm_campaign']);
+        $settings->method('campaignKeywordParameters')->willReturn(['utm_term']);
+        $this->app->instance(TrackerSettings::class, $settings);
     }
 
     private function bindUnusedRecorder(): void

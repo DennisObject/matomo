@@ -351,7 +351,9 @@ use App\Matomo\Tour\ConfiguredTourSettings;
 use App\Matomo\Tour\DatabaseTourDataRepository;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
+use App\Matomo\Tracker\ConfiguredTrackerSettings;
 use App\Matomo\Tracker\DatabaseVisitRecorder;
+use App\Matomo\Tracker\TrackerSettings;
 use App\Matomo\Tracker\VisitRecorder;
 use App\Matomo\TrackingFailures\DatabaseTrackingFailureRepository;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
@@ -1548,6 +1550,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(MatomoDatabase::class)->connection(),
             ),
         );
+        $this->app->singleton(TrackerSettings::class, ConfiguredTrackerSettings::class);
 
         $this->app->singleton(
             PromoWidgetDismissalRepository::class,

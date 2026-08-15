@@ -41,6 +41,8 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                     'config_browser_engine' => '', 'config_os' => '', 'config_cookie' => $request->cookiesEnabled ? 1 : 0,
                     'location_country' => '', 'location_browser_lang' => $request->browserLanguage,
                     'visitor_localtime' => $request->localTime, 'referer_url' => $request->referrerUrl,
+                    'referer_type' => $request->referrerType, 'referer_name' => $request->referrerName,
+                    'referer_keyword' => $request->referrerKeyword,
                     'user_id' => $request->userId, 'config_resolution' => $request->resolution,
                 ];
                 $visitId = $this->connection->table('log_visit')->insertGetId(
