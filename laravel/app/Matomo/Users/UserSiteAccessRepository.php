@@ -17,4 +17,17 @@ interface UserSiteAccessRepository
 
     /** @return list<array{site: int, access: string}> */
     public function forUser(string $login): array;
+
+    /**
+     * @param  list<int>|null  $allowedSiteIds
+     * @return array{rows: list<array{idsite: int, site_name: string, access: list<string>}>, total: int, hasSome: bool}
+     */
+    public function filteredForUser(
+        string $login,
+        ?int $limit,
+        int $offset,
+        ?string $search,
+        ?string $access,
+        ?array $allowedSiteIds,
+    ): array;
 }
