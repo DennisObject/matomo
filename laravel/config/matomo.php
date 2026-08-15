@@ -9,6 +9,7 @@ if (! is_string($configPath)) {
 }
 
 return [
+    'api_bulk_request_limit' => (int) env('MATOMO_API_BULK_REQUEST_LIMIT', 250),
     'plugin_system_settings' => [],
     'plugin_user_settings' => [],
     'config_path' => $configPath,
