@@ -25,6 +25,7 @@ use App\Matomo\Archiving\Events\ArchiveReportsStarting;
 use App\Matomo\Archiving\Events\ArchiveVisitsQueryBuilding;
 use App\Matomo\Archiving\ExamplePluginArchiveCollector;
 use App\Matomo\Archiving\GoalArchiveCollector;
+use App\Matomo\Archiving\PagePerformanceArchiveCollector;
 use App\Matomo\Archiving\SegmentConditionQueryApplier;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
 use App\Matomo\Archiving\SegmentExpressionParser;
@@ -178,6 +179,12 @@ class DatabaseReportArchiverTest extends TestCase
             $table->float('custom_float')->nullable();
             $table->float('product_price')->nullable();
             $table->unsignedBigInteger('bandwidth')->nullable();
+            $table->unsignedInteger('time_network')->nullable();
+            $table->unsignedInteger('time_server')->nullable();
+            $table->unsignedInteger('time_transfer')->nullable();
+            $table->unsignedInteger('time_dom_processing')->nullable();
+            $table->unsignedInteger('time_dom_completion')->nullable();
+            $table->unsignedInteger('time_on_load')->nullable();
             $table->string('custom_var_k1')->nullable();
             $table->string('custom_var_v1')->nullable();
             $table->string('custom_var_k2')->nullable();
@@ -2231,6 +2238,116 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertSame(1, $weekVisitors['visitor-b']['nb_visits']);
     }
 
+    public function test_collects_page_performance_totals_caps_segments_and_parents(): void
+    {
+        $this->insertVisits();
+        $this->insertActionRows();
+        $this->connection->table('log_link_visit_action')->where('idlink_va', 1)->update([
+            'time_network' => 100,
+            'time_server' => 200,
+            'time_transfer' => 300,
+            'time_dom_processing' => 400,
+            'time_dom_completion' => 500,
+            'time_on_load' => 600,
+        ]);
+        $this->connection->table('log_link_visit_action')->where('idlink_va', 2)->update([
+            'time_server' => 2_000,
+        ]);
+        $this->connection->table('log_link_visit_action')->where('idlink_va', 4)->update([
+            'time_network' => 50,
+        ]);
+        $this->registerPagePerformanceCollector(['time_server' => 1_000]);
+        $request = new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            plugin: 'PagePerformance',
+        );
+
+        $this->archiver()->archive($request);
+
+        $periods = new CarbonReportingPeriodFactory;
+        $day = $periods->make('day', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $names = [
+            'PagePerformance_network_time',
+            'PagePerformance_network_hits',
+            'PagePerformance_servery_time',
+            'PagePerformance_server_hits',
+            'PagePerformance_transfer_time',
+            'PagePerformance_transfer_hits',
+            'PagePerformance_domprocessing_time',
+            'PagePerformance_domprocessing_hits',
+            'PagePerformance_domcompletion_time',
+            'PagePerformance_domcompletion_hits',
+            'PagePerformance_onload_time',
+            'PagePerformance_onload_hits',
+            'PagePerformance_pageload_time',
+            'PagePerformance_pageload_hits',
+        ];
+        $numbers = new DatabaseVisitsSummaryArchiveRepository($this->connection);
+        $dayMetrics = $numbers->pluginMetrics(
+            [1],
+            [$day],
+            '',
+            $names,
+            'PagePerformance',
+        )[1][$day->rangeKey()];
+        $expected = [
+            'PagePerformance_network_time' => 150,
+            'PagePerformance_network_hits' => 2,
+            'PagePerformance_servery_time' => 1_200,
+            'PagePerformance_server_hits' => 2,
+            'PagePerformance_transfer_time' => 300,
+            'PagePerformance_transfer_hits' => 1,
+            'PagePerformance_domprocessing_time' => 400,
+            'PagePerformance_domprocessing_hits' => 1,
+            'PagePerformance_domcompletion_time' => 500,
+            'PagePerformance_domcompletion_hits' => 1,
+            'PagePerformance_onload_time' => 600,
+            'PagePerformance_onload_hits' => 1,
+            'PagePerformance_pageload_time' => 3_150,
+            'PagePerformance_pageload_hits' => 3,
+        ];
+        ksort($expected);
+        ksort($dayMetrics);
+        $this->assertSame($expected, $dayMetrics);
+
+        $segment = 'countryCode==au';
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $segment,
+            reports: ['PagePerformance.get'],
+        ));
+        $segmentHash = (new DatabaseSegmentHashResolver($this->connection))->resolve($segment);
+        $segmentMetrics = $numbers->pluginMetrics(
+            [1],
+            [$day],
+            $segmentHash,
+            $names,
+            'PagePerformance',
+        )[1][$day->rangeKey()];
+        $this->assertSame($dayMetrics, $segmentMetrics);
+
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'week',
+            date: '2026-08-15',
+            plugin: 'PagePerformance',
+            force: true,
+        ));
+        $week = $periods->make('week', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $weekMetrics = $numbers->pluginMetrics(
+            [1],
+            [$week],
+            '',
+            $names,
+            'PagePerformance',
+        )[1][$week->rangeKey()];
+        $this->assertSame($dayMetrics, $weekMetrics);
+    }
+
     private function archiver(): DatabaseReportArchiver
     {
         return new DatabaseReportArchiver(
@@ -2360,6 +2477,24 @@ class DatabaseReportArchiverTest extends TestCase
             numbers: new DatabaseVisitsSummaryArchiveRepository($this->connection),
             options: new DatabaseOptionRepository($this->connection),
             sites: new DatabaseSiteRepository($this->connection),
+        ));
+    }
+
+    /** @param array<string, int> $caps */
+    private function registerPagePerformanceCollector(array $caps = []): void
+    {
+        $this->events->listen(ArchiveReportsCollecting::class, new PagePerformanceArchiveCollector(
+            connection: $this->connection,
+            actionQueries: new ArchiveActionQueryFactory(
+                $this->connection,
+                $this->visitSegmentApplicator(),
+                $this->events,
+            ),
+            subperiods: new CarbonReportingSubperiodFactory,
+            segments: new DatabaseSegmentHashResolver($this->connection),
+            numbers: new DatabaseVisitsSummaryArchiveRepository($this->connection),
+            sites: new DatabaseSiteRepository($this->connection),
+            caps: $caps,
         ));
     }
 

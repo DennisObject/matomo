@@ -91,6 +91,14 @@ class InstallationConfigTest extends TestCase
             'defaultProvider' => 'openai',
             'openaiApiKey' => 'managed-key',
         ], $configuration->aiProviders());
+        $this->assertSame([
+            'time_network' => 120,
+            'time_server' => 0,
+            'time_transfer' => 0,
+            'time_dom_processing' => 0,
+            'time_dom_completion' => 0,
+            'time_on_load' => 0,
+        ], $configuration->pagePerformanceTimingCaps());
     }
 
     public function test_loads_reporting_overrides(): void
@@ -229,6 +237,10 @@ class InstallationConfigTest extends TestCase
             [AIProviders]
             defaultProvider = "openai"
             openaiApiKey = "managed-key"
+
+            [PagePerformance]
+            time_network_cap_duration_ms = 120
+            time_server_cap_duration_ms = -1
 
             [Segments]
             Segments[] = "countryCode==fr"
