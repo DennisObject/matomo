@@ -7,6 +7,7 @@ namespace App\Matomo\Api;
 use App\Matomo\Api\Exceptions\ConflictingAuthenticationParameters;
 use App\Matomo\Api\Exceptions\InvalidApiParameter;
 use App\Matomo\Api\Exceptions\MissingApiParameter;
+use App\Matomo\Archiving\ArchiveReportRequest;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\SiteAccessRole;
 use Illuminate\Http\Request;
@@ -277,6 +278,7 @@ final readonly class ApiRequest
 
     /** @var list<string> */
     private const array CORE_ADMIN_HOME_METHODS = [
+        'CoreAdminHome.archiveReports',
         'CoreAdminHome.deleteAllTrackingFailures',
         'CoreAdminHome.deleteTrackingFailure',
         'CoreAdminHome.getOptOutJSEmbedCode',
@@ -895,6 +897,43 @@ final readonly class ApiRequest
         }
 
         if ($method !== 'CoreAdminHome.deleteTrackingFailure') {
+            if ($method === 'CoreAdminHome.archiveReports') {
+                $siteId = self::requiredInteger($request, 'idSite');
+                $period = strtolower(self::requiredString($request, 'period'));
+                $date = self::requiredString($request, 'date');
+
+                if (! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
+                    throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
+                }
+
+                $reportInput = self::inputValue($request, 'report');
+                $reports = in_array($reportInput, [null, '', false, 0, '0', 'false'], true)
+                    ? []
+                    : self::stringList($reportInput, 'report', splitCommaSeparated: false);
+                $segment = self::nullableStringInput($request, 'segment');
+                $segment = in_array(strtolower($segment ?? ''), ['', '0', 'false'], true)
+                    ? null
+                    : substr($segment ?? '', 0, 8193);
+                $plugin = self::nullableStringInput($request, 'plugin');
+                $plugin = in_array(strtolower($plugin ?? ''), ['', '0', 'false'], true)
+                    ? null
+                    : $plugin;
+
+                return new CoreAdminHomeRequest(
+                    siteId: null,
+                    failureId: null,
+                    archiveReport: new ArchiveReportRequest(
+                        siteId: $siteId,
+                        period: $period,
+                        date: $date,
+                        segment: $segment,
+                        plugin: $plugin,
+                        reports: $reports,
+                        force: true,
+                    ),
+                );
+            }
+
             if ($method === 'CoreAdminHome.setArchiveSettings') {
                 $browserTrigger = self::requiredBoolean(
                     $request,

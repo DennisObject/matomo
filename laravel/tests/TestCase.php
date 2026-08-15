@@ -14,6 +14,9 @@ use App\Matomo\Annotations\AnnotationRepository;
 use App\Matomo\Api\GoalDefinition;
 use App\Matomo\Api\OptOutEmbedRequest;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
+use App\Matomo\Archiving\ArchiveReportRequest;
+use App\Matomo\Archiving\ArchiveReportResult;
+use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\CoreAdmin\BrandingManager;
@@ -229,6 +232,13 @@ abstract class TestCase extends BaseTestCase
                 bool $forceInvalidateNonexistent,
             ): array {
                 return [];
+            }
+        });
+        $this->app->instance(ReportArchiver::class, new class implements ReportArchiver
+        {
+            public function archive(ArchiveReportRequest $request): ArchiveReportResult
+            {
+                return new ArchiveReportResult([], 0, false);
             }
         });
         $this->app->instance(ScheduledTaskRunner::class, new class implements ScheduledTaskRunner

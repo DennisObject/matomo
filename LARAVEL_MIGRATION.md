@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 204 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 205 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -120,6 +120,9 @@ Handled reporting API method names:
   status updates through bound queries; plus `runScheduledTasks`, including superuser access,
   persistent timetables and retry state, database locks, priority ordering, execution results, and
   task collection, veto, start, and completion events.
+- `CoreAdminHome.archiveReports`, including superuser access, strict site, period, date, segment,
+  plugin, and report parsing, forced direct-request archiving, archive event dispatch, and the
+  legacy archive ID and visit-count response.
 - `Overlay`: both API methods, including the localized client key contract, site and global URL
   parameter exclusions, the configured pre-grouping limit, live following-page, outlink, and
   download rows, outer API row limits, and site view-access checks.
@@ -141,7 +144,7 @@ Reporting API module matrix:
 | `Annotations` | 7 | 7 | 0 |
 | `BotTracking` | 11 | 0 | 11 |
 | `Contents` | 2 | 2 | 0 |
-| `CoreAdminHome` | 13 | 11 | 2 |
+| `CoreAdminHome` | 13 | 12 | 1 |
 | `CorePluginsAdmin` | 5 | 0 | 5 |
 | `CustomDimensions` | 7 | 0 | 7 |
 | `CustomJsTracker` | 1 | 1 | 0 |
@@ -185,7 +188,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **204** | **185** |
+| **Total** | **389** | **205** | **184** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
