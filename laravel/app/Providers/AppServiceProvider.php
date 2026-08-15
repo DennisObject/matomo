@@ -288,6 +288,7 @@ use App\Matomo\Reporting\HierarchicalBlobArchiveRepository;
 use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Reporting\ReportingPeriodFactory;
 use App\Matomo\Reporting\ReportingSettings;
+use App\Matomo\Reporting\ReportMetadataCatalog;
 use App\Matomo\Reporting\ScreenResolutionPolicy;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
@@ -1722,6 +1723,13 @@ class AppServiceProvider extends ServiceProvider
                 translator: $application->make(MatomoTranslator::class),
                 dimensions: $application->make(CustomDimensionRepository::class),
                 catalogPath: resource_path('matomo/segment-metadata.php'),
+            ),
+        );
+        $this->app->singleton(
+            ReportMetadataCatalog::class,
+            fn (Application $application): ReportMetadataCatalog => new ReportMetadataCatalog(
+                translator: $application->make(MatomoTranslator::class),
+                catalogPath: resource_path('matomo/report-metadata.php'),
             ),
         );
         $this->app->singleton(
