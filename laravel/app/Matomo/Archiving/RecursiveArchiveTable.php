@@ -10,6 +10,7 @@ use InvalidArgumentException;
  * @phpstan-type ArchiveValue float|int|string|null
  * @phpstan-type Columns array<string, ArchiveValue>
  * @phpstan-type Metadata array<string, ArchiveValue>
+ * @phpstan-type StoredColumns array<int|string, ArchiveValue|array<int, array<int, ArchiveValue>>>
  * @phpstan-type ArchiveRow array{columns: Columns, metadata: Metadata, subtableId: int|null}
  * @phpstan-type ArchiveRecords array<string, list<ArchiveRow>>
  */
@@ -44,7 +45,7 @@ final class RecursiveArchiveTable
         }
 
         $this->mergeColumns($node->columns, $columns);
-        $node->metadata = [...$node->metadata, ...$metadata];
+        $node->metadata += $metadata;
     }
 
     /**
@@ -138,7 +139,7 @@ final class RecursiveArchiveTable
     /**
      * @param  array<string, RecursiveArchiveNode>  $nodes
      * @param  array<string, string>  $serialized
-     * @return list<array{0: Columns, 1: Metadata, 3: int|null}>
+     * @return list<array{0: StoredColumns, 1: Metadata, 3: int|null}>
      */
     private function serializedRows(
         array $nodes,
@@ -169,7 +170,7 @@ final class RecursiveArchiveTable
                 ? $node->columns
                 : $this->parentColumns($node->columns['label'], $children);
             $rows[] = [
-                0 => $columns,
+                0 => ArchiveGoalMetrics::nest($columns),
                 1 => $subtableId === null ? $node->metadata : [],
                 3 => $subtableId,
             ];

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\Archiving\ActionArchiveCollector;
+use App\Matomo\Archiving\ActionArchiveConfiguration;
+use App\Matomo\Archiving\ActionArchiveMetric;
+use App\Matomo\Archiving\ActionArchivePathResolver;
 use App\Matomo\Archiving\ArchiveActionQueryFactory;
 use App\Matomo\Archiving\ArchiveConversionQueryFactory;
 use App\Matomo\Archiving\ArchiveRecordSet;
@@ -17,6 +21,7 @@ use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\DynamicSegmentResolver;
 use App\Matomo\Archiving\EcommerceItemArchiveCollector;
 use App\Matomo\Archiving\EventArchiveCollector;
+use App\Matomo\Archiving\Events\ActionArchiveMetricsCollecting;
 use App\Matomo\Archiving\Events\ArchiveActionsQueryBuilding;
 use App\Matomo\Archiving\Events\ArchiveConversionsQueryBuilding;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
@@ -29,6 +34,7 @@ use App\Matomo\Archiving\PagePerformanceArchiveCollector;
 use App\Matomo\Archiving\SegmentConditionQueryApplier;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
 use App\Matomo\Archiving\SegmentExpressionParser;
+use App\Matomo\Archiving\TrustedSegmentSqlExpression;
 use App\Matomo\Archiving\VisitAggregateArchiveCollector;
 use App\Matomo\Archiving\VisitDimensionArchiveCollector;
 use App\Matomo\Geolocation\CountryMetadataProvider;
@@ -74,7 +80,9 @@ class DatabaseReportArchiverTest extends TestCase
         $schema->create('site', static function (Blueprint $table): void {
             $table->unsignedInteger('idsite')->primary();
             $table->string('timezone');
+            $table->string('main_url')->nullable();
             $table->boolean('ecommerce')->default(false);
+            $table->boolean('sitesearch')->default(true);
         });
         $schema->create('option', static function (Blueprint $table): void {
             $table->string('option_name')->primary();
@@ -161,6 +169,8 @@ class DatabaseReportArchiverTest extends TestCase
             $table->unsignedInteger('idvisit');
             $table->unsignedInteger('idaction_url')->nullable();
             $table->unsignedInteger('idaction_name')->nullable();
+            $table->unsignedInteger('idaction_url_ref')->nullable();
+            $table->unsignedInteger('idaction_name_ref')->nullable();
             $table->unsignedInteger('idaction_event_category')->nullable();
             $table->unsignedInteger('idaction_event_action')->nullable();
             $table->unsignedInteger('idaction_content_name')->nullable();
@@ -179,6 +189,7 @@ class DatabaseReportArchiverTest extends TestCase
             $table->float('custom_float')->nullable();
             $table->float('product_price')->nullable();
             $table->unsignedBigInteger('bandwidth')->nullable();
+            $table->unsignedInteger('time_spent_ref_action')->default(0);
             $table->unsignedInteger('time_network')->nullable();
             $table->unsignedInteger('time_server')->nullable();
             $table->unsignedInteger('time_transfer')->nullable();
@@ -2348,6 +2359,197 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertSame($dayMetrics, $weekMetrics);
     }
 
+    public function test_collects_recursive_action_records_metrics_extensions_segments_and_parents(): void
+    {
+        $this->insertVisits();
+        $this->insertActionArchiveRows();
+        $this->connection->table('site')->where('idsite', 1)->update([
+            'main_url' => 'https://example.test',
+            'sitesearch' => 1,
+        ]);
+        $this->connection->table('log_visit')->where('idvisit', 1)->update([
+            'visit_entry_idaction_url' => 30,
+            'visit_entry_idaction_name' => 31,
+            'visit_exit_idaction_url' => 32,
+            'visit_exit_idaction_name' => 33,
+            'visit_total_actions' => 4,
+            'visit_total_time' => 90,
+        ]);
+        $this->connection->table('log_visit')->where('idvisit', 2)->update([
+            'visit_entry_idaction_url' => 37,
+            'visit_entry_idaction_name' => 36,
+            'visit_exit_idaction_url' => 37,
+            'visit_exit_idaction_name' => 38,
+            'visit_total_actions' => 2,
+            'visit_total_time' => 40,
+        ]);
+        $this->events->listen(
+            ActionArchiveMetricsCollecting::class,
+            static function (ActionArchiveMetricsCollecting $event): void {
+                $event->metrics[] = new ActionArchiveMetric(
+                    'extension_hits',
+                    new TrustedSegmentSqlExpression('COUNT(*) * 2'),
+                );
+            },
+        );
+        $this->registerActionCollector(new ActionArchiveConfiguration(flatLimit: 500));
+        $request = new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            plugin: 'Actions',
+        );
+
+        $this->archiver()->archive($request);
+
+        $periods = new CarbonReportingPeriodFactory;
+        $day = $periods->make('day', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $blobs = new DatabaseBlobArchiveRepository($this->connection);
+        $urlRecords = $blobs->records(
+            [1],
+            [$day],
+            '',
+            'Actions_actions_url',
+            true,
+        )[1][$day->rangeKey()];
+        $urls = $this->hierarchicalRowsByLabel($urlRecords['Actions_actions_url']);
+        $this->assertSame(2, $urls['docs']['columns']['nb_visits']);
+        $this->assertSame(2, $urls['docs']['columns']['nb_hits']);
+        $this->assertArrayNotHasKey('nb_uniq_visitors', $urls['docs']['columns']);
+        $docsSubtable = $urls['docs']['subtableId'];
+        $this->assertIsInt($docsSubtable);
+        $docs = $this->hierarchicalRowsByLabel(
+            $urlRecords['Actions_actions_url_'.$docsSubtable],
+        );
+        $this->assertSame(30, $docs['/start']['columns']['sum_time_spent']);
+        $this->assertSame(1, $docs['/start']['columns']['entry_nb_visits']);
+        $this->assertSame(1, $docs['/next']['columns']['exit_nb_visits']);
+        $this->assertSame(2, $docs['/start']['columns']['extension_hits']);
+        $this->assertSame(
+            'https://example.test/docs/start',
+            $docs['/start']['metadata']['url'],
+        );
+        $this->assertSame(1, $urls['/results']['columns']['nb_hits_following_search']);
+
+        $downloads = $this->hierarchicalRowsByLabel($blobs->records(
+            [1],
+            [$day],
+            '',
+            'Actions_downloads',
+            true,
+        )[1][$day->rangeKey()]['Actions_downloads']);
+        $this->assertSame(['cdn.test'], array_keys($downloads));
+        $searches = $this->hierarchicalRowsByLabel($blobs->records(
+            [1],
+            [$day],
+            '',
+            'Actions_sitesearch',
+            false,
+        )[1][$day->rangeKey()]['Actions_sitesearch']);
+        $this->assertSame(1, $searches['manual']['columns']['site_search_has_no_result']);
+        $categories = $this->hierarchicalRowsByLabel($blobs->records(
+            [1],
+            [$day],
+            '',
+            'Actions_SiteSearchCategories',
+            false,
+        )[1][$day->rangeKey()]['Actions_SiteSearchCategories']);
+        $this->assertSame(1, $categories['docs']['columns']['nb_actions']);
+        $flatUrls = $this->hierarchicalRowsByLabel($blobs->records(
+            [1],
+            [$day],
+            '',
+            'Actions_actions_url_flat',
+            false,
+        )[1][$day->rangeKey()]['Actions_actions_url_flat']);
+        $this->assertArrayHasKey('/docs/start', $flatUrls);
+
+        $names = [
+            'Actions_nb_searches',
+            'Actions_nb_keywords',
+            'Actions_nb_outlinks',
+            'Actions_nb_uniq_outlinks',
+            'Actions_nb_pageviews',
+            'Actions_nb_uniq_pageviews',
+            'Actions_sum_time_generation',
+            'Actions_nb_hits_with_time_generation',
+            'Actions_nb_downloads',
+            'Actions_nb_uniq_downloads',
+            'Actions_hits',
+        ];
+        $numbers = new DatabaseVisitsSummaryArchiveRepository($this->connection);
+        $dayMetrics = $numbers->pluginMetrics(
+            [1],
+            [$day],
+            '',
+            $names,
+            'Actions',
+        )[1][$day->rangeKey()];
+        $expectedMetrics = [
+            'Actions_nb_downloads' => 1,
+            'Actions_nb_hits_with_time_generation' => 3,
+            'Actions_nb_keywords' => 1,
+            'Actions_nb_outlinks' => 1,
+            'Actions_nb_pageviews' => 4,
+            'Actions_nb_searches' => 1,
+            'Actions_nb_uniq_downloads' => 1,
+            'Actions_nb_uniq_outlinks' => 1,
+            'Actions_nb_uniq_pageviews' => 3,
+            'Actions_sum_time_generation' => 3.5,
+            'Actions_hits' => 6,
+        ];
+        ksort($dayMetrics);
+        ksort($expectedMetrics);
+        $this->assertSame($expectedMetrics, $dayMetrics);
+
+        $segment = 'countryCode==au';
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $segment,
+            reports: ['Actions.getPageUrls'],
+        ));
+        $segmentMetrics = $numbers->pluginMetrics(
+            [1],
+            [$day],
+            (new DatabaseSegmentHashResolver($this->connection))->resolve($segment),
+            ['Actions_hits', 'Actions_nb_pageviews', 'Actions_nb_searches'],
+            'Actions',
+        )[1][$day->rangeKey()];
+        $this->assertSame([
+            'Actions_hits' => 2,
+            'Actions_nb_pageviews' => 2,
+            'Actions_nb_searches' => 1,
+        ], $segmentMetrics);
+
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'week',
+            date: '2026-08-15',
+            plugin: 'Actions',
+            force: true,
+        ));
+        $week = $periods->make('week', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $weekMetrics = $numbers->pluginMetrics(
+            [1],
+            [$week],
+            '',
+            $names,
+            'Actions',
+        )[1][$week->rangeKey()];
+        ksort($weekMetrics);
+        $this->assertSame($expectedMetrics, $weekMetrics);
+        $weekUrls = $this->hierarchicalRowsByLabel($blobs->records(
+            [1],
+            [$week],
+            '',
+            'Actions_actions_url',
+            true,
+        )[1][$week->rangeKey()]['Actions_actions_url']);
+        $this->assertSame(2, $weekUrls['docs']['columns']['nb_visits']);
+    }
+
     private function archiver(): DatabaseReportArchiver
     {
         return new DatabaseReportArchiver(
@@ -2495,6 +2697,24 @@ class DatabaseReportArchiverTest extends TestCase
             numbers: new DatabaseVisitsSummaryArchiveRepository($this->connection),
             sites: new DatabaseSiteRepository($this->connection),
             caps: $caps,
+        ));
+    }
+
+    private function registerActionCollector(ActionArchiveConfiguration $configuration): void
+    {
+        $visits = $this->visitSegmentApplicator();
+        $this->events->listen(ArchiveReportsCollecting::class, new ActionArchiveCollector(
+            connection: $this->connection,
+            actionQueries: new ArchiveActionQueryFactory($this->connection, $visits, $this->events),
+            visitQueries: new ArchiveVisitQueryFactory($this->connection, $visits, $this->events),
+            subperiods: new CarbonReportingSubperiodFactory,
+            segments: new DatabaseSegmentHashResolver($this->connection),
+            blobs: new DatabaseBlobArchiveRepository($this->connection),
+            numbers: new DatabaseVisitsSummaryArchiveRepository($this->connection),
+            sites: new DatabaseSiteRepository($this->connection),
+            configuration: $configuration,
+            paths: new ActionArchivePathResolver($configuration),
+            events: $this->events,
         ));
     }
 
@@ -2669,6 +2889,107 @@ class DatabaseReportArchiverTest extends TestCase
                 'custom_float' => null,
                 'product_price' => null,
                 'server_time' => '2026-08-15 11:00:00',
+            ],
+        ]);
+    }
+
+    private function insertActionArchiveRows(): void
+    {
+        $this->connection->table('log_action')->insert([
+            ['idaction' => 30, 'name' => 'example.test/docs/start', 'type' => 1, 'url_prefix' => 2],
+            ['idaction' => 31, 'name' => 'Docs / Start', 'type' => 4, 'url_prefix' => null],
+            ['idaction' => 32, 'name' => 'example.test/docs/next', 'type' => 1, 'url_prefix' => 2],
+            ['idaction' => 33, 'name' => 'Docs / Next', 'type' => 4, 'url_prefix' => null],
+            ['idaction' => 34, 'name' => 'https://external.test/path', 'type' => 2, 'url_prefix' => null],
+            ['idaction' => 35, 'name' => 'https://cdn.test/file.zip', 'type' => 3, 'url_prefix' => null],
+            ['idaction' => 36, 'name' => 'manual', 'type' => 8, 'url_prefix' => null],
+            ['idaction' => 37, 'name' => 'example.test/results', 'type' => 1, 'url_prefix' => 2],
+            ['idaction' => 38, 'name' => 'Results', 'type' => 4, 'url_prefix' => null],
+        ]);
+        $this->connection->table('log_link_visit_action')->insert([
+            [
+                'idsite' => 1,
+                'idvisit' => 1,
+                'idaction_url' => 30,
+                'idaction_name' => 31,
+                'idaction_url_ref' => null,
+                'idaction_name_ref' => null,
+                'idaction_event_category' => null,
+                'custom_float' => 1_000,
+                'search_count' => null,
+                'search_cat' => null,
+                'time_spent_ref_action' => 0,
+                'server_time' => '2026-08-14 13:00:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 1,
+                'idaction_url' => 32,
+                'idaction_name' => 33,
+                'idaction_url_ref' => 30,
+                'idaction_name_ref' => 31,
+                'idaction_event_category' => null,
+                'custom_float' => 2_000,
+                'search_count' => null,
+                'search_cat' => null,
+                'time_spent_ref_action' => 30,
+                'server_time' => '2026-08-14 13:01:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 1,
+                'idaction_url' => 34,
+                'idaction_name' => null,
+                'idaction_url_ref' => 32,
+                'idaction_name_ref' => 33,
+                'idaction_event_category' => null,
+                'custom_float' => null,
+                'search_count' => null,
+                'search_cat' => null,
+                'time_spent_ref_action' => 20,
+                'server_time' => '2026-08-14 13:02:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 1,
+                'idaction_url' => 35,
+                'idaction_name' => null,
+                'idaction_url_ref' => 34,
+                'idaction_name_ref' => null,
+                'idaction_event_category' => null,
+                'custom_float' => null,
+                'search_count' => null,
+                'search_cat' => null,
+                'time_spent_ref_action' => 10,
+                'server_time' => '2026-08-14 13:03:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_url' => 37,
+                'idaction_name' => 36,
+                'idaction_url_ref' => null,
+                'idaction_name_ref' => null,
+                'idaction_event_category' => null,
+                'custom_float' => null,
+                'search_count' => 0,
+                'search_cat' => 'docs',
+                'time_spent_ref_action' => 0,
+                'server_time' => '2026-08-15 08:00:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_url' => 37,
+                'idaction_name' => 38,
+                'idaction_url_ref' => 37,
+                'idaction_name_ref' => 36,
+                'idaction_event_category' => null,
+                'custom_float' => 500,
+                'search_count' => null,
+                'search_cat' => null,
+                'time_spent_ref_action' => 15,
+                'server_time' => '2026-08-15 08:01:00',
             ],
         ]);
     }
