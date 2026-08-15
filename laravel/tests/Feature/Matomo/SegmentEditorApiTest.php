@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Segments\Events\SegmentDeactivating;
+use App\Matomo\Segments\MutableStoredSegmentRepository;
+use App\Matomo\Segments\SegmentCacheInvalidator;
 use App\Matomo\Segments\StoredSegmentRepository;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 /** @phpstan-import-type StoredSegment from StoredSegmentRepository */
@@ -25,6 +29,8 @@ class SegmentEditorApiTest extends TestCase
         $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
         $this->segments = new FakeStoredSegmentRepository;
         $this->app->instance(StoredSegmentRepository::class, $this->segments);
+        $this->app->instance(MutableStoredSegmentRepository::class, $this->segments);
+        $this->app->instance(SegmentCacheInvalidator::class, new FakeSegmentCacheInvalidator);
     }
 
     public function test_returns_a_visible_stored_segment(): void
@@ -94,6 +100,62 @@ class SegmentEditorApiTest extends TestCase
             ->assertExactJson(['value' => true]);
     }
 
+    public function test_deletes_an_owned_segment_and_clears_the_cache(): void
+    {
+        Event::fake([SegmentDeactivating::class]);
+        $cache = new FakeSegmentCacheInvalidator;
+        $this->app->instance(SegmentCacheInvalidator::class, $cache);
+        $this->segments->rows = [$this->segment(1, 'Mine', 'alice', 0, 1)];
+
+        $this->get($this->url('delete', ['idSegment' => 1]))
+            ->assertOk()
+            ->assertExactJson(['result' => 'success', 'message' => 'ok']);
+
+        self::assertSame(1, $this->segments->deletedId);
+        self::assertNotNull($this->segments->deletedAt);
+        self::assertTrue($cache->cleared);
+        Event::assertDispatched(
+            SegmentDeactivating::class,
+            static fn (SegmentDeactivating $event): bool => $event->segmentId === 1,
+        );
+    }
+
+    public function test_stars_and_unstars_an_owned_segment(): void
+    {
+        $this->segments->rows = [$this->segment(1, 'Mine', 'alice', 0, 1)];
+
+        $this->get($this->url('star', ['idSegment' => 1]))
+            ->assertOk()
+            ->assertExactJson([
+                'result' => true,
+                'starred' => 1,
+                'starred_by' => 'alice',
+            ]);
+        self::assertSame(['starred' => 1, 'starred_by' => 'alice'], $this->segments->updated);
+
+        $this->get($this->url('unstar', ['idSegment' => 1]))
+            ->assertOk()
+            ->assertExactJson(['starred' => 0, 'result' => true]);
+        self::assertSame(['starred' => 0, 'starred_by' => null], $this->segments->updated);
+    }
+
+    public function test_rejects_state_changes_to_foreign_global_deleted_and_missing_segments(): void
+    {
+        $this->segments->rows = [$this->segment(1, 'Foreign', 'bob', 1, 1)];
+        $this->get($this->url('delete', ['idSegment' => 1]))->assertBadRequest();
+
+        $this->segments->rows = [$this->segment(2, 'Global', 'alice', 0, 0)];
+        $this->get($this->url('star', ['idSegment' => 2]))->assertBadRequest();
+
+        $this->segments->rows = [$this->segment(3, 'Deleted', 'alice', 0, 1, deleted: 1)];
+        $this->get($this->url('unstar', ['idSegment' => 3]))->assertBadRequest();
+
+        $this->segments->rows = [];
+        $this->get($this->url('delete', ['idSegment' => 99]))
+            ->assertBadRequest()
+            ->assertJsonPath('message', 'Requested segment not found');
+    }
+
     /** @return StoredSegment */
     private function segment(
         int $id,
@@ -135,10 +197,17 @@ class SegmentEditorApiTest extends TestCase
 }
 
 /** @phpstan-import-type StoredSegment from StoredSegmentRepository */
-final class FakeStoredSegmentRepository implements StoredSegmentRepository
+final class FakeStoredSegmentRepository implements MutableStoredSegmentRepository
 {
     /** @var list<StoredSegment> */
     public array $rows = [];
+
+    public ?int $deletedId = null;
+
+    public ?string $deletedAt = null;
+
+    /** @var array<string, bool|int|string|null> */
+    public array $updated = [];
 
     public function find(int $segmentId): ?array
     {
@@ -154,5 +223,28 @@ final class FakeStoredSegmentRepository implements StoredSegmentRepository
     public function visible(string $login, bool $superUser, ?int $siteId): array
     {
         return $this->rows;
+    }
+
+    public function delete(int $segmentId, string $editedAt): void
+    {
+        $this->deletedId = $segmentId;
+        $this->deletedAt = $editedAt;
+    }
+
+    public function update(int $segmentId, array $values): bool
+    {
+        $this->updated = $values;
+
+        return true;
+    }
+}
+
+final class FakeSegmentCacheInvalidator implements SegmentCacheInvalidator
+{
+    public bool $cleared = false;
+
+    public function clear(): void
+    {
+        $this->cleared = true;
     }
 }

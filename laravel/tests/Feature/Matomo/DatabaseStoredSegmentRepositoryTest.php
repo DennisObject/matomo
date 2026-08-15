@@ -36,6 +36,20 @@ class DatabaseStoredSegmentRepositoryTest extends TestCase
             [6, 1, 3, 2],
             array_column($repository->visible('alice', true, 1), 'idsegment'),
         );
+
+        $this->assertTrue($repository->update(1, [
+            'definition' => 'browserCode==CH',
+            'starred' => 1,
+        ]));
+        $updated = $repository->find(1);
+        $this->assertSame(md5('browserCode==CH'), $updated['hash']);
+        $this->assertSame(1, $updated['starred']);
+
+        $repository->delete(1, '2026-08-15 13:00:00');
+        $deleted = $repository->find(1);
+        $this->assertIsArray($deleted);
+        $this->assertSame(1, $deleted['deleted']);
+        $this->assertSame('2026-08-15 13:00:00', $deleted['ts_last_edit']);
     }
 
     private function createTable(Connection $connection): void
