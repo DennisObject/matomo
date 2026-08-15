@@ -229,6 +229,24 @@ final readonly class DatabaseSiteRepository implements SiteRepository
         });
     }
 
+    public function renameGroup(string $oldGroupName, string $newGroupName): array
+    {
+        return $this->connection->transaction(function () use ($oldGroupName, $newGroupName): array {
+            $ids = $this->connection
+                ->table('site')
+                ->where('group', $oldGroupName)
+                ->pluck('idsite')
+                ->map(static fn (mixed $idSite): int => (int) $idSite)
+                ->all();
+
+            if ($ids !== []) {
+                $this->connection->table('site')->whereIn('idsite', $ids)->update(['group' => $newGroupName]);
+            }
+
+            return array_values($ids);
+        });
+    }
+
     public function excludedReferrers(int $idSite): ?string
     {
         $value = $this->connection

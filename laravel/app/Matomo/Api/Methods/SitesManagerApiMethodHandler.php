@@ -126,6 +126,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isSiteIdFromUrlRequest()
             || $request->isSitesManagerGlobalSettingsRequest()
             || $request->isSiteAliasMutationRequest()
+            || $request->isSiteGroupRenameRequest()
             || $this->globalOption($request) !== null;
     }
 
@@ -141,6 +142,10 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
         if ($request->isSiteAliasMutationRequest()) {
             return $this->mutateSiteAliases($request);
+        }
+
+        if ($request->isSiteGroupRenameRequest()) {
+            return $this->renameSiteGroup($request);
         }
 
         if ($request->isCurrencySymbolsRequest()) {
@@ -873,6 +878,38 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             : count(array_diff($final, [$mainUrl, ...$incoming]));
 
         return $this->responses->scalar($request, $inserted);
+    }
+
+    private function renameSiteGroup(ApiRequest $request): Response
+    {
+        if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+            return $this->responses->error(
+                $request,
+                "You can't access this resource as it requires a 'superuser' access.",
+                401,
+            );
+        }
+
+        $oldGroup = $request->oldSiteGroup
+            ?? throw new LogicException('The old site group was not parsed.');
+        $newGroup = $request->newSiteGroup
+            ?? throw new LogicException('The new site group was not parsed.');
+
+        if ($oldGroup === $newGroup) {
+            return $this->responses->scalar($request, true);
+        }
+
+        $siteIds = $this->sites->renameGroup($oldGroup, $newGroup);
+
+        foreach ($siteIds as $idSite) {
+            $this->siteTrackerCache->clear($idSite);
+        }
+
+        if ($siteIds !== []) {
+            $this->trackerCache->clearGeneral();
+        }
+
+        return $this->responses->scalar($request, true);
     }
 
     /**

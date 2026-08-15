@@ -133,6 +133,8 @@ class DatabaseSiteRepositoryTest extends TestCase
         $this->assertNull($sites->excludedReferrers(99));
         $this->assertSame('session,token', $sites->excludedParameters(3));
         $this->assertNull($sites->excludedParameters(99));
+        $this->assertSame([3], $sites->renameGroup(' Main ', 'Renamed'));
+        $this->assertSame([3], array_column($sites->detailsInGroup('Renamed'), 'idsite'));
     }
 
     public function test_returns_an_empty_list_before_the_site_table_exists(): void
