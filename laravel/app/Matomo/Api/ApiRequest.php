@@ -128,6 +128,20 @@ final readonly class ApiRequest
     ];
 
     /** @var list<string> */
+    private const array EXAMPLE_PLUGIN_METHODS = [
+        'ExamplePlugin.getAnswerToLife',
+        'ExamplePlugin.getExampleReport',
+        'ExamplePlugin.getExampleArchivedMetric',
+        'ExamplePlugin.getSegmentHash',
+    ];
+
+    /** @var list<string> */
+    private const array EXAMPLE_PLUGIN_REPORT_METHODS = [
+        'ExamplePlugin.getExampleReport',
+        'ExamplePlugin.getExampleArchivedMetric',
+    ];
+
+    /** @var list<string> */
     private const array DASHBOARD_METHODS = [
         'Dashboard.getDashboards',
         'Dashboard.createNewDashboardForUser',
@@ -193,6 +207,7 @@ final readonly class ApiRequest
         public ?AiProviderRequest $aiProvider,
         public ?DashboardRequest $dashboard,
         public ?ExampleApiRequest $exampleApi,
+        public ?ExamplePluginRequest $examplePlugin,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -238,6 +253,7 @@ final readonly class ApiRequest
             aiProvider: null,
             dashboard: null,
             exampleApi: null,
+            examplePlugin: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -528,6 +544,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::EXAMPLE_API_METHODS, true);
     }
 
+    public function isExamplePluginRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::EXAMPLE_PLUGIN_METHODS, true);
+    }
+
     public function isAiProvidersRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::AI_PROVIDERS_METHODS, true);
@@ -603,7 +624,35 @@ final readonly class ApiRequest
             aiProvider: self::aiProvider($request, $module, $method),
             dashboard: self::dashboard($request, $module, $method),
             exampleApi: self::exampleApi($request, $module, $method),
+            examplePlugin: self::examplePlugin($request, $module, $method),
             authentication: $authentication,
+        );
+    }
+
+    private static function examplePlugin(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?ExamplePluginRequest {
+        if ($module !== 'API' || ! in_array($method, self::EXAMPLE_PLUGIN_METHODS, true)) {
+            return null;
+        }
+
+        $segment = self::nullableStringInput($request, 'segment');
+
+        if ($method === 'ExamplePlugin.getSegmentHash' && $segment === null) {
+            throw new MissingApiParameter('segment');
+        }
+
+        [$siteIds, $allSites] = $method === 'ExamplePlugin.getSegmentHash'
+            ? self::reportSiteIds($request)
+            : [[], false];
+
+        return new ExamplePluginRequest(
+            truth: self::booleanInput($request, 'truth', true),
+            segment: $segment,
+            siteIds: $siteIds,
+            allSites: $allSites,
         );
     }
 
@@ -1111,6 +1160,7 @@ final readonly class ApiRequest
                 && ! in_array($method, self::DEVICES_DETECTION_METHODS, true)
                 && $method !== self::PAGE_PERFORMANCE_METHOD
                 && $method !== self::USER_ID_METHOD
+                && ! in_array($method, self::EXAMPLE_PLUGIN_REPORT_METHODS, true)
                 && ! in_array($method, self::EVENTS_METHODS, true)
                 && ! in_array($method, self::CONTENTS_METHODS, true)
                 && $method !== self::AI_AGENTS_METHOD
