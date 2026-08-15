@@ -11,10 +11,12 @@ use App\Matomo\AiProviders\AiProviderDefinition;
 use App\Matomo\AiProviders\AiProviderSettingsRepository;
 use App\Matomo\AiProviders\AiProviderStoredSettings;
 use App\Matomo\Api\GoalDefinition;
+use App\Matomo\Api\OptOutEmbedRequest;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\CoreAdmin\BrandingManager;
 use App\Matomo\CoreAdmin\CoreAdminSettings;
+use App\Matomo\CoreAdmin\OptOutEmbedCodeGenerator;
 use App\Matomo\Dashboard\DashboardLayoutProvider;
 use App\Matomo\Dashboard\DashboardRecipientPolicy;
 use App\Matomo\Dashboard\DashboardRepository;
@@ -157,6 +159,18 @@ abstract class TestCase extends BaseTestCase
                 bool $hasCustomFavicon,
             ): array {
                 return ['useCustomLogo' => false];
+            }
+        });
+        $this->app->instance(OptOutEmbedCodeGenerator::class, new class implements OptOutEmbedCodeGenerator
+        {
+            public function javascript(OptOutEmbedRequest $options): string
+            {
+                return '<script src="opt-out.js"></script>';
+            }
+
+            public function selfContained(OptOutEmbedRequest $options, string $language): string
+            {
+                return '<script>optOut()</script>';
             }
         });
         $this->app->instance(TrackingFailureRepository::class, new class implements TrackingFailureRepository

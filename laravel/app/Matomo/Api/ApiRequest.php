@@ -218,6 +218,8 @@ final readonly class ApiRequest
     private const array CORE_ADMIN_HOME_METHODS = [
         'CoreAdminHome.deleteAllTrackingFailures',
         'CoreAdminHome.deleteTrackingFailure',
+        'CoreAdminHome.getOptOutJSEmbedCode',
+        'CoreAdminHome.getOptOutSelfContainedEmbedCode',
         'CoreAdminHome.getTrackingFailures',
         'CoreAdminHome.setArchiveSettings',
         'CoreAdminHome.setBrandingSettings',
@@ -823,6 +825,41 @@ final readonly class ApiRequest
                     useCustomLogo: self::requiredBoolean($request, 'useCustomLogo'),
                     hasCustomLogo: self::requiredBoolean($request, 'hasCustomLogo'),
                     hasCustomFavicon: self::requiredBoolean($request, 'hasCustomFavicon'),
+                );
+            }
+
+            if (in_array($method, [
+                'CoreAdminHome.getOptOutJSEmbedCode',
+                'CoreAdminHome.getOptOutSelfContainedEmbedCode',
+            ], true)) {
+                $backgroundColor = self::requiredString($request, 'backgroundColor');
+                $fontColor = self::requiredString($request, 'fontColor');
+                $fontSize = self::requiredString($request, 'fontSize');
+                $fontFamily = self::requiredString($request, 'fontFamily');
+                $javascript = $method === 'CoreAdminHome.getOptOutJSEmbedCode';
+
+                return new CoreAdminHomeRequest(
+                    siteId: null,
+                    failureId: null,
+                    optOutEmbed: new OptOutEmbedRequest(
+                        backgroundColor: $backgroundColor,
+                        fontColor: $fontColor,
+                        fontSize: $fontSize,
+                        fontFamily: $fontFamily,
+                        applyStyling: $javascript
+                            ? self::requiredBoolean($request, 'applyStyling')
+                            : self::booleanInput($request, 'applyStyling', false),
+                        showIntro: $javascript
+                            ? self::requiredBoolean($request, 'showIntro')
+                            : self::booleanInput($request, 'showIntro', true),
+                        matomoUrl: $javascript ? self::requiredString($request, 'matomoUrl') : null,
+                        language: $javascript ? self::requiredString($request, 'language') : null,
+                        cookiePath: $javascript ? '' : self::stringInput($request, 'cookiePath'),
+                        cookieDomain: $javascript ? '' : self::stringInput($request, 'cookieDomain'),
+                        cookieSameSite: $javascript
+                            ? 'Lax'
+                            : self::stringInput($request, 'cookieSameSite', 'Lax'),
+                    ),
                 );
             }
 
@@ -1917,6 +1954,12 @@ final readonly class ApiRequest
         return self::booleanFromArray($request->query->all(), $key)
             ?? self::booleanFromArray($request->request->all(), $key)
             ?? false;
+    }
+
+    private static function requiredString(Request $request, string $key): string
+    {
+        return self::nullableStringInput($request, $key)
+            ?? throw new MissingApiParameter($key);
     }
 
     private static function supportsSiteListFilters(string $module, string $method): bool

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\Api\OptOutEmbedRequest;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\CoreAdmin\BrandingManager;
 use App\Matomo\CoreAdmin\CoreAdminSettings;
+use App\Matomo\CoreAdmin\OptOutEmbedCodeGenerator;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\TrackingFailures\Events\TrackingFailuresMakingHumanReadable;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
@@ -325,6 +327,92 @@ class CoreAdminHomeTrackingFailuresApiTest extends TestCase
             'hasCustomLogo' => '1',
             'hasCustomFavicon' => '1',
         ])->assertBadRequest();
+    }
+
+    public function test_javascript_opt_out_embed_is_public_and_parses_all_parameters(): void
+    {
+        $this->authenticate(false);
+        $generator = $this->createMock(OptOutEmbedCodeGenerator::class);
+        $generator->expects($this->once())->method('javascript')->with(
+            $this->callback(static fn (OptOutEmbedRequest $options): bool => $options == new OptOutEmbedRequest(
+                backgroundColor: 'fff',
+                fontColor: '123',
+                fontSize: '15px',
+                fontFamily: 'Arial',
+                applyStyling: true,
+                showIntro: false,
+                matomoUrl: 'https://analytics.example/',
+                language: 'fr',
+            )),
+        )->willReturn('<script>external</script>');
+        $this->app->instance(OptOutEmbedCodeGenerator::class, $generator);
+
+        $this->post($this->url('getOptOutJSEmbedCode'), [
+            'backgroundColor' => 'fff',
+            'fontColor' => '123',
+            'fontSize' => '15px',
+            'fontFamily' => 'Arial',
+            'applyStyling' => '1',
+            'showIntro' => '0',
+            'matomoUrl' => 'https://analytics.example/',
+            'language' => 'fr',
+        ])->assertOk()->assertExactJson(['value' => '<script>external</script>']);
+    }
+
+    public function test_self_contained_opt_out_embed_uses_defaults_and_cookie_settings(): void
+    {
+        $this->authenticate(false);
+        $generator = $this->createMock(OptOutEmbedCodeGenerator::class);
+        $generator->expects($this->once())->method('selfContained')->with(
+            $this->callback(static fn (OptOutEmbedRequest $options): bool => $options == new OptOutEmbedRequest(
+                backgroundColor: '',
+                fontColor: '',
+                fontSize: '',
+                fontFamily: '',
+                applyStyling: false,
+                showIntro: true,
+                cookiePath: '/privacy',
+                cookieDomain: '.example.test',
+                cookieSameSite: 'Strict',
+            )),
+            'en',
+        )->willReturn('<script>inline</script>');
+        $this->app->instance(OptOutEmbedCodeGenerator::class, $generator);
+
+        $this->post($this->url('getOptOutSelfContainedEmbedCode'), [
+            'backgroundColor' => '',
+            'fontColor' => '',
+            'fontSize' => '',
+            'fontFamily' => '',
+            'cookiePath' => '/privacy',
+            'cookieDomain' => '.example.test',
+            'cookieSameSite' => 'Strict',
+        ])->assertOk()->assertExactJson(['value' => '<script>inline</script>']);
+    }
+
+    public function test_opt_out_embed_parameters_are_required_in_signature_order(): void
+    {
+        $this->authenticate(false);
+        $this->post($this->url('getOptOutJSEmbedCode'))
+            ->assertBadRequest()
+            ->assertJsonPath('message', "Please specify a value for 'backgroundColor'.");
+        $this->post($this->url('getOptOutJSEmbedCode'), [
+            'backgroundColor' => '',
+            'fontColor' => '',
+            'fontSize' => '',
+            'fontFamily' => '',
+        ])->assertBadRequest()->assertJsonPath(
+            'message',
+            "Please specify a value for 'applyStyling'.",
+        );
+        $this->post($this->url('getOptOutSelfContainedEmbedCode'), [
+            'backgroundColor' => '',
+            'fontColor' => '',
+            'fontSize' => '',
+        ])->assertBadRequest()->assertJsonPath(
+            'message',
+            "Please specify a value for 'fontFamily'.",
+        );
     }
 
     /** @param list<int> $adminSiteIds */

@@ -10,6 +10,7 @@ use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\CoreAdmin\BrandingManager;
 use App\Matomo\CoreAdmin\CoreAdminSettings;
+use App\Matomo\CoreAdmin\OptOutEmbedCodeGenerator;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Localization\MatomoTranslator;
 use App\Matomo\Localization\MutableLanguagePreferenceRepository;
@@ -18,6 +19,7 @@ use App\Matomo\TrackingFailures\TrackingFailureRepository;
 use App\Matomo\UserChanges\UserChangeReadRepository;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use InvalidArgumentException;
 use LogicException;
 
 final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
@@ -33,6 +35,7 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         private CoreAdminSettings $settings,
         private MatomoTranslator $translator,
         private BrandingManager $branding,
+        private OptOutEmbedCodeGenerator $optOutEmbedCodes,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -59,6 +62,13 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
 
         if ($request->method === 'CoreAdminHome.setBrandingSettings') {
             return $this->updateBranding($request);
+        }
+
+        if (in_array($request->method, [
+            'CoreAdminHome.getOptOutJSEmbedCode',
+            'CoreAdminHome.getOptOutSelfContainedEmbedCode',
+        ], true)) {
+            return $this->optOutEmbedCode($request, $httpRequest);
         }
 
         if ($request->method === 'CoreAdminHome.deleteTrackingFailure') {
@@ -220,5 +230,24 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
                 $parameters->hasCustomFavicon ?? false,
             ),
         );
+    }
+
+    private function optOutEmbedCode(ApiRequest $request, Request $httpRequest): Response
+    {
+        $options = $request->coreAdminHome->optOutEmbed
+            ?? throw new LogicException('The CoreAdminHome opt-out parameters were not parsed.');
+
+        try {
+            $code = $request->method === 'CoreAdminHome.getOptOutJSEmbedCode'
+                ? $this->optOutEmbedCodes->javascript($options)
+                : $this->optOutEmbedCodes->selfContained(
+                    $options,
+                    $this->languages->resolve($httpRequest, $request->authentication),
+                );
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            return $this->responses->error($request, $invalidArgumentException->getMessage(), 400);
+        }
+
+        return $this->responses->scalar($request, $code);
     }
 }

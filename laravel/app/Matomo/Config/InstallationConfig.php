@@ -70,6 +70,9 @@ final readonly class InstallationConfig
         private bool $developmentModeEnabled,
         private string $instanceId,
         private string $temporaryPath,
+        /** @var list<string> */
+        private array $trustedHosts,
+        private bool $trustedHostCheckEnabled,
         /** @var array<int, string> */
         private array $transitionsMaxPeriodAllowed,
         /** @var array<string, mixed> */
@@ -238,6 +241,8 @@ final readonly class InstallationConfig
                 self::string($general, 'instance_id'),
             ) ?? '',
             temporaryPath: self::parsedTemporaryPath($general),
+            trustedHosts: self::stringList($general, 'trusted_hosts'),
+            trustedHostCheckEnabled: self::boolean($general, 'enable_trusted_host_check', true),
             transitionsMaxPeriodAllowed: self::parseTransitionsMaxPeriodAllowed($configuration),
             aiProviders: $aiProviders,
         );
@@ -497,6 +502,17 @@ final readonly class InstallationConfig
     public function temporaryPath(): string
     {
         return $this->temporaryPath;
+    }
+
+    /** @return list<string> */
+    public function trustedHosts(): array
+    {
+        return $this->trustedHosts;
+    }
+
+    public function trustedHostCheckEnabled(): bool
+    {
+        return $this->trustedHostCheckEnabled;
     }
 
     public function transitionsMaxPeriodAllowed(int $idSite): string

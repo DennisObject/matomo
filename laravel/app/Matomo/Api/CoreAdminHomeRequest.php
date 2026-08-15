@@ -16,5 +16,6 @@ final readonly class CoreAdminHomeRequest
         public ?bool $useCustomLogo = null,
         public ?bool $hasCustomLogo = null,
         public ?bool $hasCustomFavicon = null,
+        public ?OptOutEmbedRequest $optOutEmbed = null,
     ) {}
 }

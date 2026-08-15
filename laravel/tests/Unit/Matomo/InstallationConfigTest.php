@@ -79,6 +79,8 @@ class InstallationConfigTest extends TestCase
         $this->assertFalse($configuration->developmentModeEnabled());
         $this->assertSame('tenant.example', $configuration->instanceId());
         $this->assertSame('/custom-tmp', $configuration->temporaryPath());
+        $this->assertSame(['analytics.example', 'reports.example'], $configuration->trustedHosts());
+        $this->assertFalse($configuration->trustedHostCheckEnabled());
         $this->assertSame('month', $configuration->transitionsMaxPeriodAllowed(2));
         $this->assertSame('week', $configuration->transitionsMaxPeriodAllowed(7));
         $this->assertSame([
@@ -187,6 +189,9 @@ class InstallationConfigTest extends TestCase
             noreply_email_name = "Analytics Reports"
             instance_id = "tenant.example/< >"
             tmp_path = "/custom-tmp"
+            trusted_hosts[] = "analytics.example"
+            trusted_hosts[] = "reports.example"
+            enable_trusted_host_check = 0
             {$extraGeneral}
 
             [Plugins]

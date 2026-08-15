@@ -59,6 +59,8 @@ use App\Matomo\CoreAdmin\ConfiguredCoreAdminSettings;
 use App\Matomo\CoreAdmin\CoreAdminSettings;
 use App\Matomo\CoreAdmin\FileBrandingManager;
 use App\Matomo\CoreAdmin\IniTrustedHostConfiguration;
+use App\Matomo\CoreAdmin\OptOutEmbedCodeGenerator;
+use App\Matomo\CoreAdmin\TranslatedOptOutEmbedCodeGenerator;
 use App\Matomo\CoreAdmin\TrustedHostConfiguration;
 use App\Matomo\Dashboard\ConfiguredDashboardLayoutProvider;
 use App\Matomo\Dashboard\DashboardLayoutProvider;
@@ -229,6 +231,14 @@ class AppServiceProvider extends ServiceProvider
             },
         );
         $this->app->singleton(CoreAdminSettings::class, ConfiguredCoreAdminSettings::class);
+        $this->app->singleton(
+            OptOutEmbedCodeGenerator::class,
+            fn (Application $application): OptOutEmbedCodeGenerator => new TranslatedOptOutEmbedCodeGenerator(
+                translator: $application->make(MatomoTranslator::class),
+                trustedHosts: $application->make(InstallationConfig::class)->trustedHosts(),
+                trustedHostCheckEnabled: $application->make(InstallationConfig::class)->trustedHostCheckEnabled(),
+            ),
+        );
         $this->app->singleton(
             BrandingManager::class,
             function (Application $application): BrandingManager {

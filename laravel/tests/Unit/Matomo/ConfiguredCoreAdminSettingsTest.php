@@ -91,6 +91,8 @@ INI);
 
         $this->assertTrue($settings->generalSettingsAdminEnabled());
         $this->assertSame('/tmp', $installation->temporaryPath());
+        $this->assertSame([], $installation->trustedHosts());
+        $this->assertTrue($installation->trustedHostCheckEnabled());
         $settings->configureArchiving(false, 7200);
         $settings->replaceTrustedHosts(['analytics.example', '', 'reports.example']);
         $settings->replaceTrustedHosts(['']);
