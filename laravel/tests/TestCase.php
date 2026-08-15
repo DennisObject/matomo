@@ -29,6 +29,7 @@ use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Login\BruteForceUnblocker;
 use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptStatus;
+use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
@@ -357,13 +358,23 @@ abstract class TestCase extends BaseTestCase
                 return '';
             }
         });
-        $this->app->instance(OptionRepository::class, new class implements OptionRepository
+        $options = new class implements MutableOptionRepository
         {
+            /** @var array<string, string> */
+            private array $values = [];
+
             public function value(string $name): ?string
             {
-                return null;
+                return $this->values[$name] ?? null;
             }
-        });
+
+            public function set(string $name, string $value, bool $autoload = false): void
+            {
+                $this->values[$name] = $value;
+            }
+        };
+        $this->app->instance(MutableOptionRepository::class, $options);
+        $this->app->instance(OptionRepository::class, $options);
         $this->app->instance(PluginState::class, new class implements PluginState
         {
             public function isActivated(string $pluginName): bool
