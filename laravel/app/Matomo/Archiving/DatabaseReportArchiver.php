@@ -40,9 +40,19 @@ final readonly class DatabaseReportArchiver implements ReportArchiver
 
     private const string TODAY_TIME_TO_LIVE_OPTION = 'todayArchiveTimeToLive';
 
+    /** @var list<string> */
+    private const array SUMMED_CORE_METRICS = [
+        'nb_visits',
+        'nb_actions',
+        'sum_visit_length',
+        'bounce_count',
+        'nb_visits_converted',
+    ];
+
     public function __construct(
         private Connection $connection,
         private ReportingPeriodFactory $periods,
+        private ReportingSubperiodFactory $subperiods,
         private SegmentHashResolver $segments,
         private SiteRepository $sites,
         private OptionRepository $options,
@@ -118,12 +128,6 @@ final readonly class DatabaseReportArchiver implements ReportArchiver
         ReportingPeriod $period,
         string $timezone,
     ): array {
-        if ($period->label !== 'day') {
-            throw new RuntimeException(
-                'Parent report periods require subarchive aggregation and are not available yet.',
-            );
-        }
-
         $numericTable = $period->archiveTable();
         $blobTable = str_replace('archive_numeric_', 'archive_blob_', $numericTable);
         $this->ensureArchiveTables($numericTable, $blobTable);
@@ -290,22 +294,20 @@ final readonly class DatabaseReportArchiver implements ReportArchiver
         ReportingPeriod $period,
         string $timezone,
     ): array {
-        $start = CarbonImmutable::parse($period->startDate, $timezone)->startOfDay()->utc();
-        $end = CarbonImmutable::parse($period->endDate, $timezone)->addDay()->startOfDay()->utc();
-        $query = $this->connection
-            ->table('log_visit')
-            ->where('idsite', $request->siteId)
-            ->where('visit_last_action_time', '>=', $start->toDateTimeString())
-            ->where('visit_last_action_time', '<', $end->toDateTimeString());
-        $building = new ArchiveVisitsQueryBuilding($request, $period, $query);
-        $this->events->dispatch($building);
-
-        if (! $building->segmentApplied) {
-            throw new InvalidArgumentException(
-                "The segment '{$request->segment}' cannot be archived because no segment handler supports it.",
-            );
+        if ($period->label !== 'day') {
+            return $this->parentCoreMetrics($request, $period, $timezone);
         }
 
+        return $this->dayCoreMetrics($request, $period, $timezone);
+    }
+
+    /** @return array<string, int|float> */
+    private function dayCoreMetrics(
+        ArchiveReportRequest $request,
+        ReportingPeriod $period,
+        string $timezone,
+    ): array {
+        $query = $this->visitQuery($request, $period, $timezone);
         $row = $query->selectRaw(implode(', ', [
             'COUNT(DISTINCT idvisitor) AS nb_uniq_visitors',
             'COUNT(DISTINCT config_id) AS nb_uniq_fingerprints',
@@ -333,6 +335,127 @@ final readonly class DatabaseReportArchiver implements ReportArchiver
             'nb_visits_converted' => $this->numeric($row->nb_visits_converted ?? null),
             'nb_users' => $this->numeric($row->nb_users ?? null),
         ];
+    }
+
+    /** @return array<string, int|float> */
+    private function parentCoreMetrics(
+        ArchiveReportRequest $request,
+        ReportingPeriod $period,
+        string $timezone,
+    ): array {
+        $metrics = array_fill_keys(self::SUMMED_CORE_METRICS, 0);
+        $metrics['max_actions'] = 0;
+        $metrics['sum_daily_nb_uniq_visitors'] = 0;
+        $metrics['sum_daily_nb_users'] = 0;
+
+        foreach ($this->subperiods->children($period) as $child) {
+            $childRequest = new ArchiveReportRequest(
+                siteId: $request->siteId,
+                period: $child->label,
+                date: $child->startDate,
+                segment: $request->segment,
+                plugin: $request->plugin,
+                reports: $request->reports,
+            );
+            [$childArchiveId] = $this->archivePeriod($childRequest, $child, $timezone);
+            $childMetrics = $this->archivedCoreMetrics($child, $childArchiveId);
+
+            foreach (self::SUMMED_CORE_METRICS as $name) {
+                $metrics[$name] += $childMetrics[$name] ?? 0;
+            }
+
+            $metrics['max_actions'] = max(
+                $metrics['max_actions'],
+                $childMetrics['max_actions'] ?? 0,
+            );
+            $metrics['sum_daily_nb_uniq_visitors'] += $childMetrics[
+                $child->label === 'day' ? 'nb_uniq_visitors' : 'sum_daily_nb_uniq_visitors'
+            ] ?? 0;
+            $metrics['sum_daily_nb_users'] += $childMetrics[
+                $child->label === 'day' ? 'nb_users' : 'sum_daily_nb_users'
+            ] ?? 0;
+        }
+
+        $uniques = $this->uniqueMetrics($request, $period, $timezone);
+        $metrics['nb_uniq_visitors'] = min($uniques['nb_uniq_visitors'], $metrics['nb_visits']);
+        $metrics['nb_users'] = $uniques['nb_users'];
+
+        return $metrics;
+    }
+
+    /** @return array<string, int|float> */
+    private function archivedCoreMetrics(ReportingPeriod $period, int $archiveId): array
+    {
+        $names = [
+            ...self::SUMMED_CORE_METRICS,
+            'max_actions',
+            'nb_uniq_visitors',
+            'nb_users',
+            'sum_daily_nb_uniq_visitors',
+            'sum_daily_nb_users',
+        ];
+        $values = $this->connection
+            ->table($period->archiveTable())
+            ->where('idarchive', $archiveId)
+            ->whereIn('name', $names)
+            ->pluck('value', 'name')
+            ->all();
+        $metrics = [];
+
+        foreach ($values as $name => $value) {
+            if (is_string($name)) {
+                $metrics[$name] = $this->numeric($value);
+            }
+        }
+
+        return $metrics;
+    }
+
+    /** @return array{nb_uniq_visitors: int|float, nb_users: int|float} */
+    private function uniqueMetrics(
+        ArchiveReportRequest $request,
+        ReportingPeriod $period,
+        string $timezone,
+    ): array {
+        $row = $this->visitQuery($request, $period, $timezone)
+            ->selectRaw(implode(', ', [
+                'COUNT(DISTINCT idvisitor) AS nb_uniq_visitors',
+                'COUNT(DISTINCT user_id) AS nb_users',
+            ]))
+            ->first();
+
+        if (! $row instanceof stdClass) {
+            throw new RuntimeException('The unique visit metrics query did not return a result.');
+        }
+
+        return [
+            'nb_uniq_visitors' => $this->numeric($row->nb_uniq_visitors ?? null),
+            'nb_users' => $this->numeric($row->nb_users ?? null),
+        ];
+    }
+
+    private function visitQuery(
+        ArchiveReportRequest $request,
+        ReportingPeriod $period,
+        string $timezone,
+    ): Builder {
+        $start = CarbonImmutable::parse($period->startDate, $timezone)->startOfDay()->utc();
+        $end = CarbonImmutable::parse($period->endDate, $timezone)->addDay()->startOfDay()->utc();
+        $query = $this->connection
+            ->table('log_visit')
+            ->where('idsite', $request->siteId)
+            ->where('visit_last_action_time', '>=', $start->toDateTimeString())
+            ->where('visit_last_action_time', '<', $end->toDateTimeString());
+        $building = new ArchiveVisitsQueryBuilding($request, $period, $query);
+        $this->events->dispatch($building);
+
+        if (! $building->segmentApplied) {
+            throw new InvalidArgumentException(
+                "The segment '{$request->segment}' cannot be archived because no segment handler supports it.",
+            );
+        }
+
+        return $query;
     }
 
     private function numeric(mixed $value): int|float

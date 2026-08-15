@@ -6,6 +6,7 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Archiving\ArchiveRecordSet;
 use App\Matomo\Archiving\ArchiveReportRequest;
+use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\Events\ArchiveReportsCompleted;
@@ -307,11 +308,48 @@ class DatabaseReportArchiverTest extends TestCase
         $records->addNumeric('Example_metric', INF);
     }
 
-    public function test_rejects_unbounded_parent_period_queries_until_subarchives_are_available(): void
+    public function test_aggregates_parent_metrics_from_child_archives_and_computes_exact_uniques(): void
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('require subarchive aggregation');
-        $this->archiver()->archive(new ArchiveReportRequest(1, 'month', '2026-08-15'));
+        $this->insertVisits();
+        $this->connection->table('log_visit')->insert(
+            $this->visit(1, '2026-08-16 00:00:00', 'visitor-a', 'config-a', 'alice', 2, 10, 0, 'nz'),
+        );
+
+        $result = $this->archiver()->archive(new ArchiveReportRequest(1, 'week', '2026-08-12'));
+
+        $this->assertSame([1], $result->archiveIds);
+        $this->assertSame(5, $result->visits);
+        $this->assertFalse($result->cached);
+        $expected = [
+            'nb_uniq_visitors' => 4.0,
+            'nb_visits' => 5.0,
+            'nb_actions' => 13.0,
+            'max_actions' => 5.0,
+            'sum_visit_length' => 180.0,
+            'bounce_count' => 1.0,
+            'nb_visits_converted' => 1.0,
+            'nb_users' => 1.0,
+            'sum_daily_nb_uniq_visitors' => 5.0,
+            'sum_daily_nb_users' => 2.0,
+        ];
+        $actual = $this->connection
+            ->table('archive_numeric_2026_08')
+            ->where('idarchive', 1)
+            ->whereNot('name', 'done')
+            ->pluck('value', 'name')
+            ->all();
+        ksort($expected);
+        ksort($actual);
+        $this->assertSame($expected, $actual);
+        $this->assertSame(8, $this->connection
+            ->table('archive_numeric_2026_08')
+            ->where('name', 'done')
+            ->count());
+
+        $cached = $this->archiver()->archive(new ArchiveReportRequest(1, 'week', '2026-08-12'));
+
+        $this->assertSame([1], $cached->archiveIds);
+        $this->assertTrue($cached->cached);
     }
 
     private function archiver(): DatabaseReportArchiver
@@ -319,6 +357,7 @@ class DatabaseReportArchiverTest extends TestCase
         return new DatabaseReportArchiver(
             connection: $this->connection,
             periods: new CarbonReportingPeriodFactory,
+            subperiods: new CarbonReportingSubperiodFactory,
             segments: new DatabaseSegmentHashResolver($this->connection),
             sites: new DatabaseSiteRepository($this->connection),
             options: new DatabaseOptionRepository($this->connection),
