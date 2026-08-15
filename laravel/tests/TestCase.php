@@ -62,6 +62,7 @@ use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Sites\ConsentManagerDetector;
 use App\Matomo\Sites\CurrencyProvider;
+use App\Matomo\Sites\MutableSiteRepository;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
@@ -90,6 +91,7 @@ abstract class TestCase extends BaseTestCase
                 return [];
             }
         });
+        $this->app->instance(MutableSiteRepository::class, $this->createStub(MutableSiteRepository::class));
 
         $this->app->instance(FeedbackStore::class, new class implements FeedbackStore
         {
@@ -921,6 +923,11 @@ abstract class TestCase extends BaseTestCase
             public function websitesCountToDisplay(): int
             {
                 return 15;
+            }
+
+            public function administrationEnabled(): bool
+            {
+                return true;
             }
         });
     }

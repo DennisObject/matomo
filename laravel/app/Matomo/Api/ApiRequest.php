@@ -524,6 +524,7 @@ final readonly class ApiRequest
         public ?InsightsRequest $insights,
         public ?SitesManagerGlobalSettingsRequest $sitesManagerGlobalSettings,
         public ?SitesManagerTrackingCodeRequest $sitesManagerTrackingCode,
+        public ?SitesManagerLifecycleRequest $sitesManagerLifecycle,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -593,6 +594,7 @@ final readonly class ApiRequest
             insights: null,
             sitesManagerGlobalSettings: null,
             sitesManagerTrackingCode: null,
+            sitesManagerLifecycle: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1114,6 +1116,11 @@ final readonly class ApiRequest
         return $this->sitesManagerTrackingCode !== null;
     }
 
+    public function isSitesManagerLifecycleRequest(): bool
+    {
+        return $this->sitesManagerLifecycle !== null;
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -1186,6 +1193,7 @@ final readonly class ApiRequest
             insights: self::insights($request, $module, $method),
             sitesManagerGlobalSettings: self::sitesManagerGlobalSettings($request, $module, $method),
             sitesManagerTrackingCode: self::sitesManagerTrackingCode($request, $module, $method),
+            sitesManagerLifecycle: self::sitesManagerLifecycle($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2327,6 +2335,128 @@ final readonly class ApiRequest
             goalId: $image ? $goalId : false,
             revenue: $image ? $revenue : false,
         );
+    }
+
+    private static function sitesManagerLifecycle(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?SitesManagerLifecycleRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'SitesManager.addSite',
+            'SitesManager.updateSite',
+            'SitesManager.deleteSite',
+        ], true)) {
+            return null;
+        }
+
+        $add = $method === 'SitesManager.addSite';
+        $siteName = self::nullableStringInput($request, 'siteName');
+        if ($add && ($siteName === null || $siteName === '')) {
+            throw new MissingApiParameter('siteName');
+        }
+
+        return new SitesManagerLifecycleRequest(
+            siteId: $add ? null : self::requiredInteger($request, 'idSite'),
+            siteName: $siteName,
+            urls: self::optionalStringList($request, 'urls'),
+            ecommerce: self::optionalChoiceInteger($request, 'ecommerce', [0, 1]),
+            siteSearch: self::optionalChoiceInteger($request, 'siteSearch', [0, 1]),
+            searchKeywordParameters: self::nullableStringInput($request, 'searchKeywordParameters'),
+            searchCategoryParameters: self::nullableStringInput($request, 'searchCategoryParameters'),
+            excludedIps: self::nullableStringInput($request, 'excludedIps'),
+            excludedQueryParameters: self::nullableStringInput($request, 'excludedQueryParameters'),
+            timezone: self::nullableStringInput($request, 'timezone'),
+            currency: self::nullableStringInput($request, 'currency'),
+            group: self::nullableStringInput($request, 'group'),
+            startDate: self::nullableStringInput($request, 'startDate'),
+            excludedUserAgents: self::nullableStringInput($request, 'excludedUserAgents'),
+            keepUrlFragments: self::optionalChoiceInteger($request, 'keepURLFragments', [0, 1, 2]),
+            type: self::nullableStringInput($request, 'type'),
+            settingValues: self::settingValues($request),
+            excludeUnknownUrls: self::optionalBoolean($request, 'excludeUnknownUrls'),
+            excludedReferrers: self::nullableStringInput($request, 'excludedReferrers'),
+            description: self::nullableStringInput($request, 'description'),
+            passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    /** @return list<string>|null */
+    private static function optionalStringList(Request $request, string $key): ?array
+    {
+        $value = self::inputValue($request, $key);
+        if ($value === null) {
+            return null;
+        }
+
+        $values = is_array($value) ? $value : [$value];
+        $result = [];
+        foreach ($values as $item) {
+            if (! is_scalar($item)) {
+                throw new InvalidApiParameter($key);
+            }
+
+            $result[] = str_replace("\0", '', (string) $item);
+        }
+
+        return $result;
+    }
+
+    /** @param list<int> $choices */
+    private static function optionalChoiceInteger(Request $request, string $key, array $choices): ?int
+    {
+        $value = self::inputValue($request, $key);
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (! is_scalar($value) || (string) (int) $value !== (string) $value
+            || ! in_array((int) $value, $choices, true)) {
+            throw new InvalidApiParameter($key);
+        }
+
+        return (int) $value;
+    }
+
+    private static function optionalBoolean(Request $request, string $key): ?bool
+    {
+        $query = self::booleanFromArray($request->query->all(), $key);
+        $post = self::booleanFromArray($request->request->all(), $key);
+
+        return $query ?? $post;
+    }
+
+    /** @return array<string, list<array{name: string, value: mixed}>> */
+    private static function settingValues(Request $request): array
+    {
+        $value = self::inputValue($request, 'settingValues');
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        if (! is_array($value)) {
+            throw new InvalidApiParameter('settingValues');
+        }
+
+        $result = [];
+        foreach ($value as $plugin => $settings) {
+            if (! is_string($plugin) || ! is_array($settings)) {
+                throw new InvalidApiParameter('settingValues');
+            }
+
+            foreach ($settings as $setting) {
+                if (! is_array($setting) || ! isset($setting['name']) || ! is_scalar($setting['name'])) {
+                    throw new InvalidApiParameter('settingValues');
+                }
+
+                $result[$plugin][] = [
+                    'name' => str_replace("\0", '', (string) $setting['name']),
+                    'value' => $setting['value'] ?? null,
+                ];
+            }
+        }
+
+        return $result;
     }
 
     /** @return list<array{0: string, 1: string}> */

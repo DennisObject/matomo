@@ -7,9 +7,10 @@ namespace App\Matomo\Sites;
 use Exception;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
+use JsonException;
 use stdClass;
 
-final readonly class DatabaseSiteRepository implements SiteRepository
+final readonly class DatabaseSiteRepository implements MutableSiteRepository
 {
     private const array INTEGER_PROPERTIES = [
         'idsite',
@@ -245,6 +246,92 @@ final readonly class DatabaseSiteRepository implements SiteRepository
 
             return array_values($ids);
         });
+    }
+
+    public function create(array $values, array $urls, array $settings): int
+    {
+        return $this->connection->transaction(function () use ($values, $urls, $settings): int {
+            $idSite = (int) $this->connection->table('site')->insertGetId($values, 'idsite');
+            $this->writeUrls($idSite, $urls);
+            $this->writeSettings($idSite, $settings);
+
+            return $idSite;
+        });
+    }
+
+    public function update(int $idSite, array $values, ?array $urls, array $settings): bool
+    {
+        return $this->connection->transaction(function () use ($idSite, $values, $urls, $settings): bool {
+            if (! $this->connection->table('site')->where('idsite', $idSite)->exists()) {
+                return false;
+            }
+
+            if ($values !== []) {
+                $this->connection->table('site')->where('idsite', $idSite)->update($values);
+            }
+
+            if ($urls !== null) {
+                $this->writeUrls($idSite, $urls);
+            }
+
+            $this->writeSettings($idSite, $settings);
+
+            return true;
+        });
+    }
+
+    public function delete(int $idSite): string
+    {
+        return $this->connection->transaction(function () use ($idSite): string {
+            $sites = $this->connection->table('site')->lockForUpdate()->pluck('idsite');
+            if (! $sites->contains($idSite)) {
+                return 'not-found';
+            }
+
+            if ($sites->count() === 1) {
+                return 'last-site';
+            }
+
+            $this->connection->table('site_url')->where('idsite', $idSite)->delete();
+            $this->connection->table('site_setting')->where('idsite', $idSite)->delete();
+            $this->connection->table('archive_invalidations')->where('idsite', $idSite)->delete();
+            $this->connection->table('site')->where('idsite', $idSite)->delete();
+
+            return 'deleted';
+        });
+    }
+
+    /** @param list<string> $urls */
+    private function writeUrls(int $idSite, array $urls): void
+    {
+        $this->connection->table('site_url')->where('idsite', $idSite)->delete();
+        if ($urls !== []) {
+            $this->connection->table('site_url')->insert(array_map(
+                static fn (string $url): array => ['idsite' => $idSite, 'url' => $url],
+                array_slice($urls, 1),
+            ));
+        }
+    }
+
+    /** @param array<string, list<array{name: string, value: mixed}>> $settings */
+    private function writeSettings(int $idSite, array $settings): void
+    {
+        foreach ($settings as $plugin => $pluginSettings) {
+            foreach ($pluginSettings as $setting) {
+                $value = $setting['value'];
+                $json = ! is_scalar($value) && $value !== null;
+                try {
+                    $stored = $json ? json_encode($value, JSON_THROW_ON_ERROR) : (string) $value;
+                } catch (JsonException) {
+                    continue;
+                }
+
+                $this->connection->table('site_setting')->updateOrInsert(
+                    ['idsite' => $idSite, 'plugin_name' => $plugin, 'setting_name' => $setting['name']],
+                    ['setting_value' => $stored, 'json_encoded' => (int) $json],
+                );
+            }
+        }
     }
 
     public function excludedReferrers(int $idSite): ?string

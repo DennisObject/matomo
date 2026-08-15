@@ -7,6 +7,7 @@ namespace App\Matomo\Api\Methods;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Geolocation\TrackerCacheInvalidator;
 use App\Matomo\Goals\SiteTrackerCacheInvalidator;
@@ -15,7 +16,10 @@ use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\ConsentManagerDetector;
 use App\Matomo\Sites\CurrencyProvider;
+use App\Matomo\Sites\Events\SiteAdded;
+use App\Matomo\Sites\Events\SiteDeleted;
 use App\Matomo\Sites\Events\SiteRemovalWarningsCollecting;
+use App\Matomo\Sites\MutableSiteRepository;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
@@ -23,6 +27,7 @@ use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\SiteSettingsProvider;
 use App\Matomo\Sites\SiteTrackingCodeGenerator;
 use App\Matomo\Sites\TimezoneProvider;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -91,6 +96,8 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private ConsentManagerDetector $consentManagers,
         private SiteTrackingCodeGenerator $trackingCodes,
         private SiteSettingsProvider $siteSettings,
+        private MutableSiteRepository $mutableSites,
+        private PasswordConfirmationVerifier $passwords,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -133,6 +140,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isSiteGroupRenameRequest()
             || $request->isSitesManagerTrackingCodeRequest()
             || $request->isSiteSettingsRequest()
+            || $request->isSitesManagerLifecycleRequest()
             || $this->globalOption($request) !== null;
     }
 
@@ -152,6 +160,10 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
         if ($request->isSiteGroupRenameRequest()) {
             return $this->renameSiteGroup($request);
+        }
+
+        if ($request->isSitesManagerLifecycleRequest()) {
+            return $this->mutateSite($request);
         }
 
         if ($request->isSitesManagerTrackingCodeRequest()) {
@@ -928,6 +940,253 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             : count(array_diff($final, [$mainUrl, ...$incoming]));
 
         return $this->responses->scalar($request, $inserted);
+    }
+
+    private function mutateSite(ApiRequest $request): Response
+    {
+        $parameters = $request->sitesManagerLifecycle
+            ?? throw new LogicException('The site lifecycle parameters were not parsed.');
+        $superUser = $this->authorizer->hasSuperUserAccess($request->authentication);
+
+        if ($request->method === 'SitesManager.addSite' || $request->method === 'SitesManager.deleteSite') {
+            if (! $superUser) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires a 'superuser' access.",
+                    401,
+                );
+            }
+        } else {
+            $adminSites = $this->authorizer->siteIdsWithRole($request->authentication, SiteAccessRole::Admin);
+            if ($parameters->siteId === null || ! in_array($parameters->siteId, $adminSites, true)) {
+                $idSite = $parameters->siteId ?? 0;
+
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires 'admin' access for the website id = {$idSite}.",
+                    401,
+                );
+            }
+        }
+
+        if (! $this->runtime->administrationEnabled()) {
+            return $this->responses->error($request, 'Website administration is disabled.', 403);
+        }
+
+        if ($request->method === 'SitesManager.deleteSite') {
+            return $this->deleteSite($request);
+        }
+
+        $urlSetting = $this->lifecycleSetting($request, 'WebsiteMeasurable', 'urls');
+        $requestedUrls = is_array($urlSetting) ? array_values(array_filter(
+            $urlSetting,
+            is_string(...),
+        )) : $parameters->urls;
+        $urls = $requestedUrls === null ? null : $this->normalizeSiteUrls($requestedUrls);
+        if ($requestedUrls !== null && ($urls === null || $urls === [])) {
+            return $this->responses->error($request, 'One of the provided URLs is not a valid URL.', 400);
+        }
+
+        if ($parameters->siteName !== null && trim($parameters->siteName) === '') {
+            return $this->responses->error($request, 'The website name cannot be empty.', 400);
+        }
+
+        if ($parameters->description !== null && mb_strlen(trim($parameters->description)) > 255) {
+            return $this->responses->error($request, 'The website description must not exceed 255 characters.', 400);
+        }
+
+        $timezone = $parameters->timezone;
+        if ($timezone !== null && ! $this->validTimezone(trim($timezone))) {
+            return $this->responses->error($request, "The timezone \"{$timezone}\" is not valid. Please enter a valid timezone.", 400);
+        }
+
+        $currency = $parameters->currency;
+        if ($currency !== null && ! array_key_exists(trim($currency), $this->currencies->symbols())) {
+            return $this->responses->error($request, "The currency \"{$currency}\" is not valid. Please enter a valid currency symbol (eg. USD, EUR, etc.)", 400);
+        }
+
+        if ($parameters->type !== null && ! in_array($parameters->type, ['website', 'mobileapp', 'intranet'], true)) {
+            return $this->responses->error($request, "Invalid website type {$parameters->type}", 400);
+        }
+
+        if ($parameters->startDate !== null) {
+            try {
+                CarbonImmutable::parse($parameters->startDate, 'UTC');
+            } catch (\Throwable) {
+                return $this->responses->error($request, "The date \"{$parameters->startDate}\" is not valid.", 400);
+            }
+        }
+
+        $values = $this->siteValues($request, $superUser, $urls);
+        foreach (explode(',', (string) ($values['excluded_ips'] ?? '')) as $ip) {
+            if ($ip !== '' && IPUtils::getIPRangeBounds($ip) === null) {
+                return $this->responses->error(
+                    $request,
+                    "The IP to exclude \"{$ip}\" does not have a valid IP format (eg. 1.2.3.4, 1.2.3.*, or 1.2.3.4/5).",
+                    400,
+                );
+            }
+        }
+
+        $settings = $parameters->settingValues;
+        unset($settings['WebsiteMeasurable']);
+
+        if ($request->method === 'SitesManager.addSite') {
+            $login = $this->authorizer->authenticatedLogin($request->authentication) ?? 'anonymous';
+            $values += [
+                'name' => $parameters->siteName ?? '',
+                'description' => trim($parameters->description ?? ''),
+                'timezone' => trim($timezone ?? $this->optionOrDefault(self::DEFAULT_TIMEZONE_OPTION, 'UTC')),
+                'currency' => trim($currency ?? $this->optionOrDefault(self::DEFAULT_CURRENCY_OPTION, 'USD')),
+                'main_url' => $urls[0] ?? '',
+                'ts_created' => $this->siteCreatedAt($parameters->startDate),
+                'type' => $parameters->type ?: 'website',
+                'group' => trim($parameters->group ?? ''),
+                'creator_login' => $login,
+                'ecommerce' => $parameters->ecommerce ?? 0,
+                'sitesearch' => $parameters->siteSearch ?? 1,
+                'exclude_unknown_urls' => (int) ($parameters->excludeUnknownUrls ?? false),
+                'keep_url_fragment' => $parameters->keepUrlFragments ?? 0,
+                'sitesearch_keyword_parameters' => $parameters->searchKeywordParameters ?? '',
+                'sitesearch_category_parameters' => $parameters->searchCategoryParameters ?? '',
+                'excluded_ips' => $this->commaSeparated($parameters->excludedIps ?? ''),
+                'excluded_parameters' => $this->commaSeparated($parameters->excludedQueryParameters ?? ''),
+                'excluded_user_agents' => $this->commaSeparated($parameters->excludedUserAgents ?? ''),
+                'excluded_referrers' => $this->commaSeparated($parameters->excludedReferrers ?? ''),
+            ];
+            $idSite = $this->mutableSites->create($values, $urls ?? [], $settings);
+            $this->postSiteMutation($idSite);
+            $this->events->dispatch(new SiteAdded($idSite));
+
+            return $this->responses->scalar($request, $idSite);
+        }
+
+        $idSite = $parameters->siteId ?? throw new LogicException('The site ID was not parsed.');
+        if ($urls !== null) {
+            $values['main_url'] = $urls[0];
+        }
+
+        if (! $this->mutableSites->update($idSite, $values, $urls, $settings)) {
+            return $this->responses->error($request, "website id = {$idSite} not found", 404);
+        }
+
+        $this->postSiteMutation($idSite);
+
+        return $this->responses->success($request);
+    }
+
+    private function deleteSite(ApiRequest $request): Response
+    {
+        $parameters = $request->sitesManagerLifecycle
+            ?? throw new LogicException('The site lifecycle parameters were not parsed.');
+        $idSite = $parameters->siteId ?? throw new LogicException('The site ID was not parsed.');
+
+        if ($request->authentication->sessionId !== null) {
+            $login = $this->authorizer->authenticatedLogin($request->authentication);
+            if ($login === null || $parameters->passwordConfirmation === null
+                || ! $this->passwords->isCorrect($login, $parameters->passwordConfirmation)) {
+                return $this->responses->error($request, 'The password confirmation is invalid.', 403);
+            }
+        }
+
+        $result = $this->mutableSites->delete($idSite);
+        if ($result === 'not-found') {
+            return $this->responses->error($request, "website id = {$idSite} not found", 404);
+        }
+
+        if ($result === 'last-site') {
+            return $this->responses->error($request, 'You cannot delete the only website.', 400);
+        }
+
+        $this->postSiteMutation($idSite);
+        $this->events->dispatch(new SiteDeleted($idSite));
+
+        return $this->responses->success($request);
+    }
+
+    /**
+     * @param  list<string>|null  $urls
+     * @return array<string, bool|int|string|null>
+     */
+    private function siteValues(ApiRequest $request, bool $superUser, ?array $urls): array
+    {
+        $parameters = $request->sitesManagerLifecycle
+            ?? throw new LogicException('The site lifecycle parameters were not parsed.');
+        $values = [];
+        $websiteValue = (fn (string $name, mixed $explicit): mixed => $this->lifecycleSetting($request, 'WebsiteMeasurable', $name) ?? $explicit);
+        $commaValue = function (string $name, ?string $explicit) use ($websiteValue): ?string {
+            $value = $websiteValue($name, $explicit);
+
+            return is_array($value) ? implode(',', array_filter($value, is_scalar(...))) : (is_scalar($value) ? (string) $value : null);
+        };
+        foreach ([
+            'name' => $parameters->siteName,
+            'description' => $parameters->description === null ? null : trim($parameters->description),
+            'ecommerce' => $websiteValue('ecommerce', $parameters->ecommerce),
+            'sitesearch' => $websiteValue('sitesearch', $parameters->siteSearch),
+            'sitesearch_keyword_parameters' => $commaValue('sitesearch_keyword_parameters', $parameters->searchKeywordParameters),
+            'sitesearch_category_parameters' => $commaValue('sitesearch_category_parameters', $parameters->searchCategoryParameters),
+            'excluded_ips' => ($excludedIps = $commaValue('excluded_ips', $parameters->excludedIps)) === null ? null : $this->commaSeparated($excludedIps),
+            'excluded_parameters' => ($excludedParameters = $commaValue('excluded_parameters', $parameters->excludedQueryParameters)) === null ? null : $this->commaSeparated($excludedParameters),
+            'timezone' => $parameters->timezone === null ? null : trim($parameters->timezone),
+            'currency' => $parameters->currency === null ? null : trim($parameters->currency),
+            'excluded_user_agents' => ($excludedAgents = $commaValue('excluded_user_agents', $parameters->excludedUserAgents)) === null ? null : $this->commaSeparated($excludedAgents),
+            'keep_url_fragment' => $websiteValue('keep_url_fragment', $parameters->keepUrlFragments),
+            'type' => $parameters->type,
+            'exclude_unknown_urls' => ($unknown = $websiteValue('exclude_unknown_urls', $parameters->excludeUnknownUrls)) === null ? null : (int) (bool) $unknown,
+            'excluded_referrers' => ($excludedReferrers = $commaValue('excluded_referrers', $parameters->excludedReferrers)) === null ? null : $this->commaSeparated($excludedReferrers),
+        ] as $name => $value) {
+            if ($value !== null) {
+                $values[$name] = $value;
+            }
+        }
+
+        $group = $websiteValue('group', $parameters->group);
+        if (is_string($group) && $superUser) {
+            $values['group'] = trim($group);
+        }
+
+        if ($parameters->startDate !== null) {
+            $values['ts_created'] = $this->siteCreatedAt($parameters->startDate);
+        }
+
+        return $values;
+    }
+
+    private function lifecycleSetting(ApiRequest $request, string $plugin, string $name): mixed
+    {
+        $settings = $request->sitesManagerLifecycle?->settingValues[$plugin] ?? [];
+        foreach ($settings as $setting) {
+            if ($setting['name'] === $name) {
+                return $setting['value'];
+            }
+        }
+
+        return null;
+    }
+
+    private function siteCreatedAt(?string $date): string
+    {
+        return $date === null
+            ? CarbonImmutable::now('UTC')->format('Y-m-d H:i:s')
+            : CarbonImmutable::parse($date, 'UTC')->format('Y-m-d H:i:s');
+    }
+
+    private function validTimezone(string $timezone): bool
+    {
+        foreach ($this->timezones->all('en', $this->runtime->timezoneSupportEnabled()) as $zones) {
+            if (array_key_exists($timezone, $zones)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function postSiteMutation(int $idSite): void
+    {
+        $this->siteTrackerCache->clear($idSite);
+        $this->trackerCache->clearGeneral();
     }
 
     private function renameSiteGroup(ApiRequest $request): Response

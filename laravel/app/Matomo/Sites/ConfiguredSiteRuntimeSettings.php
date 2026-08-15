@@ -23,4 +23,9 @@ final readonly class ConfiguredSiteRuntimeSettings implements SiteRuntimeSetting
     {
         return $this->installation->websitesCountToDisplay();
     }
+
+    public function administrationEnabled(): bool
+    {
+        return $this->installation->sitesAdminEnabled();
+    }
 }

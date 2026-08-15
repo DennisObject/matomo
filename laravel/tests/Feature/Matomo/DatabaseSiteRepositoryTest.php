@@ -11,6 +11,74 @@ use Tests\TestCase;
 
 class DatabaseSiteRepositoryTest extends TestCase
 {
+    public function test_site_lifecycle_writes_are_atomic_and_protect_the_last_site(): void
+    {
+        config()->set('database.connections.matomo_site_lifecycle_test', [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => 'matomo_',
+            'foreign_key_constraints' => true,
+        ]);
+        $databases = $this->app->make(DatabaseManager::class);
+        $databases->purge('matomo_site_lifecycle_test');
+
+        $connection = $databases->connection('matomo_site_lifecycle_test');
+        $connection->getSchemaBuilder()->create('site', function (Blueprint $table): void {
+            $table->increments('idsite');
+            $table->string('name');
+            $table->string('main_url');
+            $table->string('timezone')->default('UTC');
+            $table->string('currency')->default('USD');
+            $table->string('group')->default('');
+            $table->string('type')->default('website');
+            $table->boolean('ecommerce')->default(false);
+            $table->string('excluded_referrers')->default('');
+            $table->string('excluded_parameters')->default('');
+        });
+        $connection->getSchemaBuilder()->create('site_url', function (Blueprint $table): void {
+            $table->unsignedInteger('idsite');
+            $table->string('url');
+        });
+        $connection->getSchemaBuilder()->create('site_setting', function (Blueprint $table): void {
+            $table->unsignedInteger('idsite');
+            $table->string('plugin_name');
+            $table->string('setting_name');
+            $table->text('setting_value');
+            $table->boolean('json_encoded')->default(false);
+            $table->unique(['idsite', 'plugin_name', 'setting_name']);
+        });
+        $connection->getSchemaBuilder()->create('archive_invalidations', function (Blueprint $table): void {
+            $table->unsignedInteger('idsite');
+        });
+        $sites = new DatabaseSiteRepository($connection);
+        $first = $sites->create(
+            ['name' => 'First', 'main_url' => 'https://first.test'],
+            ['https://first.test', 'https://alias.test'],
+            ['Live' => [['name' => 'disabled', 'value' => true]]],
+        );
+
+        $this->assertSame(1, $first);
+        $this->assertSame(['https://first.test', 'https://alias.test'], $sites->urls($first));
+        $this->assertSame('1', $connection->table('site_setting')->value('setting_value'));
+        $this->assertSame('last-site', $sites->delete($first));
+
+        $second = $sites->create(
+            ['name' => 'Second', 'main_url' => 'https://second.test'],
+            ['https://second.test'],
+            [],
+        );
+        $this->assertTrue($sites->update(
+            $first,
+            ['name' => 'Updated'],
+            ['https://updated.test'],
+            ['Live' => [['name' => 'disabled', 'value' => false]]],
+        ));
+        $this->assertSame('Updated', $sites->details($first)['name']);
+        $this->assertSame(['https://first.test'], $sites->urls($first));
+        $this->assertSame('deleted', $sites->delete($second));
+        $this->assertSame('not-found', $sites->delete($second));
+    }
+
     public function test_reads_integer_site_ids_with_the_matomo_table_prefix(): void
     {
         config()->set('database.connections.matomo_sites_test', [

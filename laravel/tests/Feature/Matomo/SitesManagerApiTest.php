@@ -6,13 +6,16 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
+use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\ConsentManagerDetector;
 use App\Matomo\Sites\CurrencyProvider;
+use App\Matomo\Sites\Events\SiteDeleted;
 use App\Matomo\Sites\Events\SiteRemovalWarningsCollecting;
+use App\Matomo\Sites\MutableSiteRepository;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
@@ -26,6 +29,157 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_superuser_adds_a_site_with_normalized_values_and_settings(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $authorizer->expects($this->once())->method('authenticatedLogin')->willReturn('root');
+        $sites = $this->createMock(MutableSiteRepository::class);
+        $sites->expects($this->once())->method('create')
+            ->with(
+                $this->callback(static fn (array $values): bool => $values['name'] === 'New site'
+                    && $values['main_url'] === 'https://example.test'
+                    && $values['currency'] === 'EUR'
+                    && $values['timezone'] === 'Europe/Paris'
+                    && $values['creator_login'] === 'root'
+                    && $values['excluded_ips'] === '127.0.0.1,10.0.0.0/8'),
+                ['https://example.test', 'https://alias.test'],
+                ['Live' => [['name' => 'disable_visitor_log', 'value' => true]]],
+            )
+            ->willReturn(9);
+        $timezones = $this->createStub(TimezoneProvider::class);
+        $timezones->method('all')->willReturn(['Europe' => ['Europe/Paris' => 'Paris']]);
+        $currencies = $this->createStub(CurrencyProvider::class);
+        $currencies->method('symbols')->willReturn(['EUR' => '€']);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(MutableSiteRepository::class, $sites);
+        $this->app->instance(TimezoneProvider::class, $timezones);
+        $this->app->instance(CurrencyProvider::class, $currencies);
+
+        $this->post('/index.php', [
+            'module' => 'API',
+            'method' => 'SitesManager.addSite',
+            'siteName' => 'New site',
+            'urls' => ['https://example.test/', 'https://alias.test/'],
+            'currency' => 'EUR',
+            'timezone' => 'Europe/Paris',
+            'excludedIps' => '127.0.0.1, 10.0.0.0/8',
+            'settingValues' => ['Live' => [['name' => 'disable_visitor_log', 'value' => true]]],
+            'format' => 'json',
+            'token_auth' => 'root-token',
+        ])->assertOk()->assertExactJson(['value' => 9]);
+    }
+
+    public function test_site_admin_updates_only_supplied_values_and_cannot_change_group(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $authorizer->expects($this->once())->method('siteIdsWithRole')->willReturn([7]);
+        $sites = $this->createMock(MutableSiteRepository::class);
+        $sites->expects($this->once())->method('update')
+            ->with(7, ['name' => 'Renamed', 'ecommerce' => 1], null, [])
+            ->willReturn(true);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(MutableSiteRepository::class, $sites);
+
+        $this->get('/index.php?module=API&method=SitesManager.updateSite'.
+            '&idSite=7&siteName=Renamed&ecommerce=1&group=Forbidden'.
+            '&format=json&token_auth=admin-token')
+            ->assertOk()
+            ->assertExactJson(['result' => 'success', 'message' => 'ok']);
+    }
+
+    public function test_site_update_checks_admin_access_before_mutation(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $authorizer->expects($this->once())->method('siteIdsWithRole')->willReturn([]);
+        $sites = $this->createMock(MutableSiteRepository::class);
+        $sites->expects($this->never())->method('update');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(MutableSiteRepository::class, $sites);
+
+        $this->get('/index.php?module=API&method=SitesManager.updateSite'.
+            '&idSite=7&siteName=Renamed&format=json&token_auth=view-token')
+            ->assertUnauthorized();
+    }
+
+    public function test_superuser_deletes_a_site_and_dispatches_cleanup_event(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $sites = $this->createMock(MutableSiteRepository::class);
+        $sites->expects($this->once())->method('delete')->with(7)->willReturn('deleted');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(MutableSiteRepository::class, $sites);
+
+        $deleted = [];
+        $this->app->make(Dispatcher::class)->listen(
+            SiteDeleted::class,
+            static function (SiteDeleted $event) use (&$deleted): void {
+                $deleted[] = $event->siteId;
+            },
+        );
+
+        $this->get('/index.php?module=API&method=SitesManager.deleteSite'.
+            '&idSite=7&format=json&token_auth=root-token')
+            ->assertOk()
+            ->assertExactJson(['result' => 'success', 'message' => 'ok']);
+        $this->assertSame([7], $deleted);
+    }
+
+    public function test_last_site_cannot_be_deleted(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $sites = $this->createMock(MutableSiteRepository::class);
+        $sites->expects($this->once())->method('delete')->with(7)->willReturn('last-site');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(MutableSiteRepository::class, $sites);
+
+        $this->get('/index.php?module=API&method=SitesManager.deleteSite'.
+            '&idSite=7&format=json&token_auth=root-token')
+            ->assertBadRequest()
+            ->assertJsonPath('message', 'You cannot delete the only website.');
+    }
+
+    public function test_session_site_deletion_requires_a_correct_password(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $authorizer->expects($this->once())->method('authenticatedLogin')->willReturn('root');
+        $passwords = $this->createMock(PasswordConfirmationVerifier::class);
+        $passwords->expects($this->once())->method('isCorrect')->with('root', 'wrong')->willReturn(false);
+        $sites = $this->createMock(MutableSiteRepository::class);
+        $sites->expects($this->never())->method('delete');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(PasswordConfirmationVerifier::class, $passwords);
+        $this->app->instance(MutableSiteRepository::class, $sites);
+
+        $this->withCookie('MATOMO_SESSID', 'session-id')->get(
+            '/index.php?module=API&method=SitesManager.deleteSite'.
+            '&idSite=7&passwordConfirmation=wrong&format=json&token_auth=root-token',
+        )->assertForbidden()->assertJsonPath('message', 'The password confirmation is invalid.');
+    }
+
+    public function test_site_mutations_reject_invalid_ips_before_writing(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $sites = $this->createMock(MutableSiteRepository::class);
+        $sites->expects($this->never())->method('create');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(MutableSiteRepository::class, $sites);
+
+        $this->get('/index.php?module=API&method=SitesManager.addSite'.
+            '&siteName=Invalid&excludedIps=not-an-ip&format=json&token_auth=root-token')
+            ->assertBadRequest()
+            ->assertJsonPath(
+                'message',
+                'The IP to exclude "not-an-ip" does not have a valid IP format (eg. 1.2.3.4, 1.2.3.*, or 1.2.3.4/5).',
+            );
+    }
+
     public function test_site_settings_require_site_admin_access_before_loading_metadata(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
