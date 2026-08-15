@@ -52,10 +52,13 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedInteger('time_spent_ref_action');
         });
         $recorder = new DatabaseVisitRecorder($connection);
-        $request = new TrackingRequest(1, 'https://example.test/', '', '0123456789abcdef', '127.0.0.1', 'test', 1, null, null, null, null, null, null, null, null, null, null, null, '', 1, '', '', '', '00:00:00', '', false, [], [], []);
+        $request = new TrackingRequest(1, 'https://example.test/', '', '0123456789abcdef', '127.0.0.1', 'test', 1, null, null, null, null, null, null, null, null, null, null, null, '', 1, '', '', '', '00:00:00', '', false, false, [], [], []);
 
         $recorder->record($request);
         $recorder->record($request);
+
+        $heartbeat = new TrackingRequest(1, 'https://example.test/', '', '0123456789abcdef', '127.0.0.1', 'test', 1, null, null, null, null, null, null, null, null, null, null, null, '', 1, '', '', '', '00:00:00', '', false, true, [], [], []);
+        $recorder->record($heartbeat);
 
         $this->assertSame(1, $connection->table('log_visit')->count());
         $this->assertSame(2, $connection->table('log_link_visit_action')->count());

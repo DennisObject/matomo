@@ -120,6 +120,7 @@ final readonly class TrackerRequestFactory
             sprintf('%02d:%02d:%02d', $hour, $minute, $second),
             $resolution,
             $request->boolean('cookie', false),
+            $request->boolean('ping', false),
             $visitProperties,
             $actionProperties,
             $this->performanceTimings($request),

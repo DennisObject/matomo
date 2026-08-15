@@ -153,6 +153,18 @@ final class TrackerEndpointTest extends TestCase
             '&c_t=https%3A%2F%2Fshop.example%2F&c_i=click')->assertOk();
     }
 
+    public function test_marks_heartbeat_requests(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->heartbeat,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&ping=1')->assertOk();
+    }
+
     public function test_rejects_invalid_page_performance_timings(): void
     {
         $this->bindSite();

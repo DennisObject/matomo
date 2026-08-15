@@ -26,6 +26,21 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 ? $this->action($request->actionName, 8)
                 : ($request->actionName === '' ? null : $this->action($request->actionName, 4));
             $visitId = $this->connection->table('log_visit')->where('idsite', $request->siteId)->where('idvisitor', $visitor)->where('visit_last_action_time', '>=', CarbonImmutable::parse($now)->subMinutes(30)->format('Y-m-d H:i:s'))->value('idvisit');
+            if ($request->heartbeat) {
+                if (is_numeric($visitId)) {
+                    $firstAction = $this->connection->table('log_visit')->where('idvisit', (int) $visitId)->value('visit_first_action_time');
+                    $totalTime = is_string($firstAction)
+                        ? max(0, CarbonImmutable::parse($firstAction, 'UTC')->diffInSeconds(CarbonImmutable::parse($now, 'UTC')))
+                        : 0;
+                    $updates = $this->available('log_visit', ['visit_total_time' => $totalTime]);
+                    if ($updates !== []) {
+                        $this->connection->table('log_visit')->where('idvisit', (int) $visitId)->update($updates);
+                    }
+                }
+
+                return;
+            }
+
             if (! is_numeric($visitId)) {
                 $visit = [
                     'idsite' => $request->siteId, 'idvisitor' => $visitor, 'visit_last_action_time' => $now,

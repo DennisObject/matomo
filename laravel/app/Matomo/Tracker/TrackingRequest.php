@@ -33,6 +33,7 @@ final readonly class TrackingRequest
         public string $localTime,
         public string $resolution,
         public bool $cookiesEnabled,
+        public bool $heartbeat,
         /** @var array<string, string> */
         public array $visitProperties,
         /** @var array<string, string> */
