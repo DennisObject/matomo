@@ -525,6 +525,7 @@ final readonly class ApiRequest
         public ?SitesManagerGlobalSettingsRequest $sitesManagerGlobalSettings,
         public ?SitesManagerTrackingCodeRequest $sitesManagerTrackingCode,
         public ?SitesManagerLifecycleRequest $sitesManagerLifecycle,
+        public ?UsersManagerPreferenceRequest $usersManagerPreference,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -595,6 +596,7 @@ final readonly class ApiRequest
             sitesManagerGlobalSettings: null,
             sitesManagerTrackingCode: null,
             sitesManagerLifecycle: null,
+            usersManagerPreference: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1194,6 +1196,7 @@ final readonly class ApiRequest
             sitesManagerGlobalSettings: self::sitesManagerGlobalSettings($request, $module, $method),
             sitesManagerTrackingCode: self::sitesManagerTrackingCode($request, $module, $method),
             sitesManagerLifecycle: self::sitesManagerLifecycle($request, $module, $method),
+            usersManagerPreference: self::usersManagerPreference($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2378,6 +2381,37 @@ final readonly class ApiRequest
             excludedReferrers: self::nullableStringInput($request, 'excludedReferrers'),
             description: self::nullableStringInput($request, 'description'),
             passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    private static function usersManagerPreference(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?UsersManagerPreferenceRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'UsersManager.setUserPreference',
+            'UsersManager.getUserPreference',
+            'UsersManager.initUserPreferenceWithDefault',
+            'UsersManager.getAllUsersPreferences',
+        ], true)) {
+            return null;
+        }
+
+        $all = $method === 'UsersManager.getAllUsersPreferences';
+        $input = array_replace($request->request->all(), $request->query->all());
+        if ($method === 'UsersManager.setUserPreference' && ! array_key_exists('preferenceValue', $input)) {
+            throw new MissingApiParameter('preferenceValue');
+        }
+
+        return new UsersManagerPreferenceRequest(
+            userLogin: in_array($method, [
+                'UsersManager.setUserPreference',
+                'UsersManager.initUserPreferenceWithDefault',
+            ], true) ? self::requiredString($request, 'userLogin') : self::nullableStringInput($request, 'userLogin'),
+            preferenceName: $all ? null : self::requiredString($request, 'preferenceName'),
+            preferenceValue: $input['preferenceValue'] ?? null,
+            preferenceNames: $all ? self::requiredStringList($request, 'preferenceNames') : [],
         );
     }
 

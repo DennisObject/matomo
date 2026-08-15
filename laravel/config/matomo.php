@@ -11,4 +11,5 @@ if (! is_string($configPath)) {
 return [
     'config_path' => $configPath,
     'ai_providers' => [],
+    'user_preference_names' => [],
 ];
