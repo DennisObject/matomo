@@ -18,6 +18,7 @@ use App\Matomo\Api\Methods\ActionsApiMethodHandler;
 use App\Matomo\Api\Methods\AiAgentsApiMethodHandler;
 use App\Matomo\Api\Methods\AiProvidersApiMethodHandler;
 use App\Matomo\Api\Methods\AnnotationsApiMethodHandler;
+use App\Matomo\Api\Methods\ApiMetadataMethodHandler;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Api\Methods\BotTrackingApiMethodHandler;
 use App\Matomo\Api\Methods\ContentsApiMethodHandler;
@@ -315,6 +316,7 @@ use App\Matomo\Segments\SegmentCacheInvalidator;
 use App\Matomo\Segments\SegmentCreationAuthorizer;
 use App\Matomo\Segments\SegmentCreationPolicy;
 use App\Matomo\Segments\SegmentEditorSettings;
+use App\Matomo\Segments\SegmentMetadataCatalog;
 use App\Matomo\Segments\SegmentRearchiveScheduler;
 use App\Matomo\Segments\StoredSegmentRepository;
 use App\Matomo\Settings\DatabasePolicySettingRepository;
@@ -1715,6 +1717,14 @@ class AppServiceProvider extends ServiceProvider
         );
         $this->app->singleton(PluginSettingsStore::class, DatabasePluginSettingsStore::class);
         $this->app->singleton(
+            SegmentMetadataCatalog::class,
+            fn (Application $application): SegmentMetadataCatalog => new SegmentMetadataCatalog(
+                translator: $application->make(MatomoTranslator::class),
+                dimensions: $application->make(CustomDimensionRepository::class),
+                catalogPath: resource_path('matomo/segment-metadata.php'),
+            ),
+        );
+        $this->app->singleton(
             PluginUpdateCounter::class,
             function (Application $application): PluginUpdateCounter {
                 $endpoint = config('matomo.marketplace_endpoint');
@@ -1735,6 +1745,7 @@ class AppServiceProvider extends ServiceProvider
             ApiMethodDispatcher::class,
             fn (Application $application): ApiMethodDispatcher => new ApiMethodDispatcher([
                 $application->make(CoreApiMethodHandler::class),
+                $application->make(ApiMetadataMethodHandler::class),
                 $application->make(CorePluginsAdminApiMethodHandler::class),
                 $application->make(CoreAdminHomeApiMethodHandler::class),
                 $application->make(SitesManagerApiMethodHandler::class),

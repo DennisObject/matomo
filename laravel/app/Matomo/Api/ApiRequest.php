@@ -549,6 +549,7 @@ final readonly class ApiRequest
         public ?MobileMessagingRequest $mobileMessaging,
         public ?ScheduledReportsRequest $scheduledReports,
         public ?CorePluginsAdminRequest $corePluginsAdmin,
+        public ?SegmentsMetadataRequest $segmentsMetadata,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -645,6 +646,7 @@ final readonly class ApiRequest
             mobileMessaging: null,
             scheduledReports: null,
             corePluginsAdmin: null,
+            segmentsMetadata: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1270,6 +1272,7 @@ final readonly class ApiRequest
             mobileMessaging: self::mobileMessaging($request, $module, $method),
             scheduledReports: self::scheduledReports($request, $module, $method),
             corePluginsAdmin: self::corePluginsAdmin($request, $module, $method),
+            segmentsMetadata: self::segmentsMetadata($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -3064,6 +3067,35 @@ final readonly class ApiRequest
         return new CorePluginsAdminRequest(
             settingValues: self::mixedParameterMap($request, 'settingValues'),
             passwordConfirmation: self::stringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    private static function segmentsMetadata(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?SegmentsMetadataRequest {
+        if ($module !== 'API' || $method !== 'API.getSegmentsMetadata') {
+            return null;
+        }
+
+        $input = self::inputValue($request, 'idSites');
+        $values = $input === null || $input === ''
+            ? []
+            : (is_array($input) ? $input : explode(',', (string) $input));
+        $siteIds = [];
+        foreach ($values as $value) {
+            if (! is_scalar($value) || filter_var($value, FILTER_VALIDATE_INT) === false || (int) $value < 1) {
+                throw new InvalidApiParameter('idSites', 'Website IDs must be positive integers.');
+            }
+
+            $siteIds[] = (int) $value;
+        }
+
+        return new SegmentsMetadataRequest(
+            siteIds: array_values(array_unique($siteIds)),
+            hideImplementationData: self::booleanInput($request, '_hideImplementationData', true),
+            showAllSegments: self::booleanInput($request, '_showAllSegments', false),
         );
     }
 
