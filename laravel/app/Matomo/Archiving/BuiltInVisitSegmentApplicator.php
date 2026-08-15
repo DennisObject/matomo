@@ -8,6 +8,7 @@ use App\Matomo\Geolocation\CountryMetadataProvider;
 use DeviceDetector\Parser\Device\AbstractDeviceParser;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Grammars\SQLiteGrammar;
+use Illuminate\Database\Query\JoinClause;
 use InvalidArgumentException;
 
 final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplicator
@@ -78,6 +79,41 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         'visitLocalHour' => ['hour', 'visitor_localtime'],
     ];
 
+    /** @var array<string, array{literal-string, literal-string, list<int>}> */
+    private const array ACTION_LOOKUP_SEGMENTS = [
+        'pageUrl' => ['segment_action.idaction_url', 'segment_action_url', [1]],
+        'pageTitle' => ['segment_action.idaction_name', 'segment_action_name', [4]],
+        'downloadUrl' => ['segment_action.idaction_url', 'segment_action_url', [3]],
+        'outlinkUrl' => ['segment_action.idaction_url', 'segment_action_url', [2]],
+        'siteSearchKeyword' => ['segment_action.idaction_name', 'segment_action_name', [8]],
+        'eventCategory' => ['segment_action.idaction_event_category', 'segment_event_category', [10]],
+        'eventAction' => ['segment_action.idaction_event_action', 'segment_event_action', [11]],
+        'eventName' => ['segment_action.idaction_name', 'segment_action_name', [12]],
+        'eventUrl' => ['segment_action.idaction_url', 'segment_action_url', [10]],
+        'contentName' => ['segment_action.idaction_content_name', 'segment_content_name', [13]],
+        'contentPiece' => ['segment_action.idaction_content_piece', 'segment_content_piece', [14]],
+        'contentTarget' => ['segment_action.idaction_content_target', 'segment_content_target', [15]],
+        'contentInteraction' => ['segment_action.idaction_content_interaction', 'segment_content_interaction', [16]],
+        'actionUrl' => ['segment_action.idaction_url', 'segment_action_url', [1, 3, 2, 10]],
+    ];
+
+    /** @var array<string, array{literal-string, literal-string, list<int>}> */
+    private const array VISIT_ACTION_LOOKUP_SEGMENTS = [
+        'entryPageUrl' => ['log_visit.visit_entry_idaction_url', 'segment_entry_url', [1]],
+        'entryPageTitle' => ['log_visit.visit_entry_idaction_name', 'segment_entry_name', [4]],
+        'exitPageUrl' => ['log_visit.visit_exit_idaction_url', 'segment_exit_url', [1]],
+        'exitPageTitle' => ['log_visit.visit_exit_idaction_name', 'segment_exit_name', [4]],
+    ];
+
+    /** @var array<string, array{literal-string, literal-string}> */
+    private const array ACTION_DIRECT_SEGMENTS = [
+        'siteSearchCategory' => ['segment_action.search_cat', 'text'],
+        'siteSearchCount' => ['segment_action.search_count', 'number'],
+        'eventValue' => ['segment_action.custom_float', 'number'],
+        'actionServerHour' => ['hour', 'number'],
+        'actionServerMinute' => ['minute', 'number'],
+    ];
+
     /** @var array<string, int> */
     private const array VISITOR_TYPES = [
         'new' => 0,
@@ -101,6 +137,16 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         'campaign' => 6,
         'social' => 7,
         'ai' => 8,
+    ];
+
+    /** @var array<string, int> */
+    private const array ACTION_TYPES = [
+        'pageviews' => 1,
+        'contents' => 13,
+        'sitesearches' => 8,
+        'events' => 10,
+        'outlinks' => 2,
+        'downloads' => 3,
     ];
 
     /** @var array<string, list<string>> */
@@ -128,7 +174,9 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
             return true;
         }
 
+        /** @var list<list<ResolvedSegmentCondition>> $resolved */
         $resolved = [];
+        $hasAction = false;
 
         foreach ($groups as $group) {
             $resolvedGroup = [];
@@ -136,22 +184,53 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
             foreach ($group as $condition) {
                 $definition = $this->definition($query, $condition->name);
 
-                if ($definition === null) {
+                if ($definition !== null) {
+                    [$expression, $type] = $definition;
+                    $resolvedGroup[] = new ResolvedSegmentCondition(
+                        $condition,
+                        $expression,
+                        $type,
+                    );
+
+                    continue;
+                }
+
+                $action = $this->actionDefinition($query, $condition->name);
+
+                if ($action === null) {
                     return false;
                 }
 
-                [$expression, $type] = $definition;
-                $resolvedGroup[] = [$condition, $expression, $type];
+                $hasAction = true;
+                $resolvedGroup[] = new ResolvedSegmentCondition(
+                    condition: $condition,
+                    expression: $action->source === 'type'
+                        ? 'segment_action_url.type'
+                        : $action->expression,
+                    type: $action->type,
+                    action: $action,
+                );
             }
 
             $resolved[] = $resolvedGroup;
         }
 
+        if ($hasAction) {
+            $this->applyGroupsWithActions($query, $resolved);
+
+            return true;
+        }
+
         foreach ($resolved as $group) {
             $query->where(function (Builder $and) use ($group): void {
-                foreach ($group as $index => [$condition, $expression, $type]) {
-                    $callback = function (Builder $operand) use ($condition, $expression, $type): void {
-                        $this->applyCondition($operand, $condition, $expression, $type);
+                foreach ($group as $index => $resolvedCondition) {
+                    $callback = function (Builder $operand) use ($resolvedCondition): void {
+                        $this->applyCondition(
+                            $operand,
+                            $resolvedCondition->condition,
+                            $resolvedCondition->expression,
+                            $resolvedCondition->type,
+                        );
                     };
 
                     if ($index === 0) {
@@ -164,6 +243,382 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         }
 
         return true;
+    }
+
+    /**
+     * @param  list<list<ResolvedSegmentCondition>>  $groups
+     */
+    private function applyGroupsWithActions(Builder $query, array $groups): void
+    {
+        $combinedActionGroups = [];
+
+        foreach ($groups as $group) {
+            $actionOnly = true;
+            $hasNegativeAction = false;
+
+            foreach ($group as $resolved) {
+                $actionOnly = $actionOnly && $resolved->isAction();
+                $hasNegativeAction = $hasNegativeAction || $resolved->isNegativeAction();
+
+                if ($resolved->action?->source === 'visit-lookup') {
+                    $actionOnly = false;
+                }
+            }
+
+            if ($actionOnly && ! $hasNegativeAction) {
+                $combinedActionGroups[] = $group;
+
+                continue;
+            }
+
+            $this->applyResolvedGroup($query, $group);
+        }
+
+        if ($combinedActionGroups !== []) {
+            $this->applyPositiveActionGroups($query, $combinedActionGroups);
+        }
+    }
+
+    /** @param list<ResolvedSegmentCondition> $group */
+    private function applyResolvedGroup(Builder $query, array $group): void
+    {
+        $query->where(function (Builder $and) use ($group): void {
+            foreach ($group as $index => $resolved) {
+                $callback = function (Builder $operand) use ($resolved): void {
+                    if ($resolved->action === null) {
+                        $this->applyCondition(
+                            $operand,
+                            $resolved->condition,
+                            $resolved->expression,
+                            $resolved->type,
+                        );
+
+                        return;
+                    }
+
+                    $this->applyActionExistence($operand, $resolved);
+                };
+
+                if ($index === 0) {
+                    $and->where($callback);
+                } else {
+                    $and->orWhere($callback);
+                }
+            }
+        });
+    }
+
+    /** @param list<list<ResolvedSegmentCondition>> $groups */
+    private function applyPositiveActionGroups(Builder $query, array $groups): void
+    {
+        $query->whereExists(function (Builder $actions) use ($groups): void {
+            $this->startActionSubquery($actions, array_merge(...$groups));
+
+            foreach ($groups as $group) {
+                $actions->where(function (Builder $and) use ($group): void {
+                    foreach ($group as $index => $resolved) {
+                        $callback = function (Builder $operand) use ($resolved): void {
+                            $this->applyPositiveActionCondition($operand, $resolved);
+                        };
+
+                        if ($index === 0) {
+                            $and->where($callback);
+                        } else {
+                            $and->orWhere($callback);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    private function applyActionExistence(Builder $query, ResolvedSegmentCondition $resolved): void
+    {
+        if ($resolved->action?->source === 'visit-lookup'
+            && $resolved->condition->value === ''
+            && in_array($resolved->condition->operator, ['==', '!='], true)) {
+            $this->applyEmptyVisitActionLookup($query, $resolved);
+
+            return;
+        }
+
+        $callback = function (Builder $actions) use ($resolved): void {
+            if ($resolved->action?->source === 'visit-lookup') {
+                $this->startVisitActionLookupSubquery($actions, $resolved->action);
+            } else {
+                $this->startActionSubquery($actions, [$resolved]);
+            }
+
+            if ($resolved->isNegativeAction()) {
+                $inverted = new ResolvedSegmentCondition(
+                    condition: new SegmentCondition(
+                        name: $resolved->condition->name,
+                        operator: $resolved->condition->operator === '!=' ? '==' : '=@',
+                        value: $resolved->condition->value,
+                    ),
+                    expression: $resolved->expression,
+                    type: $resolved->type,
+                    action: $resolved->action,
+                );
+                $this->applyPositiveActionCondition($actions, $inverted);
+
+                return;
+            }
+
+            $this->applyPositiveActionCondition($actions, $resolved);
+        };
+
+        if ($resolved->isNegativeAction()) {
+            $query->whereNotExists($callback);
+        } else {
+            $query->whereExists($callback);
+        }
+    }
+
+    private function applyEmptyVisitActionLookup(
+        Builder $query,
+        ResolvedSegmentCondition $resolved,
+    ): void {
+        $definition = $resolved->action;
+
+        if ($definition === null) {
+            throw new InvalidArgumentException('A visit action segment definition is required.');
+        }
+
+        $emptyLookup = function (Builder $actions) use ($resolved, $definition): void {
+            $this->startVisitActionLookupSubquery($actions, $definition);
+            $this->applyPositiveActionCondition(
+                $actions,
+                new ResolvedSegmentCondition(
+                    condition: new SegmentCondition(
+                        name: $resolved->condition->name,
+                        operator: '==',
+                        value: '',
+                    ),
+                    expression: $resolved->expression,
+                    type: $resolved->type,
+                    action: $definition,
+                ),
+            );
+        };
+
+        if ($resolved->condition->operator === '==') {
+            $query->where(function (Builder $empty) use ($definition, $emptyLookup): void {
+                $empty->whereNull($definition->expression)->orWhereExists($emptyLookup);
+            });
+
+            return;
+        }
+
+        $query->whereNotNull($definition->expression)->whereNotExists($emptyLookup);
+    }
+
+    private function startVisitActionLookupSubquery(
+        Builder $query,
+        ActionSegmentDefinition $definition,
+    ): void {
+        $alias = $definition->lookupAlias;
+        $query->selectRaw('1')
+            ->from("log_action as {$alias}")
+            ->whereColumn("{$alias}.idaction", $definition->expression);
+    }
+
+    /** @param list<ResolvedSegmentCondition> $conditions */
+    private function startActionSubquery(Builder $query, array $conditions): void
+    {
+        $query->selectRaw('1')
+            ->from('log_link_visit_action as segment_action')
+            ->whereColumn('segment_action.idvisit', 'log_visit.idvisit');
+        $joined = [];
+
+        foreach ($conditions as $resolved) {
+            $definition = $resolved->action;
+
+            if ($definition === null || $definition->source === 'direct') {
+                continue;
+            }
+
+            $alias = $definition->lookupAlias;
+
+            if (isset($joined[$alias])) {
+                continue;
+            }
+
+            $query->leftJoin(
+                "log_action as {$alias}",
+                static function (JoinClause $join) use ($alias, $definition): void {
+                    $join->on("{$alias}.idaction", '=', $definition->expression);
+                },
+            );
+            $joined[$alias] = true;
+        }
+    }
+
+    private function applyPositiveActionCondition(
+        Builder $query,
+        ResolvedSegmentCondition $resolved,
+    ): void {
+        $definition = $resolved->action;
+
+        if ($definition === null) {
+            throw new InvalidArgumentException('An action segment definition is required.');
+        }
+
+        if (in_array($definition->source, ['lookup', 'visit-lookup'], true)) {
+            $this->applyActionLookupCondition($query, $resolved, $definition);
+
+            return;
+        }
+
+        $this->applyCondition(
+            $query,
+            $resolved->condition,
+            $resolved->expression,
+            $resolved->type,
+        );
+    }
+
+    private function applyActionLookupCondition(
+        Builder $query,
+        ResolvedSegmentCondition $resolved,
+        ActionSegmentDefinition $definition,
+    ): void {
+        $query->where(function (Builder $union) use ($resolved, $definition): void {
+            foreach ($definition->actionTypes as $index => $actionType) {
+                $value = $this->normalizeActionValue(
+                    $resolved->condition->value,
+                    $resolved->condition->name,
+                    $actionType,
+                );
+                $callback = function (Builder $typed) use (
+                    $resolved,
+                    $definition,
+                    $value,
+                    $actionType,
+                ): void {
+                    $typed->where("{$definition->lookupAlias}.type", $actionType)
+                        ->where(function (Builder $names) use ($resolved, $definition, $value): void {
+                            $variants = array_values(array_unique([
+                                $value,
+                                $this->sanitizeActionValue($value),
+                            ]));
+
+                            foreach ($variants as $variantIndex => $variant) {
+                                $condition = new SegmentCondition(
+                                    $resolved->condition->name,
+                                    $resolved->condition->operator,
+                                    $variant,
+                                );
+                                $nameExpression = "{$definition->lookupAlias}.name";
+                                $variantCallback = function (Builder $nameQuery) use (
+                                    $condition,
+                                    $nameExpression,
+                                ): void {
+                                    $this->applyCondition(
+                                        $nameQuery,
+                                        $condition,
+                                        $nameExpression,
+                                        'text',
+                                    );
+                                };
+
+                                if ($variantIndex === 0) {
+                                    $names->where($variantCallback);
+                                } else {
+                                    $names->orWhere($variantCallback);
+                                }
+                            }
+                        });
+                };
+
+                if ($index === 0) {
+                    $union->where($callback);
+                } else {
+                    $union->orWhere($callback);
+                }
+            }
+        });
+    }
+
+    private function normalizeActionValue(string $value, string $name, int $actionType): string
+    {
+        if ($actionType === 1
+            || $name === 'eventUrl'
+            || ($name === 'actionUrl' && $actionType === 10)) {
+            $normalized = preg_replace('@^https?://(www\.)?@i', '', $value);
+
+            if (is_string($normalized)) {
+                return $normalized;
+            }
+        }
+
+        return $value;
+    }
+
+    private function sanitizeActionValue(string $value): string
+    {
+        $value = str_replace(["\n", "\r", "\0"], '', $value);
+
+        return htmlspecialchars(
+            html_entity_decode($value, ENT_QUOTES, 'UTF-8'),
+            ENT_QUOTES,
+            'UTF-8',
+        );
+    }
+
+    private function actionDefinition(Builder $query, string $name): ?ActionSegmentDefinition
+    {
+        if (isset(self::VISIT_ACTION_LOOKUP_SEGMENTS[$name])) {
+            [$expression, $alias, $actionTypes] = self::VISIT_ACTION_LOOKUP_SEGMENTS[$name];
+
+            return new ActionSegmentDefinition(
+                source: 'visit-lookup',
+                expression: $expression,
+                lookupAlias: $alias,
+                actionTypes: $actionTypes,
+                type: 'text',
+            );
+        }
+
+        if (isset(self::ACTION_LOOKUP_SEGMENTS[$name])) {
+            [$expression, $alias, $actionTypes] = self::ACTION_LOOKUP_SEGMENTS[$name];
+
+            return new ActionSegmentDefinition(
+                source: 'lookup',
+                expression: $expression,
+                lookupAlias: $alias,
+                actionTypes: $actionTypes,
+                type: 'text',
+            );
+        }
+
+        if ($name === 'actionType') {
+            return new ActionSegmentDefinition(
+                source: 'type',
+                expression: 'segment_action.idaction_url',
+                lookupAlias: 'segment_action_url',
+                actionTypes: [],
+                type: 'action-type',
+            );
+        }
+
+        if (! isset(self::ACTION_DIRECT_SEGMENTS[$name])) {
+            return null;
+        }
+
+        [$expression, $type] = self::ACTION_DIRECT_SEGMENTS[$name];
+
+        if (in_array($name, ['actionServerHour', 'actionServerMinute'], true)) {
+            $expression = $this->expression($query, $expression, 'server_time');
+        }
+
+        return new ActionSegmentDefinition(
+            source: 'direct',
+            expression: $expression,
+            lookupAlias: '',
+            actionTypes: [],
+            type: $type,
+        );
     }
 
     /** @return array{literal-string, literal-string}|null */
@@ -243,6 +698,12 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         string $expression,
         string $type,
     ): void {
+        if (preg_match('/^[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*$/D', $expression) === 1) {
+            $this->applyQualifiedCondition($query, $condition, $expression, $type);
+
+            return;
+        }
+
         if ($condition->value === '') {
             $this->applyEmptyCondition($query, $condition->operator, $expression);
 
@@ -263,6 +724,7 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
             'ecommerce-status',
             'referrer-type',
             'device-type',
+            'action-type',
         ], true);
         $alsoMatchesNull = ! in_array($value, ['', '0', 0, 0.0, false, null], true);
 
@@ -316,6 +778,137 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         }
 
         throw new InvalidArgumentException("The segment operator '{$operator}' requires a value.");
+    }
+
+    /**
+     * @param  literal-string  $expression
+     * @param  literal-string  $type
+     */
+    private function applyQualifiedCondition(
+        Builder $query,
+        SegmentCondition $condition,
+        string $expression,
+        string $type,
+    ): void {
+        if ($condition->value === '') {
+            if ($condition->operator === '==') {
+                $query->where(function (Builder $empty) use ($expression): void {
+                    $empty->whereNull($expression)
+                        ->orWhere($expression, '')
+                        ->orWhere($expression, '0');
+                });
+
+                return;
+            }
+
+            if ($condition->operator === '!=') {
+                $query->whereNotNull($expression)
+                    ->where($expression, '<>', '')
+                    ->where($expression, '<>', '0');
+
+                return;
+            }
+
+            throw new InvalidArgumentException(
+                "The segment operator '{$condition->operator}' requires a value.",
+            );
+        }
+
+        $value = $this->filterValue($condition->value, $type, $condition->name);
+        $alsoMatchesNull = ! in_array($value, ['', '0', 0, 0.0, false, null], true);
+
+        match ($condition->operator) {
+            '==' => $query->where($expression, '=', $value),
+            '!=' => $this->whereQualifiedNegativeComparison(
+                $query,
+                $expression,
+                $value,
+                $alsoMatchesNull,
+            ),
+            '>' => $query->where($expression, '>', $value),
+            '<' => $query->where($expression, '<', $value),
+            '>=' => $query->where($expression, '>=', $value),
+            '<=' => $query->where($expression, '<=', $value),
+            '=@' => $this->whereQualifiedLike($query, $expression, $value, 'contains', false),
+            '!@' => $this->whereQualifiedNotContains(
+                $query,
+                $expression,
+                $value,
+                $alsoMatchesNull,
+            ),
+            '=^' => $this->whereQualifiedLike($query, $expression, $value, 'starts', false),
+            '=$' => $this->whereQualifiedLike($query, $expression, $value, 'ends', false),
+            default => throw new InvalidArgumentException(
+                "The segment operator '{$condition->operator}' is not supported.",
+            ),
+        };
+    }
+
+    /** @param literal-string $expression */
+    private function whereQualifiedNegativeComparison(
+        Builder $query,
+        string $expression,
+        mixed $value,
+        bool $alsoMatchesNull,
+    ): void {
+        if (! $alsoMatchesNull) {
+            $query->where($expression, '<>', $value);
+
+            return;
+        }
+
+        $query->where(function (Builder $notEqual) use ($expression, $value): void {
+            $notEqual->whereNull($expression)->orWhere($expression, '<>', $value);
+        });
+    }
+
+    /** @param literal-string $expression */
+    private function whereQualifiedNotContains(
+        Builder $query,
+        string $expression,
+        mixed $value,
+        bool $alsoMatchesNull,
+    ): void {
+        if (! $alsoMatchesNull) {
+            $this->whereQualifiedLike($query, $expression, $value, 'contains', true);
+
+            return;
+        }
+
+        $query->where(function (Builder $notContains) use ($expression, $value): void {
+            $notContains->whereNull($expression)
+                ->orWhere(function (Builder $present) use ($expression, $value): void {
+                    $this->whereQualifiedLike($present, $expression, $value, 'contains', true);
+                });
+        });
+    }
+
+    /**
+     * @param  literal-string  $expression
+     * @param  'contains'|'ends'|'starts'  $position
+     */
+    private function whereQualifiedLike(
+        Builder $query,
+        string $expression,
+        mixed $value,
+        string $position,
+        bool $negated,
+    ): void {
+        $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], (string) $value);
+        $pattern = match ($position) {
+            'contains' => "%{$escaped}%",
+            'starts' => "{$escaped}%",
+            'ends' => "%{$escaped}",
+        };
+        $operator = $negated ? 'NOT LIKE' : 'LIKE';
+        $escape = $query->getGrammar() instanceof SQLiteGrammar
+            ? " ESCAPE '\\'"
+            : " ESCAPE '\\\\'";
+        $column = $query->getGrammar()->wrap($expression);
+        $query->whereRaw(
+            new TrustedSegmentSqlExpression("{$column} {$operator} ?{$escape}"),
+            [$pattern],
+        );
     }
 
     /** @param literal-string $expression */
@@ -456,6 +1049,7 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
             'ecommerce-status' => $this->enumValue($value, self::ECOMMERCE_STATUSES, $name),
             'referrer-type' => $this->enumValue($value, self::REFERRER_TYPES, $name),
             'device-type' => $this->deviceType($value, $name),
+            'action-type' => $this->enumValue($value, self::ACTION_TYPES, $name),
             default => throw new InvalidArgumentException("The '{$name}' segment type '{$type}' is not valid."),
         };
     }

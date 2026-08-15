@@ -72,6 +72,10 @@ class DatabaseReportArchiverTest extends TestCase
             $table->string('idvisitor');
             $table->string('config_id');
             $table->string('user_id')->nullable();
+            $table->unsignedInteger('visit_entry_idaction_url')->nullable();
+            $table->unsignedInteger('visit_entry_idaction_name')->nullable();
+            $table->unsignedInteger('visit_exit_idaction_url')->nullable();
+            $table->unsignedInteger('visit_exit_idaction_name')->nullable();
             $table->dateTime('visit_first_action_time')->nullable();
             $table->dateTime('visit_last_action_time');
             $table->unsignedInteger('visit_total_actions');
@@ -90,6 +94,29 @@ class DatabaseReportArchiverTest extends TestCase
             $table->string('referer_url')->nullable();
             $table->binary('location_ip')->nullable();
             $table->string('location_country', 3)->nullable();
+        });
+        $schema->create('log_action', static function (Blueprint $table): void {
+            $table->unsignedInteger('idaction')->primary();
+            $table->text('name');
+            $table->unsignedTinyInteger('type');
+            $table->unsignedTinyInteger('url_prefix')->nullable();
+        });
+        $schema->create('log_link_visit_action', static function (Blueprint $table): void {
+            $table->increments('idlink_va');
+            $table->unsignedInteger('idsite');
+            $table->unsignedInteger('idvisit');
+            $table->unsignedInteger('idaction_url')->nullable();
+            $table->unsignedInteger('idaction_name')->nullable();
+            $table->unsignedInteger('idaction_event_category')->nullable();
+            $table->unsignedInteger('idaction_event_action')->nullable();
+            $table->unsignedInteger('idaction_content_name')->nullable();
+            $table->unsignedInteger('idaction_content_piece')->nullable();
+            $table->unsignedInteger('idaction_content_target')->nullable();
+            $table->unsignedInteger('idaction_content_interaction')->nullable();
+            $table->string('search_cat')->nullable();
+            $table->unsignedInteger('search_count')->nullable();
+            $table->float('custom_float')->nullable();
+            $table->dateTime('server_time');
         });
         $this->connection->table('site')->insert([
             ['idsite' => 1, 'timezone' => 'Pacific/Auckland'],
@@ -400,6 +427,54 @@ class DatabaseReportArchiverTest extends TestCase
         }
     }
 
+    public function test_action_segments_match_same_action_rows_and_negative_rules_exclude_whole_visits(): void
+    {
+        $this->insertVisits();
+        $this->insertActionRows();
+        $this->connection->table('log_visit')->where('idvisit', 2)->update([
+            'visit_entry_idaction_url' => 1,
+            'visit_entry_idaction_name' => 2,
+            'visit_exit_idaction_url' => 3,
+            'visit_exit_idaction_name' => 4,
+        ]);
+        $segments = [
+            'pageUrl==https%3A%2F%2Fwww.example.test%2Fone' => 1,
+            'pageUrl==https%3A%2F%2Fwww.example.test%2Fone;pageTitle==Alpha' => 1,
+            'pageUrl==https%3A%2F%2Fwww.example.test%2Fone;pageTitle==Beta' => 0,
+            'eventCategory==Video;eventAction==play;eventName==Trailer;eventValue>=9' => 1,
+            'actionType==events' => 1,
+            'actionServerHour==10' => 1,
+            'siteSearchCategory==docs;siteSearchCount==2' => 1,
+            'entryPageUrl==https%3A%2F%2Fwww.example.test%2Fone' => 1,
+            'entryPageTitle==Alpha;exitPageTitle==Beta' => 1,
+            'entryPageTitle!=Alpha' => 1,
+            'entryPageTitle==' => 1,
+            'entryPageTitle!=' => 1,
+            'pageTitle!=Alpha' => 1,
+            'pageTitle!@ph' => 1,
+            'pageTitle=@Alpha%255F100%2525' => 1,
+            'pageTitle!@Alpha%255F100%2525' => 1,
+            'pageTitle!=Missing' => 2,
+            'countryCode==nz,pageTitle==Alpha' => 2,
+            "pageTitle==x' OR 1=1 --" => 0,
+        ];
+
+        foreach ($segments as $segment => $expectedVisits) {
+            $result = $this->archiver()->archive(new ArchiveReportRequest(
+                siteId: 1,
+                period: 'day',
+                date: '2026-08-15',
+                segment: $segment,
+            ));
+
+            $this->assertSame(
+                $expectedVisits,
+                $result->visits,
+                "The action segment '{$segment}' has the wrong visit count.",
+            );
+        }
+    }
+
     public function test_extension_failure_leaves_an_error_marker_and_validation_rejects_bad_inputs(): void
     {
         $this->insertVisits();
@@ -515,6 +590,71 @@ class DatabaseReportArchiverTest extends TestCase
             $this->visit(1, '2026-08-14 11:59:59', 'outside-a', 'config-b', null, 5, 80, 0, 'nz'),
             $this->visit(1, '2026-08-15 12:00:00', 'outside-b', 'config-c', null, 2, 10, 0, 'nz'),
             $this->visit(2, '2026-08-15 00:00:00', 'other-site', 'config-d', null, 2, 10, 0, 'nz'),
+        ]);
+    }
+
+    private function insertActionRows(): void
+    {
+        $this->connection->table('log_action')->insert([
+            ['idaction' => 1, 'name' => 'example.test/one', 'type' => 1],
+            ['idaction' => 2, 'name' => 'Alpha', 'type' => 4],
+            ['idaction' => 3, 'name' => 'example.test/two', 'type' => 1],
+            ['idaction' => 4, 'name' => 'Beta', 'type' => 4],
+            ['idaction' => 5, 'name' => 'Video', 'type' => 10],
+            ['idaction' => 6, 'name' => 'play', 'type' => 11],
+            ['idaction' => 7, 'name' => 'Trailer', 'type' => 12],
+            ['idaction' => 8, 'name' => 'example.test/trailer', 'type' => 10],
+            ['idaction' => 9, 'name' => 'Alpha_100%', 'type' => 4],
+        ]);
+        $this->connection->table('log_link_visit_action')->insert([
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_url' => 1,
+                'idaction_name' => 2,
+                'idaction_event_category' => null,
+                'idaction_event_action' => null,
+                'search_cat' => null,
+                'search_count' => null,
+                'custom_float' => null,
+                'server_time' => '2026-08-15 08:00:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_url' => 3,
+                'idaction_name' => 4,
+                'idaction_event_category' => null,
+                'idaction_event_action' => null,
+                'search_cat' => 'docs',
+                'search_count' => 2,
+                'custom_float' => null,
+                'server_time' => '2026-08-15 09:00:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_url' => 8,
+                'idaction_name' => 7,
+                'idaction_event_category' => 5,
+                'idaction_event_action' => 6,
+                'search_cat' => null,
+                'search_count' => null,
+                'custom_float' => 9.5,
+                'server_time' => '2026-08-15 10:00:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_url' => 1,
+                'idaction_name' => 9,
+                'idaction_event_category' => null,
+                'idaction_event_action' => null,
+                'search_cat' => null,
+                'search_count' => null,
+                'custom_float' => null,
+                'server_time' => '2026-08-15 11:00:00',
+            ],
         ]);
     }
 
