@@ -15,6 +15,7 @@ use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\DynamicSegmentResolver;
 use App\Matomo\Archiving\EcommerceItemArchiveCollector;
+use App\Matomo\Archiving\EventArchiveCollector;
 use App\Matomo\Archiving\Events\ArchiveActionsQueryBuilding;
 use App\Matomo\Archiving\Events\ArchiveConversionsQueryBuilding;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
@@ -1649,6 +1650,260 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertSame(1, $weekRows['VIEW-SKU']['nb_actions']);
     }
 
+    public function test_collects_event_hierarchies_values_segments_and_parent_records(): void
+    {
+        $this->insertVisits();
+        $this->insertActionRows();
+        $this->connection->table('log_action')->insert([
+            ['idaction' => 30, 'name' => '', 'type' => 12],
+            ['idaction' => 31, 'name' => 'pause', 'type' => 11],
+        ]);
+        $this->connection->table('log_link_visit_action')->insert([
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_name' => 7,
+                'idaction_event_category' => 5,
+                'idaction_event_action' => 6,
+                'custom_float' => null,
+                'server_time' => '2026-08-15 10:10:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 1,
+                'idaction_name' => 30,
+                'idaction_event_category' => 5,
+                'idaction_event_action' => 31,
+                'custom_float' => 4,
+                'server_time' => '2026-08-14 13:00:00',
+            ],
+        ]);
+        $this->registerEventCollector();
+
+        $this->archiver()->archive(new ArchiveReportRequest(1, 'day', '2026-08-15'));
+
+        $periods = new CarbonReportingPeriodFactory;
+        $day = $periods->make('day', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $blobs = new DatabaseBlobArchiveRepository($this->connection);
+        $records = $blobs->records(
+            [1],
+            [$day],
+            '',
+            'Events_category_action',
+            true,
+        )[1][$day->rangeKey()];
+        $categories = $this->hierarchicalRowsByLabel($records['Events_category_action']);
+        $video = $categories['Video'];
+        $this->assertSame(2, $video['columns']['nb_uniq_visitors']);
+        $this->assertSame(2, $video['columns']['nb_visits']);
+        $this->assertSame(3, $video['columns']['nb_events']);
+        $this->assertSame(2, $video['columns']['nb_events_with_value']);
+        $this->assertSame(13.5, $video['columns']['sum_event_value']);
+        $this->assertSame(4, $video['columns']['min_event_value']);
+        $this->assertSame(9.5, $video['columns']['max_event_value']);
+        $this->assertIsInt($video['subtableId']);
+        $actions = $this->hierarchicalRowsByLabel(
+            $records['Events_category_action_'.$video['subtableId']],
+        );
+        $this->assertSame(2, $actions['play']['columns']['nb_events']);
+        $this->assertSame(1, $actions['play']['columns']['nb_events_with_value']);
+        $this->assertSame(9.5, $actions['play']['columns']['sum_event_value']);
+        $this->assertSame(1, $actions['pause']['columns']['nb_events']);
+
+        $categoryNames = $blobs->records(
+            [1],
+            [$day],
+            '',
+            'Events_category_name',
+            true,
+        )[1][$day->rangeKey()];
+        $videoByName = $this->hierarchicalRowsByLabel(
+            $categoryNames['Events_category_name'],
+        )['Video'];
+        $names = $this->hierarchicalRowsByLabel(
+            $categoryNames['Events_category_name_'.$videoByName['subtableId']],
+        );
+        $this->assertSame(['Trailer'], array_keys($names));
+        $this->assertSame(2, $names['Trailer']['columns']['nb_events']);
+
+        $nameActions = $blobs->records(
+            [1],
+            [$day],
+            '',
+            'Events_name_action',
+            true,
+        )[1][$day->rangeKey()];
+        $eventNames = $this->hierarchicalRowsByLabel($nameActions['Events_name_action']);
+        $this->assertSame(1, $eventNames['Piwik_EventNameNotSet']['columns']['nb_events']);
+
+        $segment = 'countryCode==nz';
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $segment,
+            plugin: 'Events',
+        ));
+        $segmentRecords = $blobs->records(
+            [1],
+            [$day],
+            (new DatabaseSegmentHashResolver($this->connection))->resolve($segment),
+            'Events_category_action',
+            true,
+        )[1][$day->rangeKey()];
+        $segmentVideo = $this->hierarchicalRowsByLabel(
+            $segmentRecords['Events_category_action'],
+        )['Video'];
+        $segmentActions = $this->hierarchicalRowsByLabel(
+            $segmentRecords['Events_category_action_'.$segmentVideo['subtableId']],
+        );
+        $this->assertSame(['pause'], array_keys($segmentActions));
+
+        $this->events->listen(ArchiveActionsQueryBuilding::class, static function (
+            ArchiveActionsQueryBuilding $event,
+        ): void {
+            if ($event->request->segment === 'extensionEvent==valued') {
+                $event->query->where('log_link_visit_action.custom_float', 9.5);
+                $event->segmentApplied = true;
+            }
+        });
+        $this->events->listen(ArchiveVisitsQueryBuilding::class, static function (
+            ArchiveVisitsQueryBuilding $event,
+        ): void {
+            if ($event->request->segment === 'extensionEvent==valued') {
+                $event->query->where('log_visit.idvisit', 2);
+                $event->segmentApplied = true;
+            }
+        });
+        $extensionSegment = 'extensionEvent==valued';
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $extensionSegment,
+            plugin: 'Events',
+        ));
+        $extensionRecords = $blobs->records(
+            [1],
+            [$day],
+            (new DatabaseSegmentHashResolver($this->connection))->resolve($extensionSegment),
+            'Events_category_action',
+            true,
+        )[1][$day->rangeKey()];
+        $extensionVideo = $this->hierarchicalRowsByLabel(
+            $extensionRecords['Events_category_action'],
+        )['Video'];
+        $this->assertSame(1, $extensionVideo['columns']['nb_events']);
+        $this->assertSame(9.5, $extensionVideo['columns']['sum_event_value']);
+
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'week',
+            date: '2026-08-15',
+            force: true,
+        ));
+        $week = $periods->make('week', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $weekRecords = $blobs->records(
+            [1],
+            [$week],
+            '',
+            'Events_category_action',
+            true,
+        )[1][$week->rangeKey()];
+        $weekVideo = $this->hierarchicalRowsByLabel(
+            $weekRecords['Events_category_action'],
+        )['Video'];
+        $this->assertSame(3, $weekVideo['columns']['nb_events']);
+        $this->assertSame(4, $weekVideo['columns']['min_event_value']);
+        $this->assertSame(9.5, $weekVideo['columns']['max_event_value']);
+        $this->assertIsInt($weekVideo['subtableId']);
+        $this->assertArrayHasKey(
+            'Events_category_action_'.$weekVideo['subtableId'],
+            $weekRecords,
+        );
+    }
+
+    public function test_event_root_and_subtable_archives_use_bounded_others_rows(): void
+    {
+        $this->insertVisits();
+        $actions = [
+            ['idaction' => 1000, 'name' => '000-shared', 'type' => 10],
+            ['idaction' => 1001, 'name' => 'common', 'type' => 11],
+            ['idaction' => 1002, 'name' => 'event', 'type' => 12],
+        ];
+        $links = [];
+
+        for ($index = 0; $index < 501; $index++) {
+            $actions[] = [
+                'idaction' => 2000 + $index,
+                'name' => 'category'.str_pad((string) $index, 4, '0', STR_PAD_LEFT),
+                'type' => 10,
+            ];
+            $actions[] = [
+                'idaction' => 3000 + $index,
+                'name' => 'action'.str_pad((string) $index, 4, '0', STR_PAD_LEFT),
+                'type' => 11,
+            ];
+            $links[] = [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_name' => 1002,
+                'idaction_event_category' => 2000 + $index,
+                'idaction_event_action' => 1001,
+                'custom_float' => 1,
+                'server_time' => '2026-08-15 10:00:00',
+            ];
+            $links[] = [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_name' => 1002,
+                'idaction_event_category' => 1000,
+                'idaction_event_action' => 3000 + $index,
+                'custom_float' => 1,
+                'server_time' => '2026-08-15 10:00:00',
+            ];
+        }
+
+        foreach (array_chunk($actions, 100) as $chunk) {
+            $this->connection->table('log_action')->insert($chunk);
+        }
+
+        foreach (array_chunk($links, 100) as $chunk) {
+            $this->connection->table('log_link_visit_action')->insert($chunk);
+        }
+
+        $this->registerEventCollector();
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            plugin: 'Events',
+        ));
+        $day = (new CarbonReportingPeriodFactory)->make(
+            'day',
+            '2026-08-15',
+            'Pacific/Auckland',
+        )[0][0];
+        $records = (new DatabaseBlobArchiveRepository($this->connection))->records(
+            [1],
+            [$day],
+            '',
+            'Events_category_action',
+            true,
+        )[1][$day->rangeKey()];
+        $categories = $this->hierarchicalRowsByLabel($records['Events_category_action']);
+        $this->assertCount(500, $categories);
+        $this->assertSame(3, $categories[-1]['columns']['nb_events']);
+        $this->assertNull($categories[-1]['subtableId']);
+        $shared = $categories['000-shared'];
+        $this->assertIsInt($shared['subtableId']);
+        $sharedActions = $this->hierarchicalRowsByLabel(
+            $records['Events_category_action_'.$shared['subtableId']],
+        );
+        $this->assertCount(500, $sharedActions);
+        $this->assertSame(2, $sharedActions[-1]['columns']['nb_events']);
+    }
+
     private function archiver(): DatabaseReportArchiver
     {
         return new DatabaseReportArchiver(
@@ -1729,6 +1984,41 @@ class DatabaseReportArchiverTest extends TestCase
             blobs: new DatabaseBlobArchiveRepository($this->connection),
             sites: new DatabaseSiteRepository($this->connection),
         ));
+    }
+
+    private function registerEventCollector(): void
+    {
+        $this->events->listen(ArchiveReportsCollecting::class, new EventArchiveCollector(
+            connection: $this->connection,
+            actionQueries: new ArchiveActionQueryFactory(
+                $this->connection,
+                $this->visitSegmentApplicator(),
+                $this->events,
+            ),
+            subperiods: new CarbonReportingSubperiodFactory,
+            segments: new DatabaseSegmentHashResolver($this->connection),
+            blobs: new DatabaseBlobArchiveRepository($this->connection),
+            sites: new DatabaseSiteRepository($this->connection),
+        ));
+    }
+
+    /**
+     * @param  list<array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>, subtableId: int|null}>  $rows
+     * @return array<int|string, array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>, subtableId: int|null}>
+     */
+    private function hierarchicalRowsByLabel(array $rows): array
+    {
+        $values = [];
+
+        foreach ($rows as $row) {
+            $label = $row['columns']['label'] ?? null;
+
+            if (is_float($label) || is_int($label) || is_string($label)) {
+                $values[(string) $label] = $row;
+            }
+        }
+
+        return $values;
     }
 
     /**

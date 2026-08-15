@@ -59,6 +59,7 @@ use App\Matomo\Archiving\ConversionSegmentApplicator;
 use App\Matomo\Archiving\DatabaseArchiveInvalidationManager;
 use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\EcommerceItemArchiveCollector;
+use App\Matomo\Archiving\EventArchiveCollector;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\GoalArchiveCollector;
 use App\Matomo\Archiving\ReportArchiver;
@@ -738,6 +739,17 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(
+            EventArchiveCollector::class,
+            fn (Application $application): EventArchiveCollector => new EventArchiveCollector(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                actionQueries: $application->make(ArchiveActionQueryFactory::class),
+                subperiods: $application->make(ReportingSubperiodFactory::class),
+                segments: $application->make(SegmentHashResolver::class),
+                blobs: $application->make(HierarchicalBlobArchiveRepository::class),
+                sites: $application->make(SiteRepository::class),
+            ),
+        );
+        $this->app->singleton(
             ReportArchiver::class,
             fn (Application $application): ReportArchiver => new DatabaseReportArchiver(
                 connection: $application->make(MatomoDatabase::class)->connection(),
@@ -1051,6 +1063,7 @@ class AppServiceProvider extends ServiceProvider
         $events->listen(ArchiveReportsCollecting::class, VisitAggregateArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, GoalArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, EcommerceItemArchiveCollector::class);
+        $events->listen(ArchiveReportsCollecting::class, EventArchiveCollector::class);
     }
 
     /**

@@ -43,7 +43,7 @@ Current Laravel entry points:
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
-| Report archivers | `plugins/*/Archiver.php` | 19 archivers | Archive storage, day and parent core metrics, cache reuse, failure markers, extension events, all bundled segment families, active site-configured custom dimensions, 23 visit-derived report records, goal and ecommerce enrichment for time, device, and location reports, general goal metrics and conversion-timing records, and ecommerce item and product-view records ported; specialized action, conversion, event, and plugin records remain |
+| Report archivers | `plugins/*/Archiver.php` | 19 archivers | Archive storage, day and parent core metrics, cache reuse, failure markers, extension events, all bundled segment families, active site-configured custom dimensions, 23 visit-derived report records, goal and ecommerce enrichment for time, device, and location reports, general goal metrics and conversion-timing records, ecommerce item and product-view records, and all six hierarchical Events records ported; specialized action, conversion, and plugin records remain |
 | Tracker extensions | `plugins/*/Tracker.php`, `plugins/*/Tracker/*.php` | 15 files | Not ported; `matomo.php` and `piwik.php` remain legacy entry points |
 | Update migrations | `core/Updates/*.php`, `plugins/*/Updates/*.php` | 191 update files | Not ported |
 | Installation and updates | `plugins/Installation`, `plugins/CoreUpdater` | 2 lifecycles | Not ported |
@@ -74,8 +74,9 @@ Handled reporting API method names:
   default widgets, dashboard writes, and recipient visibility rules.
 - `DevicesDetection`: all 8 API methods, including device, brand, model, operating-system, browser,
   and engine reports, legacy archive fallback, metadata, and compliance-policy filtering.
-- `Events`: all 9 API methods, including secondary dimensions, subtable IDs, expanded and flat
-  archive reports, event-value metrics, metadata, and localized missing-name labels.
+- `Events`: all 9 API methods and their six archive producers, including secondary dimensions,
+  bounded subtables, parent aggregation, subtable IDs, expanded and flat archive reports,
+  event-value metrics, metadata, and localized missing-name labels.
 - `ExampleAPI`: all 9 API methods, including scalar, null, object, table, simple-array, and
   multidimensional-array response behavior plus the protected version lookup.
 - `ExamplePlugin`: all 4 API methods, including its static report, numeric archive metrics,
