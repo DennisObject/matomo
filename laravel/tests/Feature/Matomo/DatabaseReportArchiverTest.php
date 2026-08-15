@@ -7,6 +7,7 @@ namespace Tests\Feature\Matomo;
 use App\Matomo\Archiving\ArchiveRecordSet;
 use App\Matomo\Archiving\ArchiveReportRequest;
 use App\Matomo\Archiving\ArchiveVisitQueryFactory;
+use App\Matomo\Archiving\BrowserLanguageArchiveLabeler;
 use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\DatabaseReportArchiver;
@@ -18,6 +19,7 @@ use App\Matomo\Archiving\Events\ArchiveVisitsQueryBuilding;
 use App\Matomo\Archiving\SegmentConditionQueryApplier;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
 use App\Matomo\Archiving\SegmentExpressionParser;
+use App\Matomo\Archiving\VisitAggregateArchiveCollector;
 use App\Matomo\Archiving\VisitDimensionArchiveCollector;
 use App\Matomo\Geolocation\CountryMetadataProvider;
 use App\Matomo\Options\DatabaseOptionRepository;
@@ -114,11 +116,25 @@ class DatabaseReportArchiverTest extends TestCase
             $table->unsignedInteger('visitor_seconds_since_first')->nullable();
             $table->unsignedInteger('visitor_seconds_since_last')->nullable();
             $table->unsignedInteger('visitor_seconds_since_order')->nullable();
+            $table->unsignedInteger('visitor_count_visits')->nullable();
             $table->unsignedTinyInteger('config_device_type')->nullable();
+            $table->boolean('config_cookie')->nullable();
+            $table->boolean('config_flash')->nullable();
+            $table->boolean('config_java')->nullable();
+            $table->boolean('config_pdf')->nullable();
+            $table->boolean('config_quicktime')->nullable();
+            $table->boolean('config_realplayer')->nullable();
+            $table->boolean('config_silverlight')->nullable();
+            $table->boolean('config_windowsmedia')->nullable();
             $table->string('referer_name')->nullable();
             $table->string('referer_url')->nullable();
             $table->binary('location_ip')->nullable();
             $table->string('location_country', 3)->nullable();
+            $table->string('location_browser_lang')->nullable();
+            $table->string('location_region')->nullable();
+            $table->string('location_city')->nullable();
+            $table->float('location_latitude')->nullable();
+            $table->float('location_longitude')->nullable();
         });
         $schema->create('log_action', static function (Blueprint $table): void {
             $table->unsignedInteger('idaction')->primary();
@@ -832,6 +848,16 @@ class DatabaseReportArchiverTest extends TestCase
             'config_device_model' => 'Desktop',
             'config_browser_engine' => 'Gecko',
             'location_provider' => 'example.net',
+            'location_browser_lang' => 'fr-fr,fr;q=0.8',
+            'location_region' => 'AUK',
+            'location_city' => 'Auckland',
+            'location_latitude' => -36.8485,
+            'location_longitude' => 174.7633,
+            'visitor_count_visits' => 1,
+            'visitor_returning' => 0,
+            'visitor_seconds_since_last' => 0,
+            'config_java' => 1,
+            'config_pdf' => 1,
         ]);
         $this->connection->table('log_visit')->where('idvisit', 2)->update([
             'visit_first_action_time' => '2026-08-15 11:00:00',
@@ -846,6 +872,16 @@ class DatabaseReportArchiverTest extends TestCase
             'config_device_model' => 'Pixel',
             'config_browser_engine' => 'Blink',
             'location_provider' => 'isp.test',
+            'location_browser_lang' => 'en-us,en;q=0.5',
+            'location_region' => 'NSW',
+            'location_city' => 'Sydney',
+            'location_latitude' => -33.8688,
+            'location_longitude' => 151.2093,
+            'visitor_count_visits' => 3,
+            'visitor_returning' => 1,
+            'visitor_seconds_since_last' => 172_800,
+            'config_java' => 1,
+            'config_pdf' => 0,
         ]);
         $this->registerVisitDimensionCollector();
 
@@ -892,6 +928,55 @@ class DatabaseReportArchiverTest extends TestCase
         )[1][$period->rangeKey()];
         $this->assertSame('alice', $userRows[0]['columns']['label']);
         $this->assertSame(bin2hex('visitor-a'), $userRows[0]['metadata']['idvisitor']);
+        $cityRows = $repository->rows(
+            [1],
+            [$period],
+            '',
+            'UserCountry_city',
+        )[1][$period->rangeKey()];
+        $this->assertSame(['Auckland|AUK|nz', 'Sydney|NSW|au'], array_column(array_column($cityRows, 'columns'), 'label'));
+        $this->assertSame(-36.85, $cityRows[0]['metadata']['lat']);
+        $this->assertSame(174.76, $cityRows[0]['metadata']['long']);
+        $languageRows = $repository->rows(
+            [1],
+            [$period],
+            '',
+            'UserLanguage_language',
+        )[1][$period->rangeKey()];
+        $this->assertSame(['en-us', 'fr'], array_column(array_column($languageRows, 'columns'), 'label'));
+        $this->assertSame(2.0, $this->connection
+            ->table('archive_numeric_2026_08')
+            ->where('idarchive', 1)
+            ->where('name', 'UserCountry_distinctCountries')
+            ->value('value'));
+        $interestRows = $repository->rows(
+            [1],
+            [$period],
+            '',
+            'VisitorInterest_daysSinceLastVisit',
+        )[1][$period->rangeKey()];
+        $interestByLabel = [];
+
+        foreach ($interestRows as $row) {
+            $interestByLabel[(string) $row['columns']['label']] = $row['columns']['nb_visits'];
+        }
+
+        $this->assertSame(1, $interestByLabel['General_NewVisits']);
+        $this->assertSame(1, $interestByLabel['2-2']);
+        $pluginRows = $repository->rows(
+            [1],
+            [$period],
+            '',
+            'DevicePlugins_plugin',
+        )[1][$period->rangeKey()];
+        $pluginsByLabel = [];
+
+        foreach ($pluginRows as $row) {
+            $pluginsByLabel[(string) $row['columns']['label']] = $row['columns']['nb_visits'];
+        }
+
+        $this->assertSame(2, $pluginsByLabel['java']);
+        $this->assertSame(1, $pluginsByLabel['pdf']);
 
         $weekResult = $this->archiver()->archive(new ArchiveReportRequest(
             siteId: 1,
@@ -920,6 +1005,19 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertSame(2, $weekByLabel['']['sum_daily_nb_uniq_visitors']);
         $this->assertSame(1, $weekByLabel['CH;140.0']['nb_visits']);
         $this->assertSame(1, $weekByLabel['FF;142.0']['sum_daily_nb_uniq_visitors']);
+        $weekPluginRows = $repository->rows(
+            [1],
+            [$week],
+            '',
+            'DevicePlugins_plugin',
+        )[1][$week->rangeKey()];
+        $weekPluginsByLabel = [];
+
+        foreach ($weekPluginRows as $row) {
+            $weekPluginsByLabel[(string) $row['columns']['label']] = $row['columns']['nb_visits'];
+        }
+
+        $this->assertSame(2, $weekPluginsByLabel['java']);
         $this->assertCount(1, $weekResult->archiveIds);
     }
 
@@ -1003,8 +1101,21 @@ class DatabaseReportArchiverTest extends TestCase
             segments: new DatabaseSegmentHashResolver($this->connection),
             blobs: new DatabaseBlobArchiveRepository($this->connection),
             sites: new DatabaseSiteRepository($this->connection),
+            browserLanguages: new BrowserLanguageArchiveLabeler(
+                languageCodes: ['en', 'fr'],
+                countryCodes: ['fr', 'us'],
+                countriesByLanguage: ['fr' => 'fr'],
+            ),
         );
         $this->events->listen(ArchiveReportsCollecting::class, $collector);
+        $this->events->listen(ArchiveReportsCollecting::class, new VisitAggregateArchiveCollector(
+            connection: $this->connection,
+            visitQueries: new ArchiveVisitQueryFactory($this->connection, $visits, $this->events),
+            subperiods: new CarbonReportingSubperiodFactory,
+            segments: new DatabaseSegmentHashResolver($this->connection),
+            blobs: new DatabaseBlobArchiveRepository($this->connection),
+            sites: new DatabaseSiteRepository($this->connection),
+        ));
     }
 
     private function visitSegmentApplicator(): BuiltInVisitSegmentApplicator

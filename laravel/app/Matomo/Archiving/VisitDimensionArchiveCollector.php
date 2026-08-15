@@ -37,7 +37,8 @@ final readonly class VisitDimensionArchiveCollector
      *     plugin: string,
      *     reports: list<string>,
      *     columns: list<string>,
-     *     kind?: 'concat-null'|'hour-local'|'hour-server'|'os-version'|'resolution'|'user-id',
+     *     kind?: 'browser-language'|'city'|'concat-null'|'hour-local'|'hour-server'|'os-version'|'region'|'resolution'|'user-id',
+     *     metadata?: 'city-coordinates',
      *     limit?: int
      * }>
      */
@@ -77,6 +78,34 @@ final readonly class VisitDimensionArchiveCollector
             'plugin' => 'Provider',
             'reports' => ['Provider.getProvider'],
             'columns' => ['location_provider'],
+        ],
+        'UserLanguage_language' => [
+            'plugin' => 'UserLanguage',
+            'reports' => ['UserLanguage.getLanguage', 'UserLanguage.getLanguageCode'],
+            'columns' => ['location_browser_lang'],
+            'kind' => 'browser-language',
+        ],
+        'UserCountry_country' => [
+            'plugin' => 'UserCountry',
+            'reports' => [
+                'UserCountry.getCountry',
+                'UserCountry.getContinent',
+                'UserCountry.getNumberOfDistinctCountries',
+            ],
+            'columns' => ['location_country'],
+        ],
+        'UserCountry_region' => [
+            'plugin' => 'UserCountry',
+            'reports' => ['UserCountry.getRegion'],
+            'columns' => ['location_region', 'location_country'],
+            'kind' => 'region',
+        ],
+        'UserCountry_city' => [
+            'plugin' => 'UserCountry',
+            'reports' => ['UserCountry.getCity'],
+            'columns' => ['location_city', 'location_region', 'location_country'],
+            'kind' => 'city',
+            'metadata' => 'city-coordinates',
         ],
         'DevicesDetection_types' => [
             'plugin' => 'DevicesDetection',
@@ -130,6 +159,7 @@ final readonly class VisitDimensionArchiveCollector
         private SegmentHashResolver $segments,
         private BlobArchiveRepository $blobs,
         private SiteRepository $sites,
+        private BrowserLanguageArchiveLabeler $browserLanguages,
     ) {}
 
     public function __invoke(ArchiveReportsCollecting $event): void
@@ -142,7 +172,9 @@ final readonly class VisitDimensionArchiveCollector
 
         foreach (self::RECORDS as $recordName => $definition) {
             if (! $this->requested($event, $definition['plugin'], $definition['reports'])
-                || ! $this->columnsExist($definition['columns'])) {
+                || ! $this->columnsExist($definition['columns'])
+                || (($definition['metadata'] ?? '') === 'city-coordinates'
+                    && ! $this->columnsExist(['location_latitude', 'location_longitude']))) {
                 continue;
             }
 
@@ -150,11 +182,15 @@ final readonly class VisitDimensionArchiveCollector
                 ? $this->dayRows($event, $definition, $timezone)
                 : $this->parentRows($event, $recordName);
             $event->records->addBlob($recordName, serialize($rows));
+
+            if ($recordName === 'UserCountry_country') {
+                $event->records->addNumeric('UserCountry_distinctCountries', count($rows));
+            }
         }
     }
 
     /**
-     * @param  array{plugin: string, reports: list<string>, columns: list<string>, kind?: string, limit?: int}  $definition
+     * @param  array{plugin: string, reports: list<string>, columns: list<string>, kind?: string, metadata?: string, limit?: int}  $definition
      * @return list<array{0: array<string, float|int|string|null>, 1: array<string, float|int|string|null>}>
      */
     private function dayRows(
@@ -166,6 +202,13 @@ final readonly class VisitDimensionArchiveCollector
         $kind = $definition['kind'] ?? '';
         $this->selectDimensions($query, $definition['columns'], $kind);
         $query->selectRaw($this->metricSelect());
+
+        if (($definition['metadata'] ?? '') === 'city-coordinates') {
+            $query->selectRaw(implode(', ', [
+                'MAX(location_latitude) AS location_latitude',
+                'MAX(location_longitude) AS location_longitude',
+            ]));
+        }
 
         if ($kind === 'user-id') {
             $query->whereNotNull('log_visit.user_id')
@@ -193,6 +236,15 @@ final readonly class VisitDimensionArchiveCollector
 
             if ($kind === 'user-id' && is_string($result->visitor_id ?? null)) {
                 $metadata['idvisitor'] = strtolower(bin2hex($result->visitor_id));
+            }
+
+            if (($definition['metadata'] ?? '') === 'city-coordinates'
+                && is_numeric($result->location_latitude ?? null)
+                && is_numeric($result->location_longitude ?? null)
+                && (float) $result->location_latitude !== 0.0
+                && (float) $result->location_longitude !== 0.0) {
+                $metadata['lat'] = round((float) $result->location_latitude, 2);
+                $metadata['long'] = round((float) $result->location_longitude, 2);
             }
 
             $this->mergeBoundedRow(
@@ -350,6 +402,23 @@ final readonly class VisitDimensionArchiveCollector
             }
 
             return $hour;
+        }
+
+        if ($kind === 'browser-language') {
+            return $this->browserLanguages->label((string) ($values[0] ?? ''));
+        }
+
+        if ($kind === 'region' || $kind === 'city') {
+            $values = array_map(
+                static fn (float|int|string|null $value): string => str_replace('|', '', (string) ($value ?? '')),
+                $values,
+            );
+
+            if (($values[0] ?? '') === '') {
+                return '';
+            }
+
+            return implode('|', $values);
         }
 
         if (($kind === 'concat-null' && in_array(null, $values, true))

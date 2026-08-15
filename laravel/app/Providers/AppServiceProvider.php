@@ -50,6 +50,7 @@ use App\Matomo\Api\Methods\VisitsSummaryApiMethodHandler;
 use App\Matomo\Api\Methods\VisitTimeApiMethodHandler;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Archiving\ArchiveVisitQueryFactory;
+use App\Matomo\Archiving\BrowserLanguageArchiveLabeler;
 use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\DatabaseArchiveInvalidationManager;
@@ -58,6 +59,7 @@ use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Archiving\ReportingSubperiodFactory;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
+use App\Matomo\Archiving\VisitAggregateArchiveCollector;
 use App\Matomo\Archiving\VisitDimensionArchiveCollector;
 use App\Matomo\Archiving\VisitSegmentApplicator;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
@@ -647,8 +649,32 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(
+            BrowserLanguageArchiveLabeler::class,
+            fn (Application $application): BrowserLanguageArchiveLabeler => new BrowserLanguageArchiveLabeler(
+                languageCodes: $this->stringResourceKeys(
+                    '../core/Intl/Data/Resources/languages.php',
+                ),
+                countryCodes: $application->make(CountryMetadataProvider::class)->codes(),
+                countriesByLanguage: $this->stringResourceMap(
+                    '../core/Intl/Data/Resources/languages-to-countries.php',
+                ),
+            ),
+        );
+        $this->app->singleton(
             VisitDimensionArchiveCollector::class,
             fn (Application $application): VisitDimensionArchiveCollector => new VisitDimensionArchiveCollector(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                visitQueries: $application->make(ArchiveVisitQueryFactory::class),
+                subperiods: $application->make(ReportingSubperiodFactory::class),
+                segments: $application->make(SegmentHashResolver::class),
+                blobs: $application->make(BlobArchiveRepository::class),
+                sites: $application->make(SiteRepository::class),
+                browserLanguages: $application->make(BrowserLanguageArchiveLabeler::class),
+            ),
+        );
+        $this->app->singleton(
+            VisitAggregateArchiveCollector::class,
+            fn (Application $application): VisitAggregateArchiveCollector => new VisitAggregateArchiveCollector(
                 connection: $application->make(MatomoDatabase::class)->connection(),
                 visitQueries: $application->make(ArchiveVisitQueryFactory::class),
                 subperiods: $application->make(ReportingSubperiodFactory::class),
@@ -967,6 +993,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(Dispatcher $events): void
     {
         $events->listen(ArchiveReportsCollecting::class, VisitDimensionArchiveCollector::class);
+        $events->listen(ArchiveReportsCollecting::class, VisitAggregateArchiveCollector::class);
     }
 
     /**
@@ -990,6 +1017,35 @@ class AppServiceProvider extends ServiceProvider
             $configuration['SitesManager']['CommonPIIParams'],
             is_string(...),
         ));
+    }
+
+    /** @return list<string> */
+    private function stringResourceKeys(string $relativePath): array
+    {
+        $values = require base_path($relativePath);
+
+        return is_array($values)
+            ? array_values(array_filter(array_keys($values), is_string(...)))
+            : [];
+    }
+
+    /** @return array<string, string> */
+    private function stringResourceMap(string $relativePath): array
+    {
+        $values = require base_path($relativePath);
+        $result = [];
+
+        if (! is_array($values)) {
+            return $result;
+        }
+
+        foreach ($values as $key => $value) {
+            if (is_string($key) && is_string($value)) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
     }
 
     /**
