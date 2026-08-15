@@ -41,6 +41,23 @@ final class TrackerEndpointTest extends TestCase
         $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&e_c=Video&e_a=Play&e_v=2.5')->assertOk();
     }
 
+    public function test_validates_and_records_visitor_context(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->userId === 'alice'
+                && $request->referrerUrl === 'https://search.example/'
+                && $request->browserLanguage === 'en-US'
+                && $request->localTime === '14:05:09'
+                && $request->resolution === '1920x1080'
+                && $request->cookiesEnabled,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&uid=alice'.
+            '&urlref=https%3A%2F%2Fsearch.example%2F&lang=en-US&h=14&m=5&s=9&res=1920x1080&cookie=1')->assertOk();
+    }
+
     public function test_records_bulk_tracking_requests(): void
     {
         $this->bindSite();

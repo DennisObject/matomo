@@ -50,6 +50,20 @@ final readonly class TrackerRequestFactory
             throw new InvalidArgumentException('e_v must be numeric.');
         }
 
+        $referrer = $this->optional($request->input('urlref'), 4096);
+        if ($referrer !== null && (filter_var($referrer, FILTER_VALIDATE_URL) === false
+            || ! in_array(strtolower((string) parse_url($referrer, PHP_URL_SCHEME)), ['http', 'https'], true))) {
+            throw new InvalidArgumentException('urlref must be a valid HTTP or HTTPS URL.');
+        }
+
+        $hour = $this->boundedInteger($request->input('h'), 0, 23);
+        $minute = $this->boundedInteger($request->input('m'), 0, 59);
+        $second = $this->boundedInteger($request->input('s'), 0, 59);
+        $resolution = $this->optional($request->input('res'), 9) ?? '';
+        if ($resolution !== '' && preg_match('/^[0-9]{1,5}x[0-9]{1,5}$/D', $resolution) !== 1) {
+            throw new InvalidArgumentException('res must be a screen resolution such as 1920x1080.');
+        }
+
         return new TrackingRequest(
             (int) $siteId,
             $url,
@@ -62,6 +76,12 @@ final readonly class TrackerRequestFactory
             $eventAction,
             $this->optional($request->input('e_n'), 255),
             $eventValue === null ? null : (float) $eventValue,
+            $this->optional($request->input('uid'), 200),
+            $referrer ?? '',
+            $this->optional($request->input('lang'), 20) ?? '',
+            sprintf('%02d:%02d:%02d', $hour, $minute, $second),
+            $resolution,
+            $request->boolean('cookie', false),
         );
     }
 
@@ -102,5 +122,18 @@ final readonly class TrackerRequestFactory
     private function optional(mixed $value, int $length): ?string
     {
         return is_string($value) && $value !== '' ? mb_substr($value, 0, $length) : null;
+    }
+
+    private function boundedInteger(mixed $value, int $minimum, int $maximum): int
+    {
+        if ($value === null || $value === '') {
+            return 0;
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_INT) === false || (int) $value < $minimum || (int) $value > $maximum) {
+            throw new InvalidArgumentException('Tracker time components are invalid.');
+        }
+
+        return (int) $value;
     }
 }

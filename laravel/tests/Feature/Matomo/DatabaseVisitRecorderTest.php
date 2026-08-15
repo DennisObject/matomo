@@ -52,7 +52,7 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedInteger('time_spent_ref_action');
         });
         $recorder = new DatabaseVisitRecorder($connection);
-        $request = new TrackingRequest(1, 'https://example.test/', '', '0123456789abcdef', '127.0.0.1', 'test', 1, null, null, null, null);
+        $request = new TrackingRequest(1, 'https://example.test/', '', '0123456789abcdef', '127.0.0.1', 'test', 1, null, null, null, null, null, '', '', '00:00:00', '', false);
 
         $recorder->record($request);
         $recorder->record($request);

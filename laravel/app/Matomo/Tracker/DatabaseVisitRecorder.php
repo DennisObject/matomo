@@ -35,18 +35,19 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                     'visit_total_searches' => 0, 'visit_goal_converted' => 0, 'visit_goal_buyer' => 0,
                     'visitor_returning' => 0, 'visitor_count_visits' => 1, 'visitor_days_since_last' => 0,
                     'visitor_days_since_first' => 0, 'visitor_days_since_order' => 0,
-                    'config_resolution' => '', 'config_windowsmedia' => 0, 'config_silverlight' => 0,
+                    'config_windowsmedia' => 0, 'config_silverlight' => 0,
                     'config_java' => 0, 'config_pdf' => 0, 'config_quicktime' => 0, 'config_realplayer' => 0,
                     'config_flash' => 0, 'config_browser_version' => '', 'config_browser_name' => '',
-                    'config_browser_engine' => '', 'config_os' => '', 'config_cookie' => 0,
-                    'location_country' => '', 'location_browser_lang' => '', 'visitor_localtime' => '00:00:00',
-                    'referer_url' => '',
+                    'config_browser_engine' => '', 'config_os' => '', 'config_cookie' => $request->cookiesEnabled ? 1 : 0,
+                    'location_country' => '', 'location_browser_lang' => $request->browserLanguage,
+                    'visitor_localtime' => $request->localTime, 'referer_url' => $request->referrerUrl,
+                    'user_id' => $request->userId, 'config_resolution' => $request->resolution,
                 ];
                 $visitId = $this->connection->table('log_visit')->insertGetId($this->available('log_visit', $visit), 'idvisit');
             } else {
                 $updates = [
                     'visit_last_action_time' => $now, 'visit_exit_idaction_url' => $url,
-                    'visit_exit_idaction_name' => $name ?? 0,
+                    'visit_exit_idaction_name' => $name ?? 0, 'user_id' => $request->userId,
                 ];
                 $query = $this->connection->table('log_visit')->where('idvisit', (int) $visitId);
                 $query->update($this->available('log_visit', $updates));
