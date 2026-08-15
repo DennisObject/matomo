@@ -76,6 +76,8 @@ Handled reporting API method names:
   email existence checks, admin email-to-login lookup, and current superuser status.
   User lists, login lists, self-or-superuser user reads, superuser email lookup, and the superuser
   directory preserve shared-site visibility, pending-invite visibility, and sensitive-field redaction.
+  Site-access mapping reads preserve superuser and site-admin boundaries, role and capability validation,
+  shared user redaction, and virtual all-site admin rows for superusers.
 - `Actions`: all 18 API methods and their archive producers, including numeric totals,
   hierarchical and pre-flattened reports, bounded expansion, direct action lookup, entry and exit
   reports, search reports, metadata, segment values, goal attribution, and processed page metrics.
@@ -240,12 +242,12 @@ Reporting API module matrix:
 | `UserCountry` | 8 | 8 | 0 |
 | `UserId` | 1 | 1 | 0 |
 | `UserLanguage` | 2 | 2 | 0 |
-| `UsersManager` | 33 | 13 | 20 |
+| `UsersManager` | 33 | 17 | 16 |
 | `VisitFrequency` | 1 | 1 | 0 |
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **301** | **88** |
+| **Total** | **389** | **305** | **84** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 

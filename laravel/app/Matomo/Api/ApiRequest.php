@@ -528,6 +528,7 @@ final readonly class ApiRequest
         public ?UsersManagerPreferenceRequest $usersManagerPreference,
         public ?UsersManagerIdentityRequest $usersManagerIdentity,
         public ?UsersManagerReadRequest $usersManagerRead,
+        public ?UsersManagerSiteAccessRequest $usersManagerSiteAccess,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -601,6 +602,7 @@ final readonly class ApiRequest
             usersManagerPreference: null,
             usersManagerIdentity: null,
             usersManagerRead: null,
+            usersManagerSiteAccess: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1203,6 +1205,7 @@ final readonly class ApiRequest
             usersManagerPreference: self::usersManagerPreference($request, $module, $method),
             usersManagerIdentity: self::usersManagerIdentity($request, $module, $method),
             usersManagerRead: self::usersManagerRead($request, $module, $method),
+            usersManagerSiteAccess: self::usersManagerSiteAccess($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2473,6 +2476,35 @@ final readonly class ApiRequest
             userEmail: $method === 'UsersManager.getUserByEmail'
                 ? self::requiredString($request, 'userEmail')
                 : null,
+        );
+    }
+
+    private static function usersManagerSiteAccess(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?UsersManagerSiteAccessRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'UsersManager.getUsersSitesFromAccess',
+            'UsersManager.getUsersAccessFromSite',
+            'UsersManager.getUsersWithSiteAccess',
+            'UsersManager.getSitesAccessFromUser',
+        ], true)) {
+            return null;
+        }
+
+        return new UsersManagerSiteAccessRequest(
+            siteId: in_array($method, [
+                'UsersManager.getUsersAccessFromSite',
+                'UsersManager.getUsersWithSiteAccess',
+            ], true) ? self::requiredInteger($request, 'idSite') : null,
+            userLogin: $method === 'UsersManager.getSitesAccessFromUser'
+                ? self::requiredString($request, 'userLogin')
+                : null,
+            access: in_array($method, [
+                'UsersManager.getUsersSitesFromAccess',
+                'UsersManager.getUsersWithSiteAccess',
+            ], true) ? self::requiredString($request, 'access') : null,
         );
     }
 
