@@ -95,6 +95,8 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         'contentTarget' => ['segment_action.idaction_content_target', 'segment_content_target', [15]],
         'contentInteraction' => ['segment_action.idaction_content_interaction', 'segment_content_interaction', [16]],
         'actionUrl' => ['segment_action.idaction_url', 'segment_action_url', [1, 3, 2, 10]],
+        'productViewName' => ['segment_action.idaction_product_name', 'segment_product_view_name', [6]],
+        'productViewSku' => ['segment_action.idaction_product_sku', 'segment_product_view_sku', [5]],
     ];
 
     /** @var array<string, array{literal-string, literal-string, list<int>}> */
@@ -106,12 +108,31 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
     ];
 
     /** @var array<string, array{literal-string, literal-string}> */
+    private const array PRODUCT_VIEW_CATEGORY_LOOKUPS = [
+        'productViewCategory1' => ['segment_action.idaction_product_cat', 'segment_product_view_category_1'],
+        'productViewCategory2' => ['segment_action.idaction_product_cat2', 'segment_product_view_category_2'],
+        'productViewCategory3' => ['segment_action.idaction_product_cat3', 'segment_product_view_category_3'],
+        'productViewCategory4' => ['segment_action.idaction_product_cat4', 'segment_product_view_category_4'],
+        'productViewCategory5' => ['segment_action.idaction_product_cat5', 'segment_product_view_category_5'],
+    ];
+
+    /** @var array<string, array{literal-string, literal-string, int}> */
+    private const array PRODUCT_CATEGORY_LOOKUPS = [
+        'productCategory1' => ['segment_item.idaction_category', 'segment_product_category_1', 7],
+        'productCategory2' => ['segment_item.idaction_category2', 'segment_product_category_2', 7],
+        'productCategory3' => ['segment_item.idaction_category3', 'segment_product_category_3', 7],
+        'productCategory4' => ['segment_item.idaction_category4', 'segment_product_category_4', 7],
+        'productCategory5' => ['segment_item.idaction_category5', 'segment_product_category_5', 7],
+    ];
+
+    /** @var array<string, array{literal-string, literal-string}> */
     private const array ACTION_DIRECT_SEGMENTS = [
         'siteSearchCategory' => ['segment_action.search_cat', 'text'],
         'siteSearchCount' => ['segment_action.search_count', 'number'],
         'eventValue' => ['segment_action.custom_float', 'number'],
         'actionServerHour' => ['hour', 'number'],
         'actionServerMinute' => ['minute', 'number'],
+        'productViewPrice' => ['segment_action.product_price', 'number'],
     ];
 
     /** @var array<string, int> */
@@ -176,7 +197,7 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
 
         /** @var list<list<ResolvedSegmentCondition>> $resolved */
         $resolved = [];
-        $hasAction = false;
+        $hasRelated = false;
 
         foreach ($groups as $group) {
             $resolvedGroup = [];
@@ -197,26 +218,46 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
 
                 $action = $this->actionDefinition($query, $condition->name);
 
-                if ($action === null) {
+                if ($action !== null) {
+                    $hasRelated = true;
+                    $resolvedGroup[] = new ResolvedSegmentCondition(
+                        condition: $condition,
+                        expression: $action->source === 'type'
+                            ? 'segment_action_url.type'
+                            : $action->expression,
+                        type: $action->type,
+                        action: $action,
+                    );
+
+                    continue;
+                }
+
+                $conversion = $this->conversionDefinition($condition->name);
+
+                if ($conversion === null) {
                     return false;
                 }
 
-                $hasAction = true;
+                if (! $conversion->supports($condition->operator)) {
+                    throw new InvalidArgumentException(
+                        "The '{$condition->name}' segment does not support the {$condition->operator} operator.",
+                    );
+                }
+
+                $hasRelated = true;
                 $resolvedGroup[] = new ResolvedSegmentCondition(
                     condition: $condition,
-                    expression: $action->source === 'type'
-                        ? 'segment_action_url.type'
-                        : $action->expression,
-                    type: $action->type,
-                    action: $action,
+                    expression: $conversion->expression,
+                    type: $conversion->type,
+                    conversion: $conversion,
                 );
             }
 
             $resolved[] = $resolvedGroup;
         }
 
-        if ($hasAction) {
-            $this->applyGroupsWithActions($query, $resolved);
+        if ($hasRelated) {
+            $this->applyGroupsWithRelations($query, $resolved);
 
             return true;
         }
@@ -248,25 +289,42 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
     /**
      * @param  list<list<ResolvedSegmentCondition>>  $groups
      */
-    private function applyGroupsWithActions(Builder $query, array $groups): void
+    private function applyGroupsWithRelations(Builder $query, array $groups): void
     {
-        $combinedActionGroups = [];
+        /** @var array{action: list<list<ResolvedSegmentCondition>>, conversion: list<list<ResolvedSegmentCondition>>, item: list<list<ResolvedSegmentCondition>>} $combinedGroups */
+        $combinedGroups = [
+            'action' => [],
+            'conversion' => [],
+            'item' => [],
+        ];
 
         foreach ($groups as $group) {
-            $actionOnly = true;
-            $hasNegativeAction = false;
+            $scope = null;
+            $canCombine = true;
 
             foreach ($group as $resolved) {
-                $actionOnly = $actionOnly && $resolved->isAction();
-                $hasNegativeAction = $hasNegativeAction || $resolved->isNegativeAction();
+                $relatedScope = $resolved->relatedScope();
 
-                if ($resolved->action?->source === 'visit-lookup') {
-                    $actionOnly = false;
+                if ($relatedScope === null
+                    || $resolved->isNegativeRelated()
+                    || $resolved->requiresMissingRelationBranch()
+                    || ! $resolved->combinesOnSameRow()) {
+                    $canCombine = false;
+
+                    break;
+                }
+
+                if ($scope === null) {
+                    $scope = $relatedScope;
+                } elseif ($scope !== $relatedScope) {
+                    $canCombine = false;
+
+                    break;
                 }
             }
 
-            if ($actionOnly && ! $hasNegativeAction) {
-                $combinedActionGroups[] = $group;
+            if ($canCombine && $scope !== null) {
+                $combinedGroups[$scope][] = $group;
 
                 continue;
             }
@@ -274,8 +332,16 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
             $this->applyResolvedGroup($query, $group);
         }
 
-        if ($combinedActionGroups !== []) {
-            $this->applyPositiveActionGroups($query, $combinedActionGroups);
+        if ($combinedGroups['action'] !== []) {
+            $this->applyPositiveActionGroups($query, $combinedGroups['action']);
+        }
+
+        if ($combinedGroups['conversion'] !== []) {
+            $this->applyPositiveConversionGroups($query, $combinedGroups['conversion']);
+        }
+
+        if ($combinedGroups['item'] !== []) {
+            $this->applyPositiveConversionGroups($query, $combinedGroups['item']);
         }
     }
 
@@ -285,18 +351,24 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         $query->where(function (Builder $and) use ($group): void {
             foreach ($group as $index => $resolved) {
                 $callback = function (Builder $operand) use ($resolved): void {
-                    if ($resolved->action === null) {
-                        $this->applyCondition(
-                            $operand,
-                            $resolved->condition,
-                            $resolved->expression,
-                            $resolved->type,
-                        );
+                    if ($resolved->action !== null) {
+                        $this->applyActionExistence($operand, $resolved);
 
                         return;
                     }
 
-                    $this->applyActionExistence($operand, $resolved);
+                    if ($resolved->conversion !== null) {
+                        $this->applyConversionExistence($operand, $resolved);
+
+                        return;
+                    }
+
+                    $this->applyCondition(
+                        $operand,
+                        $resolved->condition,
+                        $resolved->expression,
+                        $resolved->type,
+                    );
                 };
 
                 if ($index === 0) {
@@ -328,6 +400,212 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
                         }
                     }
                 });
+            }
+        });
+    }
+
+    /** @param list<list<ResolvedSegmentCondition>> $groups */
+    private function applyPositiveConversionGroups(Builder $query, array $groups): void
+    {
+        $query->whereExists(function (Builder $related) use ($groups): void {
+            $this->startConversionSubquery($related, array_merge(...$groups));
+
+            foreach ($groups as $group) {
+                $related->where(function (Builder $and) use ($group): void {
+                    foreach ($group as $index => $resolved) {
+                        $callback = function (Builder $operand) use ($resolved): void {
+                            $this->applyPositiveConversionCondition($operand, $resolved);
+                        };
+
+                        if ($index === 0) {
+                            $and->where($callback);
+                        } else {
+                            $and->orWhere($callback);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    private function applyConversionExistence(
+        Builder $query,
+        ResolvedSegmentCondition $resolved,
+    ): void {
+        $callback = function (Builder $related) use ($resolved): void {
+            $this->startConversionSubquery($related, [$resolved]);
+
+            if ($resolved->isNegativeConversion()) {
+                $inverted = new ResolvedSegmentCondition(
+                    condition: new SegmentCondition(
+                        name: $resolved->condition->name,
+                        operator: $resolved->condition->operator === '!=' ? '==' : '=@',
+                        value: $resolved->condition->value,
+                    ),
+                    expression: $resolved->expression,
+                    type: $resolved->type,
+                    conversion: $resolved->conversion,
+                );
+                $this->applyPositiveConversionCondition($related, $inverted);
+
+                return;
+            }
+
+            $this->applyPositiveConversionCondition($related, $resolved);
+        };
+
+        if ($resolved->requiresMissingRelationBranch()) {
+            $query->where(function (Builder $empty) use ($callback, $resolved): void {
+                $empty->whereNotExists(function (Builder $related) use ($resolved): void {
+                    $this->startConversionSubquery($related, [$resolved]);
+                })->orWhereExists($callback);
+            });
+
+            return;
+        }
+
+        if ($resolved->isNegativeConversion()) {
+            $query->whereNotExists($callback);
+        } else {
+            $query->whereExists($callback);
+        }
+    }
+
+    /** @param list<ResolvedSegmentCondition> $conditions */
+    private function startConversionSubquery(Builder $query, array $conditions): void
+    {
+        $first = $conditions[0]->conversion ?? null;
+
+        if ($first === null) {
+            throw new InvalidArgumentException('A conversion segment definition is required.');
+        }
+
+        $table = $first->scope === 'conversion'
+            ? 'log_conversion as segment_conversion'
+            : 'log_conversion_item as segment_item';
+        $alias = $first->scope === 'conversion' ? 'segment_conversion' : 'segment_item';
+        $query->selectRaw('1')
+            ->from($table)
+            ->whereColumn("{$alias}.idvisit", 'log_visit.idvisit');
+        $joined = [];
+
+        foreach ($conditions as $resolved) {
+            $definition = $resolved->conversion;
+
+            if ($definition === null || $definition->scope !== $first->scope) {
+                throw new InvalidArgumentException('Related segment scopes cannot be mixed in one subquery.');
+            }
+
+            if ($definition->source === 'goal-name' && ! isset($joined['segment_goal'])) {
+                $query->leftJoin(
+                    'goal as segment_goal',
+                    static function (JoinClause $join): void {
+                        $join->on('segment_goal.idgoal', '=', 'segment_conversion.idgoal')
+                            ->on('segment_goal.idsite', '=', 'segment_conversion.idsite');
+                    },
+                );
+                $joined['segment_goal'] = true;
+            }
+
+            foreach ($definition->lookupColumns as [$expression, $lookupAlias]) {
+                if (isset($joined[$lookupAlias])) {
+                    continue;
+                }
+
+                $query->leftJoin(
+                    "log_action as {$lookupAlias}",
+                    static function (JoinClause $join) use ($expression, $lookupAlias): void {
+                        $join->on("{$lookupAlias}.idaction", '=', $expression);
+                    },
+                );
+                $joined[$lookupAlias] = true;
+            }
+        }
+    }
+
+    private function applyPositiveConversionCondition(
+        Builder $query,
+        ResolvedSegmentCondition $resolved,
+    ): void {
+        $definition = $resolved->conversion;
+
+        if ($definition === null) {
+            throw new InvalidArgumentException('A conversion segment definition is required.');
+        }
+
+        if ($definition->discriminatorColumn !== null) {
+            $query->where(
+                $definition->discriminatorColumn,
+                $definition->discriminatorValue,
+            );
+        }
+
+        if ($definition->source === 'lookup') {
+            $this->applyConversionLookupCondition($query, $resolved, $definition);
+
+            return;
+        }
+
+        $this->applyCondition(
+            $query,
+            $resolved->condition,
+            $resolved->expression,
+            $resolved->type,
+        );
+    }
+
+    private function applyConversionLookupCondition(
+        Builder $query,
+        ResolvedSegmentCondition $resolved,
+        ConversionSegmentDefinition $definition,
+    ): void {
+        $query->where(function (Builder $union) use ($resolved, $definition): void {
+            foreach ($definition->lookupColumns as $index => [, $lookupAlias, $actionType]) {
+                $callback = function (Builder $typed) use (
+                    $resolved,
+                    $lookupAlias,
+                    $actionType,
+                ): void {
+                    $typed->where("{$lookupAlias}.type", $actionType)
+                        ->where(function (Builder $names) use ($resolved, $lookupAlias): void {
+                            $variants = array_values(array_unique([
+                                $resolved->condition->value,
+                                $this->sanitizeActionValue($resolved->condition->value),
+                            ]));
+
+                            foreach ($variants as $variantIndex => $variant) {
+                                $condition = new SegmentCondition(
+                                    $resolved->condition->name,
+                                    $resolved->condition->operator,
+                                    $variant,
+                                );
+                                $nameExpression = "{$lookupAlias}.name";
+                                $variantCallback = function (Builder $nameQuery) use (
+                                    $condition,
+                                    $nameExpression,
+                                ): void {
+                                    $this->applyCondition(
+                                        $nameQuery,
+                                        $condition,
+                                        $nameExpression,
+                                        'text',
+                                    );
+                                };
+
+                                if ($variantIndex === 0) {
+                                    $names->where($variantCallback);
+                                } else {
+                                    $names->orWhere($variantCallback);
+                                }
+                            }
+                        });
+                };
+
+                if ($index === 0) {
+                    $union->where($callback);
+                } else {
+                    $union->orWhere($callback);
+                }
             }
         });
     }
@@ -367,6 +645,16 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
 
             $this->applyPositiveActionCondition($actions, $resolved);
         };
+
+        if ($resolved->requiresMissingRelationBranch()) {
+            $query->where(function (Builder $empty) use ($callback): void {
+                $empty->whereNotExists(function (Builder $actions): void {
+                    $this->startActionSubquery($actions, []);
+                })->orWhereExists($callback);
+            });
+
+            return;
+        }
 
         if ($resolved->isNegativeAction()) {
             $query->whereNotExists($callback);
@@ -438,19 +726,19 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
                 continue;
             }
 
-            $alias = $definition->lookupAlias;
+            foreach ($definition->columns() as [$expression, $alias]) {
+                if (isset($joined[$alias])) {
+                    continue;
+                }
 
-            if (isset($joined[$alias])) {
-                continue;
+                $query->leftJoin(
+                    "log_action as {$alias}",
+                    static function (JoinClause $join) use ($alias, $expression): void {
+                        $join->on("{$alias}.idaction", '=', $expression);
+                    },
+                );
+                $joined[$alias] = true;
             }
-
-            $query->leftJoin(
-                "log_action as {$alias}",
-                static function (JoinClause $join) use ($alias, $definition): void {
-                    $join->on("{$alias}.idaction", '=', $definition->expression);
-                },
-            );
-            $joined[$alias] = true;
         }
     }
 
@@ -484,57 +772,63 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         ActionSegmentDefinition $definition,
     ): void {
         $query->where(function (Builder $union) use ($resolved, $definition): void {
-            foreach ($definition->actionTypes as $index => $actionType) {
-                $value = $this->normalizeActionValue(
-                    $resolved->condition->value,
-                    $resolved->condition->name,
-                    $actionType,
-                );
-                $callback = function (Builder $typed) use (
-                    $resolved,
-                    $definition,
-                    $value,
-                    $actionType,
-                ): void {
-                    $typed->where("{$definition->lookupAlias}.type", $actionType)
-                        ->where(function (Builder $names) use ($resolved, $definition, $value): void {
-                            $variants = array_values(array_unique([
-                                $value,
-                                $this->sanitizeActionValue($value),
-                            ]));
+            $branchIndex = 0;
 
-                            foreach ($variants as $variantIndex => $variant) {
-                                $condition = new SegmentCondition(
-                                    $resolved->condition->name,
-                                    $resolved->condition->operator,
-                                    $variant,
-                                );
-                                $nameExpression = "{$definition->lookupAlias}.name";
-                                $variantCallback = function (Builder $nameQuery) use (
-                                    $condition,
-                                    $nameExpression,
-                                ): void {
-                                    $this->applyCondition(
-                                        $nameQuery,
+            foreach ($definition->columns() as [, $lookupAlias]) {
+                foreach ($definition->actionTypes as $actionType) {
+                    $value = $this->normalizeActionValue(
+                        $resolved->condition->value,
+                        $resolved->condition->name,
+                        $actionType,
+                    );
+                    $callback = function (Builder $typed) use (
+                        $resolved,
+                        $lookupAlias,
+                        $value,
+                        $actionType,
+                    ): void {
+                        $typed->where("{$lookupAlias}.type", $actionType)
+                            ->where(function (Builder $names) use ($resolved, $lookupAlias, $value): void {
+                                $variants = array_values(array_unique([
+                                    $value,
+                                    $this->sanitizeActionValue($value),
+                                ]));
+
+                                foreach ($variants as $variantIndex => $variant) {
+                                    $condition = new SegmentCondition(
+                                        $resolved->condition->name,
+                                        $resolved->condition->operator,
+                                        $variant,
+                                    );
+                                    $nameExpression = "{$lookupAlias}.name";
+                                    $variantCallback = function (Builder $nameQuery) use (
                                         $condition,
                                         $nameExpression,
-                                        'text',
-                                    );
-                                };
+                                    ): void {
+                                        $this->applyCondition(
+                                            $nameQuery,
+                                            $condition,
+                                            $nameExpression,
+                                            'text',
+                                        );
+                                    };
 
-                                if ($variantIndex === 0) {
-                                    $names->where($variantCallback);
-                                } else {
-                                    $names->orWhere($variantCallback);
+                                    if ($variantIndex === 0) {
+                                        $names->where($variantCallback);
+                                    } else {
+                                        $names->orWhere($variantCallback);
+                                    }
                                 }
-                            }
-                        });
-                };
+                            });
+                    };
 
-                if ($index === 0) {
-                    $union->where($callback);
-                } else {
-                    $union->orWhere($callback);
+                    if ($branchIndex === 0) {
+                        $union->where($callback);
+                    } else {
+                        $union->orWhere($callback);
+                    }
+
+                    $branchIndex++;
                 }
             }
         });
@@ -568,6 +862,31 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
 
     private function actionDefinition(Builder $query, string $name): ?ActionSegmentDefinition
     {
+        if ($name === 'productViewCategory') {
+            [$expression, $alias] = self::PRODUCT_VIEW_CATEGORY_LOOKUPS['productViewCategory1'];
+
+            return new ActionSegmentDefinition(
+                source: 'lookup',
+                expression: $expression,
+                lookupAlias: $alias,
+                actionTypes: [7],
+                type: 'text',
+                lookupColumns: array_values(self::PRODUCT_VIEW_CATEGORY_LOOKUPS),
+            );
+        }
+
+        if (isset(self::PRODUCT_VIEW_CATEGORY_LOOKUPS[$name])) {
+            [$expression, $alias] = self::PRODUCT_VIEW_CATEGORY_LOOKUPS[$name];
+
+            return new ActionSegmentDefinition(
+                source: 'lookup',
+                expression: $expression,
+                lookupAlias: $alias,
+                actionTypes: [7],
+                type: 'text',
+            );
+        }
+
         if (isset(self::VISIT_ACTION_LOOKUP_SEGMENTS[$name])) {
             [$expression, $alias, $actionTypes] = self::VISIT_ACTION_LOOKUP_SEGMENTS[$name];
 
@@ -619,6 +938,106 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
             actionTypes: [],
             type: $type,
         );
+    }
+
+    private function conversionDefinition(string $name): ?ConversionSegmentDefinition
+    {
+        if ($name === 'productCategory') {
+            return new ConversionSegmentDefinition(
+                scope: 'item',
+                source: 'lookup',
+                expression: 'segment_item.idaction_category',
+                type: 'text',
+                lookupColumns: array_values(self::PRODUCT_CATEGORY_LOOKUPS),
+            );
+        }
+
+        if (isset(self::PRODUCT_CATEGORY_LOOKUPS[$name])) {
+            [$expression, $alias, $actionType] = self::PRODUCT_CATEGORY_LOOKUPS[$name];
+
+            return new ConversionSegmentDefinition(
+                scope: 'item',
+                source: 'lookup',
+                expression: $expression,
+                type: 'text',
+                lookupColumns: [[$expression, $alias, $actionType]],
+            );
+        }
+
+        return match ($name) {
+            'visitConvertedGoalId' => new ConversionSegmentDefinition(
+                scope: 'conversion',
+                source: 'direct',
+                expression: 'segment_conversion.idgoal',
+                type: 'number',
+                includeMissingOnEmpty: true,
+            ),
+            'visitConvertedGoalName' => new ConversionSegmentDefinition(
+                scope: 'conversion',
+                source: 'goal-name',
+                expression: 'segment_goal.name',
+                type: 'text',
+                includeMissingOnEmpty: true,
+            ),
+            'orderId' => new ConversionSegmentDefinition(
+                scope: 'conversion',
+                source: 'direct',
+                expression: 'segment_conversion.idorder',
+                type: 'text',
+                discriminatorColumn: 'segment_conversion.idgoal',
+                discriminatorValue: 0,
+            ),
+            'revenueOrder' => new ConversionSegmentDefinition(
+                scope: 'conversion',
+                source: 'direct',
+                expression: 'segment_conversion.revenue',
+                type: 'number',
+                discriminatorColumn: 'segment_conversion.idgoal',
+                discriminatorValue: 0,
+                operators: ['==', '>=', '<=', '>', '<'],
+                combineOnSameRow: false,
+            ),
+            'revenueAbandonedCart' => new ConversionSegmentDefinition(
+                scope: 'conversion',
+                source: 'direct',
+                expression: 'segment_conversion.revenue',
+                type: 'number',
+                discriminatorColumn: 'segment_conversion.idgoal',
+                discriminatorValue: -1,
+                operators: ['==', '>=', '<=', '>', '<'],
+                combineOnSameRow: false,
+            ),
+            'productPrice' => new ConversionSegmentDefinition(
+                scope: 'item',
+                source: 'direct',
+                expression: 'segment_item.price',
+                type: 'number',
+                includeMissingOnEmpty: true,
+            ),
+            'productName' => new ConversionSegmentDefinition(
+                scope: 'item',
+                source: 'lookup',
+                expression: 'segment_item.idaction_name',
+                type: 'text',
+                lookupColumns: [[
+                    'segment_item.idaction_name',
+                    'segment_product_name',
+                    6,
+                ]],
+            ),
+            'productSku' => new ConversionSegmentDefinition(
+                scope: 'item',
+                source: 'lookup',
+                expression: 'segment_item.idaction_sku',
+                type: 'text',
+                lookupColumns: [[
+                    'segment_item.idaction_sku',
+                    'segment_product_sku',
+                    5,
+                ]],
+            ),
+            default => null,
+        };
     }
 
     /** @return array{literal-string, literal-string}|null */

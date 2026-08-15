@@ -113,10 +113,43 @@ class DatabaseReportArchiverTest extends TestCase
             $table->unsignedInteger('idaction_content_piece')->nullable();
             $table->unsignedInteger('idaction_content_target')->nullable();
             $table->unsignedInteger('idaction_content_interaction')->nullable();
+            $table->unsignedInteger('idaction_product_name')->nullable();
+            $table->unsignedInteger('idaction_product_sku')->nullable();
+            $table->unsignedInteger('idaction_product_cat')->nullable();
+            $table->unsignedInteger('idaction_product_cat2')->nullable();
+            $table->unsignedInteger('idaction_product_cat3')->nullable();
+            $table->unsignedInteger('idaction_product_cat4')->nullable();
+            $table->unsignedInteger('idaction_product_cat5')->nullable();
             $table->string('search_cat')->nullable();
             $table->unsignedInteger('search_count')->nullable();
             $table->float('custom_float')->nullable();
+            $table->float('product_price')->nullable();
             $table->dateTime('server_time');
+        });
+        $schema->create('goal', static function (Blueprint $table): void {
+            $table->unsignedInteger('idsite');
+            $table->integer('idgoal');
+            $table->string('name');
+        });
+        $schema->create('log_conversion', static function (Blueprint $table): void {
+            $table->unsignedInteger('idsite');
+            $table->unsignedInteger('idvisit');
+            $table->integer('idgoal');
+            $table->string('idorder')->nullable();
+            $table->float('revenue')->nullable();
+        });
+        $schema->create('log_conversion_item', static function (Blueprint $table): void {
+            $table->unsignedInteger('idsite');
+            $table->unsignedInteger('idvisit');
+            $table->string('idorder')->nullable();
+            $table->unsignedInteger('idaction_sku')->nullable();
+            $table->unsignedInteger('idaction_name')->nullable();
+            $table->unsignedInteger('idaction_category')->nullable();
+            $table->unsignedInteger('idaction_category2')->nullable();
+            $table->unsignedInteger('idaction_category3')->nullable();
+            $table->unsignedInteger('idaction_category4')->nullable();
+            $table->unsignedInteger('idaction_category5')->nullable();
+            $table->float('price')->nullable();
         });
         $this->connection->table('site')->insert([
             ['idsite' => 1, 'timezone' => 'Pacific/Auckland'],
@@ -475,6 +508,81 @@ class DatabaseReportArchiverTest extends TestCase
         }
     }
 
+    public function test_conversion_and_ecommerce_segments_preserve_related_row_semantics(): void
+    {
+        $this->insertVisits();
+        $this->insertActionRows();
+        $this->insertConversionRows();
+        $this->connection->table('log_visit')->insert(
+            $this->visit(1, '2026-08-15 10:30:00', 'visitor-c', 'config-c', null, 1, 5, 0, 'nz'),
+        );
+        $segments = [
+            'visitConvertedGoalId==1' => 1,
+            'visitConvertedGoalId!=1' => 2,
+            'visitConvertedGoalId==' => 2,
+            'visitConvertedGoalId!=' => 2,
+            'visitConvertedGoalName==Newsletter' => 1,
+            'visitConvertedGoalName==Other Site Goal' => 0,
+            'visitConvertedGoalName==' => 2,
+            'visitConvertedGoalName!=' => 2,
+            'orderId==ORDER-2' => 1,
+            'orderId==' => 0,
+            'revenueOrder>100' => 1,
+            'revenueAbandonedCart>=45' => 1,
+            'revenueOrder>100;revenueAbandonedCart>=45' => 1,
+            'visitConvertedGoalId==0;orderId==ORDER-2' => 1,
+            'visitConvertedGoalId==2;orderId==ORDER-2' => 0,
+            'visitConvertedGoalId==2,orderId==MISSING' => 1,
+            'productName==Widget' => 1,
+            'productSku==SKU-2' => 1,
+            'productCategory==Tools' => 1,
+            'productCategory2==Sale' => 1,
+            'productPrice>=49' => 1,
+            'productName==Widget;productSku==SKU-2' => 1,
+            'productName==Widget;productSku==OTHER' => 0,
+            'productName!=Widget' => 2,
+            'productName==' => 0,
+            'productPrice==' => 2,
+            'productPrice!=' => 1,
+            'productViewName==Viewed Widget' => 1,
+            'productViewSku==VIEW-SKU' => 1,
+            'productViewCategory==Viewed Tools' => 1,
+            'productViewCategory2==Featured' => 1,
+            'productViewPrice>=40' => 1,
+            'siteSearchCategory==' => 3,
+            'siteSearchCategory!=' => 1,
+            'productViewPrice==' => 3,
+            'productViewPrice!=' => 1,
+            'productViewName==' => 0,
+            "orderId==x' OR 1=1 --" => 0,
+        ];
+
+        foreach ($segments as $segment => $expectedVisits) {
+            $result = $this->archiver()->archive(new ArchiveReportRequest(
+                siteId: 1,
+                period: 'day',
+                date: '2026-08-15',
+                segment: $segment,
+            ));
+
+            $this->assertSame(
+                $expectedVisits,
+                $result->visits,
+                "The conversion segment '{$segment}' has the wrong visit count.",
+            );
+        }
+    }
+
+    public function test_revenue_segments_reject_legacy_unsupported_operators(): void
+    {
+        $query = $this->connection->table('log_visit');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("The 'revenueOrder' segment does not support the != operator.");
+
+        $this->visitSegmentApplicator()->apply($query, 'revenueOrder!=10');
+    }
+
     public function test_extension_failure_leaves_an_error_marker_and_validation_rejects_bad_inputs(): void
     {
         $this->insertVisits();
@@ -605,6 +713,16 @@ class DatabaseReportArchiverTest extends TestCase
             ['idaction' => 7, 'name' => 'Trailer', 'type' => 12],
             ['idaction' => 8, 'name' => 'example.test/trailer', 'type' => 10],
             ['idaction' => 9, 'name' => 'Alpha_100%', 'type' => 4],
+            ['idaction' => 10, 'name' => 'Viewed Widget', 'type' => 6],
+            ['idaction' => 11, 'name' => 'VIEW-SKU', 'type' => 5],
+            ['idaction' => 12, 'name' => 'Viewed Tools', 'type' => 7],
+            ['idaction' => 13, 'name' => 'Featured', 'type' => 7],
+            ['idaction' => 20, 'name' => 'Widget', 'type' => 6],
+            ['idaction' => 21, 'name' => 'SKU-2', 'type' => 5],
+            ['idaction' => 22, 'name' => 'Tools', 'type' => 7],
+            ['idaction' => 23, 'name' => 'Sale', 'type' => 7],
+            ['idaction' => 24, 'name' => 'Spare', 'type' => 6],
+            ['idaction' => 25, 'name' => 'OTHER', 'type' => 5],
         ]);
         $this->connection->table('log_link_visit_action')->insert([
             [
@@ -614,9 +732,14 @@ class DatabaseReportArchiverTest extends TestCase
                 'idaction_name' => 2,
                 'idaction_event_category' => null,
                 'idaction_event_action' => null,
+                'idaction_product_name' => 10,
+                'idaction_product_sku' => 11,
+                'idaction_product_cat' => 12,
+                'idaction_product_cat2' => 13,
                 'search_cat' => null,
                 'search_count' => null,
                 'custom_float' => null,
+                'product_price' => 42.5,
                 'server_time' => '2026-08-15 08:00:00',
             ],
             [
@@ -626,9 +749,14 @@ class DatabaseReportArchiverTest extends TestCase
                 'idaction_name' => 4,
                 'idaction_event_category' => null,
                 'idaction_event_action' => null,
+                'idaction_product_name' => null,
+                'idaction_product_sku' => null,
+                'idaction_product_cat' => null,
+                'idaction_product_cat2' => null,
                 'search_cat' => 'docs',
                 'search_count' => 2,
                 'custom_float' => null,
+                'product_price' => null,
                 'server_time' => '2026-08-15 09:00:00',
             ],
             [
@@ -638,9 +766,14 @@ class DatabaseReportArchiverTest extends TestCase
                 'idaction_name' => 7,
                 'idaction_event_category' => 5,
                 'idaction_event_action' => 6,
+                'idaction_product_name' => null,
+                'idaction_product_sku' => null,
+                'idaction_product_cat' => null,
+                'idaction_product_cat2' => null,
                 'search_cat' => null,
                 'search_count' => null,
                 'custom_float' => 9.5,
+                'product_price' => null,
                 'server_time' => '2026-08-15 10:00:00',
             ],
             [
@@ -650,10 +783,52 @@ class DatabaseReportArchiverTest extends TestCase
                 'idaction_name' => 9,
                 'idaction_event_category' => null,
                 'idaction_event_action' => null,
+                'idaction_product_name' => null,
+                'idaction_product_sku' => null,
+                'idaction_product_cat' => null,
+                'idaction_product_cat2' => null,
                 'search_cat' => null,
                 'search_count' => null,
                 'custom_float' => null,
+                'product_price' => null,
                 'server_time' => '2026-08-15 11:00:00',
+            ],
+        ]);
+    }
+
+    private function insertConversionRows(): void
+    {
+        $this->connection->table('goal')->insert([
+            ['idsite' => 1, 'idgoal' => 1, 'name' => 'Newsletter'],
+            ['idsite' => 1, 'idgoal' => 2, 'name' => 'Upgrade'],
+            ['idsite' => 2, 'idgoal' => 1, 'name' => 'Other Site Goal'],
+        ]);
+        $this->connection->table('log_conversion')->insert([
+            ['idsite' => 1, 'idvisit' => 1, 'idgoal' => 1, 'idorder' => null, 'revenue' => 50],
+            ['idsite' => 1, 'idvisit' => 2, 'idgoal' => 0, 'idorder' => 'ORDER-2', 'revenue' => 125],
+            ['idsite' => 1, 'idvisit' => 2, 'idgoal' => -1, 'idorder' => null, 'revenue' => 45],
+            ['idsite' => 1, 'idvisit' => 2, 'idgoal' => 2, 'idorder' => null, 'revenue' => 10],
+        ]);
+        $this->connection->table('log_conversion_item')->insert([
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idorder' => 'ORDER-2',
+                'idaction_sku' => 21,
+                'idaction_name' => 20,
+                'idaction_category' => 22,
+                'idaction_category2' => 23,
+                'price' => 49.95,
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idorder' => 'ORDER-2',
+                'idaction_sku' => 25,
+                'idaction_name' => 24,
+                'idaction_category' => null,
+                'idaction_category2' => null,
+                'price' => 10,
             ],
         ]);
     }
