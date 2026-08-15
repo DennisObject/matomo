@@ -76,6 +76,17 @@ final readonly class ApiRequest
 
     private const string PAGE_PERFORMANCE_METHOD = 'PagePerformance.get';
 
+    /** @var list<string> */
+    private const array REFERRERS_DISTINCT_METHODS = [
+        'Referrers.getNumberOfDistinctSearchEngines',
+        'Referrers.getNumberOfDistinctSocialNetworks',
+        'Referrers.getNumberOfDistinctKeywords',
+        'Referrers.getNumberOfDistinctCampaigns',
+        'Referrers.getNumberOfDistinctWebsites',
+        'Referrers.getNumberOfDistinctAIAssistants',
+        'Referrers.getNumberOfDistinctWebsitesUrls',
+    ];
+
     private const string USER_ID_METHOD = 'UserId.getUsers';
 
     /** @var list<string> */
@@ -708,6 +719,12 @@ final readonly class ApiRequest
     {
         return $this->module === 'API'
             && in_array($this->method, self::VISITS_SUMMARY_METHODS, true);
+    }
+
+    public function isReferrersDistinctRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::REFERRERS_DISTINCT_METHODS, true);
     }
 
     public function isVisitFrequencyRequest(): bool
@@ -2431,6 +2448,7 @@ final readonly class ApiRequest
                 && $method !== self::DEVICE_PLUGINS_METHOD
                 && ! in_array($method, self::DEVICES_DETECTION_METHODS, true)
                 && $method !== self::PAGE_PERFORMANCE_METHOD
+                && ! in_array($method, self::REFERRERS_DISTINCT_METHODS, true)
                 && $method !== self::USER_ID_METHOD
                 && ! in_array($method, self::ACTIONS_METHODS, true)
                 && ! in_array($method, self::EXAMPLE_PLUGIN_REPORT_METHODS, true)

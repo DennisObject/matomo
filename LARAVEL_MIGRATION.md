@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 244 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 254 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -160,6 +160,8 @@ Handled reporting API method names:
   referrers, per-type row grouping, partial reports, and the localized client key contract.
 - `TwoFactorAuth`: `resetTwoFactorAuth`, including password confirmation and transactional recovery-code removal.
 - `UserCountry`: all 8 API methods, including archive reports, localized location metadata, IP geolocation through the default, MaxMind database, or server-module provider, and protected provider selection.
+- `Referrers`: all 7 distinct-count API methods, including segmented numeric archives, single-site,
+  multi-site, and multi-date response shapes, access controls, and every supported response format.
 
 Reporting API module matrix:
 
@@ -200,7 +202,7 @@ Reporting API module matrix:
 | `PagePerformance` | 1 | 1 | 0 |
 | `PrivacyManager` | 18 | 0 | 18 |
 | `ProfessionalServices` | 1 | 1 | 0 |
-| `Referrers` | 23 | 0 | 23 |
+| `Referrers` | 23 | 7 | 16 |
 | `Resolution` | 2 | 2 | 0 |
 | `ScheduledReports` | 7 | 0 | 7 |
 | `SegmentEditor` | 9 | 9 | 0 |
@@ -216,7 +218,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **247** | **142** |
+| **Total** | **389** | **254** | **135** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
