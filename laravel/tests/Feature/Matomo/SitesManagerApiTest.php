@@ -17,6 +17,7 @@ use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
+use App\Matomo\Sites\SiteSettingsProvider;
 use App\Matomo\Sites\TimezoneProvider;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
@@ -25,6 +26,49 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_site_settings_require_site_admin_access_before_loading_metadata(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('siteIdsWithRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::Admin)
+            ->willReturn([8]);
+        $settings = $this->createMock(SiteSettingsProvider::class);
+        $settings->expects($this->never())->method('metadata');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteSettingsProvider::class, $settings);
+
+        $this->get('/index.php?module=API&method=SitesManager.getSiteSettings'.
+            '&idSite=7&format=json&token_auth=view-token')
+            ->assertUnauthorized()
+            ->assertJsonPath(
+                'message',
+                "You can't access this resource as it requires 'admin' access for the website id = 7.",
+            );
+    }
+
+    public function test_site_settings_return_localized_plugin_metadata(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('siteIdsWithRole')->willReturn([7]);
+        $settings = $this->createMock(SiteSettingsProvider::class);
+        $settings->expects($this->once())->method('metadata')->with(7, 'en')->willReturn([[
+            'pluginName' => 'WebsiteMeasurable',
+            'title' => 'WebsiteMeasurable',
+            'settings' => [['name' => 'urls', 'value' => ['https://example.test']]],
+        ]]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteSettingsProvider::class, $settings);
+
+        $this->get('/index.php?module=API&method=SitesManager.getSiteSettings'.
+            '&idSite=7&format=json&token_auth=admin-token&language=en')
+            ->assertOk()
+            ->assertExactJson([[
+                'pluginName' => 'WebsiteMeasurable',
+                'title' => 'WebsiteMeasurable',
+                'settings' => [['name' => 'urls', 'value' => ['https://example.test']]],
+            ]]);
+    }
+
     public function test_javascript_tracking_code_requires_view_access_before_site_reads(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

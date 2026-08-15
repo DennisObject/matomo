@@ -244,6 +244,7 @@ use App\Matomo\Sites\ConfiguredSiteRuntimeSettings;
 use App\Matomo\Sites\ConsentManagerDetector;
 use App\Matomo\Sites\CurrencyProvider;
 use App\Matomo\Sites\DatabaseSiteRepository;
+use App\Matomo\Sites\DatabaseSiteSettingsProvider;
 use App\Matomo\Sites\HttpConsentManagerDetector;
 use App\Matomo\Sites\LocalizedSiteDetailsPresenter;
 use App\Matomo\Sites\LocalizedTimezoneProvider;
@@ -251,6 +252,7 @@ use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
+use App\Matomo\Sites\SiteSettingsProvider;
 use App\Matomo\Sites\TimezoneProvider;
 use App\Matomo\Tour\ConfiguredTourSettings;
 use App\Matomo\Tour\DatabaseTourDataRepository;
@@ -498,6 +500,15 @@ class AppServiceProvider extends ServiceProvider
             SiteRepository::class,
             fn (Application $application): SiteRepository => new DatabaseSiteRepository(
                 $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            SiteSettingsProvider::class,
+            fn (Application $application): SiteSettingsProvider => new DatabaseSiteSettingsProvider(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                sites: $application->make(SiteRepository::class),
+                plugins: $application->make(PluginState::class),
+                translator: $application->make(MatomoTranslator::class),
             ),
         );
 

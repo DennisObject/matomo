@@ -66,6 +66,7 @@ use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
+use App\Matomo\Sites\SiteSettingsProvider;
 use App\Matomo\Sites\TimezoneProvider;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
@@ -81,6 +82,14 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->app->instance(SiteSettingsProvider::class, new class implements SiteSettingsProvider
+        {
+            public function metadata(int $siteId, string $language): array
+            {
+                return [];
+            }
+        });
 
         $this->app->instance(FeedbackStore::class, new class implements FeedbackStore
         {

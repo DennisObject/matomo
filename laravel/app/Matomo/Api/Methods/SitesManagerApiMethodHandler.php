@@ -20,6 +20,7 @@ use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
+use App\Matomo\Sites\SiteSettingsProvider;
 use App\Matomo\Sites\SiteTrackingCodeGenerator;
 use App\Matomo\Sites\TimezoneProvider;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -89,6 +90,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private SiteDetailsPresenter $siteDetails,
         private ConsentManagerDetector $consentManagers,
         private SiteTrackingCodeGenerator $trackingCodes,
+        private SiteSettingsProvider $siteSettings,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -130,6 +132,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isSiteAliasMutationRequest()
             || $request->isSiteGroupRenameRequest()
             || $request->isSitesManagerTrackingCodeRequest()
+            || $request->isSiteSettingsRequest()
             || $this->globalOption($request) !== null;
     }
 
@@ -169,6 +172,30 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
                 : $this->trackingCodes->image($tracking, $httpRequest->isSecure());
 
             return $this->responses->scalar($request, $code);
+        }
+
+        if ($request->isSiteSettingsRequest()) {
+            $idSite = $request->idSite ?? throw new LogicException('The site ID was not parsed.');
+            $adminSites = $this->authorizer->siteIdsWithRole(
+                $request->authentication,
+                SiteAccessRole::Admin,
+            );
+
+            if (! in_array($idSite, $adminSites, true)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires 'admin' access for the website id = {$idSite}.",
+                    401,
+                );
+            }
+
+            return $this->responses->rows(
+                $request,
+                $this->siteSettings->metadata(
+                    $idSite,
+                    $this->languages->resolve($httpRequest, $request->authentication),
+                ),
+            );
         }
 
         if ($request->isCurrencySymbolsRequest()) {
