@@ -151,6 +151,15 @@ final readonly class ApiRequest
     ];
 
     /** @var list<string> */
+    private const array GOALS_MANAGEMENT_METHODS = [
+        'Goals.getGoal',
+        'Goals.getGoals',
+        'Goals.addGoal',
+        'Goals.updateGoal',
+        'Goals.deleteGoal',
+    ];
+
+    /** @var list<string> */
     private const array EXAMPLE_UI_METHODS = [
         'ExampleUI.getTemperaturesEvolution',
         'ExampleUI.getTemperatures',
@@ -227,6 +236,7 @@ final readonly class ApiRequest
         public ?ExamplePluginRequest $examplePlugin,
         public ?ExampleUiRequest $exampleUi,
         public ?FeedbackRequest $feedback,
+        public ?GoalsRequest $goals,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -275,6 +285,7 @@ final readonly class ApiRequest
             examplePlugin: null,
             exampleUi: null,
             feedback: null,
+            goals: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -585,6 +596,12 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::FEEDBACK_METHODS, true);
     }
 
+    public function isGoalsManagementRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::GOALS_MANAGEMENT_METHODS, true);
+    }
+
     public function isAiProvidersRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::AI_PROVIDERS_METHODS, true);
@@ -663,7 +680,78 @@ final readonly class ApiRequest
             examplePlugin: self::examplePlugin($request, $module, $method),
             exampleUi: self::exampleUi($request, $module, $method),
             feedback: self::feedback($request, $module, $method),
+            goals: self::goals($request, $module, $method),
             authentication: $authentication,
+        );
+    }
+
+    private static function goals(Request $request, string $module, string $method): ?GoalsRequest
+    {
+        if ($module !== 'API' || ! in_array($method, self::GOALS_MANAGEMENT_METHODS, true)) {
+            return null;
+        }
+
+        if ($method === 'Goals.getGoals') {
+            [$siteIds, $allSites] = self::reportSiteIds($request);
+
+            return new GoalsRequest(
+                siteIds: $siteIds,
+                allSites: $allSites,
+                idGoal: null,
+                orderByName: self::booleanInput($request, 'orderByName', false),
+                definition: null,
+            );
+        }
+
+        $siteId = self::requiredInteger($request, 'idSite');
+        $requiresGoalId = in_array($method, [
+            'Goals.getGoal',
+            'Goals.updateGoal',
+            'Goals.deleteGoal',
+        ], true);
+        $definition = in_array($method, ['Goals.addGoal', 'Goals.updateGoal'], true)
+            ? self::goalDefinition($request)
+            : null;
+
+        return new GoalsRequest(
+            siteIds: [$siteId],
+            allSites: false,
+            idGoal: $requiresGoalId ? self::requiredInteger($request, 'idGoal') : null,
+            orderByName: false,
+            definition: $definition,
+        );
+    }
+
+    private static function goalDefinition(Request $request): GoalDefinition
+    {
+        $values = [];
+
+        foreach (['name', 'matchAttribute', 'pattern', 'patternType'] as $parameter) {
+            $value = self::nullableStringInput($request, $parameter);
+
+            if ($value === null) {
+                throw new MissingApiParameter($parameter);
+            }
+
+            $values[$parameter] = $value;
+        }
+
+        $revenue = self::nullableStringInput($request, 'revenue');
+
+        return new GoalDefinition(
+            name: $values['name'],
+            matchAttribute: $values['matchAttribute'],
+            pattern: $values['pattern'],
+            patternType: $values['patternType'],
+            caseSensitive: self::booleanInput($request, 'caseSensitive', false),
+            revenue: (float) ($revenue ?? '0'),
+            allowMultipleConversionsPerVisit: self::booleanInput(
+                $request,
+                'allowMultipleConversionsPerVisit',
+                false,
+            ),
+            description: self::stringInput($request, 'description'),
+            useEventValueAsRevenue: self::booleanInput($request, 'useEventValueAsRevenue', false),
         );
     }
 
