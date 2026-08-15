@@ -9,6 +9,7 @@ use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Localization\LanguageResolver;
+use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\ConsentManagerDetector;
 use App\Matomo\Sites\CurrencyProvider;
@@ -74,6 +75,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private ApiResponseFactory $responses,
         private SiteRepository $sites,
         private OptionRepository $options,
+        private MutableOptionRepository $mutableOptions,
         private SiteRuntimeSettings $runtime,
         private CurrencyProvider $currencies,
         private QueryParameterExclusionPolicy $queryParameterExclusions,
@@ -99,9 +101,11 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isPatternMatchSitesRequest()
             || $request->isConsentManagerDetectionRequest()
             || $request->isDefaultCurrencyRequest()
+            || $request->isDefaultCurrencyUpdateRequest()
             || $request->isCurrencySymbolsRequest()
             || $request->isCurrencyListRequest()
             || $request->isDefaultTimezoneRequest()
+            || $request->isDefaultTimezoneUpdateRequest()
             || $request->isTimezoneNameRequest()
             || $request->isTimezoneListRequest()
             || $request->isTimezoneSupportRequest()
@@ -441,6 +445,32 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             );
         }
 
+        if ($request->isDefaultTimezoneUpdateRequest()) {
+            if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires a 'superuser' access.",
+                    401,
+                );
+            }
+
+            $timezone = $request->timezone
+                ?? throw new LogicException('The default timezone was not parsed.');
+            $validTimezones = array_merge(...array_values($this->timezones->all('en', true)));
+
+            if (! array_key_exists($timezone, $validTimezones)) {
+                return $this->responses->error(
+                    $request,
+                    "The timezone \"{$timezone}\" is not valid. Please enter a valid timezone.",
+                    400,
+                );
+            }
+
+            $this->mutableOptions->set(self::DEFAULT_TIMEZONE_OPTION, $timezone);
+
+            return $this->responses->scalar($request, true);
+        }
+
         if ($request->isDefaultCurrencyRequest()) {
             if (! $this->authorizer->hasSomeAdminAccess($request->authentication)) {
                 return $this->responses->error(
@@ -454,6 +484,31 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
                 $request,
                 $this->optionOrDefault(self::DEFAULT_CURRENCY_OPTION, 'USD'),
             );
+        }
+
+        if ($request->isDefaultCurrencyUpdateRequest()) {
+            if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires a 'superuser' access.",
+                    401,
+                );
+            }
+
+            $currency = $request->defaultCurrency
+                ?? throw new LogicException('The default currency was not parsed.');
+
+            if (! array_key_exists($currency, $this->currencies->symbols())) {
+                return $this->responses->error(
+                    $request,
+                    "The currency \"{$currency}\" is not valid. Please enter a valid currency symbol (eg. USD, EUR, etc.)",
+                    400,
+                );
+            }
+
+            $this->mutableOptions->set(self::DEFAULT_CURRENCY_OPTION, $currency);
+
+            return $this->responses->scalar($request, true);
         }
 
         if ($request->isTimezoneSupportRequest() || $request->isWebsitesCountToDisplayRequest()) {
