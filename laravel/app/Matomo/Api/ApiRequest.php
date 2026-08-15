@@ -205,6 +205,8 @@ final readonly class ApiRequest
         'DBStats.getReportDataSummary',
         'DBStats.getReportDataSummaryByYear',
         'DBStats.getAdminDataSummary',
+        'DBStats.getIndividualReportsSummary',
+        'DBStats.getIndividualMetricsSummary',
     ];
 
     /** @var list<string> */
@@ -402,6 +404,7 @@ final readonly class ApiRequest
         public ?OverlayRequest $overlay,
         public ?TransitionsRequest $transitions,
         public ?BotTrackingRealtimeRequest $botTrackingRealtime,
+        public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -461,6 +464,7 @@ final readonly class ApiRequest
             overlay: null,
             transitions: null,
             botTrackingRealtime: null,
+            forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -942,6 +946,7 @@ final readonly class ApiRequest
             overlay: self::overlay($request, $module, $method),
             transitions: self::transitions($request, $module, $method),
             botTrackingRealtime: self::botTrackingRealtime($request, $module, $method),
+            forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
     }

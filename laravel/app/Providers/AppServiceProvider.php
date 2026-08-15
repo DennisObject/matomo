@@ -112,8 +112,11 @@ use App\Matomo\Dashboard\DashboardRepository;
 use App\Matomo\Dashboard\DatabaseDashboardRecipientPolicy;
 use App\Matomo\Dashboard\DatabaseDashboardRepository;
 use App\Matomo\Database\MatomoDatabase;
+use App\Matomo\DbStats\ArchiveStorageRepository;
+use App\Matomo\DbStats\ArchiveStorageSummaryBuilder;
 use App\Matomo\DbStats\DatabaseMetadataProvider;
 use App\Matomo\DbStats\DbStatsReportBuilder;
+use App\Matomo\DbStats\MySqlArchiveStorageRepository;
 use App\Matomo\DbStats\MySqlDatabaseMetadataProvider;
 use App\Matomo\Feedback\ConfiguredFeedbackSettings;
 use App\Matomo\Feedback\DatabaseFeedbackStore;
@@ -527,6 +530,20 @@ class AppServiceProvider extends ServiceProvider
             DbStatsReportBuilder::class,
             fn (Application $application): DbStatsReportBuilder => new DbStatsReportBuilder(
                 metadata: $application->make(DatabaseMetadataProvider::class),
+            ),
+        );
+        $this->app->singleton(
+            ArchiveStorageRepository::class,
+            fn (Application $application): ArchiveStorageRepository => new MySqlArchiveStorageRepository(
+                fn (): Connection => $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            ArchiveStorageSummaryBuilder::class,
+            fn (Application $application): ArchiveStorageSummaryBuilder => new ArchiveStorageSummaryBuilder(
+                metadata: $application->make(DatabaseMetadataProvider::class),
+                storage: fn (): ArchiveStorageRepository => $application->make(ArchiveStorageRepository::class),
+                options: fn (): MutableOptionRepository => $application->make(MutableOptionRepository::class),
             ),
         );
 
