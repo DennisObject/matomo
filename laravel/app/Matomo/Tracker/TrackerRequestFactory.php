@@ -155,6 +155,16 @@ final readonly class TrackerRequestFactory
                 ? (float) $goalRevenue
                 : ($goal === null ? null : ($goalRevenue === null ? (float) ($goal['revenue'] ?? 0) : (float) $goalRevenue)),
             (int) ($goal['allow_multiple'] ?? 0) === 1,
+            $this->automaticGoals(
+                (int) $siteId,
+                $actionType,
+                $url,
+                is_string($actionName) ? $actionName : '',
+                $eventCategory,
+                $eventAction,
+                $this->optional($request->input('e_n'), 255),
+                $eventValue === null ? null : (float) $eventValue,
+            ),
             $orderId,
             $ecommerceValues['ec_st'],
             $ecommerceValues['ec_tx'],
@@ -412,5 +422,58 @@ final readonly class TrackerRequestFactory
         }
 
         return $clean;
+    }
+
+    /** @return list<array{id: int, revenue: float, allowMultiple: bool}> */
+    private function automaticGoals(
+        int $siteId,
+        int $actionType,
+        string $url,
+        string $title,
+        ?string $eventCategory,
+        ?string $eventAction,
+        ?string $eventName,
+        ?float $eventValue,
+    ): array {
+        $values = match ($actionType) {
+            1 => ['url' => $url, 'title' => $title],
+            2 => ['external_website' => $url],
+            3 => ['file' => $url],
+            10 => ['event_category' => $eventCategory, 'event_action' => $eventAction, 'event_name' => $eventName],
+            default => [],
+        };
+        $matches = [];
+        foreach ($this->goals->activeForSites([$siteId]) as $goal) {
+            $attribute = $goal['match_attribute'] ?? null;
+            $value = is_string($attribute) ? ($values[$attribute] ?? null) : null;
+            if (! is_string($value) || ! $this->goalPatternMatches($goal, $value)) {
+                continue;
+            }
+
+            $matches[] = [
+                'id' => (int) ($goal['idgoal'] ?? 0),
+                'revenue' => (int) ($goal['event_value_as_revenue'] ?? 0) === 1 && $eventValue !== null
+                    ? $eventValue
+                    : (float) ($goal['revenue'] ?? 0),
+                'allowMultiple' => (int) ($goal['allow_multiple'] ?? 0) === 1,
+            ];
+        }
+
+        return array_values(array_filter($matches, static fn (array $goal): bool => $goal['id'] > 0));
+    }
+
+    /** @param array<string, float|int|string> $goal */
+    private function goalPatternMatches(array $goal, string $value): bool
+    {
+        $pattern = (string) ($goal['pattern'] ?? '');
+        $caseSensitive = (int) ($goal['case_sensitive'] ?? 0) === 1;
+        $subject = $caseSensitive ? $value : mb_strtolower($value);
+        $needle = $caseSensitive ? $pattern : mb_strtolower($pattern);
+
+        return match ((string) ($goal['pattern_type'] ?? 'contains')) {
+            'exact' => $subject === $needle,
+            'regex' => @preg_match('~'.str_replace('~', '\\~', $pattern).'~'.($caseSensitive ? '' : 'i'), $value) === 1,
+            default => str_contains($subject, $needle),
+        };
     }
 }

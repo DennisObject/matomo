@@ -146,6 +146,22 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                     $this->recordEcommerceItems($request, (int) $visitId, $visitor, $now, $request->ecommerceCart);
                 }
             }
+
+            foreach ($request->automaticGoals as $goal) {
+                $conversion = [
+                    'idvisit' => (int) $visitId, 'idsite' => $request->siteId, 'idvisitor' => $visitor,
+                    'server_time' => $now, 'idaction_url' => $url, 'idlink_va' => (int) $actionId,
+                    'idgoal' => $goal['id'],
+                    'buster' => $goal['allowMultiple'] ? random_int(1, 4_294_967_295) : 0,
+                    'url' => $request->url, 'revenue' => $goal['revenue'],
+                ];
+                $this->connection->table('log_conversion')->insertOrIgnore(
+                    $this->available('log_conversion', [...$conversion, ...$request->visitProperties]),
+                );
+                $this->connection->table('log_visit')->where('idvisit', (int) $visitId)->update(
+                    $this->available('log_visit', ['visit_goal_converted' => 1]),
+                );
+            }
         });
     }
 

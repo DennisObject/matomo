@@ -231,6 +231,27 @@ final class TrackerEndpointTest extends TestCase
         $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&revenue=19.95&ec_items='.$items)->assertOk();
     }
 
+    public function test_matches_automatic_url_and_event_goals(): void
+    {
+        $this->bindSite();
+        $goals = $this->createStub(GoalRepository::class);
+        $goals->method('activeForSites')->willReturn([
+            ['idgoal' => 2, 'match_attribute' => 'url', 'pattern_type' => 'contains', 'pattern' => '/thanks', 'revenue' => 5, 'allow_multiple' => 0],
+            ['idgoal' => 3, 'match_attribute' => 'event_action', 'pattern_type' => 'exact', 'pattern' => 'Buy', 'revenue' => 0, 'event_value_as_revenue' => 1, 'allow_multiple' => 1],
+        ]);
+        $this->app->instance(GoalRepository::class, $goals);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->exactly(2))->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->automaticGoals === ($request->actionType === 1
+                ? [['id' => 2, 'revenue' => 5.0, 'allowMultiple' => false]]
+                : [['id' => 3, 'revenue' => 17.0, 'allowMultiple' => true]]),
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test%2Fthanks')->assertOk();
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&e_c=Shop&e_a=Buy&e_v=17')->assertOk();
+    }
+
     public function test_rejects_invalid_page_performance_timings(): void
     {
         $this->bindSite();

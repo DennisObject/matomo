@@ -27,6 +27,8 @@ final readonly class TrackingRequest
         public ?int $goalId,
         public ?float $goalRevenue,
         public bool $goalAllowsMultiple,
+        /** @var list<array{id: int, revenue: float, allowMultiple: bool}> */
+        public array $automaticGoals,
         public ?string $ecommerceOrderId,
         public ?float $ecommerceSubtotal,
         public ?float $ecommerceTax,
