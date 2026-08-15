@@ -69,6 +69,8 @@ Handled reporting API method names:
 - `DevicePlugins`: `getPlugin` in every supported response format.
 - `PagePerformance`: `get` in every supported response format.
 - `UserId`: `getUsers` in every supported response format.
+- `UsersManager`: access-role and plugin-capability metadata, including localized role labels,
+  some-site admin access checks, and an extension event for capability registration.
 - `Actions`: all 18 API methods and their archive producers, including numeric totals,
   hierarchical and pre-flattened reports, bounded expansion, direct action lookup, entry and exit
   reports, search reports, metadata, segment values, goal attribution, and processed page metrics.
@@ -233,12 +235,12 @@ Reporting API module matrix:
 | `UserCountry` | 8 | 8 | 0 |
 | `UserId` | 1 | 1 | 0 |
 | `UserLanguage` | 2 | 2 | 0 |
-| `UsersManager` | 33 | 0 | 33 |
+| `UsersManager` | 33 | 2 | 31 |
 | `VisitFrequency` | 1 | 1 | 0 |
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **288** | **101** |
+| **Total** | **389** | **290** | **99** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
