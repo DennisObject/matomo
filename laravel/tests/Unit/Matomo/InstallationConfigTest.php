@@ -164,6 +164,33 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(2048, $configuration->pageMaximumLength());
     }
 
+    public function test_loads_site_specific_segment_creation_access(): void
+    {
+        $configuration = InstallationConfig::fromFile($this->configurationFile(
+            tablesPrefix: 'matomo_',
+            extraGeneral: <<<'INI'
+            adding_segment_requires_access = "write"
+
+            [General_7]
+            adding_segment_requires_access = "admin"
+            INI,
+        ));
+
+        $this->assertSame('write', $configuration->segmentCreationAccess());
+        $this->assertSame('write', $configuration->segmentCreationAccess(6));
+        $this->assertSame('admin', $configuration->segmentCreationAccess(7));
+    }
+
+    public function test_rejects_unknown_segment_creation_access(): void
+    {
+        $configuration = InstallationConfig::fromFile($this->configurationFile(
+            tablesPrefix: 'matomo_',
+            extraGeneral: 'adding_segment_requires_access = "owner"',
+        ));
+
+        $this->assertSame('none', $configuration->segmentCreationAccess());
+    }
+
     public function test_rejects_unsafe_table_prefix(): void
     {
         $this->expectException(RuntimeException::class);

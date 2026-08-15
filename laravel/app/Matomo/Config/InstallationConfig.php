@@ -92,6 +92,9 @@ final readonly class InstallationConfig
         private int $liveAiChatbotsMaximumRows,
         private int $liveAiChatbotsTopPageUrlsMaximumRows,
         private float $liveQueryMaximumExecutionTime,
+        private string $segmentCreationAccess,
+        /** @var array<int, string> */
+        private array $siteSegmentCreationAccess,
     ) {}
 
     public static function fromFile(string $path): self
@@ -339,6 +342,8 @@ final readonly class InstallationConfig
                 'live_query_max_execution_time',
                 -1.0,
             ),
+            segmentCreationAccess: self::parsedSegmentCreationAccess($general),
+            siteSegmentCreationAccess: self::siteSegmentCreationAccess($configuration),
         );
     }
 
@@ -675,6 +680,45 @@ final readonly class InstallationConfig
     public function liveQueryMaximumExecutionTime(): float
     {
         return $this->liveQueryMaximumExecutionTime;
+    }
+
+    public function segmentCreationAccess(?int $siteId = null): string
+    {
+        if ($siteId !== null && isset($this->siteSegmentCreationAccess[$siteId])) {
+            return $this->siteSegmentCreationAccess[$siteId];
+        }
+
+        return $this->segmentCreationAccess;
+    }
+
+    /** @param array<string, mixed> $general */
+    private static function parsedSegmentCreationAccess(array $general): string
+    {
+        $access = strtolower(self::string($general, 'adding_segment_requires_access', 'view'));
+
+        return in_array($access, ['view', 'write', 'admin'], true) ? $access : 'none';
+    }
+
+    /**
+     * @param  array<string, mixed>  $configuration
+     * @return array<int, string>
+     */
+    private static function siteSegmentCreationAccess(array $configuration): array
+    {
+        $accessBySite = [];
+
+        foreach ($configuration as $section => $values) {
+            if (preg_match('/^General_([1-9][0-9]*)$/D', $section, $matches) !== 1
+                || ! is_array($values)
+                || ! array_key_exists('adding_segment_requires_access', $values)) {
+                continue;
+            }
+
+            /** @var array<string, mixed> $values */
+            $accessBySite[(int) $matches[1]] = self::parsedSegmentCreationAccess($values);
+        }
+
+        return $accessBySite;
     }
 
     /** @param array<string, mixed> $general */
