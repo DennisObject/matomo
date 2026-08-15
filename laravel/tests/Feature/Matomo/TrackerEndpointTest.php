@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\CustomDimensions\CustomDimensionRepository;
+use App\Matomo\Goals\GoalRepository;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Tracker\TrackerSettings;
 use App\Matomo\Tracker\TrackingRequest;
@@ -165,6 +166,23 @@ final class TrackerEndpointTest extends TestCase
         $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&ping=1')->assertOk();
     }
 
+    public function test_validates_and_records_manual_goals(): void
+    {
+        $this->bindSite();
+        $goals = $this->createStub(GoalRepository::class);
+        $goals->method('findActive')->willReturn(['idgoal' => 4, 'revenue' => 9.5, 'allow_multiple' => 0]);
+        $this->app->instance(GoalRepository::class, $goals);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->goalId === 4
+                && $request->goalRevenue === 12.75
+                && ! $request->goalAllowsMultiple,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&idgoal=4&revenue=12.75')->assertOk();
+    }
+
     public function test_rejects_invalid_page_performance_timings(): void
     {
         $this->bindSite();
@@ -203,6 +221,9 @@ final class TrackerEndpointTest extends TestCase
         $settings->method('campaignNameParameters')->willReturn(['utm_campaign']);
         $settings->method('campaignKeywordParameters')->willReturn(['utm_term']);
         $this->app->instance(TrackerSettings::class, $settings);
+        $goals = $this->createStub(GoalRepository::class);
+        $goals->method('findActive')->willReturn(null);
+        $this->app->instance(GoalRepository::class, $goals);
     }
 
     private function bindUnusedRecorder(): void

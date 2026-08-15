@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Matomo\Tracker;
 
 use App\Matomo\CustomDimensions\CustomDimensionRepository;
+use App\Matomo\Goals\GoalRepository;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Sites\SiteRepository;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ final readonly class TrackerRequestFactory
         private SiteRepository $sites,
         private CustomDimensionRepository $dimensions,
         private TrackerSettings $settings,
+        private GoalRepository $goals,
     ) {}
 
     public function make(Request $request): TrackingRequest
@@ -71,6 +73,24 @@ final readonly class TrackerRequestFactory
             throw new InvalidArgumentException('search_count must be a non-negative integer.');
         }
 
+        $goalId = $request->input('idgoal');
+        $goal = null;
+        if ($goalId !== null) {
+            if (filter_var($goalId, FILTER_VALIDATE_INT) === false || (int) $goalId < 1) {
+                throw new InvalidArgumentException('idgoal must be a positive integer.');
+            }
+
+            $goal = $this->goals->findActive((int) $siteId, (int) $goalId);
+            if ($goal === null) {
+                throw new InvalidArgumentException('The requested goal does not exist.');
+            }
+        }
+
+        $goalRevenue = $request->input('revenue');
+        if ($goalRevenue !== null && ! is_numeric($goalRevenue)) {
+            throw new InvalidArgumentException('revenue must be numeric.');
+        }
+
         $referrer = $this->optional($request->input('urlref'), 4096);
         if ($referrer !== null && (filter_var($referrer, FILTER_VALIDATE_URL) === false
             || ! in_array(strtolower((string) parse_url($referrer, PHP_URL_SCHEME)), ['http', 'https'], true))) {
@@ -111,6 +131,9 @@ final readonly class TrackerRequestFactory
             $this->optionalTrimmed($request->input('c_p'), 255),
             $this->optionalTrimmed($request->input('c_t'), 4096),
             $this->optionalTrimmed($request->input('c_i'), 255),
+            $goal === null ? null : (int) $goalId,
+            $goal === null ? null : ($goalRevenue === null ? (float) ($goal['revenue'] ?? 0) : (float) $goalRevenue),
+            (int) ($goal['allow_multiple'] ?? 0) === 1,
             $this->optional($request->input('uid'), 200),
             $referrer ?? '',
             $referrerType,

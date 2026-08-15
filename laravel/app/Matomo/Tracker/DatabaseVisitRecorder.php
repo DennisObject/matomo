@@ -108,13 +108,29 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 $action['idaction_content_interaction'] = $request->contentInteraction === null ? null : $this->action($request->contentInteraction, 16);
             }
 
-            $this->connection->table('log_link_visit_action')->insert(
+            $actionId = $this->connection->table('log_link_visit_action')->insertGetId(
                 $this->available('log_link_visit_action', [
                     ...$action,
                     ...$request->actionProperties,
                     ...$request->performanceTimings,
                 ]),
+                'idlink_va',
             );
+            if ($request->goalId !== null) {
+                $buster = $request->goalAllowsMultiple ? random_int(1, 4_294_967_295) : 0;
+                $conversion = [
+                    'idvisit' => (int) $visitId, 'idsite' => $request->siteId, 'idvisitor' => $visitor,
+                    'server_time' => $now, 'idaction_url' => $url, 'idlink_va' => (int) $actionId,
+                    'idgoal' => $request->goalId, 'buster' => $buster, 'url' => $request->url,
+                    'revenue' => $request->goalRevenue,
+                ];
+                $this->connection->table('log_conversion')->insertOrIgnore(
+                    $this->available('log_conversion', [...$conversion, ...$request->visitProperties]),
+                );
+                $this->connection->table('log_visit')->where('idvisit', (int) $visitId)->update(
+                    $this->available('log_visit', ['visit_goal_converted' => 1]),
+                );
+            }
         });
     }
 

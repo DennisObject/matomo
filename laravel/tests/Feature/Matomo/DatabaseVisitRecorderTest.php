@@ -32,6 +32,7 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedInteger('visit_exit_idaction_url');
             $table->unsignedSmallInteger('visit_total_actions');
             $table->unsignedSmallInteger('visit_total_events');
+            $table->boolean('visit_goal_converted')->default(false);
         });
         $schema->create('log_action', function (Blueprint $table): void {
             $table->id('idaction');
@@ -51,17 +52,73 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedInteger('idaction_url_ref');
             $table->unsignedInteger('time_spent_ref_action');
         });
+        $schema->create('log_conversion', function (Blueprint $table): void {
+            $table->unsignedBigInteger('idvisit');
+            $table->unsignedInteger('idsite');
+            $table->binary('idvisitor');
+            $table->dateTime('server_time');
+            $table->unsignedInteger('idaction_url')->nullable();
+            $table->unsignedBigInteger('idlink_va')->nullable();
+            $table->integer('idgoal');
+            $table->unsignedInteger('buster');
+            $table->text('url');
+            $table->double('revenue')->nullable();
+            $table->primary(['idvisit', 'idgoal', 'buster']);
+        });
         $recorder = new DatabaseVisitRecorder($connection);
-        $request = new TrackingRequest(1, 'https://example.test/', '', '0123456789abcdef', '127.0.0.1', 'test', 1, null, null, null, null, null, null, null, null, null, null, null, '', 1, '', '', '', '00:00:00', '', false, false, [], [], []);
+        $request = $this->request();
 
         $recorder->record($request);
         $recorder->record($request);
 
-        $heartbeat = new TrackingRequest(1, 'https://example.test/', '', '0123456789abcdef', '127.0.0.1', 'test', 1, null, null, null, null, null, null, null, null, null, null, null, '', 1, '', '', '', '00:00:00', '', false, true, [], [], []);
+        $heartbeat = $this->request(true);
         $recorder->record($heartbeat);
+        $recorder->record($this->request(goalId: 4));
 
         $this->assertSame(1, $connection->table('log_visit')->count());
-        $this->assertSame(2, $connection->table('log_link_visit_action')->count());
-        $this->assertSame(2, $connection->table('log_visit')->value('visit_total_actions'));
+        $this->assertSame(3, $connection->table('log_link_visit_action')->count());
+        $this->assertSame(3, $connection->table('log_visit')->value('visit_total_actions'));
+        $this->assertSame(1, $connection->table('log_conversion')->count());
+        $this->assertSame(9.5, $connection->table('log_conversion')->value('revenue'));
+        $this->assertSame(1, $connection->table('log_visit')->value('visit_goal_converted'));
+    }
+
+    private function request(bool $heartbeat = false, ?int $goalId = null): TrackingRequest
+    {
+        return new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/',
+            actionName: '',
+            visitorId: '0123456789abcdef',
+            ipAddress: '127.0.0.1',
+            userAgent: 'test',
+            actionType: 1,
+            eventCategory: null,
+            eventAction: null,
+            eventName: null,
+            eventValue: null,
+            searchCategory: null,
+            searchCount: null,
+            contentName: null,
+            contentPiece: null,
+            contentTarget: null,
+            contentInteraction: null,
+            goalId: $goalId,
+            goalRevenue: $goalId === null ? null : 9.5,
+            goalAllowsMultiple: false,
+            userId: null,
+            referrerUrl: '',
+            referrerType: 1,
+            referrerName: '',
+            referrerKeyword: '',
+            browserLanguage: '',
+            localTime: '00:00:00',
+            resolution: '',
+            cookiesEnabled: false,
+            heartbeat: $heartbeat,
+            visitProperties: [],
+            actionProperties: [],
+            performanceTimings: [],
+        );
     }
 }
