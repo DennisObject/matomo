@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 203 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 204 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -120,7 +120,9 @@ Handled reporting API method names:
   status updates through bound queries; plus `runScheduledTasks`, including superuser access,
   persistent timetables and retry state, database locks, priority ordering, execution results, and
   task collection, veto, start, and completion events.
-- `Overlay`: `getTranslations`, with the existing localized client key contract.
+- `Overlay`: both API methods, including the localized client key contract, site and global URL
+  parameter exclusions, the configured pre-grouping limit, live following-page, outlink, and
+  download rows, outer API row limits, and site view-access checks.
 - `Tour`: all 3 API methods, including localized challenge state, extension events, and legacy per-user progress storage.
 - `Transitions`: all 5 API methods, including URL and title action lookup, site-scoped access checks,
   period limits, live-log segment filtering, previous and following actions, loops, exits, entry
@@ -163,7 +165,7 @@ Reporting API module matrix:
 | `Marketplace` | 5 | 0 | 5 |
 | `MobileMessaging` | 12 | 0 | 12 |
 | `MultiSites` | 3 | 3 | 0 |
-| `Overlay` | 2 | 1 | 1 |
+| `Overlay` | 2 | 2 | 0 |
 | `PagePerformance` | 1 | 1 | 0 |
 | `PrivacyManager` | 18 | 0 | 18 |
 | `ProfessionalServices` | 1 | 1 | 0 |
@@ -183,7 +185,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **203** | **186** |
+| **Total** | **389** | **204** | **185** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 

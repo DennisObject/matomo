@@ -146,6 +146,8 @@ use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
+use App\Matomo\Overlay\ConfiguredOverlaySettings;
+use App\Matomo\Overlay\OverlaySettings;
 use App\Matomo\Plugins\ConfiguredPluginState;
 use App\Matomo\Plugins\LocalTrackerFileAvailability;
 use App\Matomo\Plugins\PluginState;
@@ -237,6 +239,12 @@ class AppServiceProvider extends ServiceProvider
 
             return InstallationConfig::fromFile($path);
         });
+        $this->app->singleton(
+            OverlaySettings::class,
+            fn (Application $application): OverlaySettings => new ConfiguredOverlaySettings(
+                $application->make(InstallationConfig::class),
+            ),
+        );
 
         $this->app->singleton(
             MatomoDatabase::class,
