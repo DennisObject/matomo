@@ -72,6 +72,7 @@ use App\Matomo\Api\Methods\UsersManagerAccessApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerAccessMutationApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerCreateApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerIdentityApiMethodHandler;
+use App\Matomo\Api\Methods\UsersManagerInviteMaintenanceApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerPreferenceApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerReadApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerRoleDirectoryApiMethodHandler;
@@ -288,11 +289,13 @@ use App\Matomo\Users\DatabaseUserPreferenceRepository;
 use App\Matomo\Users\DatabaseUserRoleDirectoryRepository;
 use App\Matomo\Users\DatabaseUserSiteAccessRepository;
 use App\Matomo\Users\LaravelAnonymousAccessNotifier;
+use App\Matomo\Users\LaravelUserInvitationLinkFactory;
 use App\Matomo\Users\LaravelUserInvitationNotifier;
 use App\Matomo\Users\MutableUserRepository;
 use App\Matomo\Users\MutableUserSiteAccessRepository;
 use App\Matomo\Users\UserDirectoryRepository;
 use App\Matomo\Users\UserIdentityRepository;
+use App\Matomo\Users\UserInvitationLinkFactory;
 use App\Matomo\Users\UserInvitationNotifier;
 use App\Matomo\Users\UserPreferenceRepository;
 use App\Matomo\Users\UserPresenter;
@@ -570,10 +573,16 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(
+            UserInvitationLinkFactory::class,
+            fn (Application $application): UserInvitationLinkFactory => new LaravelUserInvitationLinkFactory(
+                (string) $application->make(Repository::class)->get('app.url', 'http://localhost'),
+            ),
+        );
+        $this->app->singleton(
             UserInvitationNotifier::class,
             fn (Application $application): UserInvitationNotifier => new LaravelUserInvitationNotifier(
                 $application->make(Mailer::class),
-                (string) $application->make(Repository::class)->get('app.url', 'http://localhost'),
+                $application->make(UserInvitationLinkFactory::class),
             ),
         );
         $this->app->singleton(
@@ -1472,6 +1481,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(UsersManagerAccessApiMethodHandler::class),
                 $application->make(UsersManagerAccessMutationApiMethodHandler::class),
                 $application->make(UsersManagerCreateApiMethodHandler::class),
+                $application->make(UsersManagerInviteMaintenanceApiMethodHandler::class),
                 $application->make(UsersManagerIdentityApiMethodHandler::class),
                 $application->make(UsersManagerPreferenceApiMethodHandler::class),
                 $application->make(UsersManagerReadApiMethodHandler::class),

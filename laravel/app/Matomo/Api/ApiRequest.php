@@ -532,6 +532,7 @@ final readonly class ApiRequest
         public ?UsersManagerRoleDirectoryRequest $usersManagerRoleDirectory,
         public ?UsersManagerAccessMutationRequest $usersManagerAccessMutation,
         public ?UsersManagerCreateRequest $usersManagerCreate,
+        public ?UsersManagerInviteMaintenanceRequest $usersManagerInviteMaintenance,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -609,6 +610,7 @@ final readonly class ApiRequest
             usersManagerRoleDirectory: null,
             usersManagerAccessMutation: null,
             usersManagerCreate: null,
+            usersManagerInviteMaintenance: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1215,6 +1217,7 @@ final readonly class ApiRequest
             usersManagerRoleDirectory: self::usersManagerRoleDirectory($request, $module, $method),
             usersManagerAccessMutation: self::usersManagerAccessMutation($request, $module, $method),
             usersManagerCreate: self::usersManagerCreate($request, $module, $method),
+            usersManagerInviteMaintenance: self::usersManagerInviteMaintenance($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2611,6 +2614,25 @@ final readonly class ApiRequest
             passwordIsHashed: $add && self::booleanInput($request, '_isPasswordHashed', false),
             initialSiteId: self::nullablePositiveIntegerInput($request, 'initialIdSite'),
             expiryDays: $add ? null : self::nullablePositiveIntegerInput($request, 'expiryInDays'),
+            passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    private static function usersManagerInviteMaintenance(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?UsersManagerInviteMaintenanceRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'UsersManager.resendInvite',
+            'UsersManager.generateInviteLink',
+        ], true)) {
+            return null;
+        }
+
+        return new UsersManagerInviteMaintenanceRequest(
+            login: self::requiredString($request, 'userLogin'),
+            expiryDays: self::integerInput($request, 'expiryInDays', 7, 1),
             passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
         );
     }

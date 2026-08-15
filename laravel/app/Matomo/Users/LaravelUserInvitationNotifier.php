@@ -9,7 +9,7 @@ use Illuminate\Mail\Message;
 
 final readonly class LaravelUserInvitationNotifier implements UserInvitationNotifier
 {
-    public function __construct(private Mailer $mailer, private string $applicationUrl) {}
+    public function __construct(private Mailer $mailer, private UserInvitationLinkFactory $links) {}
 
     public function notify(
         string $login,
@@ -17,11 +17,7 @@ final readonly class LaravelUserInvitationNotifier implements UserInvitationNoti
         #[\SensitiveParameter] string $token,
         int $expiryDays,
     ): void {
-        $url = rtrim($this->applicationUrl, '/').'/index.php?'.http_build_query([
-            'module' => 'Login',
-            'action' => 'acceptInvitation',
-            'token' => $token,
-        ]);
+        $url = $this->links->make($token);
         $body = "You have been invited. This invitation expires in {$expiryDays} days.\n{$url}";
         $this->mailer->raw($body, static function (Message $message) use ($email, $login): void {
             $message->to($email, $login)->subject('User invitation');
