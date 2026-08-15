@@ -523,6 +523,7 @@ final readonly class ApiRequest
         public ?SegmentEditorRequest $segmentEditor,
         public ?InsightsRequest $insights,
         public ?SitesManagerGlobalSettingsRequest $sitesManagerGlobalSettings,
+        public ?SitesManagerTrackingCodeRequest $sitesManagerTrackingCode,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -591,6 +592,7 @@ final readonly class ApiRequest
             segmentEditor: null,
             insights: null,
             sitesManagerGlobalSettings: null,
+            sitesManagerTrackingCode: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1102,6 +1104,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.renameGroup';
     }
 
+    public function isSitesManagerTrackingCodeRequest(): bool
+    {
+        return $this->sitesManagerTrackingCode !== null;
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -1173,6 +1180,7 @@ final readonly class ApiRequest
             segmentEditor: self::segmentEditor($request, $module, $method),
             insights: self::insights($request, $module, $method),
             sitesManagerGlobalSettings: self::sitesManagerGlobalSettings($request, $module, $method),
+            sitesManagerTrackingCode: self::sitesManagerTrackingCode($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2276,6 +2284,119 @@ final readonly class ApiRequest
         return $provider;
     }
 
+    private static function sitesManagerTrackingCode(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?SitesManagerTrackingCodeRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'SitesManager.getJavascriptTag',
+            'SitesManager.getImageTrackingCode',
+        ], true)) {
+            return null;
+        }
+
+        $image = $method === 'SitesManager.getImageTrackingCode';
+        $goalId = self::nullableIntegerOrFalse($request, 'idGoal');
+        $revenue = self::nullableFloatOrFalse($request, 'revenue');
+
+        return new SitesManagerTrackingCodeRequest(
+            siteId: self::requiredInteger($request, 'idSite'),
+            matomoUrl: self::stringInput($request, 'piwikUrl'),
+            mergeSubdomains: self::booleanInput($request, 'mergeSubdomains', false),
+            groupPageTitlesByDomain: self::booleanInput($request, 'groupPageTitlesByDomain', false),
+            mergeAliasUrls: self::booleanInput($request, 'mergeAliasUrls', false),
+            visitorCustomVariables: self::customVariableInput($request, 'visitorCustomVariables'),
+            pageCustomVariables: self::customVariableInput($request, 'pageCustomVariables'),
+            campaignNameParameter: self::stringInput($request, 'customCampaignNameQueryParam'),
+            campaignKeywordParameter: self::stringInput($request, 'customCampaignKeywordParam'),
+            doNotTrack: self::booleanInput($request, 'doNotTrack', false),
+            disableCookies: self::booleanInput($request, 'disableCookies', false),
+            trackNoScript: self::booleanInput($request, 'trackNoScript', false),
+            crossDomain: self::booleanInput($request, 'crossDomain', false),
+            forceMatomoEndpoint: self::booleanInput($request, 'forceMatomoEndpoint', false),
+            excludedQueryParameters: self::stringListInput($request, 'excludedQueryParams'),
+            excludedReferrers: self::stringListInput($request, 'excludedReferrers'),
+            disableCampaignParameters: self::booleanInput($request, 'disableCampaignParameters', false),
+            actionName: $image ? self::nullableStringInput($request, 'actionName') : null,
+            goalId: $image ? $goalId : false,
+            revenue: $image ? $revenue : false,
+        );
+    }
+
+    /** @return list<array{0: string, 1: string}> */
+    private static function customVariableInput(Request $request, string $key): array
+    {
+        $value = self::inputValue($request, $key);
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        if (! is_array($value)) {
+            throw new InvalidApiParameter($key);
+        }
+
+        $result = [];
+        foreach ($value as $variable) {
+            if (! is_array($variable) || count($variable) < 2 || ! is_scalar($variable[0]) || ! is_scalar($variable[1])) {
+                throw new InvalidApiParameter($key);
+            }
+
+            $result[] = [str_replace("\0", '', (string) $variable[0]), str_replace("\0", '', (string) $variable[1])];
+        }
+
+        return $result;
+    }
+
+    /** @return list<string> */
+    private static function stringListInput(Request $request, string $key): array
+    {
+        $value = self::inputValue($request, $key);
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        $values = is_array($value) ? $value : explode(',', (string) $value);
+        $result = [];
+        foreach ($values as $item) {
+            if (! is_scalar($item)) {
+                throw new InvalidApiParameter($key);
+            }
+
+            $result[] = str_replace("\0", '', (string) $item);
+        }
+
+        return $result;
+    }
+
+    private static function nullableIntegerOrFalse(Request $request, string $key): int|false
+    {
+        $value = self::inputValue($request, $key);
+        if (in_array($value, [null, '', false], true)) {
+            return false;
+        }
+
+        if (! is_scalar($value) || (string) (int) $value !== (string) $value) {
+            throw new InvalidApiParameter($key);
+        }
+
+        return (int) $value;
+    }
+
+    private static function nullableFloatOrFalse(Request $request, string $key): float|false
+    {
+        $value = self::inputValue($request, $key);
+        if (in_array($value, [null, '', false], true)) {
+            return false;
+        }
+
+        if (! is_scalar($value) || preg_match(self::FLOAT_PATTERN, (string) $value) !== 1) {
+            throw new InvalidApiParameter($key);
+        }
+
+        return (float) $value;
+    }
+
     private static function siteId(Request $request, string $module, string $method): ?int
     {
         $requiredMethods = [
@@ -2287,6 +2408,8 @@ final readonly class ApiRequest
             'SitesManager.detectConsentManager',
             'SitesManager.addSiteAliasUrls',
             'SitesManager.setSiteAliasUrls',
+            'SitesManager.getJavascriptTag',
+            'SitesManager.getImageTrackingCode',
         ];
         $optionalMethods = [
             'SitesManager.getExcludedQueryParametersGlobal',

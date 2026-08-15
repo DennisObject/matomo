@@ -20,6 +20,7 @@ use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
+use App\Matomo\Sites\SiteTrackingCodeGenerator;
 use App\Matomo\Sites\TimezoneProvider;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
@@ -87,6 +88,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private TimezoneProvider $timezones,
         private SiteDetailsPresenter $siteDetails,
         private ConsentManagerDetector $consentManagers,
+        private SiteTrackingCodeGenerator $trackingCodes,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -127,6 +129,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isSitesManagerGlobalSettingsRequest()
             || $request->isSiteAliasMutationRequest()
             || $request->isSiteGroupRenameRequest()
+            || $request->isSitesManagerTrackingCodeRequest()
             || $this->globalOption($request) !== null;
     }
 
@@ -146,6 +149,26 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
         if ($request->isSiteGroupRenameRequest()) {
             return $this->renameSiteGroup($request);
+        }
+
+        if ($request->isSitesManagerTrackingCodeRequest()) {
+            $tracking = $request->sitesManagerTrackingCode
+                ?? throw new LogicException('The tracking-code parameters were not parsed.');
+
+            if ($request->method === 'SitesManager.getJavascriptTag'
+                && ! $this->authorizer->hasViewAccessToSite($request->authentication, $tracking->siteId)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires 'view' access for the website id = {$tracking->siteId}.",
+                    401,
+                );
+            }
+
+            $code = $request->method === 'SitesManager.getJavascriptTag'
+                ? $this->trackingCodes->javascript($tracking, $httpRequest->root())
+                : $this->trackingCodes->image($tracking, $httpRequest->isSecure());
+
+            return $this->responses->scalar($request, $code);
         }
 
         if ($request->isCurrencySymbolsRequest()) {
