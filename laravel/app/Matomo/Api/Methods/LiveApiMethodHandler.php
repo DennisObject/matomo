@@ -11,6 +11,9 @@ use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Live\LiveAccessPolicy;
 use App\Matomo\Live\LiveCounterRepository;
 use App\Matomo\Live\LiveVisitorIdentityRepository;
+use App\Matomo\Live\LiveVisitorProfileBuilder;
+use App\Matomo\Live\LiveVisitRepository;
+use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Reporting\ReportingPeriodFactory;
 use App\Matomo\Sites\SiteRepository;
 use Illuminate\Http\Request;
@@ -28,6 +31,9 @@ final readonly class LiveApiMethodHandler implements ApiMethodHandler
         private LiveAccessPolicy $access,
         private LiveCounterRepository $counters,
         private LiveVisitorIdentityRepository $visitors,
+        private LiveVisitRepository $visits,
+        private LiveVisitorProfileBuilder $profiles,
+        private LanguageResolver $languages,
         private ReportingPeriodFactory $periods,
         private SiteRepository $sites,
     ) {}
@@ -44,6 +50,7 @@ final readonly class LiveApiMethodHandler implements ApiMethodHandler
         }
 
         $parameters = $request->live ?? throw new LogicException('The Live parameters were not parsed.');
+        $language = $this->languages->resolve($httpRequest, $request->authentication);
         $viewable = $this->authorizer->siteIdsWithAtLeastViewAccess(
             $request->authentication,
             $request->restrictSitesToLogin,
@@ -91,6 +98,98 @@ final readonly class LiveApiMethodHandler implements ApiMethodHandler
                 $request,
                 $this->visitors->mostRecentVisitDateTime($siteIds, $start, $end),
             );
+        }
+
+        if ($request->method === 'Live.getVisitorProfile') {
+            if (count($siteIds) !== 1) {
+                return $this->responses->error($request, 'This API method requires one website ID.', 400);
+            }
+
+            if (! $this->access->visitorProfileEnabled($siteIds[0])) {
+                return $this->responses->error($request, 'Visitor profiles are deactivated for this website.', 400);
+            }
+
+            $visitorId = $parameters->visitorId;
+            if ($visitorId === null || $visitorId === '') {
+                try {
+                    $visitorId = $this->visitors->mostRecentVisitorId($siteIds[0], $parameters->segment);
+                } catch (InvalidArgumentException $invalidArgumentException) {
+                    return $this->responses->error($request, $invalidArgumentException->getMessage(), 400);
+                }
+            }
+
+            if ($visitorId === false) {
+                return $this->responses->structured($request, []);
+            }
+
+            try {
+                $aggregationLimit = $this->profiles->maximumVisitsToFetch();
+                $rows = $this->visits->visits(
+                    $siteIds, $parameters->segment, null, null, null, 0, $aggregationLimit,
+                    false, $visitorId, true, false, null, $language,
+                );
+                $rows = $this->protectAnonymousVisitorDetails($request, $rows);
+
+                $profile = $this->profiles->build($visitorId, $rows, $parameters->profileVisitLimit);
+                if ($rows !== []) {
+                    $latestVisitTime = (string) ($rows[0]['lastActionDateTime'] ?? '');
+                    $profile['nextVisitorId'] = $this->visitors->adjacentVisitorId(
+                        $siteIds[0], $visitorId, $latestVisitTime, $parameters->segment, true,
+                    );
+                    $profile['previousVisitorId'] = $this->visitors->adjacentVisitorId(
+                        $siteIds[0], $visitorId, $latestVisitTime, $parameters->segment, false,
+                    );
+                }
+            } catch (InvalidArgumentException $invalidArgumentException) {
+                return $this->responses->error($request, $invalidArgumentException->getMessage(), 400);
+            }
+
+            return $this->responses->structured($request, $profile);
+        }
+
+        if (in_array($request->method, ['Live.getLastVisitsDetails', 'Live.getFirstVisitForVisitorId'], true)) {
+            $siteIds = array_values(array_filter($siteIds, $this->access->visitorLogEnabled(...)));
+            if ($siteIds === []) {
+                return $this->responses->error($request, 'Visits log is deactivated for all given websites.', 400);
+            }
+
+            if ($request->method === 'Live.getFirstVisitForVisitorId') {
+                if (count($siteIds) !== 1) {
+                    return $this->responses->error($request, 'This API method requires one website ID.', 400);
+                }
+
+                if (! $this->access->visitorProfileEnabled($siteIds[0])) {
+                    return $this->responses->error($request, 'Visitor profiles are deactivated for this website.', 400);
+                }
+
+                if ($parameters->visitorId === null || $parameters->visitorId === '') {
+                    return $this->responses->rows($request, []);
+                }
+            }
+
+            try {
+                [$start, $end] = $this->dateBounds($parameters, $siteIds);
+                $rows = $this->visits->visits(
+                    $siteIds,
+                    $parameters->segment,
+                    $start,
+                    $end,
+                    $parameters->minimumTimestamp,
+                    $parameters->filterOffset,
+                    $parameters->filterLimit,
+                    $request->method === 'Live.getFirstVisitForVisitorId',
+                    $parameters->visitorId,
+                    $parameters->fetchActions,
+                    $parameters->flat,
+                    $parameters->intersectSegment,
+                    $language,
+                );
+                $rows = $this->protectAnonymousVisitorDetails($request, $rows);
+            } catch (InvalidArgumentException $invalidArgumentException) {
+                return $this->responses->error($request, $invalidArgumentException->getMessage(), 400);
+            }
+
+            return $this->responses->rows($request, $rows);
         }
 
         try {
@@ -142,5 +241,25 @@ final readonly class LiveApiMethodHandler implements ApiMethodHandler
         }
 
         return [$periods[0]->startDate.' 00:00:00', $periods[count($periods) - 1]->endDate.' 23:59:59'];
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    private function protectAnonymousVisitorDetails(ApiRequest $request, array $rows): array
+    {
+        if ($this->authorizer->authenticatedLogin($request->authentication) !== 'anonymous') {
+            return $rows;
+        }
+
+        foreach ($rows as &$row) {
+            $row['visitorId'] = false;
+            $row['visitIp'] = null;
+            $row['fingerprint'] = false;
+            $row['userId'] = null;
+        }
+
+        return $rows;
     }
 }

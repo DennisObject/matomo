@@ -37,7 +37,9 @@ final readonly class DatabaseLiveCounterRepository implements LiveCounterReposit
         $query = $this->connection->table('log_visit')
             ->whereIn('log_visit.idsite', $siteIds)
             ->where('log_visit.visit_last_action_time', '>=', $cutoff);
-        $this->segments->apply($query, $segment);
+        if (! $this->segments->apply($query, $segment)) {
+            throw new \InvalidArgumentException('The requested segment is not supported.');
+        }
 
         return $query;
     }

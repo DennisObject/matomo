@@ -2967,6 +2967,9 @@ final readonly class ApiRequest
             'Live.isVisitorProfileEnabled',
             'Live.getMostRecentVisitorId',
             'Live.getMostRecentVisitsDateTime',
+            'Live.getLastVisitsDetails',
+            'Live.getFirstVisitForVisitorId',
+            'Live.getVisitorProfile',
         ], true)) {
             return null;
         }
@@ -2982,14 +2985,30 @@ final readonly class ApiRequest
             siteIds: $siteIds,
             allSites: $allSites,
             lastMinutes: $lastMinutes,
-            segment: in_array($method, ['Live.getCounters', 'Live.getMostRecentVisitorId'], true)
+            segment: in_array($method, ['Live.getCounters', 'Live.getMostRecentVisitorId', 'Live.getLastVisitsDetails', 'Live.getVisitorProfile'], true)
                 ? self::nullableStringInput($request, 'segment') : null,
             showColumns: $counter ? self::optionalCommaSeparatedStringList($request, 'showColumns') ?? [] : [],
             hideColumns: $counter ? self::optionalCommaSeparatedStringList($request, 'hideColumns') ?? [] : [],
-            period: $method === 'Live.getMostRecentVisitsDateTime'
+            period: in_array($method, ['Live.getMostRecentVisitsDateTime', 'Live.getLastVisitsDetails'], true)
                 ? self::nullableStringInput($request, 'period') : null,
             date: $method === 'Live.getMostRecentVisitsDateTime'
-                ? self::nullableStringInput($request, 'date') : null,
+                || $method === 'Live.getLastVisitsDetails' ? self::nullableStringInput($request, 'date') : null,
+            minimumTimestamp: $method === 'Live.getLastVisitsDetails'
+                ? self::nullablePositiveIntegerInput($request, 'minTimestamp') : null,
+            filterOffset: $method === 'Live.getLastVisitsDetails'
+                ? self::integerInput($request, 'filter_offset', 0, 0) : 0,
+            filterLimit: $method === 'Live.getLastVisitsDetails'
+                ? self::integerInput($request, 'countVisitorsToFetch', self::integerInput($request, 'filter_limit', 10, 0), 0) : 1,
+            visitorId: in_array($method, ['Live.getFirstVisitForVisitorId', 'Live.getVisitorProfile'], true)
+                ? self::nullableStringInput($request, 'visitorId') : null,
+            fetchActions: $method !== 'Live.getFirstVisitForVisitorId'
+                && ($method !== 'Live.getLastVisitsDetails'
+                    || ! self::booleanInput($request, 'doNotFetchActions', false)),
+            flat: $method === 'Live.getLastVisitsDetails' && self::booleanInput($request, 'flat', false),
+            profileVisitLimit: $method === 'Live.getVisitorProfile'
+                ? self::integerInput($request, 'limitVisits', 10, 1) : 10,
+            intersectSegment: $method === 'Live.getLastVisitsDetails'
+                ? self::nullableStringInput($request, 'intersectSegment') : null,
         );
     }
 

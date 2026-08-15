@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Matomo\Live;
 
 use App\Matomo\Archiving\VisitSegmentApplicator;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Connection;
 
 final readonly class DatabaseLiveVisitorIdentityRepository implements LiveVisitorIdentityRepository
@@ -20,7 +21,10 @@ final readonly class DatabaseLiveVisitorIdentityRepository implements LiveVisito
             ->where('log_visit.idsite', $siteId)
             ->orderByDesc('log_visit.visit_last_action_time')
             ->orderByDesc('log_visit.idvisit');
-        $this->segments->apply($query, $segment, $siteId);
+        if (! $this->segments->apply($query, $segment, $siteId)) {
+            throw new \InvalidArgumentException('The requested segment is not supported.');
+        }
+
         $visitorId = $query->value('log_visit.idvisitor');
 
         return is_string($visitorId) && $visitorId !== '' ? bin2hex($visitorId) : false;
@@ -43,5 +47,40 @@ final readonly class DatabaseLiveVisitorIdentityRepository implements LiveVisito
         $value = $query->orderByDesc('visit_last_action_time')->value('visit_last_action_time');
 
         return is_string($value) ? $value : '';
+    }
+
+    public function adjacentVisitorId(
+        int $siteId,
+        string $visitorId,
+        string $latestVisitTime,
+        ?string $segment,
+        bool $next,
+    ): string|false {
+        $binary = hex2bin($visitorId);
+        if ($binary === false) {
+            return false;
+        }
+
+        $date = CarbonImmutable::parse($latestVisitTime, 'UTC');
+        $visits = $this->connection->table('log_visit')
+            ->where('log_visit.idsite', $siteId)
+            ->where('log_visit.idvisitor', '<>', $binary)
+            ->whereBetween('log_visit.visit_last_action_time', [
+                $date->subDay()->toDateTimeString(),
+                $date->addDay()->toDateTimeString(),
+            ]);
+        if (! $this->segments->apply($visits, $segment, $siteId)) {
+            throw new \InvalidArgumentException('The requested segment is not supported.');
+        }
+
+        $visits->select('log_visit.idvisitor')
+            ->selectRaw('MAX(log_visit.visit_last_action_time) AS visit_last_action_time')
+            ->groupBy('log_visit.idvisitor');
+        $query = $this->connection->query()->fromSub($visits, 'adjacent');
+        $query->where('adjacent.visit_last_action_time', $next ? '<=' : '>=', $latestVisitTime)
+            ->orderBy('adjacent.visit_last_action_time', $next ? 'desc' : 'asc');
+        $value = $query->value('adjacent.idvisitor');
+
+        return is_string($value) && $value !== '' ? bin2hex($value) : false;
     }
 }

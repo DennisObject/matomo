@@ -110,6 +110,7 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(100, $configuration->liveAiChatbotsMaximumRows());
         $this->assertSame(100, $configuration->liveAiChatbotsTopPageUrlsMaximumRows());
         $this->assertSame(-1.0, $configuration->liveQueryMaximumExecutionTime());
+        $this->assertSame(100, $configuration->liveVisitorProfileMaximumVisits());
     }
 
     public function test_loads_reporting_overrides(): void
@@ -132,6 +133,7 @@ class InstallationConfigTest extends TestCase
             live_ai_chatbots_maximum_rows = 17
             live_ai_chatbots_top_page_urls_maximum_rows = 23
             live_query_max_execution_time = 1.5
+            live_visitor_profile_max_visits_to_aggregate = 31
             INI,
             extraTracker: <<<'INI'
             enable_default_location_provider = 0
@@ -164,6 +166,7 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(17, $configuration->liveAiChatbotsMaximumRows());
         $this->assertSame(23, $configuration->liveAiChatbotsTopPageUrlsMaximumRows());
         $this->assertSame(1.5, $configuration->liveQueryMaximumExecutionTime());
+        $this->assertSame(31, $configuration->liveVisitorProfileMaximumVisits());
         $this->assertSame(['session', 'secret'], $configuration->urlQueryParametersToExclude());
         $this->assertSame(['campaign'], $configuration->campaignNameParameters());
         $this->assertSame(['keyword'], $configuration->campaignKeywordParameters());

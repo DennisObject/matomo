@@ -10,4 +10,12 @@ interface LiveVisitorIdentityRepository
 
     /** @param list<int> $siteIds */
     public function mostRecentVisitDateTime(array $siteIds, ?string $startDateTime, ?string $endDateTime): string;
+
+    public function adjacentVisitorId(
+        int $siteId,
+        string $visitorId,
+        string $latestVisitTime,
+        ?string $segment,
+        bool $next,
+    ): string|false;
 }

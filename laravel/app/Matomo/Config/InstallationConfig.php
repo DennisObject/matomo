@@ -96,6 +96,7 @@ final readonly class InstallationConfig
         private int $pageMaximumLength,
         private int $liveAiChatbotsMaximumRows,
         private int $liveAiChatbotsTopPageUrlsMaximumRows,
+        private int $liveVisitorProfileMaximumVisits,
         private float $liveQueryMaximumExecutionTime,
         private string $segmentCreationAccess,
         /** @var array<int, string> */
@@ -359,6 +360,11 @@ final readonly class InstallationConfig
             liveAiChatbotsTopPageUrlsMaximumRows: self::positiveInteger(
                 $general,
                 'live_ai_chatbots_top_page_urls_maximum_rows',
+                100,
+            ),
+            liveVisitorProfileMaximumVisits: self::positiveInteger(
+                $general,
+                'live_visitor_profile_max_visits_to_aggregate',
                 100,
             ),
             liveQueryMaximumExecutionTime: self::number(
@@ -742,6 +748,11 @@ final readonly class InstallationConfig
     public function liveQueryMaximumExecutionTime(): float
     {
         return $this->liveQueryMaximumExecutionTime;
+    }
+
+    public function liveVisitorProfileMaximumVisits(): int
+    {
+        return $this->liveVisitorProfileMaximumVisits;
     }
 
     public function segmentCreationAccess(?int $siteId = null): string
