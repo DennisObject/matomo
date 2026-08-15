@@ -542,6 +542,7 @@ final readonly class ApiRequest
         public ?PrivacyGranularComplianceRequest $privacyGranularCompliance,
         public ?PrivacyAnonymisationSettingsRequest $privacyAnonymisationSettings,
         public ?PrivacyRawAnonymisationRequest $privacyRawAnonymisation,
+        public ?PrivacyDataSubjectsRequest $privacyDataSubjects,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -629,6 +630,7 @@ final readonly class ApiRequest
             privacyGranularCompliance: null,
             privacyAnonymisationSettings: null,
             privacyRawAnonymisation: null,
+            privacyDataSubjects: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1245,6 +1247,7 @@ final readonly class ApiRequest
             privacyGranularCompliance: self::privacyGranularCompliance($request, $module, $method),
             privacyAnonymisationSettings: self::privacyAnonymisationSettings($request, $module, $method),
             privacyRawAnonymisation: self::privacyRawAnonymisation($request, $module, $method),
+            privacyDataSubjects: self::privacyDataSubjects($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2870,6 +2873,49 @@ final readonly class ApiRequest
             visitColumns: self::optionalCommaSeparatedStringList($request, 'unsetVisitColumns') ?? [],
             actionColumns: self::optionalCommaSeparatedStringList($request, 'unsetLinkVisitActionColumns') ?? [],
             passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    private static function privacyDataSubjects(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?PrivacyDataSubjectsRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'PrivacyManager.deleteDataSubjects',
+            'PrivacyManager.exportDataSubjects',
+        ], true)) {
+            return null;
+        }
+
+        $value = self::inputValue($request, 'visits');
+        if (is_string($value)) {
+            try {
+                $value = json_decode($value, true, flags: JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                throw new InvalidApiParameter('visits');
+            }
+        }
+
+        if (! is_array($value) || $value === []) {
+            throw new InvalidApiParameter('visits');
+        }
+
+        $visits = [];
+        foreach ($value as $visit) {
+            if (! is_array($visit)
+                || ! isset($visit['idsite'], $visit['idvisit'])
+                || filter_var($visit['idsite'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false
+                || filter_var($visit['idvisit'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+                throw new InvalidApiParameter('visits');
+            }
+
+            $visits[] = ['idsite' => (int) $visit['idsite'], 'idvisit' => (int) $visit['idvisit']];
+        }
+
+        return new PrivacyDataSubjectsRequest(
+            visits: $visits,
+            delete: $method === 'PrivacyManager.deleteDataSubjects',
         );
     }
 
