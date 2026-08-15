@@ -12,6 +12,7 @@ use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Localization\MutableLanguagePreferenceRepository;
 use App\Matomo\TrackingFailures\TrackingFailurePresenter;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
+use App\Matomo\UserChanges\UserChangeReadRepository;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use LogicException;
@@ -25,17 +26,22 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         private TrackingFailurePresenter $presenter,
         private LanguageResolver $languages,
         private MutableLanguagePreferenceRepository $preferences,
+        private UserChangeReadRepository $userChanges,
     ) {}
 
     public function supports(ApiRequest $request): bool
     {
-        return $request->isCoreAdminHomeTrackingFailureRequest();
+        return $request->isCoreAdminHomeRequest();
     }
 
     public function handle(ApiRequest $request, Request $httpRequest): Response
     {
         if (! $this->supports($request)) {
             throw new LogicException('The CoreAdminHome API handler does not support this request.');
+        }
+
+        if ($request->method === 'CoreAdminHome.whatIsNewMarkAllChangesReadForCurrentUser') {
+            return $this->markChangesRead($request);
         }
 
         if ($request->method === 'CoreAdminHome.deleteTrackingFailure') {
@@ -105,5 +111,28 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         $this->failures->delete($siteId, $failureId);
 
         return $this->responses->success($request);
+    }
+
+    private function markChangesRead(ApiRequest $request): Response
+    {
+        if (! $this->authorizer->hasSomeViewAccess($request->authentication)) {
+            return $this->responses->error(
+                $request,
+                'You must have view access to at least one website.',
+                401,
+            );
+        }
+
+        $login = $this->authorizer->authenticatedLogin($request->authentication);
+
+        if ($login === null || $login === '' || strtolower($login) === 'anonymous') {
+            return $this->responses->error(
+                $request,
+                'You must be logged in to access this functionality.',
+                401,
+            );
+        }
+
+        return $this->responses->scalar($request, $this->userChanges->markAllRead($login));
     }
 }

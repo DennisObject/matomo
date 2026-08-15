@@ -161,6 +161,8 @@ use App\Matomo\Transitions\TransitionsPeriodPolicy;
 use App\Matomo\Transitions\TransitionsSettings;
 use App\Matomo\TwoFactorAuth\DatabaseTwoFactorAuthenticationResetter;
 use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
+use App\Matomo\UserChanges\DatabaseUserChangeReadRepository;
+use App\Matomo\UserChanges\UserChangeReadRepository;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -208,6 +210,13 @@ class AppServiceProvider extends ServiceProvider
             TrackingFailureRepository::class,
             fn (Application $application): TrackingFailureRepository => new DatabaseTrackingFailureRepository(
                 $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            UserChangeReadRepository::class,
+            fn (Application $application): UserChangeReadRepository => new DatabaseUserChangeReadRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+                $application->make(Dispatcher::class),
             ),
         );
         $this->app->singleton(TransitionsSettings::class, ConfiguredTransitionsSettings::class);

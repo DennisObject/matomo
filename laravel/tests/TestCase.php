@@ -59,6 +59,7 @@ use App\Matomo\Tour\TourSettings;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
 use App\Matomo\Transitions\TransitionsPeriodPolicy;
 use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
+use App\Matomo\UserChanges\UserChangeReadRepository;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Request;
 
@@ -151,6 +152,13 @@ abstract class TestCase extends BaseTestCase
             public function deleteForSites(array $siteIds): void {}
 
             public function delete(int $siteId, int|string $failureId): void {}
+        });
+        $this->app->instance(UserChangeReadRepository::class, new class implements UserChangeReadRepository
+        {
+            public function markAllRead(string $login): bool
+            {
+                return false;
+            }
         });
         $this->app->instance(LanguageCatalog::class, new class implements LanguageCatalog
         {

@@ -9,6 +9,7 @@ use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\TrackingFailures\Events\TrackingFailuresMakingHumanReadable;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
+use App\Matomo\UserChanges\UserChangeReadRepository;
 use App\Support\MatomoProductUrl;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -132,16 +133,48 @@ class CoreAdminHomeTrackingFailuresApiTest extends TestCase
             ->assertJsonPath('message', "Please specify a value for 'idFailure'.");
     }
 
+    public function test_authenticated_viewer_can_mark_all_visible_changes_read(): void
+    {
+        $this->authenticate(false, false, [], true, 'alice');
+        $changes = $this->createMock(UserChangeReadRepository::class);
+        $changes->expects($this->once())->method('markAllRead')->with('alice')->willReturn(true);
+        $this->app->instance(UserChangeReadRepository::class, $changes);
+
+        $this->post($this->url('whatIsNewMarkAllChangesReadForCurrentUser'))
+            ->assertOk()->assertExactJson(['value' => true]);
+    }
+
+    public function test_marking_changes_read_requires_view_access_first(): void
+    {
+        $this->authenticate(false, false, [], false, 'anonymous');
+
+        $this->post($this->url('whatIsNewMarkAllChangesReadForCurrentUser'))
+            ->assertStatus(401)
+            ->assertJsonPath('message', 'You must have view access to at least one website.');
+    }
+
+    public function test_marking_changes_read_rejects_anonymous_viewer(): void
+    {
+        $this->authenticate(false, false, [], true, 'anonymous');
+
+        $this->post($this->url('whatIsNewMarkAllChangesReadForCurrentUser'))
+            ->assertStatus(401)
+            ->assertJsonPath('message', 'You must be logged in to access this functionality.');
+    }
+
     /** @param list<int> $adminSiteIds */
     private function authenticate(
         bool $superuser,
         bool $hasSomeAdminAccess = false,
         array $adminSiteIds = [],
+        bool $hasSomeViewAccess = false,
+        string $login = 'alice',
     ): void {
         $authorizer = $this->createStub(ApiAccessAuthorizer::class);
-        $authorizer->method('authenticatedLogin')->willReturn('alice');
+        $authorizer->method('authenticatedLogin')->willReturn($login);
         $authorizer->method('hasSuperUserAccess')->willReturn($superuser);
         $authorizer->method('hasSomeAdminAccess')->willReturn($hasSomeAdminAccess);
+        $authorizer->method('hasSomeViewAccess')->willReturn($hasSomeViewAccess);
         $authorizer->method('siteIdsWithRole')->with(
             $this->anything(),
             SiteAccessRole::Admin,

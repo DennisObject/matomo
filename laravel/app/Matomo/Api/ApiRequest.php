@@ -215,10 +215,11 @@ final readonly class ApiRequest
     ];
 
     /** @var list<string> */
-    private const array CORE_ADMIN_HOME_TRACKING_FAILURE_METHODS = [
+    private const array CORE_ADMIN_HOME_METHODS = [
         'CoreAdminHome.deleteAllTrackingFailures',
         'CoreAdminHome.deleteTrackingFailure',
         'CoreAdminHome.getTrackingFailures',
+        'CoreAdminHome.whatIsNewMarkAllChangesReadForCurrentUser',
     ];
 
     /** @var list<string> */
@@ -695,10 +696,10 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::DASHBOARD_METHODS, true);
     }
 
-    public function isCoreAdminHomeTrackingFailureRequest(): bool
+    public function isCoreAdminHomeRequest(): bool
     {
         return $this->module === 'API'
-            && in_array($this->method, self::CORE_ADMIN_HOME_TRACKING_FAILURE_METHODS, true);
+            && in_array($this->method, self::CORE_ADMIN_HOME_METHODS, true);
     }
 
     public function isTourRequest(): bool
@@ -784,7 +785,7 @@ final readonly class ApiRequest
         string $module,
         string $method,
     ): ?CoreAdminHomeRequest {
-        if ($module !== 'API' || ! in_array($method, self::CORE_ADMIN_HOME_TRACKING_FAILURE_METHODS, true)) {
+        if ($module !== 'API' || ! in_array($method, self::CORE_ADMIN_HOME_METHODS, true)) {
             return null;
         }
 
