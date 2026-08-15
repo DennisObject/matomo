@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 268 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 272 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -102,7 +102,8 @@ Handled reporting API method names:
 - `Insights`: `canGenerateInsights`, including some-site view access and fixed-period, range, and
   unsupported multi-period date detection; plus both direct insight reports with site access,
   segmented current and comparison archives, mover, new, and disappeared rows, impact and growth
-  filters, ordering, limits, and mover-and-shaker marking.
+  filters, ordering, limits, and mover-and-shaker marking; plus both extension-driven overview maps
+  with default parameter merging, report labels, isolated source reads, and empty-report handling.
 - `DevicesDetection`: all 8 API methods, including device, brand, model, operating-system, browser,
   and engine reports, legacy archive fallback, metadata, and compliance-policy filtering.
 - `Events`: all 9 API methods and their six archive producers, including secondary dimensions,
@@ -173,6 +174,8 @@ Handled reporting API method names:
   conditional fallback to legacy website archives. AI-assistant and assistant entry-page APIs include
   URL and title archive orientations, optional direct subtable reads, expanded and flat dimensions,
   localized missing labels, metadata, segments, and conditional fallback to legacy website archives.
+  Referrer-type and merged-all reports compose those ported reports with legacy type filtering,
+  localized labels, direct type routing, recursion-safe expansion, and single-site/date limits.
 
 Reporting API module matrix:
 
@@ -201,7 +204,7 @@ Reporting API module matrix:
 | `Feedback` | 3 | 3 | 0 |
 | `Goals` | 12 | 12 | 0 |
 | `ImageGraph` | 1 | 0 | 1 |
-| `Insights` | 5 | 3 | 2 |
+| `Insights` | 5 | 5 | 0 |
 | `JsTrackerInstallCheck` | 2 | 2 | 0 |
 | `LanguagesManager` | 9 | 9 | 0 |
 | `Live` | 7 | 0 | 7 |
@@ -213,7 +216,7 @@ Reporting API module matrix:
 | `PagePerformance` | 1 | 1 | 0 |
 | `PrivacyManager` | 18 | 0 | 18 |
 | `ProfessionalServices` | 1 | 1 | 0 |
-| `Referrers` | 23 | 21 | 2 |
+| `Referrers` | 23 | 23 | 0 |
 | `Resolution` | 2 | 2 | 0 |
 | `ScheduledReports` | 7 | 0 | 7 |
 | `SegmentEditor` | 9 | 9 | 0 |
@@ -229,7 +232,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **268** | **121** |
+| **Total** | **389** | **272** | **117** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 

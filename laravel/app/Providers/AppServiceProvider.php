@@ -54,6 +54,7 @@ use App\Matomo\Api\Methods\ReferrersDistinctApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersOverviewApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersSearchApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersSocialApiMethodHandler;
+use App\Matomo\Api\Methods\ReferrersTypeApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersWebsiteApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorMutationApiMethodHandler;
@@ -1390,6 +1391,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ReferrersOverviewApiMethodHandler::class),
                 $application->make(ReferrersSearchApiMethodHandler::class),
                 $application->make(ReferrersSocialApiMethodHandler::class),
+                $application->make(ReferrersTypeApiMethodHandler::class),
                 $application->make(ReferrersWebsiteApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),

@@ -137,6 +137,12 @@ final readonly class ApiRequest
         'Referrers.getEntryPageTitlesForAIAssistant',
     ];
 
+    /** @var list<string> */
+    private const array REFERRERS_TYPE_METHODS = [
+        'Referrers.getReferrerType',
+        'Referrers.getAll',
+    ];
+
     private const string USER_ID_METHOD = 'UserId.getUsers';
 
     /** @var list<string> */
@@ -810,6 +816,12 @@ final readonly class ApiRequest
     {
         return $this->module === 'API'
             && in_array($this->method, self::REFERRERS_AI_METHODS, true);
+    }
+
+    public function isReferrersTypeRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::REFERRERS_TYPE_METHODS, true);
     }
 
     public function isVisitFrequencyRequest(): bool
@@ -2540,6 +2552,7 @@ final readonly class ApiRequest
                 && ! in_array($method, self::REFERRERS_SEARCH_METHODS, true)
                 && ! in_array($method, self::REFERRERS_SOCIAL_METHODS, true)
                 && ! in_array($method, self::REFERRERS_AI_METHODS, true)
+                && ! in_array($method, self::REFERRERS_TYPE_METHODS, true)
                 && $method !== self::USER_ID_METHOD
                 && ! in_array($method, self::ACTIONS_METHODS, true)
                 && ! in_array($method, self::EXAMPLE_PLUGIN_REPORT_METHODS, true)
@@ -2606,6 +2619,9 @@ final readonly class ApiRequest
             secondaryDimension: self::reportSecondaryDimension($request, $method),
             flat: self::booleanInput($request, 'flat', false),
             showDimensions: self::booleanInput($request, 'show_dimensions', false),
+            typeReferrer: self::reportTypeReferrer($request, $method),
+            setReferrerTypeLabel: $method !== 'Referrers.getReferrerType'
+                || self::booleanInput($request, '_setReferrerTypeLabel', true),
         );
     }
 
@@ -2617,6 +2633,7 @@ final readonly class ApiRequest
             && ! in_array($method, self::BOT_TRACKING_SUBTABLE_METHODS, true)
             && ! in_array($method, self::REFERRERS_REQUIRED_SUBTABLE_METHODS, true)
             && ! in_array($method, self::REFERRERS_OPTIONAL_SUBTABLE_METHODS, true)
+            && $method !== 'Referrers.getReferrerType'
             && $method !== 'CustomDimensions.getCustomDimension') {
             return null;
         }
@@ -2642,6 +2659,25 @@ final readonly class ApiRequest
         }
 
         return (int) $value;
+    }
+
+    private static function reportTypeReferrer(Request $request, string $method): ?string
+    {
+        if ($method !== 'Referrers.getReferrerType') {
+            return null;
+        }
+
+        $value = self::inputValue($request, 'typeReferrer');
+
+        if (in_array($value, [null, '', false, 'false', 0, '0'], true)) {
+            return null;
+        }
+
+        if (! is_scalar($value)) {
+            throw new InvalidApiParameter('typeReferrer', "The parameter 'typeReferrer' has an invalid value.");
+        }
+
+        return (string) $value;
     }
 
     private static function multiSites(

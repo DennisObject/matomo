@@ -26,5 +26,7 @@ final readonly class VisitsSummaryRequest
         public ?string $secondaryDimension,
         public bool $flat,
         public bool $showDimensions,
+        public ?string $typeReferrer,
+        public bool $setReferrerTypeLabel,
     ) {}
 }
