@@ -2965,6 +2965,8 @@ final readonly class ApiRequest
         if ($module !== 'API' || ! in_array($method, [
             'Live.getCounters',
             'Live.isVisitorProfileEnabled',
+            'Live.getMostRecentVisitorId',
+            'Live.getMostRecentVisitsDateTime',
         ], true)) {
             return null;
         }
@@ -2980,9 +2982,14 @@ final readonly class ApiRequest
             siteIds: $siteIds,
             allSites: $allSites,
             lastMinutes: $lastMinutes,
-            segment: $counter ? self::nullableStringInput($request, 'segment') : null,
+            segment: in_array($method, ['Live.getCounters', 'Live.getMostRecentVisitorId'], true)
+                ? self::nullableStringInput($request, 'segment') : null,
             showColumns: $counter ? self::optionalCommaSeparatedStringList($request, 'showColumns') ?? [] : [],
             hideColumns: $counter ? self::optionalCommaSeparatedStringList($request, 'hideColumns') ?? [] : [],
+            period: $method === 'Live.getMostRecentVisitsDateTime'
+                ? self::nullableStringInput($request, 'period') : null,
+            date: $method === 'Live.getMostRecentVisitsDateTime'
+                ? self::nullableStringInput($request, 'date') : null,
         );
     }
 

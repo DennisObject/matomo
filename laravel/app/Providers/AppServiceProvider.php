@@ -194,8 +194,10 @@ use App\Matomo\Insights\CoreInsightSourceReportProvider;
 use App\Matomo\Insights\InsightSourceReportProvider;
 use App\Matomo\Live\DatabaseLiveAccessPolicy;
 use App\Matomo\Live\DatabaseLiveCounterRepository;
+use App\Matomo\Live\DatabaseLiveVisitorIdentityRepository;
 use App\Matomo\Live\LiveAccessPolicy;
 use App\Matomo\Live\LiveCounterRepository;
+use App\Matomo\Live\LiveVisitorIdentityRepository;
 use App\Matomo\Localization\ApiLanguageResolver;
 use App\Matomo\Localization\DatabaseLanguagePreferenceRepository;
 use App\Matomo\Localization\FilesystemLanguageCatalog;
@@ -714,6 +716,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             LiveCounterRepository::class,
             fn (Application $application): LiveCounterRepository => new DatabaseLiveCounterRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+                $application->make(VisitSegmentApplicator::class),
+            ),
+        );
+        $this->app->singleton(
+            LiveVisitorIdentityRepository::class,
+            fn (Application $application): LiveVisitorIdentityRepository => new DatabaseLiveVisitorIdentityRepository(
                 $application->make(MatomoDatabase::class)->connection(),
                 $application->make(VisitSegmentApplicator::class),
             ),
