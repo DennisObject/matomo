@@ -37,4 +37,16 @@ interface MutableUserRepository
     public function setSuperuser(string $login, bool $enabled): string;
 
     public function deleteSessions(string $login): bool;
+
+    /** @return array{result: 'updated'|'not-found'|'email-exists'|'email-is-login', emailChanged?: bool, passwordChanged?: bool, email?: string, inviteToken?: string} */
+    public function update(
+        string $login,
+        #[\SensitiveParameter] ?string $password,
+        ?string $email,
+        bool $passwordIsHashed,
+        int $inviteExpiryDays,
+    ): array;
+
+    /** @return 'deleted'|'not-found'|'denied'|'only-superuser' */
+    public function delete(string $login, string $requester, bool $requesterIsSuperuser): string;
 }

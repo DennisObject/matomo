@@ -201,6 +201,109 @@ final readonly class DatabaseMutableUserRepository implements MutableUserReposit
         return true;
     }
 
+    public function update(
+        string $login,
+        ?string $password,
+        ?string $email,
+        bool $passwordIsHashed,
+        int $inviteExpiryDays,
+    ): array {
+        return $this->connection->transaction(function () use (
+            $login,
+            $password,
+            $email,
+            $passwordIsHashed,
+            $inviteExpiryDays,
+        ): array {
+            $user = $this->connection->table('user')->where('login', $login)->lockForUpdate()->first();
+            if ($user === null || ! is_string($user->email ?? null)) {
+                return ['result' => 'not-found'];
+            }
+
+            $newEmail = $email ?? $user->email;
+            $emailChanged = strcasecmp($newEmail, $user->email) !== 0;
+            if ($emailChanged && $this->connection->table('user')
+                ->where('email', $newEmail)->where('login', '!=', $login)->exists()) {
+                return ['result' => 'email-exists'];
+            }
+
+            if ($emailChanged && $this->connection->table('user')
+                ->where('login', $newEmail)->where('login', '!=', $login)->exists()) {
+                return ['result' => 'email-is-login'];
+            }
+
+            $values = ['email' => $newEmail];
+            if ($password !== null) {
+                $info = password_get_info($password);
+                $values['password'] = ($passwordIsHashed && ($info['algo'] ?? null) !== null)
+                    ? $password
+                    : password_hash($passwordIsHashed ? $password : md5($password), PASSWORD_DEFAULT);
+                $values['ts_password_modified'] = CarbonImmutable::now()->toDateTimeString();
+            }
+
+            $token = null;
+            if ($emailChanged && ($user->invite_token ?? null) !== null) {
+                $token = bin2hex(random_bytes(32));
+                $values['invite_token'] = hash('sha512', $token.$this->salt);
+                $values['invite_link_token'] = null;
+                $values['invite_expired_at'] = CarbonImmutable::now()
+                    ->addDays($inviteExpiryDays)->toDateTimeString();
+            }
+
+            $this->connection->table('user')->where('login', $login)->update($values);
+
+            $result = [
+                'result' => 'updated',
+                'emailChanged' => $emailChanged,
+                'passwordChanged' => $password !== null,
+                'email' => $newEmail,
+            ];
+            if ($token !== null) {
+                $result['inviteToken'] = $token;
+            }
+
+            return $result;
+        });
+    }
+
+    public function delete(string $login, string $requester, bool $requesterIsSuperuser): string
+    {
+        return $this->connection->transaction(function () use ($login, $requester, $requesterIsSuperuser): string {
+            $user = $this->connection->table('user')->where('login', $login)->lockForUpdate()->first();
+            if ($user === null) {
+                return 'not-found';
+            }
+
+            if (! $requesterIsSuperuser
+                && (($user->invited_by ?? null) !== $requester || ($user->invite_token ?? null) === null)) {
+                return 'denied';
+            }
+
+            if ((int) ($user->superuser_access ?? 0) === 1
+                && $this->connection->table('user')->where('superuser_access', 1)->lockForUpdate()->count() === 1) {
+                return 'only-superuser';
+            }
+
+            $this->connection->table('user_token_auth')->where('login', $login)->delete();
+            $this->connection->table('plugin_setting')->where('user_login', $login)->delete();
+            $this->connection->table('access')->where('login', $login)->delete();
+            $this->connection->table('option')->where('option_name', 'like', 'UsersManager.%.'.$login)->delete();
+            $this->connection->table('option')->whereIn('option_name', [
+                'Feedback.nextFeedbackReminder.'.$login,
+                $login.'_MobileMessagingSettings',
+                $login.'_defaultReport',
+                $login.'_defaultReportDate',
+                $login.'_isLDAPUser',
+                $login.'_hideSegmentDefinitionChangeMessage',
+            ])->delete();
+            $this->connection->table('option')
+                ->where('option_name', 'like', 'ProfessionalServices.DismissedWidget.%.'.$login)->delete();
+            $this->connection->table('user')->where('login', $login)->delete();
+
+            return 'deleted';
+        });
+    }
+
     /** @return 'login-exists'|'email-exists'|'login-is-email'|'email-is-login'|null */
     private function conflict(string $login, string $email): ?string
     {

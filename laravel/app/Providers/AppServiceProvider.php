@@ -78,6 +78,7 @@ use App\Matomo\Api\Methods\UsersManagerReadApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerRoleDirectoryApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerSecurityMutationApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerSiteAccessApiMethodHandler;
+use App\Matomo\Api\Methods\UsersManagerUpdateDeleteApiMethodHandler;
 use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
 use App\Matomo\Api\Methods\VisitorInterestApiMethodHandler;
 use App\Matomo\Api\Methods\VisitsSummaryApiMethodHandler;
@@ -1484,6 +1485,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(UsersManagerCreateApiMethodHandler::class),
                 $application->make(UsersManagerInviteMaintenanceApiMethodHandler::class),
                 $application->make(UsersManagerSecurityMutationApiMethodHandler::class),
+                $application->make(UsersManagerUpdateDeleteApiMethodHandler::class),
                 $application->make(UsersManagerIdentityApiMethodHandler::class),
                 $application->make(UsersManagerPreferenceApiMethodHandler::class),
                 $application->make(UsersManagerReadApiMethodHandler::class),

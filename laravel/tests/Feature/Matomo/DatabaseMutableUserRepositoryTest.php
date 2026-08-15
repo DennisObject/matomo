@@ -99,6 +99,42 @@ final class DatabaseMutableUserRepositoryTest extends TestCase
         $this->assertTrue($connection->table('session')->where('id', 'other')->exists());
     }
 
+    public function test_pending_email_update_rotates_invite_and_password(): void
+    {
+        $connection = $this->connection();
+        $users = new DatabaseMutableUserRepository($connection, 'salt');
+        $users->invite('alice', 'alice@example.test', 7, 7, 'admin');
+
+        $result = $users->update('alice', 'newpass', 'new@example.test', false, 7);
+
+        $this->assertSame('updated', $result['result']);
+        $token = $result['inviteToken'] ?? null;
+        $this->assertIsString($token);
+        $user = $connection->table('user')->where('login', 'alice');
+        $this->assertSame('new@example.test', $user->value('email'));
+        $password = $user->value('password');
+        $this->assertIsString($password);
+        $this->assertTrue(password_verify(md5('newpass'), $password));
+        $this->assertSame(hash('sha512', $token.'salt'), $user->value('invite_token'));
+    }
+
+    public function test_delete_removes_user_owned_security_data(): void
+    {
+        $connection = $this->connection();
+        $users = new DatabaseMutableUserRepository($connection, 'salt');
+        $users->create('alice', 'secret1', 'alice@example.test', false, 7);
+        $connection->table('user_token_auth')->insert(['login' => 'alice']);
+        $connection->table('plugin_setting')->insert(['user_login' => 'alice']);
+        $connection->table('option')->insert(['option_name' => 'Feedback.nextFeedbackReminder.alice']);
+
+        $this->assertSame('deleted', $users->delete('alice', 'admin', true));
+        $this->assertFalse($connection->table('user')->where('login', 'alice')->exists());
+        $this->assertFalse($connection->table('access')->where('login', 'alice')->exists());
+        $this->assertFalse($connection->table('user_token_auth')->where('login', 'alice')->exists());
+        $this->assertFalse($connection->table('plugin_setting')->where('user_login', 'alice')->exists());
+        $this->assertFalse($connection->table('option')->where('option_name', 'like', '%.alice')->exists());
+    }
+
     private function connection(): ConnectionInterface
     {
         $connection = $this->app->make(ConnectionInterface::class);
@@ -124,6 +160,15 @@ final class DatabaseMutableUserRepositoryTest extends TestCase
         $schema->create('session', static function (Blueprint $table): void {
             $table->string('id');
             $table->text('data');
+        });
+        $schema->create('user_token_auth', static function (Blueprint $table): void {
+            $table->string('login');
+        });
+        $schema->create('plugin_setting', static function (Blueprint $table): void {
+            $table->string('user_login');
+        });
+        $schema->create('option', static function (Blueprint $table): void {
+            $table->string('option_name');
         });
 
         return $connection;
