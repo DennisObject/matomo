@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 364 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 371 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -140,6 +140,9 @@ Handled reporting API method names:
 - `MobileMessaging`: all 12 API methods, including delegated credential ownership, compatible storage,
   ASPSMS and development providers, E.164 phone validation, verification cooldown and expiry,
   bounded failed attempts, deletion events, and SSRF-safe provider calls.
+- `ScheduledReports`: all 7 API methods, including owner and superuser boundaries, soft deletion,
+  dashboard report mapping, HTML and PDF generation from migrated report APIs, email attachments,
+  verified mobile delivery, and current plus legacy database shapes.
 - `AIAgents`: `get` in every supported response format, including suffixed column filtering.
 - `AIProviders`: all 4 API methods, including masked credential storage, managed configuration,
   provider extension events, and SSRF-safe connection tests.
@@ -279,7 +282,7 @@ Reporting API module matrix:
 | `ProfessionalServices` | 1 | 1 | 0 |
 | `Referrers` | 23 | 23 | 0 |
 | `Resolution` | 2 | 2 | 0 |
-| `ScheduledReports` | 7 | 0 | 7 |
+| `ScheduledReports` | 7 | 7 | 0 |
 | `SegmentEditor` | 9 | 9 | 0 |
 | `SitesManager` | 55 | 55 | 0 |
 | `Tour` | 3 | 3 | 0 |
@@ -293,7 +296,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **364** | **25** |
+| **Total** | **389** | **371** | **18** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 

@@ -547,6 +547,7 @@ final readonly class ApiRequest
         public ?PrivacyPurgeExecutionRequest $privacyPurgeExecution,
         public ?ImageGraphRequest $imageGraph,
         public ?MobileMessagingRequest $mobileMessaging,
+        public ?ScheduledReportsRequest $scheduledReports,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -641,6 +642,7 @@ final readonly class ApiRequest
             privacyPurgeExecution: null,
             imageGraph: null,
             mobileMessaging: null,
+            scheduledReports: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1264,6 +1266,7 @@ final readonly class ApiRequest
             privacyPurgeExecution: self::privacyPurgeExecution($request, $module, $method),
             imageGraph: self::imageGraph($request, $module, $method),
             mobileMessaging: self::mobileMessaging($request, $module, $method),
+            scheduledReports: self::scheduledReports($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -3040,6 +3043,52 @@ final readonly class ApiRequest
         );
     }
 
+    private static function scheduledReports(Request $request, string $module, string $method): ?ScheduledReportsRequest
+    {
+        if ($module !== 'API' || ! in_array($method, [
+            'ScheduledReports.addReport', 'ScheduledReports.updateReport', 'ScheduledReports.deleteReport',
+            'ScheduledReports.getWidgetReportMap', 'ScheduledReports.getReports',
+            'ScheduledReports.generateReport', 'ScheduledReports.sendReport',
+        ], true)) {
+            return null;
+        }
+
+        $write = in_array($method, ['ScheduledReports.addReport', 'ScheduledReports.updateReport'], true);
+
+        return new ScheduledReportsRequest(
+            idReport: in_array($method, [
+                'ScheduledReports.updateReport', 'ScheduledReports.deleteReport',
+                'ScheduledReports.generateReport', 'ScheduledReports.sendReport',
+            ], true) ? self::requiredInteger($request, 'idReport') : self::nullablePositiveIntegerInput($request, 'idReport'),
+            idSite: $write || $method === 'ScheduledReports.getWidgetReportMap'
+                ? self::requiredInteger($request, 'idSite') : self::nullablePositiveIntegerInput($request, 'idSite'),
+            description: $write ? self::requiredString($request, 'description') : null,
+            period: $write ? self::requiredString($request, 'period') : self::nullableStringInput($request, 'period'),
+            hour: $write ? self::requiredInteger($request, 'hour') : null,
+            reportType: $write ? self::requiredString($request, 'reportType') : null,
+            reportFormat: $write ? self::requiredString($request, 'reportFormat')
+                : self::nullableStringInput($request, 'reportFormat'),
+            reports: $write ? self::optionalCommaSeparatedStringList($request, 'reports') ?? [] : [],
+            parameters: $write || $method === 'ScheduledReports.generateReport'
+                ? self::mixedParameterMap($request, 'parameters') : [],
+            idSegment: self::nullablePositiveIntegerInput($request, 'idSegment'),
+            evolutionPeriodFor: $write ? self::safeStringInput($request, 'evolutionPeriodFor', 'prev') : 'prev',
+            evolutionPeriodN: self::nullablePositiveIntegerInput($request, 'evolutionPeriodN'),
+            periodParam: self::nullableStringInput($request, 'periodParam'),
+            onlyOwnReports: self::booleanInput($request, 'ifSuperUserReturnOnlySuperUserReports', false),
+            dashboardId: $method === 'ScheduledReports.getWidgetReportMap'
+                ? self::requiredInteger($request, 'dashId') : null,
+            segment: $method === 'ScheduledReports.getWidgetReportMap'
+                ? self::safeStringInput($request, 'segment', '') : '',
+            date: in_array($method, ['ScheduledReports.generateReport', 'ScheduledReports.sendReport'], true)
+                ? self::safeStringInput($request, 'date', 'today') : null,
+            language: self::nullableStringInput($request, 'language'),
+            outputType: $method === 'ScheduledReports.generateReport'
+                ? self::integerInput($request, 'outputType', 1, 1) : null,
+            force: $method === 'ScheduledReports.sendReport' && self::booleanInput($request, 'force', false),
+        );
+    }
+
     private static function marketplace(Request $request, string $module, string $method): ?MarketplaceRequest
     {
         if ($module !== 'API' || ! in_array($method, [
@@ -4205,6 +4254,21 @@ final readonly class ApiRequest
         }
 
         return $values;
+    }
+
+    /** @return array<string, mixed> */
+    private static function mixedParameterMap(Request $request, string $key): array
+    {
+        $input = self::inputValue($request, $key);
+        if (in_array($input, [null, '', []], true)) {
+            return [];
+        }
+
+        if (! is_array($input) || array_is_list($input)) {
+            throw new InvalidApiParameter($key, "The parameter '{$key}' must be an object.");
+        }
+
+        return $input;
     }
 
     private static function requiredBoolean(Request $request, string $key): bool
