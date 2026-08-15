@@ -32,6 +32,15 @@ final readonly class ApiRequest
         public ?string $countryCode,
         public ?bool $multipleTimezonesInCountry,
         public ?string $siteGroup,
+        public bool $fetchAliasUrls,
+        public ?string $sitePattern,
+        public ?int $siteLimit,
+        public ?int $siteContentTimeout,
+        /** @var list<int> */
+        public array $sitesToExclude,
+        public ?SiteAccessRole $minimumSiteAccessRole,
+        /** @var list<string> */
+        public array $siteTypesToExclude,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -61,6 +70,13 @@ final readonly class ApiRequest
             countryCode: null,
             multipleTimezonesInCountry: null,
             siteGroup: null,
+            fetchAliasUrls: false,
+            sitePattern: null,
+            siteLimit: null,
+            siteContentTimeout: null,
+            sitesToExclude: [],
+            minimumSiteAccessRole: null,
+            siteTypesToExclude: [],
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -119,6 +135,42 @@ final readonly class ApiRequest
     public function isSitesFromGroupRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getSitesFromGroup';
+    }
+
+    public function isAdminSitesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSitesWithAdminAccess';
+    }
+
+    public function isMinimumAccessSitesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSitesWithMinimumAccess';
+    }
+
+    public function isViewSitesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSitesWithViewAccess';
+    }
+
+    public function isAtLeastViewSitesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSitesWithAtLeastViewAccess';
+    }
+
+    public function isSiteRemovalWarningsRequest(): bool
+    {
+        return $this->module === 'API'
+            && $this->method === 'SitesManager.getMessagesToWarnOnSiteRemoval';
+    }
+
+    public function isPatternMatchSitesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getPatternMatchSites';
+    }
+
+    public function isConsentManagerDetectionRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.detectConsentManager';
     }
 
     public function isDefaultCurrencyRequest(): bool
@@ -253,6 +305,13 @@ final readonly class ApiRequest
             countryCode: self::timezoneCountryCode($request, $module, $method),
             multipleTimezonesInCountry: self::multipleTimezonesInCountry($request, $module, $method),
             siteGroup: self::siteGroup($request, $module, $method),
+            fetchAliasUrls: self::fetchAliasUrls($request, $module, $method),
+            sitePattern: self::sitePattern($request, $module, $method),
+            siteLimit: self::siteLimit($request, $module, $method),
+            siteContentTimeout: self::siteContentTimeout($request, $module, $method),
+            sitesToExclude: self::sitesToExclude($request, $module, $method),
+            minimumSiteAccessRole: self::minimumSiteAccessRole($request, $module, $method),
+            siteTypesToExclude: self::siteTypesToExclude($request, $module, $method),
             authentication: $authentication,
         );
     }
@@ -262,8 +321,10 @@ final readonly class ApiRequest
         $requiredMethods = [
             'SitesManager.getExcludedQueryParameters',
             'SitesManager.getExcludedReferrers',
+            'SitesManager.getMessagesToWarnOnSiteRemoval',
             'SitesManager.getSiteFromId',
             'SitesManager.getSiteUrlsFromId',
+            'SitesManager.detectConsentManager',
         ];
         $optionalMethods = [
             'SitesManager.getExcludedQueryParametersGlobal',
@@ -409,6 +470,172 @@ final readonly class ApiRequest
         return $module === 'API' && $method === 'SitesManager.getSitesFromGroup'
             ? trim(self::stringInput($request, 'group'))
             : null;
+    }
+
+    private static function fetchAliasUrls(Request $request, string $module, string $method): bool
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.getSitesWithAdminAccess') {
+            return false;
+        }
+
+        return self::booleanFromArray($request->query->all(), 'fetchAliasUrls')
+            ?? self::booleanFromArray($request->request->all(), 'fetchAliasUrls')
+            ?? false;
+    }
+
+    private static function sitePattern(Request $request, string $module, string $method): ?string
+    {
+        if (! self::supportsSiteListFilters($module, $method)) {
+            return null;
+        }
+
+        $pattern = self::nullableStringInput($request, 'pattern');
+
+        if ($method === 'SitesManager.getPatternMatchSites' && $pattern === null) {
+            throw new MissingApiParameter('pattern');
+        }
+
+        if ($method === 'SitesManager.getSitesWithMinimumAccess' && ($pattern === '' || $pattern === '0')) {
+            return null;
+        }
+
+        return $pattern;
+    }
+
+    private static function siteLimit(Request $request, string $module, string $method): ?int
+    {
+        if (! self::supportsSiteLimit($module, $method)) {
+            return null;
+        }
+
+        $value = self::nullableStringInput($request, 'limit');
+
+        if ($value === null || $value === '' || (string) (int) $value !== $value || (int) $value < 1) {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    private static function siteContentTimeout(Request $request, string $module, string $method): ?int
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.detectConsentManager') {
+            return null;
+        }
+
+        $value = self::nullableStringInput($request, 'timeOut');
+
+        if ($value === null || $value === '') {
+            return 60;
+        }
+
+        if ((string) (int) $value !== $value) {
+            throw new InvalidApiParameter('timeOut');
+        }
+
+        return max(1, min((int) $value, 60));
+    }
+
+    /**
+     * @return list<int>
+     */
+    private static function sitesToExclude(Request $request, string $module, string $method): array
+    {
+        if (! self::supportsSiteListFilters($module, $method)) {
+            return [];
+        }
+
+        $query = $request->query->all();
+        $post = $request->request->all();
+
+        if (array_key_exists('sitesToExclude', $query)) {
+            $value = $query['sitesToExclude'];
+        } elseif (array_key_exists('sitesToExclude', $post)) {
+            $value = $post['sitesToExclude'];
+        } else {
+            return [];
+        }
+
+        $values = is_array($value) ? $value : explode(',', (string) $value);
+        $siteIds = [];
+
+        foreach ($values as $siteId) {
+            if (! is_scalar($siteId) || (string) (int) $siteId !== (string) $siteId) {
+                throw new InvalidApiParameter('sitesToExclude');
+            }
+
+            $siteIds[] = (int) $siteId;
+        }
+
+        return array_values(array_unique($siteIds));
+    }
+
+    private static function minimumSiteAccessRole(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?SiteAccessRole {
+        if ($module !== 'API' || $method !== 'SitesManager.getSitesWithMinimumAccess') {
+            return null;
+        }
+
+        $permission = self::nullableStringInput($request, 'permission');
+
+        if ($permission === null || $permission === '') {
+            throw new MissingApiParameter('permission');
+        }
+
+        return SiteAccessRole::tryFrom(strtolower($permission))
+            ?? throw new InvalidApiParameter('permission', 'Invalid permission provided');
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function siteTypesToExclude(Request $request, string $module, string $method): array
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.getSitesWithMinimumAccess') {
+            return [];
+        }
+
+        $query = $request->query->all();
+        $post = $request->request->all();
+
+        if (array_key_exists('siteTypesToExclude', $query)) {
+            $value = $query['siteTypesToExclude'];
+        } elseif (array_key_exists('siteTypesToExclude', $post)) {
+            $value = $post['siteTypesToExclude'];
+        } else {
+            return [];
+        }
+
+        $values = is_array($value) ? $value : explode(',', (string) $value);
+        $siteTypes = [];
+
+        foreach ($values as $siteType) {
+            if (! is_scalar($siteType)) {
+                throw new InvalidApiParameter('siteTypesToExclude');
+            }
+
+            $siteTypes[] = str_replace("\0", '', (string) $siteType);
+        }
+
+        return array_values(array_unique($siteTypes));
+    }
+
+    private static function supportsSiteListFilters(string $module, string $method): bool
+    {
+        return $module === 'API' && in_array($method, [
+            'SitesManager.getSitesWithAdminAccess',
+            'SitesManager.getSitesWithMinimumAccess',
+            'SitesManager.getPatternMatchSites',
+        ], true);
+    }
+
+    private static function supportsSiteLimit(string $module, string $method): bool
+    {
+        return self::supportsSiteListFilters($module, $method)
+            || ($module === 'API' && $method === 'SitesManager.getSitesWithAtLeastViewAccess');
     }
 
     private static function authentication(Request $request): ApiAuthentication

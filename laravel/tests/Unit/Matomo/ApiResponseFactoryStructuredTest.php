@@ -87,8 +87,43 @@ class ApiResponseFactoryStructuredTest extends TestCase
         );
     }
 
+    public function test_renders_nested_row_values_as_legacy_json_and_xml(): void
+    {
+        $rows = [[
+            'idsite' => 7,
+            'name' => 'Docs',
+            'alias_urls' => ['https://docs.test', 'https://www.docs.test'],
+        ]];
+        $responses = new ApiResponseFactory;
+
+        $this->assertSame(
+            '[{"idsite":7,"name":"Docs","alias_urls":["https:\/\/docs.test","https:\/\/www.docs.test"]}]',
+            $responses->rows($this->request('json'), $rows)->getContent(),
+        );
+        $this->assertSame(
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>\n\t<row>\n".
+            "\t\t<idsite>7</idsite>\n\t\t<name>Docs</name>\n\t\t<alias_urls>\n".
+            "\t\t\t<row key=\"0\">https://docs.test</row>\n".
+            "\t\t\t<row key=\"1\">https://www.docs.test</row>\n".
+            "\t\t</alias_urls>\n\t</row>\n</result>",
+            $responses->rows($this->request('xml'), $rows)->getContent(),
+        );
+        $this->assertSame(
+            "idsite,name,alias_urls_0,alias_urls_1\n".
+            '7,Docs,https://docs.test,https://www.docs.test',
+            $responses->rows(
+                ApiRequest::fromRequest(Request::create(
+                    '/index.php?format=csv&convertToUnicode=0',
+                )),
+                $rows,
+            )->getContent(),
+        );
+    }
+
     private function request(string $format): ApiRequest
     {
-        return ApiRequest::fromRequest(Request::create("/index.php?format={$format}"));
+        return ApiRequest::fromRequest(Request::create(
+            "/index.php?format={$format}",
+        ));
     }
 }

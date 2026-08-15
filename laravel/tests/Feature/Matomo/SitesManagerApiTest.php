@@ -9,18 +9,644 @@ use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
+use App\Matomo\Sites\ConsentManagerDetector;
 use App\Matomo\Sites\CurrencyProvider;
+use App\Matomo\Sites\Events\SiteRemovalWarningsCollecting;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_consent_manager_detection_uses_the_stored_site_url(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('hasViewAccessToSite')
+            ->with($this->isInstanceOf(ApiAuthentication::class), 7)
+            ->willReturn(true);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())->method('mainUrl')->with(7)->willReturn('https://site.example/');
+        $detector = $this->createMock(ConsentManagerDetector::class);
+        $detector->expects($this->once())
+            ->method('detect')
+            ->with('https://site.example/', 60)
+            ->willReturn([
+                'name' => 'Cookiebot',
+                'url' => 'https://matomo.org/faq/how-to/using-cookiebot-consent-manager-with-matomo',
+                'isConnected' => true,
+            ]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(ConsentManagerDetector::class, $detector);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.detectConsentManager'.
+            '&idSite=7&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([
+                'name' => 'Cookiebot',
+                'url' => 'https://matomo.org/faq/how-to/using-cookiebot-consent-manager-with-matomo',
+                'isConnected' => true,
+            ]);
+    }
+
+    #[DataProvider('consentManagerTimeouts')]
+    public function test_consent_manager_detection_clamps_the_timeout(string $value, int $expected): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasViewAccessToSite')->willReturn(true);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())->method('mainUrl')->with(7)->willReturn('https://site.example/');
+        $detector = $this->createMock(ConsentManagerDetector::class);
+        $detector->expects($this->once())
+            ->method('detect')
+            ->with('https://site.example/', $expected)
+            ->willReturn(null);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(ConsentManagerDetector::class, $detector);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.detectConsentManager'.
+            "&idSite=7&timeOut={$value}&format=json&token_auth=view-token",
+        )->assertOk()
+            ->assertExactJson(['result' => 'success', 'message' => 'ok']);
+    }
+
+    /**
+     * @return iterable<string, array{string, int}>
+     */
+    public static function consentManagerTimeouts(): iterable
+    {
+        yield 'upper bound' => ['99999', 60];
+        yield 'mid range' => ['30', 30];
+        yield 'zero' => ['0', 1];
+        yield 'negative' => ['-100', 1];
+    }
+
+    public function test_consent_manager_detection_returns_success_without_a_site_url(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasViewAccessToSite')->willReturn(true);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())->method('mainUrl')->with(7)->willReturn(null);
+        $detector = $this->createMock(ConsentManagerDetector::class);
+        $detector->expects($this->never())->method('detect');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(ConsentManagerDetector::class, $detector);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.detectConsentManager'.
+            '&idSite=7&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson(['result' => 'success', 'message' => 'ok']);
+    }
+
+    public function test_consent_manager_detection_checks_view_access_before_reading_the_site(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasViewAccessToSite')->willReturn(false);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('mainUrl');
+        $detector = $this->createMock(ConsentManagerDetector::class);
+        $detector->expects($this->never())->method('detect');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(ConsentManagerDetector::class, $detector);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.detectConsentManager'.
+            '&idSite=7&format=json&token_auth=invalid-token',
+        )->assertUnauthorized()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "You can't access this resource as it requires 'view' access for the website id = 7.",
+            ]);
+    }
+
+    public function test_consent_manager_detection_requires_a_site_id_before_authorization(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasViewAccessToSite');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get('/index.php?module=API&method=SitesManager.detectConsentManager&format=json')
+            ->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "Please specify a value for 'idSite'.",
+            ]);
+    }
+
+    public function test_consent_manager_detection_rejects_an_invalid_timeout_before_authorization(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasViewAccessToSite');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.detectConsentManager'.
+            '&idSite=7&timeOut=slow&format=json',
+        )->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => 'The API parameter [timeOut] must be a scalar value.',
+            ]);
+    }
+
+    public function test_pattern_match_sites_apply_view_access_exclusions_and_limit(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithAtLeastViewAccess')
+            ->with($this->isInstanceOf(ApiAuthentication::class))
+            ->willReturn([1, 2, 3]);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('detailsForIds')
+            ->with([1, 3], 'docs', 2)
+            ->willReturn([
+                ['idsite' => 1, 'name' => 'Docs'],
+                ['idsite' => 3, 'name' => 'API Docs'],
+            ]);
+        $presenter = $this->createMock(SiteDetailsPresenter::class);
+        $presenter->expects($this->exactly(2))
+            ->method('present')
+            ->willReturnCallback(function (array $site, string $language, bool $includeCreator): array {
+                $this->assertSame('fr', $language);
+                $this->assertFalse($includeCreator);
+
+                return [...$site, 'currency_name' => 'euro'];
+            });
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(SiteDetailsPresenter::class, $presenter);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getPatternMatchSites'.
+            '&pattern=docs&limit=2&sitesToExclude=2&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([
+                ['idsite' => 1, 'name' => 'Docs', 'currency_name' => 'euro'],
+                ['idsite' => 3, 'name' => 'API Docs', 'currency_name' => 'euro'],
+            ]);
+    }
+
+    public function test_pattern_match_sites_return_empty_without_view_access(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithAtLeastViewAccess')
+            ->willReturn([]);
+        $authorizer->expects($this->never())->method('hasSuperUserAccess');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('detailsForIds');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getPatternMatchSites'.
+            '&pattern=docs&format=json&token_auth=invalid-token',
+        )->assertOk()
+            ->assertExactJson([]);
+    }
+
+    public function test_pattern_match_sites_require_pattern_before_authorization(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('siteIdsWithAtLeastViewAccess');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get('/index.php?module=API&method=SitesManager.getPatternMatchSites&format=json')
+            ->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "Please specify a value for 'pattern'.",
+            ]);
+    }
+
+    public function test_site_removal_warnings_collect_plugin_messages_for_superusers(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $events = $this->app->make(Dispatcher::class);
+        $events->listen(
+            SiteRemovalWarningsCollecting::class,
+            function (SiteRemovalWarningsCollecting $event): void {
+                $this->assertSame(7, $event->idSite);
+                $event->messages[] = '<strong>Remove related data first.</strong>';
+                $event->messages[] = 'This cannot be undone.';
+            },
+        );
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getMessagesToWarnOnSiteRemoval'.
+            '&idSite=7&format=json&token_auth=root-token',
+        )->assertOk()
+            ->assertExactJson([
+                '<strong>Remove related data first.</strong>',
+                'This cannot be undone.',
+            ]);
+    }
+
+    public function test_site_removal_warnings_are_empty_without_plugin_listeners(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getMessagesToWarnOnSiteRemoval'.
+            '&idSite=7&format=json&token_auth=root-token',
+        )->assertOk()
+            ->assertExactJson([]);
+    }
+
+    public function test_site_removal_warnings_require_superuser_before_dispatching_event(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $events = $this->createMock(Dispatcher::class);
+        $events->expects($this->never())->method('dispatch');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(Dispatcher::class, $events);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getMessagesToWarnOnSiteRemoval'.
+            '&idSite=7&format=json&token_auth=admin-token',
+        )->assertUnauthorized()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "You can't access this resource as it requires a 'superuser' access.",
+            ]);
+    }
+
+    public function test_site_removal_warnings_require_a_site_id_before_authorization(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasSuperUserAccess');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getMessagesToWarnOnSiteRemoval&format=json',
+        )->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => "Please specify a value for 'idSite'.",
+            ]);
+    }
+
+    public function test_at_least_view_sites_apply_restricted_login_and_limit(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithAtLeastViewAccess')
+            ->with($this->isInstanceOf(ApiAuthentication::class), 'alice')
+            ->willReturn([1, 2, 3]);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(true);
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('detailsForIds')
+            ->with([1, 2, 3], null, 2)
+            ->willReturn([
+                ['idsite' => 1, 'name' => 'First site'],
+                ['idsite' => 2, 'name' => 'Second site'],
+            ]);
+        $presenter = $this->createMock(SiteDetailsPresenter::class);
+        $presenter->expects($this->exactly(2))
+            ->method('present')
+            ->willReturnCallback(function (array $site, string $language, bool $includeCreator): array {
+                $this->assertSame('fr', $language);
+                $this->assertTrue($includeCreator);
+
+                return [...$site, 'creator_login' => 'root'];
+            });
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(SiteDetailsPresenter::class, $presenter);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithAtLeastViewAccess'.
+            '&_restrictSitesToLogin=alice&limit=2&format=json&token_auth=root-token',
+        )->assertOk()
+            ->assertExactJson([
+                ['idsite' => 1, 'name' => 'First site', 'creator_login' => 'root'],
+                ['idsite' => 2, 'name' => 'Second site', 'creator_login' => 'root'],
+            ]);
+    }
+
+    public function test_at_least_view_sites_return_empty_without_access(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithAtLeastViewAccess')
+            ->with($this->isInstanceOf(ApiAuthentication::class), null)
+            ->willReturn([]);
+        $authorizer->expects($this->never())->method('hasSuperUserAccess');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('detailsForIds');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithAtLeastViewAccess'.
+            '&format=json&token_auth=invalid-token',
+        )->assertOk()
+            ->assertExactJson([]);
+    }
+
+    public function test_view_sites_return_only_exact_view_access_with_legacy_presentation(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::View)
+            ->willReturn([1, 3]);
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('detailsForIds')
+            ->with([1, 3])
+            ->willReturn([
+                ['idsite' => 1, 'name' => 'First site'],
+                ['idsite' => 3, 'name' => 'Third site'],
+            ]);
+        $presenter = $this->createMock(SiteDetailsPresenter::class);
+        $presenter->expects($this->exactly(2))
+            ->method('present')
+            ->willReturnCallback(function (array $site, string $language, bool $includeCreator): array {
+                $this->assertSame('fr', $language);
+                $this->assertFalse($includeCreator);
+
+                return [...$site, 'currency_name' => 'euro'];
+            });
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(SiteDetailsPresenter::class, $presenter);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithViewAccess'.
+            '&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([
+                ['idsite' => 1, 'name' => 'First site', 'currency_name' => 'euro'],
+                ['idsite' => 3, 'name' => 'Third site', 'currency_name' => 'euro'],
+            ]);
+    }
+
+    public function test_view_sites_return_empty_for_superuser_exact_role_access(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::View)
+            ->willReturn([]);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('detailsForIds');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithViewAccess'.
+            '&format=json&token_auth=root-token',
+        )->assertOk()
+            ->assertExactJson([]);
+    }
+
+    public function test_minimum_access_sites_apply_role_and_site_filters(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithMinimumRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::Write)
+            ->willReturn([2, 4, 5]);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('detailsForIds')
+            ->with([2, 5], 'site', 2, ['intranet'])
+            ->willReturn([
+                ['idsite' => 2, 'name' => 'Second site'],
+                ['idsite' => 5, 'name' => 'Fifth site'],
+            ]);
+        $presenter = $this->createMock(SiteDetailsPresenter::class);
+        $presenter->expects($this->exactly(2))
+            ->method('present')
+            ->willReturnCallback(function (array $site, string $language, bool $includeCreator): array {
+                $this->assertSame('fr', $language);
+                $this->assertFalse($includeCreator);
+
+                return [...$site, 'currency_name' => 'euro'];
+            });
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(SiteDetailsPresenter::class, $presenter);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithMinimumAccess'.
+            '&permission=WRITE&pattern=site&limit=2&sitesToExclude=4'.
+            '&siteTypesToExclude%5B0%5D=intranet&format=json&token_auth=write-token',
+        )->assertOk()
+            ->assertExactJson([
+                ['idsite' => 2, 'name' => 'Second site', 'currency_name' => 'euro'],
+                ['idsite' => 5, 'name' => 'Fifth site', 'currency_name' => 'euro'],
+            ]);
+    }
+
+    public function test_minimum_access_sites_return_empty_before_reading_sites(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithMinimumRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::View)
+            ->willReturn([]);
+        $authorizer->expects($this->never())->method('hasSuperUserAccess');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('detailsForIds');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithMinimumAccess'.
+            '&permission=view&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([]);
+    }
+
+    public function test_minimum_access_sites_treat_zero_pattern_as_no_filter(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithMinimumRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::View)
+            ->willReturn([1]);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('detailsForIds')
+            ->with([1], null, null, [])
+            ->willReturn([['idsite' => 1, 'name' => 'First site']]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithMinimumAccess'.
+            '&permission=view&pattern=0&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([['idsite' => 1, 'name' => 'First site']]);
+    }
+
+    #[DataProvider('invalidMinimumAccessParameters')]
+    public function test_minimum_access_sites_reject_invalid_parameters(
+        string $parameters,
+        string $message,
+    ): void {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('siteIdsWithMinimumRole');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithMinimumAccess'.
+            "&{$parameters}&format=json",
+        )->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => $message,
+            ]);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function invalidMinimumAccessParameters(): iterable
+    {
+        yield 'missing permission' => ['', "Please specify a value for 'permission'."];
+        yield 'invalid permission' => ['permission=owner', 'Invalid permission provided'];
+        yield 'nested site type' => [
+            'permission=view&siteTypesToExclude%5B0%5D%5Btype%5D=intranet',
+            'The API parameter [siteTypesToExclude] must be a scalar value.',
+        ];
+    }
+
+    public function test_admin_sites_apply_filters_and_fetch_alias_urls_in_bulk(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::Admin)
+            ->willReturn([1, 2, 3]);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $languages = $this->createMock(LanguageResolver::class);
+        $languages->expects($this->once())->method('resolve')->willReturn('fr');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->once())
+            ->method('detailsForIds')
+            ->with([1, 3], 'docs', 2)
+            ->willReturn([
+                ['idsite' => 1, 'name' => 'Docs', 'main_url' => 'https://docs.test'],
+                ['idsite' => 3, 'name' => 'API Docs', 'main_url' => 'https://api.test'],
+            ]);
+        $sites->expects($this->once())
+            ->method('aliasUrlsForIds')
+            ->with([1, 3])
+            ->willReturn([
+                1 => ['https://www.docs.test'],
+                3 => ['https://www.api.test'],
+            ]);
+        $presenter = $this->createMock(SiteDetailsPresenter::class);
+        $presenter->expects($this->exactly(2))
+            ->method('present')
+            ->willReturnCallback(function (array $site, string $language, bool $includeCreator): array {
+                $this->assertSame('fr', $language);
+                $this->assertFalse($includeCreator);
+
+                return [...$site, 'currency_name' => 'euro'];
+            });
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(LanguageResolver::class, $languages);
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->app->instance(SiteDetailsPresenter::class, $presenter);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithAdminAccess'.
+            '&fetchAliasUrls=1&pattern=docs&limit=2&sitesToExclude=2'.
+            '&format=json&token_auth=admin-token',
+        )->assertOk()
+            ->assertExactJson([
+                [
+                    'idsite' => 1,
+                    'name' => 'Docs',
+                    'main_url' => 'https://docs.test',
+                    'currency_name' => 'euro',
+                    'alias_urls' => ['https://docs.test', 'https://www.docs.test'],
+                ],
+                [
+                    'idsite' => 3,
+                    'name' => 'API Docs',
+                    'main_url' => 'https://api.test',
+                    'currency_name' => 'euro',
+                    'alias_urls' => ['https://api.test', 'https://www.api.test'],
+                ],
+            ]);
+    }
+
+    public function test_admin_sites_return_an_empty_list_without_admin_access(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())
+            ->method('siteIdsWithRole')
+            ->with($this->isInstanceOf(ApiAuthentication::class), SiteAccessRole::Admin)
+            ->willReturn([]);
+        $authorizer->expects($this->never())->method('hasSuperUserAccess');
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('detailsForIds');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithAdminAccess'.
+            '&format=json&token_auth=view-token',
+        )->assertOk()
+            ->assertExactJson([]);
+    }
+
+    public function test_admin_sites_reject_invalid_site_exclusions_before_authorization(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('siteIdsWithRole');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get(
+            '/index.php?module=API&method=SitesManager.getSitesWithAdminAccess'.
+            '&sitesToExclude%5B0%5D=invalid&format=json',
+        )->assertBadRequest()
+            ->assertExactJson([
+                'result' => 'error',
+                'message' => 'The API parameter [sitesToExclude] must be a scalar value.',
+            ]);
+    }
+
     public function test_sites_from_group_trim_the_group_and_require_superuser(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);

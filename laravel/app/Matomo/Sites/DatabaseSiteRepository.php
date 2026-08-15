@@ -6,6 +6,7 @@ namespace App\Matomo\Sites;
 
 use Exception;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Query\Builder;
 use stdClass;
 
 final readonly class DatabaseSiteRepository implements SiteRepository
@@ -45,6 +46,16 @@ final readonly class DatabaseSiteRepository implements SiteRepository
         return $record instanceof stdClass ? $this->normalizeDetails($record) : [];
     }
 
+    public function mainUrl(int $idSite): ?string
+    {
+        $url = $this->connection
+            ->table('site')
+            ->where('idsite', $idSite)
+            ->value('main_url');
+
+        return is_string($url) && $url !== '' ? $url : null;
+    }
+
     public function allDetails(): array
     {
         $sites = [];
@@ -56,6 +67,50 @@ final readonly class DatabaseSiteRepository implements SiteRepository
             if (is_int($idSite)) {
                 $sites[$idSite] = $site;
             }
+        }
+
+        return $sites;
+    }
+
+    public function detailsForIds(
+        array $idSites,
+        ?string $pattern = null,
+        ?int $limit = null,
+        array $siteTypesToExclude = [],
+    ): array {
+        if ($idSites === []) {
+            return [];
+        }
+
+        $query = $this->connection
+            ->table('site as site')
+            ->whereIn('site.idsite', $idSites)
+            ->orderBy('site.idsite');
+
+        if ($siteTypesToExclude !== []) {
+            $query->whereNotIn('site.type', $siteTypesToExclude);
+        }
+
+        if ($pattern !== null) {
+            $query->where(function (Builder $query) use ($pattern): void {
+                $query->where('site.name', 'like', "%{$pattern}%")
+                    ->orWhere('site.main_url', 'like', "http%{$pattern}%")
+                    ->orWhere('site.group', 'like', "%{$pattern}%");
+
+                if (is_numeric($pattern)) {
+                    $query->orWhere('site.idsite', $pattern);
+                }
+            });
+        }
+
+        if ($limit !== null) {
+            $query->limit($limit);
+        }
+
+        $sites = [];
+
+        foreach ($query->get() as $record) {
+            $sites[] = $this->normalizeDetails($record);
         }
 
         return $sites;
@@ -121,6 +176,31 @@ final readonly class DatabaseSiteRepository implements SiteRepository
             ...(is_string($mainUrl) ? [$mainUrl] : []),
             ...$aliases,
         ]);
+    }
+
+    public function aliasUrlsForIds(array $idSites): array
+    {
+        if ($idSites === []) {
+            return [];
+        }
+
+        $urls = [];
+        $records = $this->connection
+            ->table('site_url')
+            ->select(['idsite', 'url'])
+            ->whereIn('idsite', $idSites)
+            ->get();
+
+        foreach ($records as $record) {
+            $idSite = $record->idsite ?? null;
+            $url = $record->url ?? null;
+
+            if ((is_int($idSite) || is_string($idSite)) && is_string($url)) {
+                $urls[(int) $idSite][] = $url;
+            }
+        }
+
+        return $urls;
     }
 
     public function excludedReferrers(int $idSite): ?string

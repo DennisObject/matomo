@@ -7,14 +7,18 @@ namespace App\Matomo\Api\Methods;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
+use App\Matomo\Sites\ConsentManagerDetector;
 use App\Matomo\Sites\CurrencyProvider;
+use App\Matomo\Sites\Events\SiteRemovalWarningsCollecting;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use LogicException;
@@ -66,6 +70,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
     public function __construct(
         private ApiAccessAuthorizer $authorizer,
+        private Dispatcher $events,
         private ApiResponseFactory $responses,
         private SiteRepository $sites,
         private OptionRepository $options,
@@ -75,6 +80,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private LanguageResolver $languages,
         private TimezoneProvider $timezones,
         private SiteDetailsPresenter $siteDetails,
+        private ConsentManagerDetector $consentManagers,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -85,6 +91,13 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isViewableSiteIdsRequest()
             || $request->isSiteGroupsRequest()
             || $request->isSitesFromGroupRequest()
+            || $request->isAdminSitesRequest()
+            || $request->isMinimumAccessSitesRequest()
+            || $request->isViewSitesRequest()
+            || $request->isAtLeastViewSitesRequest()
+            || $request->isSiteRemovalWarningsRequest()
+            || $request->isPatternMatchSitesRequest()
+            || $request->isConsentManagerDetectionRequest()
             || $request->isDefaultCurrencyRequest()
             || $request->isCurrencySymbolsRequest()
             || $request->isCurrencyListRequest()
@@ -211,6 +224,183 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             );
 
             return $this->responses->rows($request, $sites);
+        }
+
+        if ($request->isAdminSitesRequest()) {
+            $idSites = array_values(array_diff(
+                $this->authorizer->siteIdsWithRole($request->authentication, SiteAccessRole::Admin),
+                $request->sitesToExclude,
+            ));
+
+            if ($idSites === []) {
+                return $this->responses->rows($request, []);
+            }
+
+            $siteRecords = $this->sites->detailsForIds(
+                $idSites,
+                $request->sitePattern,
+                $request->siteLimit,
+            );
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+            $includeCreator = $this->authorizer->hasSuperUserAccess($request->authentication);
+            $aliasUrls = $request->fetchAliasUrls
+                ? $this->sites->aliasUrlsForIds(array_map(
+                    static fn (array $site): int => (int) ($site['idsite'] ?? 0),
+                    $siteRecords,
+                ))
+                : [];
+            $sites = [];
+
+            foreach ($siteRecords as $site) {
+                $site = $this->siteDetails->present($site, $language, $includeCreator);
+
+                if ($request->fetchAliasUrls) {
+                    $idSite = $site['idsite'] ?? null;
+                    $mainUrl = $site['main_url'] ?? null;
+                    $sites[] = [...$site, 'alias_urls' => [
+                        ...(is_string($mainUrl) ? [$mainUrl] : []),
+                        ...((is_int($idSite) || is_string($idSite)) ? ($aliasUrls[(int) $idSite] ?? []) : []),
+                    ]];
+
+                    continue;
+                }
+
+                $sites[] = $site;
+            }
+
+            return $this->responses->rows($request, $sites);
+        }
+
+        if ($request->isMinimumAccessSitesRequest()) {
+            $role = $request->minimumSiteAccessRole
+                ?? throw new LogicException('The minimum site access role was not parsed.');
+            $idSites = array_values(array_diff(
+                $this->authorizer->siteIdsWithMinimumRole($request->authentication, $role),
+                $request->sitesToExclude,
+            ));
+
+            if ($idSites === []) {
+                return $this->responses->rows($request, []);
+            }
+
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+            $includeCreator = $this->authorizer->hasSuperUserAccess($request->authentication);
+            $sites = array_map(
+                fn (array $site): array => $this->siteDetails->present($site, $language, $includeCreator),
+                $this->sites->detailsForIds(
+                    $idSites,
+                    $request->sitePattern,
+                    $request->siteLimit,
+                    $request->siteTypesToExclude,
+                ),
+            );
+
+            return $this->responses->rows($request, $sites);
+        }
+
+        if ($request->isViewSitesRequest()) {
+            $idSites = $this->authorizer->siteIdsWithRole(
+                $request->authentication,
+                SiteAccessRole::View,
+            );
+
+            if ($idSites === []) {
+                return $this->responses->rows($request, []);
+            }
+
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+            $sites = array_map(
+                fn (array $site): array => $this->siteDetails->present($site, $language, false),
+                $this->sites->detailsForIds($idSites),
+            );
+
+            return $this->responses->rows($request, $sites);
+        }
+
+        if ($request->isAtLeastViewSitesRequest()) {
+            $idSites = $this->authorizer->siteIdsWithAtLeastViewAccess(
+                $request->authentication,
+                $request->restrictSitesToLogin,
+            );
+
+            if ($idSites === []) {
+                return $this->responses->rows($request, []);
+            }
+
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+            $includeCreator = $this->authorizer->hasSuperUserAccess($request->authentication);
+            $sites = array_map(
+                fn (array $site): array => $this->siteDetails->present($site, $language, $includeCreator),
+                $this->sites->detailsForIds($idSites, null, $request->siteLimit),
+            );
+
+            return $this->responses->rows($request, $sites);
+        }
+
+        if ($request->isSiteRemovalWarningsRequest()) {
+            if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires a 'superuser' access.",
+                    401,
+                );
+            }
+
+            $event = new SiteRemovalWarningsCollecting(
+                $request->idSite ?? throw new LogicException('The site ID was not parsed.'),
+            );
+            $this->events->dispatch($event);
+
+            return $this->responses->values($request, $event->messages);
+        }
+
+        if ($request->isPatternMatchSitesRequest()) {
+            $idSites = array_values(array_diff(
+                $this->authorizer->siteIdsWithAtLeastViewAccess($request->authentication),
+                $request->sitesToExclude,
+            ));
+
+            if ($idSites === []) {
+                return $this->responses->rows($request, []);
+            }
+
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+            $includeCreator = $this->authorizer->hasSuperUserAccess($request->authentication);
+            $sites = array_map(
+                fn (array $site): array => $this->siteDetails->present($site, $language, $includeCreator),
+                $this->sites->detailsForIds(
+                    $idSites,
+                    $request->sitePattern ?? throw new LogicException('The site pattern was not parsed.'),
+                    $request->siteLimit,
+                ),
+            );
+
+            return $this->responses->rows($request, $sites);
+        }
+
+        if ($request->isConsentManagerDetectionRequest()) {
+            $idSite = $request->idSite ?? throw new LogicException('The site ID was not parsed.');
+
+            if (! $this->authorizer->hasViewAccessToSite($request->authentication, $idSite)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires 'view' access for the website id = {$idSite}.",
+                    401,
+                );
+            }
+
+            $url = $this->sites->mainUrl($idSite);
+            $result = $url === null
+                ? null
+                : $this->consentManagers->detect(
+                    $url,
+                    $request->siteContentTimeout
+                        ?? throw new LogicException('The site content timeout was not parsed.'),
+                );
+
+            return $result === null
+                ? $this->responses->success($request)
+                : $this->responses->row($request, $result);
         }
 
         $role = $request->siteAccessRole();

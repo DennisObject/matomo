@@ -26,6 +26,12 @@ final readonly class InstallationConfig
         /** @var list<string> */
         private array $proxyIps,
         private bool $proxyIpReadLastInList,
+        private bool $internetFeaturesEnabled,
+        /** @var list<string> */
+        private array $allowedPrivateEgressRanges,
+        private ?string $outboundProxyHost,
+        /** @var list<string> */
+        private array $outboundProxyExcludedHosts,
         private int $websitesCountToDisplay,
         /** @var list<string> */
         private array $activatedPlugins,
@@ -59,13 +65,15 @@ final readonly class InstallationConfig
         $cnilPolicy = $configuration['CnilPolicy'] ?? [];
         $sitesManager = $configuration['SitesManager'] ?? [];
         $languages = $configuration['Languages'] ?? [];
+        $proxy = $configuration['proxy'] ?? [];
 
         if (! is_array($database)
             || ! is_array($general)
             || ! is_array($plugins)
             || ! is_array($cnilPolicy)
             || ! is_array($sitesManager)
-            || ! is_array($languages)) {
+            || ! is_array($languages)
+            || ! is_array($proxy)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
 
@@ -106,6 +114,10 @@ final readonly class InstallationConfig
             proxyClientHeaders: self::stringList($general, 'proxy_client_headers'),
             proxyIps: self::stringList($general, 'proxy_ips'),
             proxyIpReadLastInList: self::boolean($general, 'proxy_ip_read_last_in_list', true),
+            internetFeaturesEnabled: self::boolean($general, 'enable_internet_features', true),
+            allowedPrivateEgressRanges: self::stringList($general, 'allowed_private_egress_ranges'),
+            outboundProxyHost: self::nullableString($proxy, 'host'),
+            outboundProxyExcludedHosts: self::commaSeparatedList($proxy, 'exclude'),
             websitesCountToDisplay: max(
                 self::positiveInteger($general, 'site_selector_max_sites', 15),
                 self::positiveInteger($general, 'autocomplete_min_sites', 5),
@@ -184,6 +196,32 @@ final readonly class InstallationConfig
     public function proxyIpReadLastInList(): bool
     {
         return $this->proxyIpReadLastInList;
+    }
+
+    public function internetFeaturesEnabled(): bool
+    {
+        return $this->internetFeaturesEnabled;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function allowedPrivateEgressRanges(): array
+    {
+        return $this->allowedPrivateEgressRanges;
+    }
+
+    public function outboundProxyHost(): ?string
+    {
+        return $this->outboundProxyHost;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function outboundProxyExcludedHosts(): array
+    {
+        return $this->outboundProxyExcludedHosts;
     }
 
     public function websitesCountToDisplay(): int
@@ -333,6 +371,28 @@ final readonly class InstallationConfig
         }
 
         return (string) $value;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private static function nullableString(array $values, string $key): ?string
+    {
+        $value = trim(self::string($values, $key));
+
+        return $value === '' ? null : $value;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     * @return list<string>
+     */
+    private static function commaSeparatedList(array $values, string $key): array
+    {
+        return array_values(array_filter(
+            array_map(trim(...), explode(',', self::string($values, $key))),
+            static fn (string $value): bool => $value !== '',
+        ));
     }
 
     /**

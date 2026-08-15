@@ -9,6 +9,32 @@ use LogicException;
 
 final class ApiResponseFactory
 {
+    public function success(ApiRequest $request, string $message = 'ok'): Response
+    {
+        return match ($request->format) {
+            'console', 'rss' => $this->response(
+                'Success:'.$message,
+                200,
+                $request->format === 'rss' ? 'text/xml; charset=utf-8' : 'text/plain; charset=utf-8',
+            ),
+            'csv', 'tsv' => $this->response(
+                $request->format === 'csv' ? "message\n{$message}" : "message\t{$message}",
+                200,
+                'application/vnd.ms-excel',
+            )->header('Content-Disposition', 'attachment; filename=piwik-report-export.csv'),
+            'html' => $this->response("<!-- Success: {$message} -->", 200, 'text/html; charset=utf-8'),
+            'json' => $this->json($request, ['result' => 'success', 'message' => $message], 200),
+            'original' => $this->response('1', 200, 'text/plain; charset=utf-8'),
+            'xml' => $this->response(
+                "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>\n\t<success message=\"".
+                    $this->escape($message)."\" />\n</result>",
+                200,
+                'text/xml; charset=utf-8',
+            ),
+            default => throw new LogicException('The API response format is not supported.'),
+        };
+    }
+
     public function scalar(ApiRequest $request, bool|int|string $value): Response
     {
         return match ($request->format) {
@@ -58,7 +84,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
      */
     public function rows(ApiRequest $request, array $rows): Response
     {
@@ -184,7 +210,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
      */
     private function xmlRows(array $rows): Response
     {
@@ -199,16 +225,9 @@ final class ApiResponseFactory
         $content = '';
 
         foreach ($rows as $row) {
-            $content .= "\n\t<row>";
-
-            foreach ($row as $name => $value) {
-                $value = $this->scalarText($value, false);
-                $content .= $value === ''
-                    ? "\n\t\t<{$name} />"
-                    : "\n\t\t<{$name}>{$this->escape($value)}</{$name}>";
-            }
-
-            $content .= "\n\t</row>";
+            $content .= "\n\t<row>\n";
+            $content .= $this->xmlArray($row, "\t\t");
+            $content .= "\t</row>";
         }
 
         return $this->response(
@@ -379,13 +398,14 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
      */
     private function spreadsheetRows(ApiRequest $request, array $rows): Response
     {
         if ($rows === []) {
             $content = 'No data available';
         } else {
+            $rows = array_map($this->flattenNestedRow(...), $rows);
             $delimiter = $request->format === 'csv' ? ',' : "\t";
             $columns = $this->rowColumns($rows);
             $lines = [implode($delimiter, array_map(
@@ -543,7 +563,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
      */
     private function htmlRows(array $rows): Response
     {
@@ -559,8 +579,11 @@ final class ApiResponseFactory
             $body .= "\n\t<tr>";
 
             foreach ($columns as $column) {
-                $value = $this->scalarText($row[$column] ?? '', false);
-                $body .= "\n\t\t<td>{$this->escape($value)}</td>";
+                $value = $row[$column] ?? '';
+                $value = is_array($value)
+                    ? '<pre>'.$this->escape(var_export($value, true)).'</pre>'
+                    : $this->escape($this->scalarText($value, false));
+                $body .= "\n\t\t<td>{$value}</td>";
             }
 
             $body .= "\n\t</tr>";
@@ -615,7 +638,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
      */
     private function originalRows(ApiRequest $request, array $rows): Response
     {
@@ -708,7 +731,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
      */
     private function consoleRows(ApiRequest $request, array $rows): Response
     {
@@ -724,9 +747,11 @@ final class ApiResponseFactory
 
             foreach ($row as $name => $value) {
                 $name = str_replace(['\\', "'"], ['\\\\', "\\'"], $name);
-                $value = is_string($value)
-                    ? "'".str_replace(['\\', "'"], ['\\\\', "\\'"], $value)."'"
-                    : $this->scalarText($value, true);
+                $value = match (true) {
+                    is_array($value) => var_export($value, true),
+                    is_string($value) => "'".str_replace(['\\', "'"], ['\\\\', "\\'"], $value)."'",
+                    default => $this->scalarText($value, true),
+                };
                 $columns[] = "'{$name}' => {$value}";
             }
 
@@ -761,7 +786,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
      */
     private function jsonRows(ApiRequest $request, array $rows): Response
     {
@@ -822,7 +847,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  list<array<string, bool|int|string|null>>  $rows
+     * @param  list<array<string, array<int, string>|bool|int|string|null>>  $rows
      * @return list<string>
      */
     private function rowColumns(array $rows): array
@@ -838,6 +863,27 @@ final class ApiResponseFactory
         }
 
         return $columns;
+    }
+
+    /**
+     * @param  array<array-key, array<array-key, string>|bool|int|string|null>  $row
+     * @return array<string, bool|int|string|null>
+     */
+    private function flattenNestedRow(array $row, string $prefix = ''): array
+    {
+        $flattened = [];
+
+        foreach ($row as $name => $value) {
+            $name = $prefix === '' ? (string) $name : $prefix.'_'.(string) $name;
+
+            if (is_array($value)) {
+                $flattened = [...$flattened, ...$this->flattenNestedRow($value, $name)];
+            } else {
+                $flattened[$name] = $value;
+            }
+        }
+
+        return $flattened;
     }
 
     /**

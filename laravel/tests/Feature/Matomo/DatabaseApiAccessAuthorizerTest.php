@@ -210,6 +210,41 @@ class DatabaseApiAccessAuthorizerTest extends TestCase
         ));
     }
 
+    public function test_returns_sites_with_the_requested_minimum_role(): void
+    {
+        $this->addUser('member');
+        $this->addSiteAccess('member', 'view', 1);
+        $this->addSiteAccess('member', 'write', 2);
+        $this->addSiteAccess('member', 'admin', 3);
+        $this->addToken('member', 'member-token');
+        $this->addUser('root', true);
+        $this->addToken('root', 'root-token');
+        $authorizer = $this->authorizer();
+        $member = $this->authentication('member-token', true);
+        $root = $this->authentication('root-token', true);
+
+        $this->assertSame(
+            [1, 2, 3],
+            $authorizer->siteIdsWithMinimumRole($member, SiteAccessRole::View),
+        );
+        $this->assertSame(
+            [2, 3],
+            $authorizer->siteIdsWithMinimumRole($member, SiteAccessRole::Write),
+        );
+        $this->assertSame(
+            [3],
+            $authorizer->siteIdsWithMinimumRole($member, SiteAccessRole::Admin),
+        );
+        $this->assertSame(
+            [1, 2, 3],
+            $authorizer->siteIdsWithMinimumRole($root, SiteAccessRole::Write),
+        );
+        $this->assertSame(
+            [],
+            $authorizer->siteIdsWithMinimumRole($this->authentication('invalid'), SiteAccessRole::View),
+        );
+    }
+
     public function test_access_event_can_apply_migrated_plugin_permissions(): void
     {
         $this->addUser('viewer');

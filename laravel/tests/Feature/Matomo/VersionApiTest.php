@@ -216,6 +216,69 @@ class VersionApiTest extends TestCase
         ];
     }
 
+    #[DataProvider('legacySuccessFormats')]
+    public function test_legacy_success_formats_keep_exact_output(
+        string $parameters,
+        string $contentType,
+        string $content,
+        ?string $contentDisposition,
+    ): void {
+        $request = ApiRequest::fromRequest(Request::create('/index.php?'.$parameters));
+        $response = $this->app->make(ApiResponseFactory::class)->success($request);
+
+        $this->assertSame($contentType, $response->headers->get('Content-Type'));
+        $this->assertSame($content, $response->getContent());
+
+        if ($contentDisposition !== null) {
+            $this->assertSame(
+                $contentDisposition,
+                $response->headers->get('Content-Disposition'),
+            );
+        }
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string, string|null}>
+     */
+    public static function legacySuccessFormats(): iterable
+    {
+        $spreadsheetDisposition = 'attachment; filename=piwik-report-export.csv';
+
+        yield 'JSON' => [
+            'format=json',
+            'application/json; charset=utf-8',
+            '{"result":"success","message":"ok"}',
+            null,
+        ];
+        yield 'XML' => [
+            'format=xml',
+            'text/xml; charset=utf-8',
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>\n\t<success message=\"ok\" />\n</result>",
+            null,
+        ];
+        yield 'CSV' => [
+            'format=csv',
+            'application/vnd.ms-excel',
+            "message\nok",
+            $spreadsheetDisposition,
+        ];
+        yield 'TSV' => [
+            'format=tsv',
+            'application/vnd.ms-excel',
+            "message\tok",
+            $spreadsheetDisposition,
+        ];
+        yield 'HTML' => [
+            'format=html',
+            'text/html; charset=utf-8',
+            '<!-- Success: ok -->',
+            null,
+        ];
+        yield 'original' => ['format=original', 'text/plain; charset=utf-8', '1', null];
+        yield 'console' => ['format=console', 'text/plain; charset=utf-8', 'Success:ok', null];
+        yield 'RSS' => ['format=rss', 'text/xml; charset=utf-8', 'Success:ok', null];
+    }
+
     #[DataProvider('legacyRowListFormats')]
     public function test_legacy_row_list_formats_keep_exact_output(
         string $parameters,
@@ -565,7 +628,7 @@ class VersionApiTest extends TestCase
         $authorizer->expects($this->never())->method('hasSomeViewAccess');
         $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
 
-        $this->get('/index.php?module=API&method=SitesManager.getSitesWithAdminAccess&format=json')
+        $this->get('/index.php?module=API&method=VisitsSummary.get&format=json')
             ->assertStatus(501)
             ->assertExactJson([
                 'result' => 'error',

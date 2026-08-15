@@ -40,6 +40,13 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(['HTTP_X_FORWARDED_FOR'], $configuration->proxyClientHeaders());
         $this->assertSame(['10.0.0.1'], $configuration->proxyIps());
         $this->assertTrue($configuration->proxyIpReadLastInList());
+        $this->assertFalse($configuration->internetFeaturesEnabled());
+        $this->assertSame(['192.168.1.0/24'], $configuration->allowedPrivateEgressRanges());
+        $this->assertSame('proxy.example', $configuration->outboundProxyHost());
+        $this->assertSame(
+            ['direct.example', 'other.example'],
+            $configuration->outboundProxyExcludedHosts(),
+        );
         $this->assertSame(21, $configuration->websitesCountToDisplay());
         $this->assertSame(['CoreHome', 'SitesManager'], $configuration->activatedPlugins());
         $this->assertSame(['BTC' => 'Bitcoin'], $configuration->customCurrencies());
@@ -82,6 +89,8 @@ class InstallationConfigTest extends TestCase
             login_allowlist_ip[] = "10.0.0.0/8"
             proxy_client_headers[] = "HTTP_X_FORWARDED_FOR"
             proxy_ips[] = "10.0.0.1"
+            enable_internet_features = 0
+            allowed_private_egress_ranges[] = "192.168.1.0/24"
             autocomplete_min_sites = 9
             site_selector_max_sites = 21
             currencies[BTC] = "Bitcoin"
@@ -103,6 +112,10 @@ class InstallationConfigTest extends TestCase
             [Languages]
             Languages[] = "en"
             Languages[] = "fr"
+
+            [proxy]
+            host = "proxy.example"
+            exclude = "direct.example, other.example"
             INI;
 
         $this->assertNotFalse(file_put_contents($path, $content));

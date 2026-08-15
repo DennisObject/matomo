@@ -16,10 +16,24 @@ interface SiteRepository
      */
     public function details(int $idSite): array;
 
+    public function mainUrl(int $idSite): ?string;
+
     /**
      * @return array<int, array<string, int|string|null>>
      */
     public function allDetails(): array;
+
+    /**
+     * @param  list<int>  $idSites
+     * @param  list<string>  $siteTypesToExclude
+     * @return list<array<string, int|string|null>>
+     */
+    public function detailsForIds(
+        array $idSites,
+        ?string $pattern = null,
+        ?int $limit = null,
+        array $siteTypesToExclude = [],
+    ): array;
 
     /**
      * @return list<array<string, int|string|null>>
@@ -35,6 +49,12 @@ interface SiteRepository
      * @return list<string>
      */
     public function urls(int $idSite): array;
+
+    /**
+     * @param  list<int>  $idSites
+     * @return array<int, list<string>>
+     */
+    public function aliasUrlsForIds(array $idSites): array;
 
     public function excludedReferrers(int $idSite): ?string;
 
