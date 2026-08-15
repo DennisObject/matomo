@@ -546,6 +546,7 @@ final readonly class ApiRequest
         public ?PrivacyDataSubjectSearchRequest $privacyDataSubjectSearch,
         public ?PrivacyPurgeExecutionRequest $privacyPurgeExecution,
         public ?ImageGraphRequest $imageGraph,
+        public ?MobileMessagingRequest $mobileMessaging,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -639,6 +640,7 @@ final readonly class ApiRequest
             privacyDataSubjectSearch: null,
             privacyPurgeExecution: null,
             imageGraph: null,
+            mobileMessaging: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1261,6 +1263,7 @@ final readonly class ApiRequest
             privacyDataSubjectSearch: self::privacyDataSubjectSearch($request, $module, $method),
             privacyPurgeExecution: self::privacyPurgeExecution($request, $module, $method),
             imageGraph: self::imageGraph($request, $module, $method),
+            mobileMessaging: self::mobileMessaging($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -3008,6 +3011,35 @@ final readonly class ApiRequest
         );
     }
 
+    private static function mobileMessaging(Request $request, string $module, string $method): ?MobileMessagingRequest
+    {
+        if ($module !== 'API' || ! in_array($method, [
+            'MobileMessaging.areSMSAPICredentialProvided', 'MobileMessaging.getSMSProvider',
+            'MobileMessaging.setSMSAPICredential', 'MobileMessaging.addPhoneNumber',
+            'MobileMessaging.resendVerificationCode', 'MobileMessaging.getCreditLeft',
+            'MobileMessaging.getPhoneNumbers', 'MobileMessaging.removePhoneNumber',
+            'MobileMessaging.validatePhoneNumber', 'MobileMessaging.deleteSMSAPICredential',
+            'MobileMessaging.setDelegatedManagement', 'MobileMessaging.getDelegatedManagement',
+        ], true)) {
+            return null;
+        }
+
+        return new MobileMessagingRequest(
+            provider: $method === 'MobileMessaging.setSMSAPICredential'
+                ? self::requiredString($request, 'provider') : null,
+            credentials: $method === 'MobileMessaging.setSMSAPICredential'
+                ? self::scalarStringMap($request, 'credentials') : [],
+            phoneNumber: in_array($method, [
+                'MobileMessaging.addPhoneNumber', 'MobileMessaging.resendVerificationCode',
+                'MobileMessaging.removePhoneNumber', 'MobileMessaging.validatePhoneNumber',
+            ], true) ? self::requiredString($request, 'phoneNumber') : null,
+            verificationCode: $method === 'MobileMessaging.validatePhoneNumber'
+                ? self::requiredString($request, 'verificationCode') : null,
+            delegatedManagement: $method === 'MobileMessaging.setDelegatedManagement'
+                ? self::requiredBoolean($request, 'delegatedManagement') : null,
+        );
+    }
+
     private static function marketplace(Request $request, string $module, string $method): ?MarketplaceRequest
     {
         if ($module !== 'API' || ! in_array($method, [
@@ -4149,6 +4181,30 @@ final readonly class ApiRequest
         $post = $request->request->all();
 
         return $post[$key] ?? null;
+    }
+
+    /** @return array<string, string|int|null> */
+    private static function scalarStringMap(Request $request, string $key): array
+    {
+        $input = self::inputValue($request, $key);
+        if ($input === null || $input === '') {
+            return [];
+        }
+
+        if (! is_array($input) || ($input !== [] && array_is_list($input))) {
+            throw new InvalidApiParameter($key, "The parameter '{$key}' must be an object.");
+        }
+
+        $values = [];
+        foreach ($input as $name => $value) {
+            if (! is_string($name) || (! is_string($value) && ! is_int($value) && $value !== null)) {
+                throw new InvalidApiParameter($key, "The parameter '{$key}' contains an invalid value.");
+            }
+
+            $values[$name] = $value;
+        }
+
+        return $values;
     }
 
     private static function requiredBoolean(Request $request, string $key): bool
