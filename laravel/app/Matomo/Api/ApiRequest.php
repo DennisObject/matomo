@@ -552,6 +552,7 @@ final readonly class ApiRequest
         public ?SegmentsMetadataRequest $segmentsMetadata,
         public ?ReportMetadataRequest $reportMetadata,
         public ?BulkApiRequest $bulk,
+        public ?ProcessedReportRequest $processedReport,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -651,6 +652,7 @@ final readonly class ApiRequest
             segmentsMetadata: null,
             reportMetadata: null,
             bulk: null,
+            processedReport: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1279,6 +1281,7 @@ final readonly class ApiRequest
             segmentsMetadata: self::segmentsMetadata($request, $module, $method),
             reportMetadata: self::reportMetadata($request, $module, $method),
             bulk: self::bulk($request, $module, $method),
+            processedReport: self::processedReport($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -3159,6 +3162,37 @@ final readonly class ApiRequest
         }
 
         return new BulkApiRequest($urls);
+    }
+
+    private static function processedReport(Request $request, string $module, string $method): ?ProcessedReportRequest
+    {
+        if ($module !== 'API' || $method !== 'API.getProcessedReport') {
+            return null;
+        }
+
+        $apiParameters = self::inputValue($request, 'apiParameters');
+        if (is_string($apiParameters) && $apiParameters !== '') {
+            parse_str($apiParameters, $apiParameters);
+        }
+
+        if (in_array($apiParameters, [null, false, ''], true)) {
+            $apiParameters = [];
+        }
+
+        if (! is_array($apiParameters)) {
+            throw new InvalidApiParameter('apiParameters', 'The value must be an array or query string.');
+        }
+
+        return new ProcessedReportRequest(
+            siteId: self::requiredInteger($request, 'idSite'),
+            period: self::requiredString($request, 'period'),
+            date: self::requiredString($request, 'date'),
+            apiModule: self::requiredString($request, 'apiModule'),
+            apiAction: self::requiredString($request, 'apiAction'),
+            apiParameters: $apiParameters,
+            hideMetricsDocumentation: self::booleanInput($request, 'hideMetricsDoc', false),
+            showRawMetrics: self::booleanInput($request, 'showRawMetrics', false),
+        );
     }
 
     private static function scheduledReports(Request $request, string $module, string $method): ?ScheduledReportsRequest
