@@ -530,6 +530,7 @@ final readonly class ApiRequest
         public ?UsersManagerReadRequest $usersManagerRead,
         public ?UsersManagerSiteAccessRequest $usersManagerSiteAccess,
         public ?UsersManagerRoleDirectoryRequest $usersManagerRoleDirectory,
+        public ?UsersManagerAccessMutationRequest $usersManagerAccessMutation,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -605,6 +606,7 @@ final readonly class ApiRequest
             usersManagerRead: null,
             usersManagerSiteAccess: null,
             usersManagerRoleDirectory: null,
+            usersManagerAccessMutation: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1209,6 +1211,7 @@ final readonly class ApiRequest
             usersManagerRead: self::usersManagerRead($request, $module, $method),
             usersManagerSiteAccess: self::usersManagerSiteAccess($request, $module, $method),
             usersManagerRoleDirectory: self::usersManagerRoleDirectory($request, $module, $method),
+            usersManagerAccessMutation: self::usersManagerAccessMutation($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2539,6 +2542,34 @@ final readonly class ApiRequest
             search: self::nullableStringInput($request, 'filter_search'),
             access: self::nullableStringInput($request, 'filter_access'),
             status: self::nullableStringInput($request, 'filter_status'),
+        );
+    }
+
+    private static function usersManagerAccessMutation(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?UsersManagerAccessMutationRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'UsersManager.setUserAccess',
+            'UsersManager.addCapabilities',
+            'UsersManager.removeCapabilities',
+        ], true)) {
+            return null;
+        }
+
+        $entryKey = $method === 'UsersManager.setUserAccess' ? 'access' : 'capabilities';
+        $entryValue = self::inputValue($request, $entryKey);
+        if ($entryValue === null) {
+            throw new MissingApiParameter($entryKey);
+        }
+
+        return new UsersManagerAccessMutationRequest(
+            userLogin: self::requiredString($request, 'userLogin'),
+            entries: self::stringList($entryValue, $entryKey),
+            entriesWereArray: is_array($entryValue),
+            siteIds: self::requiredStringList($request, 'idSites'),
+            passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
         );
     }
 
