@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 140 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 147 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Not ported |
@@ -86,8 +86,8 @@ Handled reporting API method names:
   period labels, planet ratios, and optional logo and URL metadata.
 - `Feedback`: all 3 API methods, including localized validation, English feedback labels, configured
   plain-text email delivery, permission checks, and legacy per-user reminder storage.
-- `Goals`: `getGoal`, `getGoals`, `addGoal`, `updateGoal`, and `deleteGoal`, including site-scoped
-  permissions, legacy definition validation, goal and conversion writes, and tracker-cache invalidation.
+- `Goals`: all 12 API methods, including site-scoped management, legacy definition validation,
+  tracker-cache invalidation, ecommerce item reports, goal metrics, and conversion-range reports.
 - `Tour`: all 3 API methods, including localized challenge state, extension events, and legacy per-user progress storage.
 - `TwoFactorAuth`: `resetTwoFactorAuth`, including password confirmation and transactional recovery-code removal.
 - `UserCountry`: all 8 API methods, including archive reports, localized location metadata, IP geolocation through the default, MaxMind database, or server-module provider, and protected provider selection.
@@ -117,7 +117,7 @@ Reporting API module matrix:
 | `ExampleReport` | 1 | 1 | 0 |
 | `ExampleUI` | 4 | 4 | 0 |
 | `Feedback` | 3 | 3 | 0 |
-| `Goals` | 12 | 5 | 7 |
+| `Goals` | 12 | 12 | 0 |
 | `ImageGraph` | 1 | 0 | 1 |
 | `Insights` | 5 | 0 | 5 |
 | `JsTrackerInstallCheck` | 2 | 0 | 2 |
