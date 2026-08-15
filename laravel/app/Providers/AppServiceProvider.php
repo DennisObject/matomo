@@ -50,6 +50,9 @@ use App\Matomo\Api\Methods\VisitsSummaryApiMethodHandler;
 use App\Matomo\Api\Methods\VisitTimeApiMethodHandler;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Archiving\DatabaseArchiveInvalidationManager;
+use App\Matomo\Archiving\DatabaseReportArchiver;
+use App\Matomo\Archiving\ReportArchiver;
+use App\Matomo\Archiving\SegmentDefinitionValidator;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabasePasswordConfirmationVerifier;
@@ -627,6 +630,18 @@ class AppServiceProvider extends ServiceProvider
                     configuredAutoArchiveSegments: $configuration->autoArchiveSegments(),
                 );
             },
+        );
+        $this->app->singleton(
+            ReportArchiver::class,
+            fn (Application $application): ReportArchiver => new DatabaseReportArchiver(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                periods: $application->make(ReportingPeriodFactory::class),
+                segments: $application->make(SegmentHashResolver::class),
+                sites: $application->make(SiteRepository::class),
+                options: $application->make(OptionRepository::class),
+                segmentValidator: $application->make(SegmentDefinitionValidator::class),
+                events: $application->make(Dispatcher::class),
+            ),
         );
         $this->app->singleton(
             ScheduledTaskLock::class,
