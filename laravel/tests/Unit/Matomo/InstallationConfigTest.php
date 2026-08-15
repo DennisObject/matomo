@@ -71,6 +71,10 @@ class InstallationConfigTest extends TestCase
         $this->assertTrue($configuration->browserArchivingTriggerEnabled());
         $this->assertTrue($configuration->defaultLocationProviderEnabled());
         $this->assertTrue($configuration->languageToCountryGuessEnabled());
+        $this->assertSame([
+            'defaultProvider' => 'openai',
+            'openaiApiKey' => 'managed-key',
+        ], $configuration->aiProviders());
     }
 
     public function test_loads_reporting_overrides(): void
@@ -181,6 +185,10 @@ class InstallationConfigTest extends TestCase
 
             [Tracker]
             {$extraTracker}
+
+            [AIProviders]
+            defaultProvider = "openai"
+            openaiApiKey = "managed-key"
             INI;
 
         $this->assertNotFalse(file_put_contents($path, $content));

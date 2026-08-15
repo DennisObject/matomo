@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use App\Matomo\AiProviders\AiProviderCentralConfiguration;
+use App\Matomo\AiProviders\AiProviderConfiguration;
+use App\Matomo\AiProviders\AiProviderConnectionTester;
+use App\Matomo\AiProviders\AiProviderDefinition;
+use App\Matomo\AiProviders\AiProviderSettingsRepository;
+use App\Matomo\AiProviders\AiProviderStoredSettings;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Geolocation\CountryMetadataProvider;
@@ -43,6 +49,43 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->app->instance(AiProviderCentralConfiguration::class, new AiProviderCentralConfiguration);
+        $this->app->instance(
+            AiProviderSettingsRepository::class,
+            new class implements AiProviderSettingsRepository
+            {
+                private AiProviderStoredSettings $settings;
+
+                public function __construct()
+                {
+                    $this->settings = new AiProviderStoredSettings('', 'instant', []);
+                }
+
+                public function read(): AiProviderStoredSettings
+                {
+                    return $this->settings;
+                }
+
+                public function save(#[\SensitiveParameter] AiProviderStoredSettings $settings): void
+                {
+                    $this->settings = $settings;
+                }
+            },
+        );
+        $this->app->instance(
+            AiProviderConnectionTester::class,
+            new class implements AiProviderConnectionTester
+            {
+                public function test(
+                    AiProviderDefinition $provider,
+                    #[\SensitiveParameter]
+                    AiProviderConfiguration $configuration,
+                ): array {
+                    return [];
+                }
+            },
+        );
 
         $this->app->instance(ClientIpResolver::class, new ClientIpResolver([], [], true));
         $this->app->instance(LoginAttemptGuard::class, new class implements LoginAttemptGuard

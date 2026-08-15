@@ -62,6 +62,8 @@ final readonly class InstallationConfig
         private bool $browserArchivingTriggerEnabled,
         private bool $defaultLocationProviderEnabled,
         private bool $languageToCountryGuessEnabled,
+        /** @var array<string, mixed> */
+        private array $aiProviders,
     ) {}
 
     public static function fromFile(string $path): self
@@ -85,6 +87,7 @@ final readonly class InstallationConfig
         $login = $configuration['Login'] ?? [];
         $proxy = $configuration['proxy'] ?? [];
         $tracker = $configuration['Tracker'] ?? [];
+        $aiProviders = $configuration['AIProviders'] ?? [];
 
         if (! is_array($database)
             || ! is_array($general)
@@ -94,7 +97,8 @@ final readonly class InstallationConfig
             || ! is_array($languages)
             || ! is_array($login)
             || ! is_array($proxy)
-            || ! is_array($tracker)) {
+            || ! is_array($tracker)
+            || ! is_array($aiProviders)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
 
@@ -198,6 +202,7 @@ final readonly class InstallationConfig
                 'enable_language_to_country_guess',
                 true,
             ),
+            aiProviders: $aiProviders,
         );
     }
 
@@ -415,6 +420,12 @@ final readonly class InstallationConfig
     public function languageToCountryGuessEnabled(): bool
     {
         return $this->languageToCountryGuessEnabled;
+    }
+
+    /** @return array<string, mixed> */
+    public function aiProviders(): array
+    {
+        return $this->aiProviders;
     }
 
     /**

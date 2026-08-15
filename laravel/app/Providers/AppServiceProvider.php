@@ -4,7 +4,16 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Matomo\AiProviders\AiProviderCatalog;
+use App\Matomo\AiProviders\AiProviderCentralConfiguration;
+use App\Matomo\AiProviders\AiProviderConnectionTester;
+use App\Matomo\AiProviders\AiProviderSettingsManager;
+use App\Matomo\AiProviders\AiProviderSettingsRepository;
+use App\Matomo\AiProviders\BuiltInAiProviderCatalog;
+use App\Matomo\AiProviders\DatabaseAiProviderSettingsRepository;
+use App\Matomo\AiProviders\HttpAiProviderConnectionTester;
 use App\Matomo\Api\Methods\AiAgentsApiMethodHandler;
+use App\Matomo\Api\Methods\AiProvidersApiMethodHandler;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Api\Methods\ContentsApiMethodHandler;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
@@ -146,6 +155,45 @@ class AppServiceProvider extends ServiceProvider
                 return new MatomoDatabase($databases->connection('matomo'));
             },
         );
+
+        $this->app->singleton(AiProviderCatalog::class, BuiltInAiProviderCatalog::class);
+        $this->app->singleton(
+            AiProviderCentralConfiguration::class,
+            function (Application $application): AiProviderCentralConfiguration {
+                $installation = $application->make(InstallationConfig::class)->aiProviders();
+                $configured = $application->make(Repository::class)->get('matomo.ai_providers', []);
+
+                return new AiProviderCentralConfiguration(array_replace(
+                    $installation,
+                    is_array($configured) ? $configured : [],
+                ));
+            },
+        );
+        $this->app->singleton(
+            AiProviderSettingsRepository::class,
+            fn (Application $application): AiProviderSettingsRepository => new DatabaseAiProviderSettingsRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            AiProviderConnectionTester::class,
+            function (Application $application): AiProviderConnectionTester {
+                $installation = $application->make(InstallationConfig::class);
+
+                return new HttpAiProviderConnectionTester(
+                    http: $application->make(HttpFactory::class),
+                    hosts: $application->make(EgressHostResolver::class),
+                    trustedAwsHosts: new EgressHostResolver(
+                        allowedPrivateRanges: $installation->allowedPrivateEgressRanges(),
+                        blockedHosts: [],
+                    ),
+                    internetFeaturesEnabled: $installation->internetFeaturesEnabled(),
+                    outboundProxyHost: $installation->outboundProxyHost(),
+                    outboundProxyExcludedHosts: $installation->outboundProxyExcludedHosts(),
+                );
+            },
+        );
+        $this->app->singleton(AiProviderSettingsManager::class);
 
         $this->app->singleton(
             ApiAccessAuthorizer::class,
@@ -572,6 +620,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ProfessionalServicesApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),
+                $application->make(AiProvidersApiMethodHandler::class),
                 $application->make(TourApiMethodHandler::class),
                 $application->make(TwoFactorAuthApiMethodHandler::class),
                 $application->make(UserCountryApiMethodHandler::class),
