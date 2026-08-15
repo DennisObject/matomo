@@ -39,7 +39,7 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 255 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 257 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
@@ -163,7 +163,8 @@ Handled reporting API method names:
 - `Referrers`: all 7 distinct-count API methods, including segmented numeric archives, single-site,
   multi-site, and multi-date response shapes, access controls, and every supported response format.
   The overview API also combines per-type visits, distinct counters, processed percentages, and
-  requested-column filtering.
+  requested-column filtering. Campaign and campaign-keyword APIs include hierarchical archive
+  expansion, direct subtable reads, processed metrics, segments, and response formats.
 
 Reporting API module matrix:
 
@@ -204,7 +205,7 @@ Reporting API module matrix:
 | `PagePerformance` | 1 | 1 | 0 |
 | `PrivacyManager` | 18 | 0 | 18 |
 | `ProfessionalServices` | 1 | 1 | 0 |
-| `Referrers` | 23 | 8 | 15 |
+| `Referrers` | 23 | 10 | 13 |
 | `Resolution` | 2 | 2 | 0 |
 | `ScheduledReports` | 7 | 0 | 7 |
 | `SegmentEditor` | 9 | 9 | 0 |
@@ -220,7 +221,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **255** | **134** |
+| **Total** | **389** | **257** | **132** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 
