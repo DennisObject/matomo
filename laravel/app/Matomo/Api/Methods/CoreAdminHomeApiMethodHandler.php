@@ -7,6 +7,7 @@ namespace App\Matomo\Api\Methods;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
+use App\Matomo\Archiving\CronArchiveRunner;
 use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
@@ -41,6 +42,7 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         private OptOutEmbedCodeGenerator $optOutEmbedCodes,
         private ArchiveInvalidationManager $archiveInvalidations,
         private ReportArchiver $reportArchiver,
+        private CronArchiveRunner $cronArchiver,
         private ScheduledTaskRunner $scheduledTasks,
     ) {}
 
@@ -83,6 +85,10 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
 
         if ($request->method === 'CoreAdminHome.archiveReports') {
             return $this->archiveReports($request);
+        }
+
+        if ($request->method === 'CoreAdminHome.runCronArchiving') {
+            return $this->runCronArchiving($request);
         }
 
         if ($request->method === 'CoreAdminHome.runScheduledTasks') {
@@ -352,5 +358,18 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
             'idarchives' => $result->archiveIds,
             'nb_visits' => $result->visits,
         ]);
+    }
+
+    private function runCronArchiving(ApiRequest $request): Response
+    {
+        if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+            return $this->responses->error(
+                $request,
+                "You can't access this resource as it requires a 'superuser' access.",
+                401,
+            );
+        }
+
+        return $this->responses->values($request, $this->cronArchiver->run()->lines);
     }
 }

@@ -65,7 +65,9 @@ use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\ContentArchiveCollector;
 use App\Matomo\Archiving\ConversionSegmentApplicator;
+use App\Matomo\Archiving\CronArchiveRunner;
 use App\Matomo\Archiving\DatabaseArchiveInvalidationManager;
+use App\Matomo\Archiving\DatabaseCronArchiveRunner;
 use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\EcommerceItemArchiveCollector;
 use App\Matomo\Archiving\EventArchiveCollector;
@@ -889,6 +891,29 @@ class AppServiceProvider extends ServiceProvider
                 events: $application->make(Dispatcher::class),
                 logger: $application->make(LoggerInterface::class),
             ),
+        );
+        $this->app->singleton(
+            CronArchiveRunner::class,
+            function (Application $application): CronArchiveRunner {
+                $configuration = $application->make(InstallationConfig::class);
+                $connection = $application->make(MatomoDatabase::class)->connection();
+
+                return new DatabaseCronArchiveRunner(
+                    connection: $connection,
+                    sites: $application->make(SiteRepository::class),
+                    archiver: $application->make(ReportArchiver::class),
+                    scheduledTasks: $application->make(ScheduledTaskRunner::class),
+                    options: $application->make(MutableOptionRepository::class),
+                    lock: new DatabaseScheduledTaskLock($connection),
+                    events: $application->make(Dispatcher::class),
+                    logger: $application->make(LoggerInterface::class),
+                    configuredAutoArchiveSegments: $configuration->autoArchiveSegments(),
+                    enabledReportingPeriods: array_values(array_filter(
+                        ['day', 'week', 'month', 'year', 'range'],
+                        $configuration->reportingPeriodEnabled(...),
+                    )),
+                );
+            },
         );
 
         $this->app->singleton(
