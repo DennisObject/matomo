@@ -222,6 +222,7 @@ final readonly class ApiRequest
         'CoreAdminHome.getOptOutSelfContainedEmbedCode',
         'CoreAdminHome.getTrackingFailures',
         'CoreAdminHome.invalidateArchivedReports',
+        'CoreAdminHome.runScheduledTasks',
         'CoreAdminHome.setArchiveSettings',
         'CoreAdminHome.setBrandingSettings',
         'CoreAdminHome.setTrustedHosts',

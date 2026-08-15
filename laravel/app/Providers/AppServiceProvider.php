@@ -139,6 +139,10 @@ use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\ScreenResolutionPolicy;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
+use App\Matomo\Scheduling\DatabaseScheduledTaskLock;
+use App\Matomo\Scheduling\DatabaseScheduledTaskRunner;
+use App\Matomo\Scheduling\ScheduledTaskLock;
+use App\Matomo\Scheduling\ScheduledTaskRunner;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\EgressHostResolver;
@@ -623,6 +627,21 @@ class AppServiceProvider extends ServiceProvider
                     configuredAutoArchiveSegments: $configuration->autoArchiveSegments(),
                 );
             },
+        );
+        $this->app->singleton(
+            ScheduledTaskLock::class,
+            fn (Application $application): ScheduledTaskLock => new DatabaseScheduledTaskLock(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            ScheduledTaskRunner::class,
+            fn (Application $application): ScheduledTaskRunner => new DatabaseScheduledTaskRunner(
+                options: $application->make(MutableOptionRepository::class),
+                locks: $application->make(ScheduledTaskLock::class),
+                events: $application->make(Dispatcher::class),
+                logger: $application->make(LoggerInterface::class),
+            ),
         );
 
         $this->app->singleton(

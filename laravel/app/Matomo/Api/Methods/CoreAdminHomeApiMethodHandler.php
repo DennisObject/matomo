@@ -15,6 +15,7 @@ use App\Matomo\CoreAdmin\OptOutEmbedCodeGenerator;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Localization\MatomoTranslator;
 use App\Matomo\Localization\MutableLanguagePreferenceRepository;
+use App\Matomo\Scheduling\ScheduledTaskRunner;
 use App\Matomo\TrackingFailures\TrackingFailurePresenter;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
 use App\Matomo\UserChanges\UserChangeReadRepository;
@@ -38,6 +39,7 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         private BrandingManager $branding,
         private OptOutEmbedCodeGenerator $optOutEmbedCodes,
         private ArchiveInvalidationManager $archiveInvalidations,
+        private ScheduledTaskRunner $scheduledTasks,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -75,6 +77,10 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
 
         if ($request->method === 'CoreAdminHome.invalidateArchivedReports') {
             return $this->invalidateArchives($request);
+        }
+
+        if ($request->method === 'CoreAdminHome.runScheduledTasks') {
+            return $this->runScheduledTasks($request);
         }
 
         if ($request->method === 'CoreAdminHome.deleteTrackingFailure') {
@@ -302,5 +308,18 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         }
 
         return $this->responses->values($request, $logs);
+    }
+
+    private function runScheduledTasks(ApiRequest $request): Response
+    {
+        if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+            return $this->responses->error(
+                $request,
+                "You can't access this resource as it requires a 'superuser' access.",
+                401,
+            );
+        }
+
+        return $this->responses->rows($request, $this->scheduledTasks->run());
     }
 }

@@ -39,10 +39,10 @@ Current Laravel entry points:
 
 | Surface | Legacy source | Checked total | Laravel status |
 | --- | --- | ---: | --- |
-| Reporting API methods | `plugins/*/API.php` | 389 methods | 171 method names handled |
+| Reporting API methods | `plugins/*/API.php` | 389 methods | 172 method names handled |
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
-| Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Not ported |
+| Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
 | Report archivers | `plugins/*/Archiver.php` | 18 archivers | Read-only numeric archive access started; archive creation is not ported |
 | Tracker extensions | `plugins/*/Tracker.php`, `plugins/*/Tracker/*.php` | 15 files | Not ported; `matomo.php` and `piwik.php` remain legacy entry points |
 | Update migrations | `core/Updates/*.php`, `plugins/*/Updates/*.php` | 191 update files | Not ported |
@@ -106,7 +106,9 @@ Handled reporting API method names:
   settings, and encoded HTML and JavaScript boundaries; plus `invalidateArchivedReports`, including
   site-admin checks, extension-controlled site selection, strict date and range parsing, parent and
   child period expansion, automatic-segment re-archiving queues, old-log limits, and safe archive
-  status updates through bound queries.
+  status updates through bound queries; plus `runScheduledTasks`, including superuser access,
+  persistent timetables and retry state, database locks, priority ordering, execution results, and
+  task collection, veto, start, and completion events.
 - `Overlay`: `getTranslations`, with the existing localized client key contract.
 - `Tour`: all 3 API methods, including localized challenge state, extension events, and legacy per-user progress storage.
 - `Transitions`: `getTranslations` and `isPeriodAllowed`, including the complete localized metric
@@ -125,7 +127,7 @@ Reporting API module matrix:
 | `Annotations` | 7 | 0 | 7 |
 | `BotTracking` | 11 | 0 | 11 |
 | `Contents` | 2 | 2 | 0 |
-| `CoreAdminHome` | 13 | 10 | 3 |
+| `CoreAdminHome` | 13 | 11 | 2 |
 | `CorePluginsAdmin` | 5 | 0 | 5 |
 | `CustomDimensions` | 7 | 0 | 7 |
 | `CustomJsTracker` | 1 | 1 | 0 |
@@ -169,7 +171,7 @@ Reporting API module matrix:
 | `VisitTime` | 3 | 3 | 0 |
 | `VisitorInterest` | 4 | 4 | 0 |
 | `VisitsSummary` | 10 | 10 | 0 |
-| **Total** | **389** | **171** | **218** |
+| **Total** | **389** | **172** | **217** |
 
 The final parity gate requires every remaining counter to reach zero and the legacy entry files to be removed only after their Laravel replacements pass contract tests.
 

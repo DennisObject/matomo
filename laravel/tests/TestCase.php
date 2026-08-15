@@ -50,6 +50,7 @@ use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\ScreenResolutionPolicy;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
+use App\Matomo\Scheduling\ScheduledTaskRunner;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Sites\ConsentManagerDetector;
@@ -184,6 +185,13 @@ abstract class TestCase extends BaseTestCase
                 bool $cascadeDown,
                 bool $forceInvalidateNonexistent,
             ): array {
+                return [];
+            }
+        });
+        $this->app->instance(ScheduledTaskRunner::class, new class implements ScheduledTaskRunner
+        {
+            public function run(): array
+            {
                 return [];
             }
         });

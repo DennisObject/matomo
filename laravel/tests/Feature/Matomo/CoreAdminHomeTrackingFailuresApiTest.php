@@ -11,6 +11,7 @@ use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\CoreAdmin\BrandingManager;
 use App\Matomo\CoreAdmin\CoreAdminSettings;
 use App\Matomo\CoreAdmin\OptOutEmbedCodeGenerator;
+use App\Matomo\Scheduling\ScheduledTaskRunner;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\TrackingFailures\Events\TrackingFailuresMakingHumanReadable;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
@@ -480,6 +481,37 @@ class CoreAdminHomeTrackingFailuresApiTest extends TestCase
             'message',
             "Specify a value for &idSites= as a comma separated list of website IDs, for which your token_auth has 'admin' permission",
         );
+    }
+
+    public function test_superuser_can_run_scheduled_tasks(): void
+    {
+        $this->authenticate(true);
+        $runner = $this->createMock(ScheduledTaskRunner::class);
+        $runner->expects($this->once())->method('run')->willReturn([
+            ['task' => 'CoreAdmin.cleanup', 'output' => 'Time elapsed: 0.001s'],
+        ]);
+        $this->app->instance(ScheduledTaskRunner::class, $runner);
+
+        $this->post($this->url('runScheduledTasks'))
+            ->assertOk()
+            ->assertExactJson([
+                ['task' => 'CoreAdmin.cleanup', 'output' => 'Time elapsed: 0.001s'],
+            ]);
+    }
+
+    public function test_non_superuser_cannot_run_scheduled_tasks(): void
+    {
+        $this->authenticate(false, true, [7]);
+        $runner = $this->createMock(ScheduledTaskRunner::class);
+        $runner->expects($this->never())->method('run');
+        $this->app->instance(ScheduledTaskRunner::class, $runner);
+
+        $this->post($this->url('runScheduledTasks'))
+            ->assertStatus(401)
+            ->assertJsonPath(
+                'message',
+                "You can't access this resource as it requires a 'superuser' access.",
+            );
     }
 
     /**
