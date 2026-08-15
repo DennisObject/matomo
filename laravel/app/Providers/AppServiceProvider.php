@@ -62,6 +62,7 @@ use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\EcommerceItemArchiveCollector;
 use App\Matomo\Archiving\EventArchiveCollector;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
+use App\Matomo\Archiving\ExamplePluginArchiveCollector;
 use App\Matomo\Archiving\GoalArchiveCollector;
 use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Archiving\ReportingSubperiodFactory;
@@ -762,6 +763,19 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(
+            ExamplePluginArchiveCollector::class,
+            fn (Application $application): ExamplePluginArchiveCollector => new ExamplePluginArchiveCollector(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                visitQueries: $application->make(ArchiveVisitQueryFactory::class),
+                subperiods: $application->make(ReportingSubperiodFactory::class),
+                segments: $application->make(SegmentHashResolver::class),
+                blobs: $application->make(BlobArchiveRepository::class),
+                numbers: $application->make(NumericArchiveRepository::class),
+                options: $application->make(MutableOptionRepository::class),
+                sites: $application->make(SiteRepository::class),
+            ),
+        );
+        $this->app->singleton(
             ReportArchiver::class,
             fn (Application $application): ReportArchiver => new DatabaseReportArchiver(
                 connection: $application->make(MatomoDatabase::class)->connection(),
@@ -1077,6 +1091,7 @@ class AppServiceProvider extends ServiceProvider
         $events->listen(ArchiveReportsCollecting::class, EcommerceItemArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, EventArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, ContentArchiveCollector::class);
+        $events->listen(ArchiveReportsCollecting::class, ExamplePluginArchiveCollector::class);
     }
 
     /**

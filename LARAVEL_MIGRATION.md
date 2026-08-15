@@ -43,7 +43,7 @@ Current Laravel entry points:
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
-| Report archivers | `plugins/*/Archiver.php` | 19 archivers | Archive storage, day and parent core metrics, cache reuse, failure markers, extension events, all bundled segment families, active site-configured custom dimensions, 23 visit-derived report records, goal and ecommerce enrichment for time, device, and location reports, general goal metrics and conversion-timing records, ecommerce item and product-view records, all six hierarchical Events records, and both hierarchical Contents records ported; specialized action, conversion, and plugin records remain |
+| Report archivers | `plugins/*/Archiver.php` | 19 archivers | Archive storage, day and parent core metrics, cache reuse, failure markers, extension events, all bundled segment families, active site-configured custom dimensions, 23 visit-derived report records, goal and ecommerce enrichment for time, device, and location reports, general goal metrics and conversion-timing records, ecommerce item and product-view records, all six hierarchical Events records, both hierarchical Contents records, and all three ExamplePlugin records ported; specialized action, conversion, and other plugin records remain |
 | Tracker extensions | `plugins/*/Tracker.php`, `plugins/*/Tracker/*.php` | 15 files | Not ported; `matomo.php` and `piwik.php` remain legacy entry points |
 | Update migrations | `core/Updates/*.php`, `plugins/*/Updates/*.php` | 191 update files | Not ported |
 | Installation and updates | `plugins/Installation`, `plugins/CoreUpdater` | 2 lifecycles | Not ported |
@@ -81,7 +81,8 @@ Handled reporting API method names:
 - `ExampleAPI`: all 9 API methods, including scalar, null, object, table, simple-array, and
   multidimensional-array response behavior plus the protected version lookup.
 - `ExamplePlugin`: all 4 API methods, including its static report, numeric archive metrics,
-  segment hash lookup, truth switch, report validation, and view-access checks.
+  two numeric and visitor archive producers, segment hash lookup, truth switch, report validation,
+  and view-access checks.
 - `ExampleReport`: `getExampleReport`, including report parameters, response formats, and
   view-access checks.
 - `ExampleUI`: all 4 API methods, including hourly and evolution temperature series, localized

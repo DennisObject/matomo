@@ -23,6 +23,7 @@ use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\Events\ArchiveReportsCompleted;
 use App\Matomo\Archiving\Events\ArchiveReportsStarting;
 use App\Matomo\Archiving\Events\ArchiveVisitsQueryBuilding;
+use App\Matomo\Archiving\ExamplePluginArchiveCollector;
 use App\Matomo\Archiving\GoalArchiveCollector;
 use App\Matomo\Archiving\SegmentConditionQueryApplier;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
@@ -2127,6 +2128,109 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertSame(2, $pieces[-1]['columns']['nb_impressions']);
     }
 
+    public function test_collects_example_plugin_metrics_state_blobs_segments_and_parents(): void
+    {
+        $this->insertVisits();
+        $this->registerExamplePluginCollector();
+        $request = new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            plugin: 'ExamplePlugin',
+        );
+
+        $first = $this->archiver()->archive($request);
+        $second = $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            plugin: 'ExamplePlugin',
+            force: true,
+        ));
+
+        $this->assertSame([1], $first->archiveIds);
+        $this->assertSame([2], $second->archiveIds);
+        $this->assertSame([
+            1 => [
+                'ExamplePlugin_example_metric' => -3690.0,
+                'ExamplePlugin_example_metric2' => 0.0,
+            ],
+            2 => [
+                'ExamplePlugin_example_metric' => -3690.0,
+                'ExamplePlugin_example_metric2' => 1.0,
+            ],
+        ], $this->connection
+            ->table('archive_numeric_2026_08')
+            ->whereIn('idarchive', [1, 2])
+            ->whereIn('name', [
+                'ExamplePlugin_example_metric',
+                'ExamplePlugin_example_metric2',
+            ])
+            ->get()
+            ->groupBy('idarchive')
+            ->map(static fn ($rows): array => $rows->pluck('value', 'name')->all())
+            ->all());
+
+        $periods = new CarbonReportingPeriodFactory;
+        $day = $periods->make('day', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $blobs = new DatabaseBlobArchiveRepository($this->connection);
+        $visitors = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$day],
+            '',
+            'ExamplePlugin_exampleBlob',
+        )[1][$day->rangeKey()]);
+        $this->assertSame(1, $visitors['visitor-a']['nb_visits']);
+        $this->assertSame(1, $visitors['visitor-a']['nb_actions']);
+        $this->assertSame(1, $visitors['visitor-b']['nb_visits']);
+        $this->assertSame(3, $visitors['visitor-b']['nb_actions']);
+
+        $segment = 'countryCode==nz';
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $segment,
+            plugin: 'ExamplePlugin',
+        ));
+        $segmentVisitors = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$day],
+            (new DatabaseSegmentHashResolver($this->connection))->resolve($segment),
+            'ExamplePlugin_exampleBlob',
+        )[1][$day->rangeKey()]);
+        $this->assertSame(['visitor-a'], array_keys($segmentVisitors));
+
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'week',
+            date: '2026-08-15',
+            force: true,
+        ));
+        $week = $periods->make('week', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $weekMetrics = (new DatabaseVisitsSummaryArchiveRepository($this->connection))
+            ->pluginMetrics(
+                [1],
+                [$week],
+                '',
+                [
+                    'ExamplePlugin_example_metric',
+                    'ExamplePlugin_example_metric2',
+                ],
+                'ExamplePlugin',
+            )[1][$week->rangeKey()];
+        $this->assertSame(-25_816, $weekMetrics['ExamplePlugin_example_metric']);
+        $this->assertSame(1, $weekMetrics['ExamplePlugin_example_metric2']);
+        $weekVisitors = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$week],
+            '',
+            'ExamplePlugin_exampleBlob',
+        )[1][$week->rangeKey()]);
+        $this->assertSame(1, $weekVisitors['visitor-a']['nb_visits']);
+        $this->assertSame(1, $weekVisitors['visitor-b']['nb_visits']);
+    }
+
     private function archiver(): DatabaseReportArchiver
     {
         return new DatabaseReportArchiver(
@@ -2237,6 +2341,24 @@ class DatabaseReportArchiverTest extends TestCase
             subperiods: new CarbonReportingSubperiodFactory,
             segments: new DatabaseSegmentHashResolver($this->connection),
             blobs: new DatabaseBlobArchiveRepository($this->connection),
+            sites: new DatabaseSiteRepository($this->connection),
+        ));
+    }
+
+    private function registerExamplePluginCollector(): void
+    {
+        $this->events->listen(ArchiveReportsCollecting::class, new ExamplePluginArchiveCollector(
+            connection: $this->connection,
+            visitQueries: new ArchiveVisitQueryFactory(
+                $this->connection,
+                $this->visitSegmentApplicator(),
+                $this->events,
+            ),
+            subperiods: new CarbonReportingSubperiodFactory,
+            segments: new DatabaseSegmentHashResolver($this->connection),
+            blobs: new DatabaseBlobArchiveRepository($this->connection),
+            numbers: new DatabaseVisitsSummaryArchiveRepository($this->connection),
+            options: new DatabaseOptionRepository($this->connection),
             sites: new DatabaseSiteRepository($this->connection),
         ));
     }
