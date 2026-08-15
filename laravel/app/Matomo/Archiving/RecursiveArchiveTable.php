@@ -278,7 +278,8 @@ final class RecursiveArchiveTable
                 continue;
             }
 
-            $operation = $this->aggregationOperations[$name] ?? 'sum';
+            $operation = $this->aggregationOperations[$name]
+                ?? (str_ends_with($name, '_nb_conv_pages_before') ? 'max' : 'sum');
 
             if ($operation === 'min') {
                 $target[$name] = $this->minimum($target[$name] ?? null, $value);

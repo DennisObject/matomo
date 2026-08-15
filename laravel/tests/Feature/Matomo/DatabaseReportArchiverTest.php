@@ -40,6 +40,7 @@ use App\Matomo\Archiving\VisitDimensionArchiveCollector;
 use App\Matomo\Geolocation\CountryMetadataProvider;
 use App\Matomo\Goals\DatabaseGoalRepository;
 use App\Matomo\Options\DatabaseOptionRepository;
+use App\Matomo\Plugins\PluginState;
 use App\Matomo\Reporting\CarbonReportingPeriodFactory;
 use App\Matomo\Reporting\DatabaseBlobArchiveRepository;
 use App\Matomo\Reporting\DatabaseSegmentHashResolver;
@@ -229,6 +230,7 @@ class DatabaseReportArchiverTest extends TestCase
             $table->unsignedInteger('items')->nullable();
             $table->unsignedInteger('visitor_count_visits')->nullable();
             $table->unsignedInteger('visitor_seconds_since_first')->nullable();
+            $table->unsignedInteger('pageviews_before')->nullable();
             $table->dateTime('server_time')->nullable();
             $table->string('config_device_type')->nullable();
             $table->string('config_device_brand')->nullable();
@@ -2367,6 +2369,11 @@ class DatabaseReportArchiverTest extends TestCase
             'main_url' => 'https://example.test',
             'sitesearch' => 1,
         ]);
+        $this->connection->table('goal')->insert([
+            'idsite' => 1,
+            'idgoal' => 1,
+            'name' => 'Documentation signup',
+        ]);
         $this->connection->table('log_visit')->where('idvisit', 1)->update([
             'visit_entry_idaction_url' => 30,
             'visit_entry_idaction_name' => 31,
@@ -2382,6 +2389,14 @@ class DatabaseReportArchiverTest extends TestCase
             'visit_exit_idaction_name' => 38,
             'visit_total_actions' => 2,
             'visit_total_time' => 40,
+        ]);
+        $this->connection->table('log_conversion')->insert([
+            'idsite' => 1,
+            'idvisit' => 1,
+            'idgoal' => 1,
+            'revenue' => 40,
+            'pageviews_before' => 4,
+            'server_time' => '2026-08-14 13:04:00',
         ]);
         $this->events->listen(
             ActionArchiveMetricsCollecting::class,
@@ -2425,6 +2440,15 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertSame(1, $docs['/start']['columns']['entry_nb_visits']);
         $this->assertSame(1, $docs['/next']['columns']['exit_nb_visits']);
         $this->assertSame(2, $docs['/start']['columns']['extension_hits']);
+        $this->assertSame(1, $docs['/start']['columns']['goal_1_nb_conversions']);
+        $this->assertSame(40, $docs['/start']['columns']['goal_1_revenue']);
+        $this->assertSame(4, $docs['/start']['columns']['goal_1_nb_conv_pages_before']);
+        $this->assertSame(0.25, $docs['/start']['columns']['goal_1_nb_conversions_attrib']);
+        $this->assertSame(10, $docs['/start']['columns']['goal_1_revenue_attrib']);
+        $this->assertSame(1, $docs['/start']['columns']['goal_1_nb_conversions_entry']);
+        $this->assertSame(1, $docs['/start']['columns']['goal_1_nb_conversions_entry_rate']);
+        $this->assertSame(40, $docs['/start']['columns']['goal_1_revenue_entry']);
+        $this->assertSame(40, $docs['/start']['columns']['goal_1_revenue_per_entry']);
         $this->assertSame(
             'https://example.test/docs/start',
             $docs['/start']['metadata']['url'],
@@ -2548,6 +2572,8 @@ class DatabaseReportArchiverTest extends TestCase
             true,
         )[1][$week->rangeKey()]['Actions_actions_url']);
         $this->assertSame(2, $weekUrls['docs']['columns']['nb_visits']);
+        $this->assertSame(2, $weekUrls['docs']['columns']['goal_1_nb_conversions']);
+        $this->assertSame(4, $weekUrls['docs']['columns']['goal_1_nb_conv_pages_before']);
     }
 
     private function archiver(): DatabaseReportArchiver
@@ -2706,12 +2732,25 @@ class DatabaseReportArchiverTest extends TestCase
         $this->events->listen(ArchiveReportsCollecting::class, new ActionArchiveCollector(
             connection: $this->connection,
             actionQueries: new ArchiveActionQueryFactory($this->connection, $visits, $this->events),
+            conversionQueries: new ArchiveConversionQueryFactory(
+                $this->connection,
+                $visits,
+                $this->events,
+            ),
             visitQueries: new ArchiveVisitQueryFactory($this->connection, $visits, $this->events),
             subperiods: new CarbonReportingSubperiodFactory,
             segments: new DatabaseSegmentHashResolver($this->connection),
             blobs: new DatabaseBlobArchiveRepository($this->connection),
             numbers: new DatabaseVisitsSummaryArchiveRepository($this->connection),
             sites: new DatabaseSiteRepository($this->connection),
+            goals: new DatabaseGoalRepository($this->connection),
+            plugins: new class implements PluginState
+            {
+                public function isActivated(string $pluginName): bool
+                {
+                    return $pluginName === 'Goals';
+                }
+            },
             configuration: $configuration,
             paths: new ActionArchivePathResolver($configuration),
             events: $this->events,

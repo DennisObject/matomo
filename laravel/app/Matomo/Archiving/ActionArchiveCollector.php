@@ -6,6 +6,8 @@ namespace App\Matomo\Archiving;
 
 use App\Matomo\Archiving\Events\ActionArchiveMetricsCollecting;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
+use App\Matomo\Goals\GoalRepository;
+use App\Matomo\Plugins\PluginState;
 use App\Matomo\Reporting\HierarchicalBlobArchiveRepository;
 use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Reporting\SegmentHashResolver;
@@ -19,7 +21,7 @@ use stdClass;
 /**
  * @phpstan-type ArchiveValue float|int|string|null
  * @phpstan-type Metrics array<string, ArchiveValue>
- * @phpstan-type ActionReference array{type: int, path: non-empty-list<int|string>, flatLabel: int|string|null}
+ * @phpstan-type ActionReference array{type: int, path: non-empty-list<int|string>, flatLabel: int|string|null, entryVisits: int|float}
  */
 final readonly class ActionArchiveCollector
 {
@@ -110,15 +112,22 @@ final readonly class ActionArchiveCollector
         'exit_nb_uniq_visitors' => 'sum_daily_exit_nb_uniq_visitors',
     ];
 
+    private const int CART_GOAL = -1;
+
+    private const int ORDER_GOAL = 0;
+
     public function __construct(
         private Connection $connection,
         private ArchiveActionQueryFactory $actionQueries,
+        private ArchiveConversionQueryFactory $conversionQueries,
         private ArchiveVisitQueryFactory $visitQueries,
         private ReportingSubperiodFactory $subperiods,
         private SegmentHashResolver $segments,
         private HierarchicalBlobArchiveRepository $blobs,
         private NumericArchiveRepository $numbers,
         private SiteRepository $sites,
+        private GoalRepository $goals,
+        private PluginState $plugins,
         private ActionArchiveConfiguration $configuration,
         private ActionArchivePathResolver $paths,
         private Dispatcher $events,
@@ -138,9 +147,18 @@ final readonly class ActionArchiveCollector
 
         $metricEvent = new ActionArchiveMetricsCollecting([], $event->request, $event->period);
         $this->events->dispatch($metricEvent);
+        $collectGoals = $this->collectGoals($event->request->siteId);
+        $goalIds = $collectGoals ? $this->goalIds($event->request->siteId) : [];
         $operations = $this->aggregationOperations($metricEvent->metrics);
         [$reports, $numeric] = $event->period->label === 'day'
-            ? $this->dayRecords($event, $timezone, $metricEvent->metrics, $operations)
+            ? $this->dayRecords(
+                $event,
+                $timezone,
+                $metricEvent->metrics,
+                $operations,
+                $goalIds,
+                $collectGoals,
+            )
             : $this->parentRecords($event, $operations);
 
         foreach ($reports as $recordName => $table) {
@@ -174,6 +192,7 @@ final readonly class ActionArchiveCollector
     /**
      * @param  list<ActionArchiveMetric>  $extensionMetrics
      * @param  array<string, 'max'|'min'>  $operations
+     * @param  list<int>  $goalIds
      * @return array{array<string, RecursiveArchiveTable>, array<string, int|float>}
      */
     private function dayRecords(
@@ -181,6 +200,8 @@ final readonly class ActionArchiveCollector
         string $timezone,
         array $extensionMetrics,
         array $operations,
+        array $goalIds,
+        bool $collectGoals,
     ): array {
         $reports = $this->emptyReports($operations);
         $numeric = array_fill_keys(self::NUMERIC_RECORDS, 0);
@@ -230,6 +251,7 @@ final readonly class ActionArchiveCollector
                     'type' => $type,
                     'path' => $path,
                     'flatLabel' => $flatLabel,
+                    'entryVisits' => 0,
                 ];
                 $this->addNumericMetrics($numeric, $type, $metrics);
             }
@@ -238,6 +260,11 @@ final readonly class ActionArchiveCollector
         $this->mergeEntryMetrics($reports, $actions, $event, $timezone);
         $this->mergeExitMetrics($reports, $actions, $event, $timezone);
         $this->mergeTimeMetrics($reports, $actions, $event, $timezone);
+
+        if ($collectGoals) {
+            $this->mergePageGoalMetrics($reports, $actions, $event, $timezone, $goalIds);
+            $this->mergeEntryGoalMetrics($reports, $actions, $event, $timezone);
+        }
 
         if ($siteSearchEnabled) {
             $this->mergeSearchCategories($reports[self::SEARCH_CATEGORIES], $event, $timezone);
@@ -472,7 +499,7 @@ final readonly class ActionArchiveCollector
      */
     private function mergeEntryMetrics(
         array $reports,
-        array $actions,
+        array &$actions,
         ArchiveReportsCollecting $event,
         string $timezone,
     ): void {
@@ -497,7 +524,8 @@ final readonly class ActionArchiveCollector
                 ->groupBy('log_visit.'.$field);
 
             foreach ($query->cursor() as $row) {
-                $reference = $actions[$this->integer($row->archived_idaction ?? null)] ?? null;
+                $idAction = $this->integer($row->archived_idaction ?? null);
+                $reference = $actions[$idAction] ?? null;
 
                 if ($reference === null
                     || $reference['type'] === ActionArchivePathResolver::SITE_SEARCH) {
@@ -522,6 +550,9 @@ final readonly class ActionArchiveCollector
                             $row->entry_bounce_count ?? null,
                         ),
                     ],
+                );
+                $actions[$idAction]['entryVisits'] = $this->numeric(
+                    $row->entry_nb_visits ?? null,
                 );
             }
         }
@@ -619,6 +650,271 @@ final readonly class ActionArchiveCollector
                 );
             }
         }
+    }
+
+    /**
+     * @param  array<string, RecursiveArchiveTable>  $reports
+     * @param  array<int, ActionReference>  $actions
+     * @param  list<int>  $goalIds
+     */
+    private function mergePageGoalMetrics(
+        array $reports,
+        array $actions,
+        ArchiveReportsCollecting $event,
+        string $timezone,
+        array $goalIds,
+    ): void {
+        if (! $this->pageGoalColumnsExist()) {
+            return;
+        }
+
+        foreach ($goalIds as $goalId) {
+            foreach ([
+                'idaction_url' => ActionArchivePathResolver::PAGE_URL,
+                'idaction_name' => ActionArchivePathResolver::PAGE_TITLE,
+            ] as $field => $type) {
+                $field = $this->actionField($field);
+                $query = $this->conversionQueries
+                    ->make($event->request, $event->period, $timezone)
+                    ->join(
+                        'log_link_visit_action as conversion_action',
+                        static function (JoinClause $join): void {
+                            $join->on(
+                                'conversion_action.idvisit',
+                                '=',
+                                'log_conversion.idvisit',
+                            )->on(
+                                'conversion_action.idsite',
+                                '=',
+                                'log_conversion.idsite',
+                            );
+                        },
+                    )
+                    ->join(
+                        'log_action as conversion_action_definition',
+                        static function (JoinClause $join) use ($field): void {
+                            $join->on(
+                                'conversion_action_definition.idaction',
+                                '=',
+                                'conversion_action.'.$field,
+                            );
+                        },
+                    )
+                    ->where('log_conversion.idgoal', $goalId)
+                    ->where('conversion_action_definition.type', $type)
+                    ->whereColumn(
+                        'conversion_action.server_time',
+                        '<=',
+                        'log_conversion.server_time',
+                    )
+                    ->addSelect([
+                        'log_conversion.idvisit as conversion_visit',
+                        'conversion_action_definition.idaction as archived_idaction',
+                    ])
+                    ->addSelect($this->pageGoalMetricSelect())
+                    ->groupBy([
+                        'log_conversion.idvisit',
+                        'conversion_action_definition.idaction',
+                    ]);
+
+                foreach ($query->cursor() as $row) {
+                    $reference = $actions[$this->integer(
+                        $row->archived_idaction ?? null,
+                    )] ?? null;
+
+                    if ($reference === null || $reference['type'] !== $type) {
+                        continue;
+                    }
+
+                    $prefix = 'goal_'.$goalId.'_';
+                    $this->mergeAction(
+                        $reports,
+                        $type,
+                        $reference['path'],
+                        $reference['flatLabel'],
+                        [
+                            $prefix.'nb_conversions' => $this->numeric(
+                                $row->goal_nb_conversions ?? null,
+                            ),
+                            $prefix.'revenue' => $this->numeric(
+                                $row->goal_revenue ?? null,
+                            ),
+                            $prefix.'nb_conv_pages_before' => $this->numeric(
+                                $row->goal_nb_conv_pages_before ?? null,
+                            ),
+                            $prefix.'nb_conversions_attrib' => $this->numericWithPrecision(
+                                $row->goal_nb_conversions_attrib ?? null,
+                                4,
+                            ),
+                            $prefix.'nb_conversions_page_rate' => 0,
+                            $prefix.'nb_conversions_page_uniq' => $this->numeric(
+                                $row->goal_nb_conversions_page_uniq ?? null,
+                            ),
+                            $prefix.'revenue_attrib' => $this->numeric(
+                                $row->goal_revenue_attrib ?? null,
+                            ),
+                        ],
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, RecursiveArchiveTable>  $reports
+     * @param  array<int, ActionReference>  $actions
+     */
+    private function mergeEntryGoalMetrics(
+        array $reports,
+        array $actions,
+        ArchiveReportsCollecting $event,
+        string $timezone,
+    ): void {
+        if (! $this->entryGoalColumnsExist()) {
+            return;
+        }
+
+        /** @var array<string, int|float> $entrances */
+        $entrances = [];
+
+        foreach ($actions as $reference) {
+            if (in_array($reference['type'], [
+                ActionArchivePathResolver::PAGE_URL,
+                ActionArchivePathResolver::PAGE_TITLE,
+            ], true)) {
+                $key = $this->actionReferenceKey($reference);
+                $entrances[$key] = ($entrances[$key] ?? 0) + $reference['entryVisits'];
+            }
+        }
+
+        /**
+         * @var array<string, array{
+         *     reference: ActionReference,
+         *     goalId: int,
+         *     conversions: int|float,
+         *     revenue: int|float
+         * }> $goalMetrics
+         */
+        $goalMetrics = [];
+
+        foreach ([
+            'visit_entry_idaction_url' => ActionArchivePathResolver::PAGE_URL,
+            'visit_entry_idaction_name' => ActionArchivePathResolver::PAGE_TITLE,
+        ] as $field => $type) {
+            $field = $this->visitActionField($field);
+            $query = $this->conversionQueries
+                ->make($event->request, $event->period, $timezone)
+                ->join(
+                    'log_action as conversion_entry_action',
+                    static function (JoinClause $join) use ($field): void {
+                        $join->on(
+                            'conversion_entry_action.idaction',
+                            '=',
+                            'log_visit.'.$field,
+                        );
+                    },
+                )
+                ->whereNotNull('log_visit.'.$field)
+                ->where('log_conversion.idgoal', '>=', self::ORDER_GOAL)
+                ->where('conversion_entry_action.type', $type)
+                ->addSelect([
+                    'log_visit.'.$field.' as archived_idaction',
+                    'log_conversion.idgoal as archived_idgoal',
+                ])
+                ->addSelect($this->entryGoalMetricSelect())
+                ->groupBy([
+                    'log_visit.'.$field,
+                    'log_conversion.idgoal',
+                    'conversion_entry_action.type',
+                ]);
+
+            foreach ($query->cursor() as $row) {
+                $reference = $actions[$this->integer($row->archived_idaction ?? null)] ?? null;
+                $goalId = $this->integer($row->archived_idgoal ?? null);
+
+                if ($reference === null || $reference['type'] !== $type || $goalId < 0) {
+                    continue;
+                }
+
+                $referenceKey = $this->actionReferenceKey($reference);
+                $key = $referenceKey."\0".$goalId;
+                $goalMetrics[$key] ??= [
+                    'reference' => $reference,
+                    'goalId' => $goalId,
+                    'conversions' => 0,
+                    'revenue' => 0,
+                ];
+                $goalMetrics[$key]['conversions'] += $this->numeric(
+                    $row->goal_nb_conversions_entry ?? null,
+                );
+                $goalMetrics[$key]['revenue'] += $this->numeric(
+                    $row->goal_revenue_entry ?? null,
+                );
+            }
+        }
+
+        foreach ($goalMetrics as $row) {
+            $reference = $row['reference'];
+            $prefix = 'goal_'.$row['goalId'].'_';
+            $metrics = [
+                $prefix.'revenue_entry' => $row['revenue'],
+                $prefix.'nb_conversions_entry' => $row['conversions'],
+            ];
+            $entryVisits = $entrances[$this->actionReferenceKey($reference)] ?? 0;
+
+            if ($entryVisits > 0) {
+                $metrics[$prefix.'nb_conversions_entry_rate'] = $this->numericWithPrecision(
+                    $row['conversions'] / $entryVisits,
+                    3,
+                );
+                $metrics[$prefix.'revenue_per_entry'] = $this->numericWithPrecision(
+                    $row['revenue'] / $entryVisits,
+                    3,
+                );
+            }
+
+            $this->mergeAction(
+                $reports,
+                $reference['type'],
+                $reference['path'],
+                $reference['flatLabel'],
+                $metrics,
+            );
+        }
+    }
+
+    /** @param ActionReference $reference */
+    private function actionReferenceKey(array $reference): string
+    {
+        return $reference['type']."\0".serialize($reference['path']);
+    }
+
+    private function pageGoalMetricSelect(): TrustedSegmentSqlExpression
+    {
+        $grammar = $this->connection->getQueryGrammar();
+        $revenue = $grammar->wrap('log_conversion.revenue');
+        $pageviews = $grammar->wrap('log_conversion.pageviews_before');
+        $boundedRevenue = "CASE WHEN ABS({$revenue}) > 1000000000000 THEN 0 ELSE COALESCE({$revenue}, 0) END";
+
+        return new TrustedSegmentSqlExpression(implode(', ', [
+            'COUNT(*) AS goal_nb_conversions',
+            "ROUND(SUM({$boundedRevenue}), 2) AS goal_revenue",
+            "MAX(COALESCE({$pageviews}, 0)) AS goal_nb_conv_pages_before",
+            "ROUND(SUM(CASE WHEN {$pageviews} > 0 THEN 1.0 / {$pageviews} ELSE 0 END), 4) AS goal_nb_conversions_attrib",
+            '0 AS goal_nb_conversions_page_rate',
+            'COUNT(*) AS goal_nb_conversions_page_uniq',
+            "ROUND(SUM(CASE WHEN {$pageviews} > 0 THEN {$boundedRevenue} / {$pageviews} ELSE 0 END), 2) AS goal_revenue_attrib",
+        ]));
+    }
+
+    private function entryGoalMetricSelect(): TrustedSegmentSqlExpression
+    {
+        $revenue = $this->connection->getQueryGrammar()->wrap('log_conversion.revenue');
+
+        return new TrustedSegmentSqlExpression(implode(', ', [
+            'COUNT(*) AS goal_nb_conversions_entry',
+            "ROUND(SUM(CASE WHEN ABS({$revenue}) > 1000000000000 THEN 0 ELSE COALESCE({$revenue}, 0) END), 2) AS goal_revenue_entry",
+        ]));
     }
 
     private function mergeSearchCategories(
@@ -731,6 +1027,34 @@ final readonly class ActionArchiveCollector
         return $operations;
     }
 
+    private function collectGoals(int $siteId): bool
+    {
+        return $this->plugins->isActivated('Goals')
+            && ! $this->configuration->goalsDisabled($siteId);
+    }
+
+    /** @return list<int> */
+    private function goalIds(int $siteId): array
+    {
+        $goalIds = [];
+
+        foreach ($this->goals->activeForSites([$siteId]) as $goal) {
+            if (is_numeric($goal['idgoal'] ?? null)) {
+                $goalIds[] = (int) $goal['idgoal'];
+            }
+        }
+
+        if ((int) ($this->sites->details($siteId)['ecommerce'] ?? 0) === 1) {
+            $goalIds[] = self::CART_GOAL;
+            $goalIds[] = self::ORDER_GOAL;
+        }
+
+        $goalIds = array_values(array_unique($goalIds));
+        sort($goalIds);
+
+        return $goalIds;
+    }
+
     /** @return array<string, ArchiveValue> */
     private function metadata(string $name, int $type, ?int $prefix): array
     {
@@ -792,6 +1116,26 @@ final readonly class ActionArchiveCollector
         ]);
     }
 
+    private function pageGoalColumnsExist(): bool
+    {
+        return $this->entryGoalColumnsExist()
+            && $this->connection->getSchemaBuilder()->hasColumn(
+                'log_conversion',
+                'pageviews_before',
+            );
+    }
+
+    private function entryGoalColumnsExist(): bool
+    {
+        return $this->connection->getSchemaBuilder()->hasColumns('log_conversion', [
+            'idsite',
+            'idvisit',
+            'idgoal',
+            'revenue',
+            'server_time',
+        ]);
+    }
+
     private function actionField(string $field): string
     {
         return match ($field) {
@@ -822,6 +1166,17 @@ final readonly class ActionArchiveCollector
     private function numeric(mixed $value): int|float
     {
         return $this->nullableNumeric($value) ?? 0;
+    }
+
+    private function numericWithPrecision(mixed $value, int $precision): int|float
+    {
+        if (! is_numeric($value)) {
+            return 0;
+        }
+
+        $number = round((float) $value, $precision);
+
+        return floor($number) === $number ? (int) $number : $number;
     }
 
     private function nullableNumeric(mixed $value): int|float|null
