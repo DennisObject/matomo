@@ -87,6 +87,8 @@ final readonly class ApiRequest
         'Referrers.getNumberOfDistinctWebsitesUrls',
     ];
 
+    private const string REFERRERS_OVERVIEW_METHOD = 'Referrers.get';
+
     private const string USER_ID_METHOD = 'UserId.getUsers';
 
     /** @var list<string> */
@@ -725,6 +727,11 @@ final readonly class ApiRequest
     {
         return $this->module === 'API'
             && in_array($this->method, self::REFERRERS_DISTINCT_METHODS, true);
+    }
+
+    public function isReferrersOverviewRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === self::REFERRERS_OVERVIEW_METHOD;
     }
 
     public function isVisitFrequencyRequest(): bool
@@ -2449,6 +2456,7 @@ final readonly class ApiRequest
                 && ! in_array($method, self::DEVICES_DETECTION_METHODS, true)
                 && $method !== self::PAGE_PERFORMANCE_METHOD
                 && ! in_array($method, self::REFERRERS_DISTINCT_METHODS, true)
+                && $method !== self::REFERRERS_OVERVIEW_METHOD
                 && $method !== self::USER_ID_METHOD
                 && ! in_array($method, self::ACTIONS_METHODS, true)
                 && ! in_array($method, self::EXAMPLE_PLUGIN_REPORT_METHODS, true)
