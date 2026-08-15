@@ -195,6 +195,19 @@ final readonly class ApiRequest
     private const string AI_AGENTS_METHOD = 'AIAgents.get';
 
     /** @var list<string> */
+    private const array DB_STATS_METHODS = [
+        'DBStats.getGeneralInformation',
+        'DBStats.getDBStatus',
+        'DBStats.getDatabaseUsageSummary',
+        'DBStats.getTrackerDataSummary',
+        'DBStats.getMetricDataSummary',
+        'DBStats.getMetricDataSummaryByYear',
+        'DBStats.getReportDataSummary',
+        'DBStats.getReportDataSummaryByYear',
+        'DBStats.getAdminDataSummary',
+    ];
+
+    /** @var list<string> */
     private const array EXAMPLE_API_METHODS = [
         'ExampleAPI.getMatomoVersion',
         'ExampleAPI.getAnswerToLife',
@@ -758,6 +771,11 @@ final readonly class ApiRequest
     public function isAiAgentsRequest(): bool
     {
         return $this->module === 'API' && $this->method === self::AI_AGENTS_METHOD;
+    }
+
+    public function isDbStatsRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::DB_STATS_METHODS, true);
     }
 
     public function isExampleApiRequest(): bool
