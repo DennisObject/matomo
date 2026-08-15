@@ -10,7 +10,7 @@ use App\Matomo\Localization\MatomoTranslator;
 final readonly class ContentsReportBuilder
 {
     public function __construct(
-        private BlobArchiveRepository $archives,
+        private HierarchicalBlobArchiveRepository $archives,
         private MatomoTranslator $translator,
     ) {}
 
@@ -35,7 +35,13 @@ final readonly class ContentsReportBuilder
             $recordName .= '_'.$idSubtable;
         }
 
-        $archiveRows = $this->archives->rows($siteIds, $periods, $segmentHash, $recordName);
+        $archiveRows = $this->archives->records(
+            $siteIds,
+            $periods,
+            $segmentHash,
+            $recordName,
+            false,
+        );
         $dimensions = [...($forceSiteIndex ? ['idSite'] : []), ...($forceDateIndex ? ['date'] : [])];
 
         if (! $forceSiteIndex) {
@@ -45,7 +51,9 @@ final readonly class ContentsReportBuilder
                 $period = $periods[0] ?? null;
 
                 return new ApiTableReport($this->rows(
-                    $period === null ? [] : ($archiveRows[$idSite][$period->rangeKey()] ?? []),
+                    $period === null
+                        ? []
+                        : ($archiveRows[$idSite][$period->rangeKey()][$recordName] ?? []),
                     $byName,
                     $idSubtable,
                     $language,
@@ -56,6 +64,7 @@ final readonly class ContentsReportBuilder
             return new ApiTableReport($this->dateRows(
                 $archiveRows[$idSite] ?? [],
                 $periods,
+                $recordName,
                 $byName,
                 $idSubtable,
                 $language,
@@ -70,6 +79,7 @@ final readonly class ContentsReportBuilder
                 $data[$idSite] = $this->dateRows(
                     $archiveRows[$idSite] ?? [],
                     $periods,
+                    $recordName,
                     $byName,
                     $idSubtable,
                     $language,
@@ -78,7 +88,9 @@ final readonly class ContentsReportBuilder
             } else {
                 $period = $periods[0] ?? null;
                 $data[$idSite] = $this->rows(
-                    $period === null ? [] : ($archiveRows[$idSite][$period->rangeKey()] ?? []),
+                    $period === null
+                        ? []
+                        : ($archiveRows[$idSite][$period->rangeKey()][$recordName] ?? []),
                     $byName,
                     $idSubtable,
                     $language,
@@ -91,13 +103,14 @@ final readonly class ContentsReportBuilder
     }
 
     /**
-     * @param  array<string, list<array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>}>>  $archiveRows
+     * @param  array<string, array<string, list<array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>, subtableId: int|null}>>>  $archiveRows
      * @param  list<ReportingPeriod>  $periods
      * @return array<string, list<array<string, float|int|string|null>>>
      */
     private function dateRows(
         array $archiveRows,
         array $periods,
+        string $recordName,
         bool $byName,
         ?int $idSubtable,
         string $language,
@@ -107,7 +120,7 @@ final readonly class ContentsReportBuilder
 
         foreach ($periods as $period) {
             $rows[$period->resultKey] = $this->rows(
-                $archiveRows[$period->rangeKey()] ?? [],
+                $archiveRows[$period->rangeKey()][$recordName] ?? [],
                 $byName,
                 $idSubtable,
                 $language,
@@ -119,7 +132,7 @@ final readonly class ContentsReportBuilder
     }
 
     /**
-     * @param  list<array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>}>  $archiveRows
+     * @param  list<array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>, subtableId: int|null}>  $archiveRows
      * @return list<array<string, float|int|string|null>>
      */
     private function rows(
@@ -145,6 +158,10 @@ final readonly class ContentsReportBuilder
 
             if ($showMetadata) {
                 $row = [...$row, ...$archiveRow['metadata']];
+            }
+
+            if ($idSubtable === null && $archiveRow['subtableId'] !== null) {
+                $row['idsubdatatable'] = $archiveRow['subtableId'];
             }
 
             if (is_float($visits) || is_int($visits)) {

@@ -43,7 +43,7 @@ Current Laravel entry points:
 | Web controllers | `plugins/*/Controller.php` | 47 controller files | Not ported; `/` remains a 503 foundation route |
 | Console commands | `plugins/**/Commands/*.php` | 129 command files | Not ported; `laravel/routes/console.php` is empty |
 | Scheduled tasks | `plugins/*/Tasks.php` | 15 task providers | Persistent runner and extension contract ported; bundled providers remain |
-| Report archivers | `plugins/*/Archiver.php` | 19 archivers | Archive storage, day and parent core metrics, cache reuse, failure markers, extension events, all bundled segment families, active site-configured custom dimensions, 23 visit-derived report records, goal and ecommerce enrichment for time, device, and location reports, general goal metrics and conversion-timing records, ecommerce item and product-view records, and all six hierarchical Events records ported; specialized action, conversion, and plugin records remain |
+| Report archivers | `plugins/*/Archiver.php` | 19 archivers | Archive storage, day and parent core metrics, cache reuse, failure markers, extension events, all bundled segment families, active site-configured custom dimensions, 23 visit-derived report records, goal and ecommerce enrichment for time, device, and location reports, general goal metrics and conversion-timing records, ecommerce item and product-view records, all six hierarchical Events records, and both hierarchical Contents records ported; specialized action, conversion, and plugin records remain |
 | Tracker extensions | `plugins/*/Tracker.php`, `plugins/*/Tracker/*.php` | 15 files | Not ported; `matomo.php` and `piwik.php` remain legacy entry points |
 | Update migrations | `core/Updates/*.php`, `plugins/*/Updates/*.php` | 191 update files | Not ported |
 | Installation and updates | `plugins/Installation`, `plugins/CoreUpdater` | 2 lifecycles | Not ported |
@@ -63,7 +63,8 @@ Handled reporting API method names:
 - `DevicePlugins`: `getPlugin` in every supported response format.
 - `PagePerformance`: `get` in every supported response format.
 - `UserId`: `getUsers` in every supported response format.
-- `Contents`: both API methods, including subtables, in every supported response format.
+- `Contents`: both API methods and archive producers, including bounded root and subtable records,
+  interaction-only filtering, parent aggregation, subtable IDs, and every supported response format.
 - `CustomJsTracker`: `doesIncludePluginTrackersAutomatically` in every supported response format.
 - `ProfessionalServices`: `dismissWidget` in every supported response format.
 - `Login`: `unblockBruteForceIPs` in every supported response format.

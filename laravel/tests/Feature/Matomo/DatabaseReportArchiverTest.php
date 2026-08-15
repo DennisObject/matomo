@@ -12,6 +12,7 @@ use App\Matomo\Archiving\ArchiveVisitQueryFactory;
 use App\Matomo\Archiving\BrowserLanguageArchiveLabeler;
 use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
+use App\Matomo\Archiving\ContentArchiveCollector;
 use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\DynamicSegmentResolver;
 use App\Matomo\Archiving\EcommerceItemArchiveCollector;
@@ -1904,6 +1905,228 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertSame(2, $sharedActions[-1]['columns']['nb_events']);
     }
 
+    public function test_collects_content_hierarchies_interactions_segments_and_parents(): void
+    {
+        $this->insertVisits();
+        $this->connection->table('log_action')->insert([
+            ['idaction' => 40, 'name' => 'Hero', 'type' => 8],
+            ['idaction' => 41, 'name' => 'Banner', 'type' => 13],
+            ['idaction' => 42, 'name' => 'https://content.example.test', 'type' => 14],
+            ['idaction' => 43, 'name' => 'click', 'type' => 15],
+            ['idaction' => 44, 'name' => '', 'type' => 13],
+            ['idaction' => 45, 'name' => 'No impression', 'type' => 8],
+            ['idaction' => 46, 'name' => 'Ignored piece', 'type' => 13],
+        ]);
+        $this->connection->table('log_link_visit_action')->insert([
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_content_name' => 40,
+                'idaction_content_piece' => 41,
+                'idaction_content_target' => 42,
+                'server_time' => '2026-08-15 08:00:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_content_name' => 40,
+                'idaction_content_piece' => 41,
+                'idaction_content_target' => 42,
+                'server_time' => '2026-08-15 08:05:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 1,
+                'idaction_content_name' => 40,
+                'idaction_content_piece' => 44,
+                'idaction_content_target' => 42,
+                'server_time' => '2026-08-14 13:00:00',
+            ],
+        ]);
+        $this->connection->table('log_link_visit_action')->insert([
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_content_name' => 40,
+                'idaction_content_piece' => 41,
+                'idaction_content_interaction' => 43,
+                'server_time' => '2026-08-15 08:10:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 1,
+                'idaction_content_name' => 40,
+                'idaction_content_piece' => 44,
+                'idaction_content_interaction' => 43,
+                'server_time' => '2026-08-14 13:05:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_content_name' => 45,
+                'idaction_content_piece' => 46,
+                'idaction_content_interaction' => 43,
+                'server_time' => '2026-08-15 08:15:00',
+            ],
+        ]);
+        $this->registerContentCollector();
+
+        $this->archiver()->archive(new ArchiveReportRequest(1, 'day', '2026-08-15'));
+
+        $periods = new CarbonReportingPeriodFactory;
+        $day = $periods->make('day', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $blobs = new DatabaseBlobArchiveRepository($this->connection);
+        $nameRecords = $blobs->records(
+            [1],
+            [$day],
+            '',
+            'Contents_name_piece',
+            true,
+        )[1][$day->rangeKey()];
+        $names = $this->hierarchicalRowsByLabel($nameRecords['Contents_name_piece']);
+        $hero = $names['Hero'];
+        $this->assertSame(2, $hero['columns']['nb_uniq_visitors']);
+        $this->assertSame(2, $hero['columns']['nb_visits']);
+        $this->assertSame(3, $hero['columns']['nb_impressions']);
+        $this->assertSame(2, $hero['columns']['nb_interactions']);
+        $this->assertIsInt($hero['subtableId']);
+        $pieces = $this->hierarchicalRowsByLabel(
+            $nameRecords['Contents_name_piece_'.$hero['subtableId']],
+        );
+        $this->assertSame(['Banner'], array_keys($pieces));
+        $this->assertSame(2, $pieces['Banner']['columns']['nb_impressions']);
+        $this->assertSame(1, $pieces['Banner']['columns']['nb_interactions']);
+        $this->assertArrayNotHasKey('No impression', $names);
+
+        $pieceRecords = $blobs->records(
+            [1],
+            [$day],
+            '',
+            'Contents_piece_name',
+            true,
+        )[1][$day->rangeKey()];
+        $contentPieces = $this->hierarchicalRowsByLabel(
+            $pieceRecords['Contents_piece_name'],
+        );
+        $this->assertSame(2, $contentPieces['Banner']['columns']['nb_impressions']);
+        $this->assertSame(1, $contentPieces['Banner']['columns']['nb_interactions']);
+        $this->assertSame(
+            1,
+            $contentPieces['Piwik_ContentPieceNotSet']['columns']['nb_impressions'],
+        );
+        $this->assertSame(
+            0,
+            $contentPieces['Piwik_ContentPieceNotSet']['columns']['nb_interactions'],
+        );
+
+        $segment = 'countryCode==nz';
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $segment,
+            plugin: 'Contents',
+        ));
+        $segmentRecords = $blobs->records(
+            [1],
+            [$day],
+            (new DatabaseSegmentHashResolver($this->connection))->resolve($segment),
+            'Contents_name_piece',
+            false,
+        )[1][$day->rangeKey()];
+        $segmentHero = $this->hierarchicalRowsByLabel(
+            $segmentRecords['Contents_name_piece'],
+        )['Hero'];
+        $this->assertSame(1, $segmentHero['columns']['nb_impressions']);
+        $this->assertSame(1, $segmentHero['columns']['nb_interactions']);
+
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'week',
+            date: '2026-08-15',
+            force: true,
+        ));
+        $week = $periods->make('week', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $weekRecords = $blobs->records(
+            [1],
+            [$week],
+            '',
+            'Contents_name_piece',
+            true,
+        )[1][$week->rangeKey()];
+        $weekHero = $this->hierarchicalRowsByLabel(
+            $weekRecords['Contents_name_piece'],
+        )['Hero'];
+        $this->assertSame(3, $weekHero['columns']['nb_impressions']);
+        $this->assertSame(2, $weekHero['columns']['nb_interactions']);
+        $this->assertIsInt($weekHero['subtableId']);
+        $this->assertArrayHasKey(
+            'Contents_name_piece_'.$weekHero['subtableId'],
+            $weekRecords,
+        );
+    }
+
+    public function test_content_subtables_use_the_actions_row_limit(): void
+    {
+        $this->insertVisits();
+        $actions = [
+            ['idaction' => 1000, 'name' => 'Shared name', 'type' => 8],
+            ['idaction' => 1001, 'name' => 'Target', 'type' => 14],
+        ];
+        $links = [];
+
+        for ($index = 0; $index < 101; $index++) {
+            $actions[] = [
+                'idaction' => 2000 + $index,
+                'name' => 'piece'.str_pad((string) $index, 3, '0', STR_PAD_LEFT),
+                'type' => 13,
+            ];
+            $links[] = [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_content_name' => 1000,
+                'idaction_content_piece' => 2000 + $index,
+                'idaction_content_target' => 1001,
+                'server_time' => '2026-08-15 10:00:00',
+            ];
+        }
+
+        foreach (array_chunk($actions, 100) as $chunk) {
+            $this->connection->table('log_action')->insert($chunk);
+        }
+
+        foreach (array_chunk($links, 100) as $chunk) {
+            $this->connection->table('log_link_visit_action')->insert($chunk);
+        }
+
+        $this->registerContentCollector();
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            plugin: 'Contents',
+        ));
+        $day = (new CarbonReportingPeriodFactory)->make(
+            'day',
+            '2026-08-15',
+            'Pacific/Auckland',
+        )[0][0];
+        $records = (new DatabaseBlobArchiveRepository($this->connection))->records(
+            [1],
+            [$day],
+            '',
+            'Contents_name_piece',
+            true,
+        )[1][$day->rangeKey()];
+        $name = $this->hierarchicalRowsByLabel($records['Contents_name_piece'])['Shared name'];
+        $this->assertIsInt($name['subtableId']);
+        $pieces = $this->hierarchicalRowsByLabel(
+            $records['Contents_name_piece_'.$name['subtableId']],
+        );
+        $this->assertCount(100, $pieces);
+        $this->assertSame(2, $pieces[-1]['columns']['nb_impressions']);
+    }
+
     private function archiver(): DatabaseReportArchiver
     {
         return new DatabaseReportArchiver(
@@ -1989,6 +2212,22 @@ class DatabaseReportArchiverTest extends TestCase
     private function registerEventCollector(): void
     {
         $this->events->listen(ArchiveReportsCollecting::class, new EventArchiveCollector(
+            connection: $this->connection,
+            actionQueries: new ArchiveActionQueryFactory(
+                $this->connection,
+                $this->visitSegmentApplicator(),
+                $this->events,
+            ),
+            subperiods: new CarbonReportingSubperiodFactory,
+            segments: new DatabaseSegmentHashResolver($this->connection),
+            blobs: new DatabaseBlobArchiveRepository($this->connection),
+            sites: new DatabaseSiteRepository($this->connection),
+        ));
+    }
+
+    private function registerContentCollector(): void
+    {
+        $this->events->listen(ArchiveReportsCollecting::class, new ContentArchiveCollector(
             connection: $this->connection,
             actionQueries: new ArchiveActionQueryFactory(
                 $this->connection,
