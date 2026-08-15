@@ -216,6 +216,21 @@ final class TrackerEndpointTest extends TestCase
         $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&ec_id=order-1&revenue=39.9&ec_items='.$items)->assertOk();
     }
 
+    public function test_records_ecommerce_cart_updates_without_an_order_id(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->ecommerceCart
+                && $request->ecommerceOrderId === null
+                && $request->goalRevenue === 19.95,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+        $items = rawurlencode((string) json_encode([['sku-1', 'Shoes', 'Sale', 19.95, 1]]));
+
+        $this->get('/matomo.php?idsite=1&url=https%3A%2F%2Fexample.test&revenue=19.95&ec_items='.$items)->assertOk();
+    }
+
     public function test_rejects_invalid_page_performance_timings(): void
     {
         $this->bindSite();

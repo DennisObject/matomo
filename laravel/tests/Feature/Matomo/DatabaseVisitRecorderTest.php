@@ -97,20 +97,29 @@ final class DatabaseVisitRecorderTest extends TestCase
         $recorder->record($heartbeat);
         $recorder->record($this->request(goalId: 4));
         $recorder->record($this->request(orderId: 'order-17'));
+        $recorder->record($this->request(cart: true));
+        $recorder->record($this->request(cart: true, itemSku: 'sku-2'));
 
         $this->assertSame(1, $connection->table('log_visit')->count());
-        $this->assertSame(4, $connection->table('log_link_visit_action')->count());
-        $this->assertSame(4, $connection->table('log_visit')->value('visit_total_actions'));
-        $this->assertSame(2, $connection->table('log_conversion')->count());
+        $this->assertSame(6, $connection->table('log_link_visit_action')->count());
+        $this->assertSame(6, $connection->table('log_visit')->value('visit_total_actions'));
+        $this->assertSame(3, $connection->table('log_conversion')->count());
         $this->assertSame(9.5, $connection->table('log_conversion')->where('idgoal', 4)->value('revenue'));
         $this->assertSame('order-17', $connection->table('log_conversion')->where('idgoal', 0)->value('idorder'));
-        $this->assertSame(1, $connection->table('log_conversion_item')->count());
+        $this->assertSame(3, $connection->table('log_conversion_item')->count());
+        $this->assertSame('0', $connection->table('log_conversion_item')->where('idorder', '0')->value('idorder'));
+        $this->assertSame(1, $connection->table('log_conversion_item')->where('idorder', '0')->where('deleted', 1)->count());
         $this->assertSame(1, $connection->table('log_visit')->value('visit_goal_converted'));
         $this->assertSame(1, $connection->table('log_visit')->value('visit_goal_buyer'));
     }
 
-    private function request(bool $heartbeat = false, ?int $goalId = null, ?string $orderId = null): TrackingRequest
-    {
+    private function request(
+        bool $heartbeat = false,
+        ?int $goalId = null,
+        ?string $orderId = null,
+        bool $cart = false,
+        string $itemSku = 'sku-1',
+    ): TrackingRequest {
         return new TrackingRequest(
             siteId: 1,
             url: 'https://example.test/',
@@ -130,15 +139,16 @@ final class DatabaseVisitRecorderTest extends TestCase
             contentTarget: null,
             contentInteraction: null,
             goalId: $goalId,
-            goalRevenue: $goalId === null && $orderId === null ? null : ($goalId === null ? 42.5 : 9.5),
+            goalRevenue: $goalId === null && $orderId === null && ! $cart ? null : ($goalId === null ? 42.5 : 9.5),
             goalAllowsMultiple: false,
             ecommerceOrderId: $orderId,
             ecommerceSubtotal: $orderId === null ? null : 35.0,
             ecommerceTax: null,
             ecommerceShipping: null,
             ecommerceDiscount: null,
-            ecommerceItems: $orderId === null ? [] : [[
-                'sku' => 'sku-1', 'name' => 'Shoes', 'categories' => ['Sale'], 'price' => 42.5, 'quantity' => 1,
+            ecommerceCart: $cart,
+            ecommerceItems: $orderId === null && ! $cart ? [] : [[
+                'sku' => $itemSku, 'name' => 'Shoes', 'categories' => ['Sale'], 'price' => 42.5, 'quantity' => 1,
             ]],
             userId: null,
             referrerUrl: '',

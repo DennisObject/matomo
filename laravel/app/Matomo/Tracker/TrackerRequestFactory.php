@@ -96,8 +96,8 @@ final readonly class TrackerRequestFactory
             throw new InvalidArgumentException('A request cannot record a goal and an ecommerce order together.');
         }
 
-        if ($orderId !== null && $goalRevenue === null) {
-            throw new InvalidArgumentException('revenue is required for ecommerce orders.');
+        if (($orderId !== null || $request->has('ec_items')) && $goalRevenue === null) {
+            throw new InvalidArgumentException('revenue is required for ecommerce requests.');
         }
 
         $ecommerceValues = [];
@@ -151,7 +151,7 @@ final readonly class TrackerRequestFactory
             $this->optionalTrimmed($request->input('c_t'), 4096),
             $this->optionalTrimmed($request->input('c_i'), 255),
             $goal === null ? null : (int) $goalId,
-            $orderId !== null
+            $orderId !== null || $request->has('ec_items')
                 ? (float) $goalRevenue
                 : ($goal === null ? null : ($goalRevenue === null ? (float) ($goal['revenue'] ?? 0) : (float) $goalRevenue)),
             (int) ($goal['allow_multiple'] ?? 0) === 1,
@@ -160,7 +160,8 @@ final readonly class TrackerRequestFactory
             $ecommerceValues['ec_tx'],
             $ecommerceValues['ec_sh'],
             $ecommerceValues['ec_dt'],
-            $this->ecommerceItems($request, $orderId),
+            $orderId === null && $request->has('ec_items'),
+            $this->ecommerceItems($request),
             $this->optional($request->input('uid'), 200),
             $referrer ?? '',
             $referrerType,
@@ -363,19 +364,22 @@ final readonly class TrackerRequestFactory
     }
 
     /** @return list<array{sku: string, name: string, categories: list<string>, price: float, quantity: int}> */
-    private function ecommerceItems(Request $request, ?string $orderId): array
+    private function ecommerceItems(Request $request): array
     {
         $items = $request->input('ec_items');
         if (is_string($items) && $items !== '') {
             $items = json_decode($items, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new InvalidArgumentException('ec_items must contain valid JSON.');
+            }
         }
 
         if ($items === null || $items === '') {
             return [];
         }
 
-        if ($orderId === null || ! is_array($items) || count($items) > 1_000) {
-            throw new InvalidArgumentException('ec_items must be an array attached to an ecommerce order.');
+        if (! is_array($items) || count($items) > 1_000) {
+            throw new InvalidArgumentException('ec_items must be an array.');
         }
 
         $clean = [];
