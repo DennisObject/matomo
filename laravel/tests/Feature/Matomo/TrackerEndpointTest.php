@@ -569,6 +569,25 @@ final class TrackerEndpointTest extends TestCase
         ]))->assertOk();
     }
 
+    public function test_records_ecommerce_cart_updates_without_an_order_id(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->ecommerceCart
+                && $request->ecommerceOrderId === null
+                && $request->goalRevenue === 19.95,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+        $items = [['sku-1', 'Shoes', 'Sale', 19.95, 1]];
+
+        $this->get($this->url([
+            'idgoal' => '0',
+            'revenue' => '19.95',
+            'ec_items' => json_encode($items, JSON_THROW_ON_ERROR),
+        ]))->assertOk();
+    }
+
     public function test_rejects_invalid_ecommerce_orders(): void
     {
         $this->bindSite();

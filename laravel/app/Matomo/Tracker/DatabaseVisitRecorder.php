@@ -45,8 +45,8 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 return;
             }
 
-            if ($request->ecommerceOrderId !== null) {
-                $this->recordEcommerceOrder($request, $visitor, $ip, $now);
+            if ($request->ecommerceOrderId !== null || $request->ecommerceCart) {
+                $this->recordEcommerce($request, $visitor, $ip, $now);
 
                 return;
             }
@@ -150,6 +150,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 'visit_total_events',
                 'visit_total_searches',
                 'visit_total_time',
+                'visit_goal_buyer',
                 'visit_exit_idaction_url',
                 'visit_exit_idaction_name',
             ])
@@ -212,7 +213,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         ]);
     }
 
-    private function recordEcommerceOrder(
+    private function recordEcommerce(
         TrackingRequest $request,
         string $visitor,
         string $ip,
@@ -223,20 +224,23 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             $visitor,
             $ip,
             $now,
-            ['visit_goal_converted' => 1, 'visit_goal_buyer' => 1],
+            $request->ecommerceCart
+                ? ['visit_goal_converted' => 1]
+                : ['visit_goal_converted' => 1, 'visit_goal_buyer' => 1],
+            $request->ecommerceCart,
         );
         $orderId = $request->ecommerceOrderId;
-        if ($orderId === null) {
+        if ($orderId === null && ! $request->ecommerceCart) {
             return;
         }
 
-        $inserted = $this->connection->table('log_conversion')->insertOrIgnore([
+        $conversion = [
             'idvisit' => $visitId,
             'idsite' => $request->siteId,
             'idvisitor' => $visitor,
             'server_time' => $now->format('Y-m-d H:i:s'),
-            'idgoal' => 0,
-            'buster' => (int) base_convert(substr(md5($orderId), 0, 8), 16, 10),
+            'idgoal' => $request->ecommerceCart ? -1 : 0,
+            'buster' => $request->ecommerceCart ? 0 : (int) base_convert(substr(md5((string) $orderId), 0, 8), 16, 10),
             'idorder' => $orderId,
             'url' => $request->url,
             'revenue' => $request->goalRevenue,
@@ -246,9 +250,26 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'revenue_discount' => $request->ecommerceDiscount,
             'items' => array_sum(array_column($request->ecommerceItems, 'quantity')),
             ...$request->visitProperties,
-        ]);
-        if ($inserted > 0 && $request->ecommerceItems !== []) {
-            $this->recordEcommerceItems($request, $visitId, $visitor, $now, $orderId);
+        ];
+        if ($request->ecommerceCart) {
+            $this->connection->table('log_conversion')->updateOrInsert(
+                ['idvisit' => $visitId, 'idgoal' => -1, 'buster' => 0],
+                $conversion,
+            );
+            $inserted = 1;
+        } else {
+            $inserted = $this->connection->table('log_conversion')->insertOrIgnore($conversion);
+        }
+
+        if ($inserted > 0 && ($request->ecommerceCart || $request->ecommerceItems !== [])) {
+            $this->recordEcommerceItems(
+                $request,
+                $visitId,
+                $visitor,
+                $now,
+                $request->ecommerceCart ? '0' : (string) $orderId,
+                $request->ecommerceCart,
+            );
         }
     }
 
@@ -259,6 +280,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         string $ip,
         CarbonImmutable $now,
         array $conversionUpdates,
+        bool $opensCart = false,
     ): int {
         $visit = $this->recentVisit($request->siteId, $visitor, $now);
         $visitId = $visit === null
@@ -277,6 +299,11 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             ...$conversionUpdates,
             ...$request->visitProperties,
         ];
+        if ($opensCart) {
+            $buyer = $visit === null ? 0 : (int) ($visit->visit_goal_buyer ?? 0);
+            $visitUpdates['visit_goal_buyer'] = in_array($buyer, [1, 3], true) ? 3 : 2;
+        }
+
         if ($request->userId !== null) {
             $visitUpdates['user_id'] = $request->userId;
         }
@@ -409,7 +436,15 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         string $visitor,
         CarbonImmutable $now,
         string $orderId,
+        bool $cart,
     ): void {
+        if ($cart) {
+            $this->connection->table('log_conversion_item')
+                ->where('idvisit', $visitId)
+                ->where('idorder', $orderId)
+                ->update(['deleted' => 1]);
+        }
+
         $rows = [];
         $actionIds = [];
         foreach ($request->ecommerceItems as $item) {
@@ -433,7 +468,20 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             ];
         }
 
-        $this->connection->table('log_conversion_item')->insertOrIgnore($rows);
+        if ($cart) {
+            foreach ($rows as $row) {
+                $this->connection->table('log_conversion_item')->updateOrInsert(
+                    [
+                        'idvisit' => $visitId,
+                        'idorder' => $orderId,
+                        'idaction_sku' => $row['idaction_sku'],
+                    ],
+                    $row,
+                );
+            }
+        } elseif ($rows !== []) {
+            $this->connection->table('log_conversion_item')->insertOrIgnore($rows);
+        }
     }
 
     /** @param array<string, int> $actionIds */

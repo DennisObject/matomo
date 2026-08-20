@@ -530,6 +530,48 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame(2, $connection->table('log_action')->where('type', 7)->count());
     }
 
+    public function test_ecommerce_carts_replace_current_items_and_preserve_ordered_status(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $base = [
+            'siteId' => 1,
+            'url' => 'https://example.test/cart',
+            'actionName' => 'Ignored',
+            'visitorId' => '0123456789abcdef',
+            'ipAddress' => '192.0.2.0',
+            'userAgent' => 'Test browser',
+        ];
+        $recorder->record(new TrackingRequest(...$base, goalRevenue: 42.5, ecommerceOrderId: 'order-17'));
+        $recorder->record(new TrackingRequest(
+            ...$base,
+            goalRevenue: 19.95,
+            ecommerceCart: true,
+            ecommerceItems: [[
+                'sku' => 'sku-1', 'name' => 'Shoes', 'categories' => ['Sale'], 'price' => 19.95, 'quantity' => 1,
+            ]],
+        ));
+        $recorder->record(new TrackingRequest(
+            ...$base,
+            goalRevenue: 8.5,
+            ecommerceCart: true,
+            ecommerceItems: [[
+                'sku' => 'sku-2', 'name' => 'Hat', 'categories' => ['Sale'], 'price' => 8.5, 'quantity' => 2,
+            ]],
+        ));
+
+        $cart = $connection->table('log_conversion')->where('idgoal', -1)->first();
+        $this->assertInstanceOf(stdClass::class, $cart);
+        $this->assertSame(8.5, $cart->revenue);
+        $this->assertSame(2, $cart->items);
+        $this->assertSame(2, $connection->table('log_conversion')->count());
+        $this->assertSame(3, $connection->table('log_visit')->value('visit_goal_buyer'));
+        $this->assertSame(0, $connection->table('log_link_visit_action')->count());
+        $this->assertSame(2, $connection->table('log_conversion_item')->where('idorder', '0')->count());
+        $this->assertSame(1, $connection->table('log_conversion_item')->where('idorder', '0')->where('deleted', 1)->count());
+        $this->assertSame(1, $connection->table('log_conversion_item')->where('idorder', '0')->where('deleted', 0)->count());
+    }
+
     private function connection(): ConnectionInterface
     {
         config()->set('database.connections.tracker_test', ['driver' => 'sqlite', 'database' => ':memory:']);

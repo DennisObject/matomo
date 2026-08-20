@@ -147,6 +147,11 @@ final class TrackerRequestFactory
 
         $orderId = $this->ecommerceOrderId($request->input('ec_id'));
         $goalIdInput = $request->input('idgoal');
+        $ecommerceCart = $orderId === null
+            && $request->exists('ec_items')
+            && filter_var($goalIdInput, FILTER_VALIDATE_INT) !== false
+            && (int) $goalIdInput === 0;
+        $ecommerce = $orderId !== null || $ecommerceCart;
         $goal = null;
         $goalRevenue = null;
         if ($orderId !== null) {
@@ -157,6 +162,8 @@ final class TrackerRequestFactory
 
             $goalRevenue = $this->goalRevenue($request->input('revenue'), 0.0);
             $orderId = $this->clean($this->policy->storedOrderId($siteId, $orderId), 100);
+        } elseif ($ecommerceCart) {
+            $goalRevenue = $this->goalRevenue($request->input('revenue'), 0.0);
         } elseif ($goalIdInput !== null) {
             if (filter_var($goalIdInput, FILTER_VALIDATE_INT) === false || (int) $goalIdInput < 1) {
                 throw new InvalidArgumentException('idgoal must be a positive integer.');
@@ -175,7 +182,7 @@ final class TrackerRequestFactory
 
         $ecommerceValues = [];
         foreach (['ec_st', 'ec_tx', 'ec_sh', 'ec_dt'] as $parameter) {
-            $ecommerceValues[$parameter] = $orderId === null
+            $ecommerceValues[$parameter] = ! $ecommerce
                 ? null
                 : $this->ecommerceRevenue($request->input($parameter));
         }
@@ -272,7 +279,8 @@ final class TrackerRequestFactory
             ecommerceTax: $ecommerceValues['ec_tx'],
             ecommerceShipping: $ecommerceValues['ec_sh'],
             ecommerceDiscount: $ecommerceValues['ec_dt'],
-            ecommerceItems: $this->ecommerceItems($request, $orderId),
+            ecommerceCart: $ecommerceCart,
+            ecommerceItems: $this->ecommerceItems($request, $ecommerce),
             userId: $userId,
             referrerUrl: $referrer,
             referrerType: $referrerType,
@@ -744,7 +752,7 @@ final class TrackerRequestFactory
     }
 
     /** @return list<array{sku: string, name: string, categories: list<string>, price: float, quantity: int}> */
-    private function ecommerceItems(Request $request, ?string $orderId): array
+    private function ecommerceItems(Request $request, bool $ecommerce): array
     {
         $items = $request->input('ec_items');
         if ($items === null || $items === '') {
@@ -755,8 +763,8 @@ final class TrackerRequestFactory
             $items = json_decode($items, true);
         }
 
-        if ($orderId === null || ! is_array($items) || ! array_is_list($items) || count($items) > 1_000) {
-            throw new InvalidArgumentException('ec_items must be an array attached to an ecommerce order.');
+        if (! $ecommerce || ! is_array($items) || ! array_is_list($items) || count($items) > 1_000) {
+            throw new InvalidArgumentException('ec_items must be an array attached to an ecommerce request.');
         }
 
         $clean = [];

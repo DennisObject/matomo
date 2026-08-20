@@ -32,6 +32,7 @@ final readonly class TrackingRequest
         public ?float $ecommerceTax = null,
         public ?float $ecommerceShipping = null,
         public ?float $ecommerceDiscount = null,
+        public bool $ecommerceCart = false,
         /** @var list<array{sku: string, name: string, categories: list<string>, price: float, quantity: int}> */
         public array $ecommerceItems = [],
         public ?string $userId = null,
