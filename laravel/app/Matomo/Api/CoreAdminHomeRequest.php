@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Matomo\Api;
 
+use App\Matomo\Archiving\ArchiveReportRequest;
+
 final readonly class CoreAdminHomeRequest
 {
     public function __construct(
@@ -18,5 +20,6 @@ final readonly class CoreAdminHomeRequest
         public ?bool $hasCustomFavicon = null,
         public ?OptOutEmbedRequest $optOutEmbed = null,
         public ?ArchiveInvalidationRequest $archiveInvalidation = null,
+        public ?ArchiveReportRequest $archiveReport = null,
     ) {}
 }

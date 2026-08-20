@@ -6,6 +6,9 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Api\OptOutEmbedRequest;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
+use App\Matomo\Archiving\ArchiveReportRequest;
+use App\Matomo\Archiving\ArchiveReportResult;
+use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\CoreAdmin\BrandingManager;
@@ -18,6 +21,7 @@ use App\Matomo\TrackingFailures\TrackingFailureRepository;
 use App\Matomo\UserChanges\UserChangeReadRepository;
 use App\Support\MatomoProductUrl;
 use Illuminate\Support\Facades\Event;
+use InvalidArgumentException;
 use Tests\TestCase;
 
 class CoreAdminHomeTrackingFailuresApiTest extends TestCase
@@ -512,6 +516,87 @@ class CoreAdminHomeTrackingFailuresApiTest extends TestCase
                 'message',
                 "You can't access this resource as it requires a 'superuser' access.",
             );
+    }
+
+    public function test_superuser_can_archive_reports_with_the_legacy_contract(): void
+    {
+        $this->authenticate(true);
+        $archiver = $this->createMock(ReportArchiver::class);
+        $archiver->expects($this->once())->method('archive')->with(
+            $this->callback(static fn (ArchiveReportRequest $request): bool => $request == new ArchiveReportRequest(
+                siteId: 7,
+                period: 'week',
+                date: '2026-08-15',
+                segment: 'countryCode==fr',
+                plugin: 'VisitsSummary',
+                reports: ['get', 'getVisits'],
+                force: true,
+            )),
+        )->willReturn(new ArchiveReportResult([41, 42], 12.5, false));
+        $this->app->instance(ReportArchiver::class, $archiver);
+
+        $this->post($this->url('archiveReports'), [
+            'idSite' => '7',
+            'period' => 'WEEK',
+            'date' => '2026-08-15',
+            'segment' => 'countryCode==fr',
+            'plugin' => 'VisitsSummary',
+            'report' => ['get', 'getVisits'],
+        ])->assertOk()->assertExactJson([
+            'idarchives' => [41, 42],
+            'nb_visits' => 12.5,
+        ]);
+    }
+
+    public function test_archive_reports_requires_superuser_access(): void
+    {
+        $this->authenticate(false, true, [7]);
+        $archiver = $this->createMock(ReportArchiver::class);
+        $archiver->expects($this->never())->method('archive');
+        $this->app->instance(ReportArchiver::class, $archiver);
+
+        $this->post($this->url('archiveReports'), [
+            'idSite' => '7',
+            'period' => 'day',
+            'date' => '2026-08-15',
+        ])->assertStatus(401)->assertJsonPath(
+            'message',
+            "You can't access this resource as it requires a 'superuser' access.",
+        );
+    }
+
+    public function test_archive_reports_validates_parameters_and_archiver_errors(): void
+    {
+        $this->authenticate(true);
+        $archiver = $this->createMock(ReportArchiver::class);
+        $archiver->expects($this->once())->method('archive')->willThrowException(
+            new InvalidArgumentException('The website id = 7 does not exist.'),
+        );
+        $this->app->instance(ReportArchiver::class, $archiver);
+
+        $this->post($this->url('archiveReports'))
+            ->assertBadRequest()
+            ->assertJsonPath('message', "Please specify a value for 'idSite'.");
+        $this->post($this->url('archiveReports'), ['idSite' => '7'])
+            ->assertBadRequest()
+            ->assertJsonPath('message', "Please specify a value for 'period'.");
+        $this->post($this->url('archiveReports'), [
+            'idSite' => '7',
+            'period' => 'quarter',
+            'date' => '2026-08-15',
+        ])->assertBadRequest()->assertJsonPath(
+            'message',
+            "The period 'quarter' is not supported.",
+        );
+
+        $this->post($this->url('archiveReports'), [
+            'idSite' => '7',
+            'period' => 'day',
+            'date' => '2026-08-15',
+        ])->assertBadRequest()->assertJsonPath(
+            'message',
+            'The website id = 7 does not exist.',
+        );
     }
 
     /**

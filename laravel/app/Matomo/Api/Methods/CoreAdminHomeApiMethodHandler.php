@@ -7,6 +7,7 @@ namespace App\Matomo\Api\Methods;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
+use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\CoreAdmin\BrandingManager;
@@ -39,6 +40,7 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         private BrandingManager $branding,
         private OptOutEmbedCodeGenerator $optOutEmbedCodes,
         private ArchiveInvalidationManager $archiveInvalidations,
+        private ReportArchiver $reportArchiver,
         private ScheduledTaskRunner $scheduledTasks,
     ) {}
 
@@ -77,6 +79,10 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
 
         if ($request->method === 'CoreAdminHome.invalidateArchivedReports') {
             return $this->invalidateArchives($request);
+        }
+
+        if ($request->method === 'CoreAdminHome.archiveReports') {
+            return $this->archiveReports($request);
         }
 
         if ($request->method === 'CoreAdminHome.runScheduledTasks') {
@@ -321,5 +327,30 @@ final readonly class CoreAdminHomeApiMethodHandler implements ApiMethodHandler
         }
 
         return $this->responses->rows($request, $this->scheduledTasks->run());
+    }
+
+    private function archiveReports(ApiRequest $request): Response
+    {
+        if (! $this->authorizer->hasSuperUserAccess($request->authentication)) {
+            return $this->responses->error(
+                $request,
+                "You can't access this resource as it requires a 'superuser' access.",
+                401,
+            );
+        }
+
+        $parameters = $request->coreAdminHome->archiveReport
+            ?? throw new LogicException('The CoreAdminHome archive report parameters were not parsed.');
+
+        try {
+            $result = $this->reportArchiver->archive($parameters);
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            return $this->responses->error($request, $invalidArgumentException->getMessage(), 400);
+        }
+
+        return $this->responses->structured($request, [
+            'idarchives' => $result->archiveIds,
+            'nb_visits' => $result->visits,
+        ]);
     }
 }
