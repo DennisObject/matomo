@@ -904,7 +904,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         $newGroup = $request->newSiteGroup
             ?? throw new LogicException('The new site group was not parsed.');
 
-        if ($oldGroup === $newGroup) {
+        if ($oldGroup == $newGroup) {
             return $this->responses->scalar($request, true);
         }
 
