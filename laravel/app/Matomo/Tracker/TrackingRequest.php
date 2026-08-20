@@ -53,5 +53,6 @@ final readonly class TrackingRequest
         public array $actionProperties = [],
         /** @var array<string, int> */
         public array $performanceTimings = [],
+        public ?IssuedTrackerCookie $visitorCookie = null,
     ) {}
 }

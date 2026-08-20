@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Matomo;
 
 use App\Http\Controllers\Controller;
+use App\Matomo\Tracker\MatomoCookie;
+use App\Matomo\Tracker\MatomoHttpCookie;
 use App\Matomo\Tracker\TrackerRequestFactory;
 use App\Matomo\Tracker\VisitRecorder;
 use Illuminate\Http\Request;
@@ -31,8 +33,23 @@ final class TrackerController extends Controller
         }
 
         $response = $this->pixel();
+        if ($batch->doNotTrackHonored) {
+            $response->header('Tk', 'N');
+        }
 
-        return $batch->doNotTrackHonored ? $response->header('Tk', 'N') : $response;
+        $cookie = null;
+        foreach ($batch->requests as $trackingRequest) {
+            if ($trackingRequest->visitorCookie !== null) {
+                $cookie = $trackingRequest->visitorCookie;
+            }
+        }
+
+        if ($cookie !== null) {
+            $response->header('P3P', MatomoCookie::P3P_POLICY);
+            $response->headers->setCookie(new MatomoHttpCookie($cookie));
+        }
+
+        return $response;
     }
 
     private function pixel(): Response

@@ -26,4 +26,6 @@ interface TrackingRequestPolicy
     public function masksCampaignParameters(int $siteId): bool;
 
     public function collectsScreenResolution(int $siteId): bool;
+
+    public function forcesCookielessTracking(int $siteId): bool;
 }
