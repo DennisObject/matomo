@@ -6,6 +6,7 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Privacy\DatabaseDataSubjectRepository;
+use App\Matomo\Sites\SiteRepository;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Events\Dispatcher;
@@ -97,10 +98,14 @@ final class DatabaseDataSubjectRepositoryTest extends TestCase
 
     private function repository(ArchiveInvalidationManager $invalidations): DatabaseDataSubjectRepository
     {
+        $sites = $this->createStub(SiteRepository::class);
+        $sites->method('timezone')->willReturn('UTC');
+
         return new DatabaseDataSubjectRepository(
             $this->connection,
             new Dispatcher($this->app),
             $invalidations,
+            $sites,
         );
     }
 }

@@ -680,6 +680,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(MatomoDatabase::class)->connection(),
                 $application->make(Dispatcher::class),
                 $application->make(ArchiveInvalidationManager::class),
+                $application->make(SiteRepository::class),
             ),
         );
         $this->app->singleton(
