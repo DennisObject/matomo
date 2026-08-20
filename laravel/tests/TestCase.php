@@ -50,6 +50,8 @@ use App\Matomo\Login\BruteForceUnblocker;
 use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptStatus;
 use App\Matomo\Marketplace\MarketplaceService;
+use App\Matomo\MobileMessaging\MobileMessagingSettingsRepository;
+use App\Matomo\MobileMessaging\SmsProviderGateway;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
@@ -715,6 +717,39 @@ abstract class TestCase extends BaseTestCase
             public function startFreeTrial(string $pluginName): void {}
 
             public function saveLicenseKey(#[\SensitiveParameter] string $licenseKey): void {}
+        });
+        $this->app->instance(MobileMessagingSettingsRepository::class, new class implements MobileMessagingSettingsRepository
+        {
+            /** @var array<string, array<string, mixed>> */
+            private array $settings = [];
+
+            public function read(string $login): array
+            {
+                return $this->settings[$login] ?? [];
+            }
+
+            public function save(string $login, #[\SensitiveParameter] array $settings): void
+            {
+                $this->settings[$login] = $settings;
+            }
+        });
+        $this->app->instance(SmsProviderGateway::class, new class implements SmsProviderGateway
+        {
+            public function verify(string $provider, #[\SensitiveParameter] array $credentials): void {}
+
+            public function credit(string $provider, #[\SensitiveParameter] array $credentials): int|string
+            {
+                return $provider === '' ? 0 : '0';
+            }
+
+            public function send(
+                string $provider,
+                #[\SensitiveParameter]
+                array $credentials,
+                string $text,
+                string $phoneNumber,
+                string $from,
+            ): void {}
         });
         $this->app->instance(PluginState::class, new class implements PluginState
         {

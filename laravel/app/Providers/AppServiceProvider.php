@@ -47,6 +47,7 @@ use App\Matomo\Api\Methods\LanguagesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\LiveApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\MarketplaceApiMethodHandler;
+use App\Matomo\Api\Methods\MobileMessagingApiMethodHandler;
 use App\Matomo\Api\Methods\MultiSitesApiMethodHandler;
 use App\Matomo\Api\Methods\OverlayApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
@@ -222,6 +223,10 @@ use App\Matomo\Login\DatabaseLoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Marketplace\HttpMarketplaceService;
 use App\Matomo\Marketplace\MarketplaceService;
+use App\Matomo\MobileMessaging\DatabaseMobileMessagingSettingsRepository;
+use App\Matomo\MobileMessaging\HttpSmsProviderGateway;
+use App\Matomo\MobileMessaging\MobileMessagingSettingsRepository;
+use App\Matomo\MobileMessaging\SmsProviderGateway;
 use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
@@ -1653,6 +1658,12 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            MobileMessagingSettingsRepository::class,
+            DatabaseMobileMessagingSettingsRepository::class,
+        );
+        $this->app->singleton(SmsProviderGateway::class, HttpSmsProviderGateway::class);
+
+        $this->app->singleton(
             ImageGraphRenderer::class,
             GdImageGraphRenderer::class,
         );
@@ -1754,6 +1765,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(PrivacyManagerRawAnonymisationApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
                 $application->make(MarketplaceApiMethodHandler::class),
+                $application->make(MobileMessagingApiMethodHandler::class),
                 $application->make(LiveApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),
                 $application->make(AiProvidersApiMethodHandler::class),
