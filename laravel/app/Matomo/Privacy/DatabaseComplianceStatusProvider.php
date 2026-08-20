@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Matomo\Privacy;
 
 use App\Matomo\Config\InstallationConfig;
+use App\Matomo\Localization\MatomoTranslator;
 use App\Matomo\Options\OptionRepository;
 use Illuminate\Database\ConnectionInterface;
 
@@ -15,9 +16,10 @@ final readonly class DatabaseComplianceStatusProvider implements ComplianceStatu
         private OptionRepository $options,
         private CompliancePolicyStateRepository $policies,
         private InstallationConfig $configuration,
+        private MatomoTranslator $translator,
     ) {}
 
-    public function status(?int $idSite): array
+    public function status(?int $idSite, string $language): array
     {
         $ipEnabled = $this->resolvedOptionBoolean('ipAnonymizerEnabled', $idSite, true)
             || $this->enforced('PrivacyManager', 'IPAnonymisation', $idSite);
@@ -33,97 +35,99 @@ final readonly class DatabaseComplianceStatusProvider implements ComplianceStatu
             $referrer = $this->strictestReferrer($referrer, 'exclude_path');
         }
 
+        $hasEcommerce = $this->hasEcommerceEnabledSite($idSite);
+        $ecommerceEnforced = $this->enforced('Ecommerce', 'EcommerceRestricted', $idSite);
+
         $requirements = [
             $this->requirement(
-                'Device model detection disabled',
+                $this->translate('DevicesDetection_DeviceModelDetectionDisabled', $language),
                 $this->enforced('DevicesDetection', 'DeviceModelDetectionDisabled', $idSite),
-                'Device model detection and device model report must be disabled.',
+                $this->translate('DevicesDetection_DeviceModelDetectionDisabledRequirementNote', $language),
             ),
             $this->requirement(
-                'Only Major versions',
+                $this->translate('DevicesDetection_OnlyMajorVersionsSettingTitle', $language),
                 $this->enforced('DevicesDetection', 'OnlyMajorVersions', $idSite),
-                'Only Major OS and browser versions are stored.',
+                $this->translate('DevicesDetection_OnlyMajorVersionsSettingRequirementNote', $language),
             ),
             $this->requirement(
-                'Ecommerce Restricted',
-                ! $this->hasEcommerceEnabledSite($idSite)
-                    || $this->enforced('Ecommerce', 'EcommerceRestricted', $idSite),
-                'Ecommerce analytics must be disabled or restricted.',
+                $this->translate('Ecommerce_EcommercePolicySettingTitle', $language),
+                ! $hasEcommerce || $ecommerceEnforced,
+                $this->ecommerceNote($idSite, $language, $hasEcommerce, $ecommerceEnforced),
             ),
             $this->requirement(
-                'Ecommerce - Order ID anonymisation',
+                $this->translate('Ecommerce_OrderIdAnonymizationSettingTitle', $language),
                 $this->resolvedOptionBoolean('anonymizeOrderId', $idSite)
                     || $this->enforced('Ecommerce', 'OrderIdAnonymization', $idSite),
-                'Order IDs must be anonymised.',
+                $this->translate('Ecommerce_OrderIdAnonymizationSettingRequirementNote', $language),
             ),
             $this->requirement(
-                'PII data filtered',
+                $this->translate('SitesManager_FilterPIIParametersSettingTitle', $language),
                 $this->options->value('SitesManager_ExcludeTypeQueryParamsGlobal') === 'matomo_recommended_pii'
                     || $this->enforced('SitesManager', 'FilterPIIParameters', $idSite),
-                'Personally Identifiable Information data must use the recommended exclusion list.',
+                $this->translate('SitesManager_FilterPiiParametersSettingRequirementNote', $language),
             ),
             $this->requirement(
-                'Turn off Visits log and Visitor profiles',
+                $this->translate('Live_DisableVisitsLogAndProfile', $language),
                 $this->resolvedSettingBoolean('Live', 'disable_visitor_log', $idSite)
                     || $this->enforced('Live', 'VisitorLogDisabled', $idSite),
-                'Visits log is required to be disabled.',
+                $this->translate('Live_VisitorLogPolicySettingRequirementNote', $language),
             ),
             $this->requirement(
-                'Campaign parameter values masked',
+                $this->translate('PrivacyManager_CampaignParameterValuesMaskedSettingTitle', $language),
                 $this->siteBooleanOrAny('PrivacyManager', 'campaign_parameter_values_masked', $idSite)
                     || $this->enforced('PrivacyManager', 'CampaignParameterValuesMasked', $idSite),
-                'Campaign parameter values must be masked before they are stored.',
+                $this->translate('PrivacyManager_CampaignParameterValuesMaskedSettingRequirementNote', $language),
             ),
             $this->requirement(
-                'Segmented data rounding enabled',
+                $this->translate('PrivacyManager_SegmentedDataRoundingSettingTitle', $language),
                 $this->enforced('PrivacyManager', 'DataRoundingEnabled', $idSite),
-                'Segmented count metrics must be rounded to the nearest 10.',
+                $this->translate('PrivacyManager_SegmentedDataRoundingSettingRequirementNote', $language),
             ),
             $this->requirement(
-                'IP Anonymisation Enabled',
+                $this->translate('PrivacyManager_AnonymizeIpPolicySettingTitle', $language),
                 $ipEnabled,
-                "Anonymisation of visitors' IP addresses must be enabled.",
+                $this->translate('PrivacyManager_AnonymizeIpPolicySettingRequirementNote', $language),
             ),
             $this->requirement(
-                'IP Address Mask Length',
+                $this->translate('PrivacyManager_AnonymizeIpMaskLengthSettingTitle', $language),
                 $maskLength >= 2,
-                sprintf('Must be set to at least 2 byte(s), currently %d byte(s).', $maskLength),
+                $this->translate('PrivacyManager_AnonymizeIpMaskLengthSettingRequirementNote', $language, [2, $maskLength]),
             ),
             $this->requirement(
-                'Referrer Anonymisation',
+                $this->translate('PrivacyManager_ReferrerAnonymizationSettingTitle', $language),
                 in_array($referrer, ['exclude_path', 'exclude_all'], true),
-                'Only the referrer host or referrer type may be collected.',
+                $this->translate('PrivacyManager_ReferrerAnonymizationSettingRequirementNote', $language),
             ),
             $this->requirement(
-                'Data retention period',
+                $this->translate('PrivacyManager_RetentionPeriodPolicySettingTitle', $language),
                 $retention <= 759,
-                sprintf('Retention period is set to %d days.', $retention),
+                $this->translate('PrivacyManager_RetentionPeriodPolicySettingRequirementNote', $language, [$retention]),
             ),
             $this->requirement(
-                'Limit available segments',
+                $this->translate('SegmentEditor_LimitSegmentsSettingTitle', $language),
                 $this->enforced('SegmentEditor', 'LimitSegments', $idSite),
-                'Limit the available segments to be compliant.',
+                $this->translate('SegmentEditor_LimitSegmentsSettingRequirementNote', $language),
             ),
             $this->requirement(
-                'Screen resolution detection disabled',
+                $this->translate('Resolution_ScreenResolutionDetectionDisabled', $language),
                 $this->enforced('Resolution', 'ScreenResolutionDetectionDisabled', $idSite),
-                'Screen resolution detection and screen resolution report must be disabled.',
+                $this->translate('Resolution_ScreenResolutionDetectionDisabledRequirementNote', $language),
             ),
             $this->requirement(
-                'User ID disabled',
+                $this->translate('UserId_UserIdDisabledSettingTitle', $language),
                 $this->siteBooleanOrAny('UserId', 'user_id_disabled', $idSite)
                     || $this->enforced('UserId', 'UserIdDisabled', $idSite),
-                'Collection of User ID while tracking must be disabled.',
+                $this->translate('UserId_UserIdDisabledSettingRequirementNote', $language),
             ),
             $this->requirement(
-                'Third-party cookies',
+                $this->translate('General_ThirdPartyCookieSettingTitle', $language),
                 ! $this->configuration->thirdPartyCookiesEnabled($idSite),
-                'Third-party cookies must be disabled.',
+                $this->translate('General_ThirdPartyCookieSettingNote', $language),
             ),
             [
-                'name' => 'Opt out',
+                'name' => $this->translate('General_ComplianceCNILUnknownSettingOptOutTitle', $language),
                 'value' => 'unknown',
-                'notes' => 'Opt out must be manually set up and configured.',
+                'notes' => $this->translate('General_ComplianceCNILUnknownSettingOptOutNotes', $language, ['', '']),
             ],
         ];
 
@@ -142,6 +146,45 @@ final readonly class DatabaseComplianceStatusProvider implements ComplianceStatu
             'value' => $compliant ? 'compliant' : 'non_compliant',
             'notes' => $notes,
         ];
+    }
+
+    /** @param list<bool|int|string> $arguments */
+    private function translate(string $key, string $language, array $arguments = []): string
+    {
+        return $this->translator->translate($key, $language, $arguments);
+    }
+
+    private function ecommerceNote(
+        ?int $idSite,
+        string $language,
+        bool $hasEcommerce,
+        bool $enforced,
+    ): string {
+        if (! $hasEcommerce) {
+            return $this->translate(
+                $idSite === null
+                    ? 'Ecommerce_EcommercePolicySettingCompliantAll'
+                    : 'Ecommerce_EcommercePolicySettingCompliantSingle',
+                $language,
+            );
+        }
+
+        if (! $enforced) {
+            return $this->translate('Ecommerce_EcommercePolicySettingNonCompliantNote', $language);
+        }
+
+        $query = ['module' => 'SitesManager', 'action' => 'index'];
+        if ($idSite !== null) {
+            $query['idSite'] = (string) $idSite;
+        }
+
+        $link = 'index.php?'.http_build_query($query);
+
+        return $this->translate(
+            'Ecommerce_EcommercePolicySettingRequirementNote',
+            $language,
+            ['<a href="'.$link.'">', '</a>'],
+        );
     }
 
     private function enforced(string $plugin, string $setting, ?int $idSite): bool
