@@ -39,6 +39,7 @@ use App\Matomo\Api\Methods\ExampleUiApiMethodHandler;
 use App\Matomo\Api\Methods\FeedbackApiMethodHandler;
 use App\Matomo\Api\Methods\GoalsApiMethodHandler;
 use App\Matomo\Api\Methods\GoalsReportApiMethodHandler;
+use App\Matomo\Api\Methods\InsightsCapabilityApiMethodHandler;
 use App\Matomo\Api\Methods\JsTrackerInstallCheckApiMethodHandler;
 use App\Matomo\Api\Methods\LanguagesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
@@ -1360,6 +1361,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(SegmentEditorStateApiMethodHandler::class),
                 $application->make(SegmentEditorMutationApiMethodHandler::class),
                 $application->make(SegmentEditorReportApiMethodHandler::class),
+                $application->make(InsightsCapabilityApiMethodHandler::class),
                 $application->make(DashboardApiMethodHandler::class),
                 $application->make(DbStatsApiMethodHandler::class),
                 $application->make(ProfessionalServicesApiMethodHandler::class),

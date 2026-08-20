@@ -218,6 +218,8 @@ final readonly class ApiRequest
         'SegmentEditor.getSegmentData',
     ];
 
+    private const string INSIGHTS_CAPABILITY_METHOD = 'Insights.canGenerateInsights';
+
     /** @var list<string> */
     private const array DB_STATS_METHODS = [
         'DBStats.getGeneralInformation',
@@ -430,6 +432,7 @@ final readonly class ApiRequest
         public ?BotTrackingRealtimeRequest $botTrackingRealtime,
         public ?CustomDimensionsRequest $customDimensions,
         public ?SegmentEditorRequest $segmentEditor,
+        public ?InsightsRequest $insights,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -492,6 +495,7 @@ final readonly class ApiRequest
             botTrackingRealtime: null,
             customDimensions: null,
             segmentEditor: null,
+            insights: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -820,6 +824,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::SEGMENT_EDITOR_METHODS, true);
     }
 
+    public function isInsightsRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === self::INSIGHTS_CAPABILITY_METHOD;
+    }
+
     public function isExampleApiRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::EXAMPLE_API_METHODS, true);
@@ -986,8 +995,24 @@ final readonly class ApiRequest
             botTrackingRealtime: self::botTrackingRealtime($request, $module, $method),
             customDimensions: self::customDimensions($request, $module, $method),
             segmentEditor: self::segmentEditor($request, $module, $method),
+            insights: self::insights($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
+        );
+    }
+
+    private static function insights(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?InsightsRequest {
+        if ($module !== 'API' || $method !== self::INSIGHTS_CAPABILITY_METHOD) {
+            return null;
+        }
+
+        return new InsightsRequest(
+            self::requiredString($request, 'period'),
+            self::requiredString($request, 'date'),
         );
     }
 
