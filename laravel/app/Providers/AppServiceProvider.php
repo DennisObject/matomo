@@ -198,6 +198,8 @@ use App\Matomo\Login\DatabaseLoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Options\MutableOptionRepository;
+use App\Matomo\Privacy\ConfiguredDeletionBatchLimits;
+use App\Matomo\Privacy\DeletionBatchLimits;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Overlay\ConfiguredOverlaySettings;
 use App\Matomo\Overlay\OverlaySettings;
@@ -554,6 +556,7 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(AccessMetadataProvider::class, ConfiguredAccessMetadataProvider::class);
+        $this->app->singleton(DeletionBatchLimits::class, ConfiguredDeletionBatchLimits::class);
         $this->app->singleton(UserPreferenceDefaults::class, ConfiguredUserPreferenceDefaults::class);
         $this->app->singleton(
             UserPreferenceRepository::class,
