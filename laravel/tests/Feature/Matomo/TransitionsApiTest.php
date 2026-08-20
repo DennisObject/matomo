@@ -8,6 +8,8 @@ use App\Matomo\Archiving\ArchiveActionQueryFactory;
 use App\Matomo\Archiving\ArchiveVisitQueryFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Database\MatomoDatabase;
+use App\Matomo\Overlay\OverlaySettings;
+use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Transitions\TransitionsReportBuilder;
 use Illuminate\Database\Connection;
@@ -40,6 +42,33 @@ class TransitionsApiTest extends TestCase
         $this->app->forgetInstance(ArchiveActionQueryFactory::class);
         $this->app->forgetInstance(ArchiveVisitQueryFactory::class);
         $this->app->forgetInstance(TransitionsReportBuilder::class);
+        $this->app->instance(OverlaySettings::class, new class implements OverlaySettings
+        {
+            public function followingPagesLimit(): int
+            {
+                return 300;
+            }
+
+            public function urlQueryParametersToExclude(): array
+            {
+                return ['jsessionid', 'token_auth', 'token'];
+            }
+
+            public function campaignNameParameters(): array
+            {
+                return ['utm_campaign'];
+            }
+
+            public function campaignKeywordParameters(): array
+            {
+                return ['utm_term'];
+            }
+
+            public function pageMaximumLength(): int
+            {
+                return 1024;
+            }
+        });
 
         $authorizer = $this->createStub(ApiAccessAuthorizer::class);
         $authorizer->method('hasViewAccessToSite')->willReturn(true);
@@ -262,6 +291,111 @@ class TransitionsApiTest extends TestCase
 
         $this->get($this->url('Transitions.getTransitionsForPageUrl', [
             'pageUrl' => 'https://example.com/page',
+            'idSite' => 1,
+            'period' => 'day',
+            'date' => '2026-08-15',
+        ]))->assertStatus(401)->assertExactJson([
+            'result' => 'error',
+            'message' => "You can't access this resource as it requires 'view' access for the website id = 1.",
+        ]);
+    }
+
+    public function test_overlay_returns_following_pages_outlinks_and_downloads(): void
+    {
+        $response = $this->get($this->url('Overlay.getFollowingPages', [
+            'url' => 'https://Example.com/page?utm_campaign=ignored&token_auth=secret',
+            'idSite' => 1,
+            'period' => 'day',
+            'date' => '2026-08-15',
+            'filter_limit' => -1,
+        ]))->assertOk()->json();
+
+        $this->assertSame([
+            ['label' => 'example.com/next', 'referrals' => 1],
+            ['label' => 'example.com/page', 'referrals' => 1],
+            ['label' => 'https://external.test/path', 'referrals' => 1],
+            ['label' => 'https://files.test/file.zip', 'referrals' => 1],
+        ], $response);
+    }
+
+    public function test_overlay_applies_the_outer_api_row_filter_after_merging_reports(): void
+    {
+        $this->get($this->url('Overlay.getFollowingPages', [
+            'url' => 'https://example.com/page',
+            'idSite' => 1,
+            'period' => 'day',
+            'date' => '2026-08-15',
+            'filter_offset' => 1,
+            'filter_limit' => 2,
+        ]))->assertOk()->assertExactJson([
+            ['label' => 'example.com/page', 'referrals' => 1],
+            ['label' => 'https://external.test/path', 'referrals' => 1],
+        ]);
+    }
+
+    public function test_overlay_normalizes_matrix_parameters_and_site_exclusions(): void
+    {
+        $sites = $this->createStub(SiteRepository::class);
+        $sites->method('timezone')->willReturnMap([[1, 'UTC']]);
+        $sites->method('details')->willReturn(['keep_url_fragment' => 0]);
+        $sites->method('excludedParameters')->willReturn('private,/^secret/');
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $globalExclusions = $this->createStub(QueryParameterExclusionPolicy::class);
+        $globalExclusions->method('parameters')->willReturn('global');
+        $this->app->instance(QueryParameterExclusionPolicy::class, $globalExclusions);
+
+        $this->get($this->url('Overlay.getFollowingPages', [
+            'url' => 'https://Example.com/page;jsessionid=x;private=y;secretValue=z;global=a#removed',
+            'idSite' => 1,
+            'period' => 'day',
+            'date' => '2026-08-15',
+            'filter_limit' => 1,
+        ]))->assertOk()->assertExactJson([
+            ['label' => 'example.com/next', 'referrals' => 1],
+        ]);
+    }
+
+    public function test_overlay_uses_the_last_repeated_scalar_query_parameter(): void
+    {
+        $this->connection->table('log_action')->insert([
+            'idaction' => 10,
+            'name' => 'example.com/page?item=last',
+            'type' => 1,
+            'url_prefix' => 2,
+        ]);
+        $this->connection->table('log_link_visit_action')->insert(
+            $this->link(20, 1, 3, 8, 10, null),
+        );
+
+        $this->get($this->url('Overlay.getFollowingPages', [
+            'url' => 'https://example.com/page?item=first&item=last',
+            'idSite' => 1,
+            'period' => 'day',
+            'date' => '2026-08-15',
+        ]))->assertOk()->assertExactJson([
+            ['label' => 'example.com/next', 'referrals' => 1],
+        ]);
+    }
+
+    public function test_overlay_returns_an_empty_report_when_the_page_is_unknown(): void
+    {
+        $this->get($this->url('Overlay.getFollowingPages', [
+            'url' => 'https://example.com/missing',
+            'idSite' => 1,
+            'period' => 'day',
+            'date' => '2026-08-15',
+        ]))->assertOk()->assertExactJson([]);
+    }
+
+    public function test_overlay_checks_view_access_before_reading_transition_logs(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasViewAccessToSite')->willReturn(false);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get($this->url('Overlay.getFollowingPages', [
+            'url' => 'https://example.com/page',
             'idSite' => 1,
             'period' => 'day',
             'date' => '2026-08-15',

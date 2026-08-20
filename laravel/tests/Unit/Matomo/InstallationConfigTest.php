@@ -99,6 +99,11 @@ class InstallationConfigTest extends TestCase
             'time_dom_completion' => 0,
             'time_on_load' => 0,
         ], $configuration->pagePerformanceTimingCaps());
+        $this->assertSame(300, $configuration->overlayFollowingPagesLimit());
+        $this->assertContains('token_auth', $configuration->urlQueryParametersToExclude());
+        $this->assertContains('utm_campaign', $configuration->campaignNameParameters());
+        $this->assertContains('utm_term', $configuration->campaignKeywordParameters());
+        $this->assertSame(1024, $configuration->pageMaximumLength());
     }
 
     public function test_loads_reporting_overrides(): void
@@ -117,10 +122,15 @@ class InstallationConfigTest extends TestCase
             enable_custom_logo = 0
             enable_browser_archiving_triggering = 0
             piwik_professional_support_ads_enabled = 0
+            overlay_following_pages_limit = 25
             INI,
             extraTracker: <<<'INI'
             enable_default_location_provider = 0
             enable_language_to_country_guess = 0
+            url_query_parameter_to_exclude_from_url = "session,secret"
+            campaign_var_name = "campaign"
+            campaign_keyword_var_name = "keyword"
+            page_maximum_length = 2048
             INI,
         ));
 
@@ -138,6 +148,11 @@ class InstallationConfigTest extends TestCase
         $this->assertFalse($configuration->defaultLocationProviderEnabled());
         $this->assertFalse($configuration->languageToCountryGuessEnabled());
         $this->assertFalse($configuration->professionalServicesAdsEnabled());
+        $this->assertSame(25, $configuration->overlayFollowingPagesLimit());
+        $this->assertSame(['session', 'secret'], $configuration->urlQueryParametersToExclude());
+        $this->assertSame(['campaign'], $configuration->campaignNameParameters());
+        $this->assertSame(['keyword'], $configuration->campaignKeywordParameters());
+        $this->assertSame(2048, $configuration->pageMaximumLength());
     }
 
     public function test_rejects_unsafe_table_prefix(): void

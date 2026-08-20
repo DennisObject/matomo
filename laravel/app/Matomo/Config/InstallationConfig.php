@@ -81,6 +81,14 @@ final readonly class InstallationConfig
         private array $aiProviders,
         /** @var array<string, int> */
         private array $pagePerformanceTimingCaps,
+        private int $overlayFollowingPagesLimit,
+        /** @var list<string> */
+        private array $urlQueryParametersToExclude,
+        /** @var list<string> */
+        private array $campaignNameParameters,
+        /** @var list<string> */
+        private array $campaignKeywordParameters,
+        private int $pageMaximumLength,
     ) {}
 
     public static function fromFile(string $path): self
@@ -255,6 +263,64 @@ final readonly class InstallationConfig
             transitionsMaxPeriodAllowed: self::parseTransitionsMaxPeriodAllowed($configuration),
             aiProviders: $aiProviders,
             pagePerformanceTimingCaps: self::parsePagePerformanceTimingCaps($pagePerformance),
+            overlayFollowingPagesLimit: self::nonNegativeInteger(
+                $general,
+                'overlay_following_pages_limit',
+                300,
+            ),
+            urlQueryParametersToExclude: self::commaSeparatedList(
+                $tracker,
+                'url_query_parameter_to_exclude_from_url',
+                [
+                    'gclid',
+                    'fbclid',
+                    'msclkid',
+                    'twclid',
+                    'wbraid',
+                    'gbraid',
+                    'yclid',
+                    'fb_xd_fragment',
+                    'fb_comment_id',
+                    'phpsessid',
+                    'jsessionid',
+                    'sessionid',
+                    'aspsessionid',
+                    'doing_wp_cron',
+                    'sid',
+                    'pk_vid',
+                    'li_fat_id',
+                    'token_auth',
+                    'token',
+                ],
+            ),
+            campaignNameParameters: self::commaSeparatedList(
+                $tracker,
+                'campaign_var_name',
+                [
+                    'pk_cpn',
+                    'pk_campaign',
+                    'piwik_campaign',
+                    'mtm_campaign',
+                    'matomo_campaign',
+                    'utm_campaign',
+                    'utm_source',
+                    'utm_medium',
+                ],
+            ),
+            campaignKeywordParameters: self::commaSeparatedList(
+                $tracker,
+                'campaign_keyword_var_name',
+                [
+                    'pk_kwd',
+                    'pk_keyword',
+                    'piwik_kwd',
+                    'mtm_kwd',
+                    'mtm_keyword',
+                    'matomo_kwd',
+                    'utm_term',
+                ],
+            ),
+            pageMaximumLength: self::positiveInteger($tracker, 'page_maximum_length', 1024),
         );
     }
 
@@ -550,6 +616,34 @@ final readonly class InstallationConfig
         return $this->pagePerformanceTimingCaps;
     }
 
+    public function overlayFollowingPagesLimit(): int
+    {
+        return $this->overlayFollowingPagesLimit;
+    }
+
+    /** @return list<string> */
+    public function urlQueryParametersToExclude(): array
+    {
+        return $this->urlQueryParametersToExclude;
+    }
+
+    /** @return list<string> */
+    public function campaignNameParameters(): array
+    {
+        return $this->campaignNameParameters;
+    }
+
+    /** @return list<string> */
+    public function campaignKeywordParameters(): array
+    {
+        return $this->campaignKeywordParameters;
+    }
+
+    public function pageMaximumLength(): int
+    {
+        return $this->pageMaximumLength;
+    }
+
     /** @param array<string, mixed> $general */
     private static function parsedTemporaryPath(array $general): string
     {
@@ -819,6 +913,14 @@ final readonly class InstallationConfig
         $value = self::string($values, $key, (string) $default);
 
         return preg_match('/^[1-9]\d*$/D', $value) === 1 ? (int) $value : $default;
+    }
+
+    /** @param array<string, mixed> $values */
+    private static function nonNegativeInteger(array $values, string $key, int $default): int
+    {
+        $value = self::string($values, $key, (string) $default);
+
+        return preg_match('/^\d+$/D', $value) === 1 ? (int) $value : $default;
     }
 
     /** @param array<string, mixed> $values */

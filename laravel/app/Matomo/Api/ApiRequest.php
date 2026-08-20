@@ -243,7 +243,11 @@ final readonly class ApiRequest
         'LanguagesManager.set12HourClockForUser',
     ];
 
-    private const string OVERLAY_TRANSLATIONS_METHOD = 'Overlay.getTranslations';
+    /** @var list<string> */
+    private const array OVERLAY_METHODS = [
+        'Overlay.getTranslations',
+        'Overlay.getFollowingPages',
+    ];
 
     /** @var list<string> */
     private const array TRANSITIONS_METHODS = [
@@ -354,6 +358,7 @@ final readonly class ApiRequest
         public ?GoalsReportRequest $goalsReport,
         public ?JsTrackerInstallCheckRequest $jsTrackerInstallCheck,
         public ?LanguagesManagerRequest $languagesManager,
+        public ?OverlayRequest $overlay,
         public ?TransitionsRequest $transitions,
         public ApiAuthentication $authentication,
     ) {}
@@ -411,6 +416,7 @@ final readonly class ApiRequest
             goalsReport: null,
             jsTrackerInstallCheck: null,
             languagesManager: null,
+            overlay: null,
             transitions: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -761,9 +767,19 @@ final readonly class ApiRequest
             && in_array($this->method, self::LANGUAGES_MANAGER_METHODS, true);
     }
 
+    public function isOverlayRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::OVERLAY_METHODS, true);
+    }
+
     public function isOverlayTranslationsRequest(): bool
     {
-        return $this->module === 'API' && $this->method === self::OVERLAY_TRANSLATIONS_METHOD;
+        return $this->module === 'API' && $this->method === 'Overlay.getTranslations';
+    }
+
+    public function isOverlayFollowingPagesRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'Overlay.getFollowingPages';
     }
 
     public function isTransitionsRequest(): bool
@@ -863,6 +879,7 @@ final readonly class ApiRequest
             goalsReport: self::goalsReport($request, $module, $method),
             jsTrackerInstallCheck: self::jsTrackerInstallCheck($request, $module, $method),
             languagesManager: self::languagesManager($request, $module, $method),
+            overlay: self::overlay($request, $module, $method),
             transitions: self::transitions($request, $module, $method),
             authentication: $authentication,
         );
@@ -1107,6 +1124,32 @@ final readonly class ApiRequest
         );
     }
 
+    private static function overlay(Request $request, string $module, string $method): ?OverlayRequest
+    {
+        if ($module !== 'API' || $method !== 'Overlay.getFollowingPages') {
+            return null;
+        }
+
+        [$siteId, $period, $date] = self::reportContext($request);
+        $url = self::nullableStringInput($request, 'url');
+
+        if ($url === null) {
+            throw new MissingApiParameter('url');
+        }
+
+        $segment = trim(self::nullableStringInput($request, 'segment') ?? '');
+
+        return new OverlayRequest(
+            siteId: $siteId,
+            period: $period,
+            date: $date,
+            url: $url,
+            segment: $segment === '' ? null : substr($segment, 0, 8192),
+            filterLimit: self::integerInput($request, 'filter_limit', 100, -1),
+            filterOffset: self::integerInput($request, 'filter_offset', 0, 0),
+        );
+    }
+
     private static function transitions(Request $request, string $module, string $method): ?TransitionsRequest
     {
         if ($module !== 'API' || ! in_array($method, self::TRANSITIONS_METHODS, true)) {
@@ -1117,39 +1160,7 @@ final readonly class ApiRequest
             return null;
         }
 
-        $siteId = self::requiredInteger($request, 'idSite');
-
-        if ($siteId < 1) {
-            throw new InvalidApiParameter('idSite');
-        }
-
-        $period = self::nullableStringInput($request, 'period');
-
-        if ($period === null || $period === '') {
-            throw new MissingApiParameter('period');
-        }
-
-        $period = strtolower($period);
-
-        if (! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
-            throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
-        }
-
-        $date = self::nullableStringInput($request, 'date');
-
-        if ($date === null || $date === '') {
-            throw new MissingApiParameter('date');
-        }
-
-        if (! self::validReportDate($date)) {
-            throw new InvalidApiParameter('date', "The date '{$date}' is not valid.");
-        }
-
-        if ($period === 'range'
-            && ! str_contains($date, ',')
-            && preg_match('/^(last|previous)[0-9]*$/D', $date) !== 1) {
-            throw new InvalidApiParameter('date', "The date '{$date}' is not a valid range.");
-        }
+        [$siteId, $period, $date] = self::reportContext($request);
 
         if ($method === 'Transitions.isPeriodAllowed') {
             return new TransitionsRequest(
@@ -1220,6 +1231,46 @@ final readonly class ApiRequest
             parts: $parts,
             allParts: $allParts,
         );
+    }
+
+    /** @return array{int, 'day'|'week'|'month'|'range'|'year', string} */
+    private static function reportContext(Request $request): array
+    {
+        $siteId = self::requiredInteger($request, 'idSite');
+
+        if ($siteId < 1) {
+            throw new InvalidApiParameter('idSite');
+        }
+
+        $period = self::nullableStringInput($request, 'period');
+
+        if ($period === null || $period === '') {
+            throw new MissingApiParameter('period');
+        }
+
+        $period = strtolower($period);
+
+        if (! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
+            throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
+        }
+
+        $date = self::nullableStringInput($request, 'date');
+
+        if ($date === null || $date === '') {
+            throw new MissingApiParameter('date');
+        }
+
+        if (! self::validReportDate($date)) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not valid.");
+        }
+
+        if ($period === 'range'
+            && ! str_contains($date, ',')
+            && preg_match('/^(last|previous)[0-9]*$/D', $date) !== 1) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not a valid range.");
+        }
+
+        return [$siteId, $period, $date];
     }
 
     private static function jsTrackerInstallCheck(
