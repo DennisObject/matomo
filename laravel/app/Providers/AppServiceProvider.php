@@ -62,6 +62,7 @@ use App\Matomo\Archiving\ArchiveConversionQueryFactory;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Archiving\ArchiveVisitQueryFactory;
 use App\Matomo\Archiving\BotTrackingArchiveConfiguration;
+use App\Matomo\Archiving\BotTrackingContentArchiveCollector;
 use App\Matomo\Archiving\BotTrackingOverviewArchiveCollector;
 use App\Matomo\Archiving\BrowserLanguageArchiveLabeler;
 use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
@@ -851,6 +852,17 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(
+            BotTrackingContentArchiveCollector::class,
+            fn (Application $application): BotTrackingContentArchiveCollector => new BotTrackingContentArchiveCollector(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                subperiods: $application->make(ReportingSubperiodFactory::class),
+                segments: $application->make(SegmentHashResolver::class),
+                blobs: $application->make(BlobArchiveRepository::class),
+                sites: $application->make(SiteRepository::class),
+                configuration: $application->make(BotTrackingArchiveConfiguration::class),
+            ),
+        );
+        $this->app->singleton(
             ExamplePluginArchiveCollector::class,
             fn (Application $application): ExamplePluginArchiveCollector => new ExamplePluginArchiveCollector(
                 connection: $application->make(MatomoDatabase::class)->connection(),
@@ -1247,6 +1259,7 @@ class AppServiceProvider extends ServiceProvider
         $events->listen(ArchiveReportsCollecting::class, EventArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, ContentArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, BotTrackingOverviewArchiveCollector::class);
+        $events->listen(ArchiveReportsCollecting::class, BotTrackingContentArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, ExamplePluginArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, PagePerformanceArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, ActionArchiveCollector::class);
