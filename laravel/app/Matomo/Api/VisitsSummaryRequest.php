@@ -21,5 +21,6 @@ final readonly class VisitsSummaryRequest
         public ?array $columns,
         public array $showColumns,
         public array $hideColumns,
+        public ?int $idSubtable,
     ) {}
 }
