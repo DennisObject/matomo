@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Matomo\Config;
 
+use App\Matomo\Tracker\TrackerCookieSettings;
 use RuntimeException;
 
 final readonly class InstallationConfig
@@ -44,6 +45,7 @@ final readonly class InstallationConfig
         private bool $thirdPartyCookiesEnabled,
         /** @var array<int, bool> */
         private array $siteThirdPartyCookiesEnabled,
+        private TrackerCookieSettings $trackerCookies,
         private int $deleteLogsOlderThan,
         private bool $granularPrivacyComplianceEnabled,
         /** @var list<string>|null */
@@ -224,6 +226,21 @@ final readonly class InstallationConfig
                 $configuration,
                 'Tracker',
                 'use_third_party_id_cookie',
+            ),
+            trackerCookies: new TrackerCookieSettings(
+                name: self::string($tracker, 'cookie_name', '_pk_uid'),
+                expireSeconds: self::positiveInteger($tracker, 'cookie_expire', 33_955_200),
+                path: self::string($tracker, 'cookie_path'),
+                domain: self::string($tracker, 'cookie_domain'),
+                namesBySite: self::siteStringValues($configuration, 'Tracker', 'cookie_name'),
+                expireSecondsBySite: self::siteIntegerValues(
+                    $configuration,
+                    'Tracker',
+                    'cookie_expire',
+                    33_955_200,
+                ),
+                pathsBySite: self::siteStringValues($configuration, 'Tracker', 'cookie_path'),
+                domainsBySite: self::siteStringValues($configuration, 'Tracker', 'cookie_domain'),
             ),
             deleteLogsOlderThan: self::positiveInteger($deleteLogs, 'delete_logs_older_than', 180),
             granularPrivacyComplianceEnabled: self::string(
@@ -560,6 +577,11 @@ final readonly class InstallationConfig
         }
 
         return $this->thirdPartyCookiesEnabled;
+    }
+
+    public function trackerCookies(): TrackerCookieSettings
+    {
+        return $this->trackerCookies;
     }
 
     public function deleteLogsOlderThan(): int
@@ -899,6 +921,54 @@ final readonly class InstallationConfig
 
             /** @var array<string, mixed> $values */
             $valuesBySite[(int) $matches[1]] = self::boolean($values, $key);
+        }
+
+        return $valuesBySite;
+    }
+
+    /**
+     * @param  array<string, mixed>  $configuration
+     * @return array<int, string>
+     */
+    private static function siteStringValues(array $configuration, string $section, string $key): array
+    {
+        $valuesBySite = [];
+
+        foreach ($configuration as $name => $values) {
+            if (preg_match('/^'.preg_quote($section, '/').'_([1-9][0-9]*)$/D', $name, $matches) !== 1
+                || ! is_array($values)
+                || ! array_key_exists($key, $values)) {
+                continue;
+            }
+
+            /** @var array<string, mixed> $values */
+            $valuesBySite[(int) $matches[1]] = self::string($values, $key);
+        }
+
+        return $valuesBySite;
+    }
+
+    /**
+     * @param  array<string, mixed>  $configuration
+     * @return array<int, int>
+     */
+    private static function siteIntegerValues(
+        array $configuration,
+        string $section,
+        string $key,
+        int $default,
+    ): array {
+        $valuesBySite = [];
+
+        foreach ($configuration as $name => $values) {
+            if (preg_match('/^'.preg_quote($section, '/').'_([1-9][0-9]*)$/D', $name, $matches) !== 1
+                || ! is_array($values)
+                || ! array_key_exists($key, $values)) {
+                continue;
+            }
+
+            /** @var array<string, mixed> $values */
+            $valuesBySite[(int) $matches[1]] = self::positiveInteger($values, $key, $default);
         }
 
         return $valuesBySite;

@@ -127,10 +127,7 @@ final class TrackerRequestFactory
             return null;
         }
 
-        $visitorId = $request->input('_id', '');
-        if (! is_string($visitorId) || preg_match('/^[a-f0-9]{16}$/iD', $visitorId) !== 1) {
-            $visitorId = bin2hex(random_bytes(8));
-        }
+        $visitorId = $this->visitorId($request, $siteId);
 
         $actionName = $actionType === 8 ? $search : $request->input('action_name', '');
 
@@ -312,6 +309,7 @@ final class TrackerRequestFactory
             visitProperties: $visitProperties,
             actionProperties: $actionProperties,
             performanceTimings: $this->performanceTimings($request, $actionType),
+            visitorCookie: $this->visitorCookie($request, $siteId, $visitorId),
         );
     }
 
@@ -479,6 +477,67 @@ final class TrackerRequestFactory
         $key = $siteId."\0".$ipAddress;
 
         return $this->storedIpsByContext[$key] ??= $this->policy->storedIpAddress($siteId, $ipAddress);
+    }
+
+    private function visitorId(Request $request, int $siteId): string
+    {
+        if (! $this->policy->forcesCookielessTracking($siteId)) {
+            if ($this->configuration->thirdPartyCookiesEnabled($siteId)) {
+                $cookieVisitorId = $this->thirdPartyVisitorId($request, $siteId);
+                if ($cookieVisitorId !== null) {
+                    return $cookieVisitorId;
+                }
+            }
+
+            $visitorId = $request->input('_id', '');
+            if (is_string($visitorId) && preg_match('/^[a-f0-9]{16}$/iD', $visitorId) === 1) {
+                return strtolower($visitorId);
+            }
+        }
+
+        return bin2hex(random_bytes(8));
+    }
+
+    private function thirdPartyVisitorId(Request $request, int $siteId): ?string
+    {
+        return MatomoCookie::fromRequest(
+            $request,
+            $this->configuration->trackerCookies()->name($siteId),
+        )->visitorId();
+    }
+
+    private function visitorCookie(Request $request, int $siteId, string $visitorId): ?IssuedTrackerCookie
+    {
+        if ($this->policy->forcesCookielessTracking($siteId)
+            || ! $this->configuration->thirdPartyCookiesEnabled($siteId)
+            || MatomoCookie::fromRequest(
+                $request,
+                $this->configuration->ignoreVisitsCookieName(),
+            )->ignoresVisits()) {
+            return null;
+        }
+
+        $cookies = $this->configuration->trackerCookies();
+        $value = MatomoCookie::encode([0 => $visitorId]);
+        if (strlen($value) > MatomoCookie::MAXIMUM_SIZE) {
+            return null;
+        }
+
+        $secure = $request->secure();
+
+        return new IssuedTrackerCookie(
+            name: $cookies->name($siteId),
+            value: $value,
+            expiresAt: time() + $cookies->expireSeconds($siteId),
+            path: $cookies->path($siteId),
+            domain: $cookies->domain($siteId),
+            secure: $secure,
+            sameSite: MatomoCookie::sameSite(
+                $secure ? 'None' : 'Lax',
+                $secure,
+                (string) $request->userAgent(),
+            ),
+        );
     }
 
     private function optional(mixed $value, int $length): ?string

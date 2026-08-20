@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\Config\InstallationConfig;
 use App\Matomo\CustomDimensions\CustomDimensionRepository;
 use App\Matomo\Goals\GoalRepository;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Settings\PolicySettingRepository;
 use App\Matomo\Sites\SiteRepository;
+use App\Matomo\Tracker\MatomoCookie;
 use App\Matomo\Tracker\TrackingRequest;
+use App\Matomo\Tracker\TrackingRequestPolicy;
 use App\Matomo\Tracker\VisitRecorder;
 use Tests\TestCase;
 
@@ -797,7 +800,9 @@ final class TrackerEndpointTest extends TestCase
         $recorder->expects($this->never())->method('record');
         $this->app->instance(VisitRecorder::class, $recorder);
 
-        $this->withUnencryptedCookie('matomo_ignore', '*')->get($this->url())->assertOk();
+        $this->withUnencryptedCookie('matomo_ignore', MatomoCookie::encode(['ignore' => '*']))
+            ->get($this->url())
+            ->assertOk();
     }
 
     public function test_does_not_treat_an_unset_ignore_cookie_as_opt_out(): void
@@ -808,6 +813,109 @@ final class TrackerEndpointTest extends TestCase
         $this->app->instance(VisitRecorder::class, $recorder);
 
         $this->withUnencryptedCookie('matomo_ignore', 'invalid')->get($this->url())->assertOk();
+    }
+
+    public function test_does_not_treat_a_raw_star_ignore_cookie_as_opt_out(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->withUnencryptedCookie('matomo_ignore', '*')->get($this->url())->assertOk();
+    }
+
+    public function test_reads_and_sets_the_third_party_visitor_cookie(): void
+    {
+        $this->bindSite();
+        $this->enableThirdPartyCookies();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->visitorId === 'fedcba9876543210'
+                && $request->visitorCookie !== null
+                && $request->visitorCookie->name === '_pk_uid'
+                && $request->visitorCookie->value === MatomoCookie::encode([0 => 'fedcba9876543210'])
+                && $request->visitorCookie->path === ''
+                && $request->visitorCookie->domain === ''
+                && ! $request->visitorCookie->secure
+                && $request->visitorCookie->sameSite === 'Lax',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $response = $this->withUnencryptedCookie('_pk_uid', MatomoCookie::encode([0 => 'fedcba9876543210']))
+            ->get($this->url())
+            ->assertOk()
+            ->assertHeader('P3P', MatomoCookie::P3P_POLICY);
+
+        $cookie = (string) $response->headers->get('Set-Cookie');
+        $this->assertStringContainsString('_pk_uid=0%3DZmVkY2JhOTg3NjU0MzIxMA%3D%3D', $cookie);
+        $this->assertStringContainsString('; SameSite=Lax', $cookie);
+        $this->assertStringNotContainsString('; secure', $cookie);
+    }
+
+    public function test_prefers_the_third_party_cookie_over_the_first_party_id(): void
+    {
+        $this->bindSite();
+        $this->enableThirdPartyCookies();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->visitorId === 'aaaaaaaaaaaaaaaa',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->withUnencryptedCookie('_pk_uid', MatomoCookie::encode([0 => 'aaaaaaaaaaaaaaaa']))
+            ->get($this->url(['_id' => '0123456789abcdef']))
+            ->assertOk();
+    }
+
+    public function test_sets_a_secure_none_cookie_over_https(): void
+    {
+        $this->bindSite();
+        $this->enableThirdPartyCookies("cookie_path = \"/\"\ncookie_domain = \"www.analytics.test\"");
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->visitorCookie !== null
+                && $request->visitorCookie->secure
+                && $request->visitorCookie->sameSite === 'None'
+                && $request->visitorCookie->path === '/'
+                && $request->visitorCookie->domain === 'www.analytics.test',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get('https://localhost'.$this->url())->assertOk();
+    }
+
+    public function test_does_not_set_or_read_cookies_when_cookieless_tracking_is_forced(): void
+    {
+        $this->bindSite();
+        $this->enableThirdPartyCookies();
+        $this->mutableOptions()->set('PrivacyManager.forceCookielessTracking', '1');
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->visitorId !== '0123456789abcdef'
+                && $request->visitorId !== 'fedcba9876543210'
+                && $request->visitorCookie === null,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->withUnencryptedCookie('_pk_uid', MatomoCookie::encode([0 => 'fedcba9876543210']))
+            ->get($this->url())
+            ->assertOk()
+            ->assertHeaderMissing('Set-Cookie')
+            ->assertHeaderMissing('P3P');
+    }
+
+    public function test_does_not_set_a_visitor_cookie_when_third_party_cookies_are_disabled(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->visitorId === '0123456789abcdef'
+                && $request->visitorCookie === null,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url())->assertOk()->assertHeaderMissing('Set-Cookie');
     }
 
     public function test_silently_excludes_configured_ip_addresses(): void
@@ -841,6 +949,20 @@ final class TrackerEndpointTest extends TestCase
         $this->get($this->url(['url' => 'https://other.test/page']))
             ->assertBadRequest()
             ->assertSeeText('url does not belong to the requested website.');
+    }
+
+    private function enableThirdPartyCookies(string $extra = ''): void
+    {
+        $this->assertNotFalse(file_put_contents(
+            $this->configurationPath,
+            str_replace(
+                '[Tracker]',
+                "[Tracker]\nuse_third_party_id_cookie = 1\n{$extra}",
+                (string) file_get_contents($this->configurationPath),
+            ),
+        ));
+        $this->app->forgetInstance(InstallationConfig::class);
+        $this->app->forgetInstance(TrackingRequestPolicy::class);
     }
 
     /**

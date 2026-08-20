@@ -23,6 +23,8 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
 
     private const string ORDER_ID_OPTION = 'PrivacyManager.anonymizeOrderId';
 
+    private const string COOKIELESS_OPTION = 'PrivacyManager.forceCookielessTracking';
+
     public function __construct(
         private InstallationConfig $configuration,
         private OptionRepository $options,
@@ -38,7 +40,10 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
             return false;
         }
 
-        return $request->cookie($this->configuration->ignoreVisitsCookieName()) !== '*';
+        return ! MatomoCookie::fromRequest(
+            $request,
+            $this->configuration->ignoreVisitsCookieName(),
+        )->ignoresVisits();
     }
 
     public function honorsDoNotTrack(Request $request): bool
@@ -131,6 +136,11 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
             'ScreenResolutionDetectionDisabled',
             $siteId,
         );
+    }
+
+    public function forcesCookielessTracking(int $siteId): bool
+    {
+        return $this->booleanOption(self::COOKIELESS_OPTION, $siteId, false);
     }
 
     private function siteId(Request $request): ?int

@@ -112,6 +112,10 @@ class InstallationConfigTest extends TestCase
         $this->assertTrue($configuration->trackingEnabled());
         $this->assertSame(1_800, $configuration->visitStandardLength());
         $this->assertSame('matomo_ignore', $configuration->ignoreVisitsCookieName());
+        $this->assertSame('_pk_uid', $configuration->trackerCookies()->name());
+        $this->assertSame(33_955_200, $configuration->trackerCookies()->expireSeconds());
+        $this->assertSame('', $configuration->trackerCookies()->path());
+        $this->assertSame('', $configuration->trackerCookies()->domain());
         $this->assertSame(100, $configuration->liveAiChatbotsMaximumRows());
         $this->assertSame(100, $configuration->liveAiChatbotsTopPageUrlsMaximumRows());
         $this->assertSame(-1.0, $configuration->liveQueryMaximumExecutionTime());
@@ -151,9 +155,17 @@ class InstallationConfigTest extends TestCase
             record_statistics = 0
             visit_standard_length = 900
             ignore_visits_cookie_name = "custom_ignore"
+            cookie_name = "uid"
+            cookie_expire = 86400
+            cookie_path = "/"
+            cookie_domain = "www.example.test"
 
             [Tracker_7]
             use_third_party_id_cookie = 1
+            cookie_name = "site_uid"
+            cookie_expire = 3600
+            cookie_path = "/tracker"
+            cookie_domain = "site.example.test"
             INI,
         ));
 
@@ -186,6 +198,14 @@ class InstallationConfigTest extends TestCase
         $this->assertSame('custom_ignore', $configuration->ignoreVisitsCookieName());
         $this->assertTrue($configuration->thirdPartyCookiesEnabled(7));
         $this->assertFalse($configuration->thirdPartyCookiesEnabled(8));
+        $this->assertSame('uid', $configuration->trackerCookies()->name());
+        $this->assertSame('site_uid', $configuration->trackerCookies()->name(7));
+        $this->assertSame(86_400, $configuration->trackerCookies()->expireSeconds());
+        $this->assertSame(3_600, $configuration->trackerCookies()->expireSeconds(7));
+        $this->assertSame('/', $configuration->trackerCookies()->path());
+        $this->assertSame('/tracker', $configuration->trackerCookies()->path(7));
+        $this->assertSame('www.example.test', $configuration->trackerCookies()->domain());
+        $this->assertSame('site.example.test', $configuration->trackerCookies()->domain(7));
     }
 
     public function test_loads_site_specific_segment_creation_access(): void
