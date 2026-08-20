@@ -1,22 +1,20 @@
 # Laravel Port TODO
 
-This is the remaining-work ledger for the Matomo-to-Laravel port. It describes the state after `feature/laravel-tracker-automatic-goals` (`6c0f6a4781`) and PR #185.
+This is the remaining-work ledger for the Matomo-to-Laravel port. It describes `dev` after PR #185 (`70c1264e82`).
 
-Last local gate: 1,021 tests and 5,868 assertions passed. Pint, PHPStan, Rector, strict Composer validation, and the locked dependency security audit also passed.
+Last validated code baseline: 1,130 tests and 6,495 assertions passed. Pint, PHPStan, Rector, and all required GitHub checks also passed.
 
 ## Delivery order
 
-- [ ] Keep every change in a small, coherent stacked branch and PR.
-- [ ] Make PR #37 and each descendant ready only when its required checks are green.
-- [ ] Merge the stack in base order. Rebase or retarget each next PR after its parent merges.
-- [ ] Do not bypass required checks. GitHub currently has repository jobs queued without active runners.
+- [ ] Keep every change in a small, coherent branch and PR based on `dev`.
+- [ ] Mark each PR ready only when its required checks are green.
+- [ ] Do not bypass required checks.
 - [ ] Resolve review comments and related CI failures before each merge.
 - [ ] Remove legacy entry points only after the matching Laravel runtime passes parity tests.
 
 ## Correct the migration ledger
 
 - [ ] Re-run the public reporting API inventory and update `LARAVEL_MIGRATION.md`. Its checked commit and 378/389 table are stale; the route inventory now handles all 389 public method names.
-- [ ] Recount update files. The current checkout contains 192 `core/Updates` and plugin update PHP files, while the ledger says 191.
 - [ ] Replace broad "ported" statements with links to the tests or inventories that prove each surface.
 - [ ] Record intentional compatibility limits and remove them as full parity is implemented.
 
@@ -49,12 +47,12 @@ The Laravel endpoints now cover page views, events, downloads, outlinks, bulk re
 - [ ] Complete automatic goals for visit duration and all legacy edge cases. Verify duplicate, repeatable, event-revenue, and ecommerce conversion rules.
 - [ ] Complete ecommerce order uniqueness, abandoned-cart transitions, cart-to-order item movement, item updates, rounding, and buyer-state values.
 - [ ] Port queued tracking, request authentication, tracking failure storage, spam prevention, request limits, response callbacks, and debug modes.
-- [ ] Port all 15 bundled tracker extension files and the tracker event/dimension extension contracts.
+- [ ] Port all bundled tracker extension points and the tracker event/dimension extension contracts.
 - [ ] Add legacy-versus-Laravel tracker fixture comparisons, concurrency tests, large bulk tests, and MySQL integration coverage.
 
 ## Archiving and reports
 
-- [ ] Inventory all 19 bundled archivers by record name and mark each record as proven, incomplete, or missing.
+- [ ] Inventory all 18 bundled archivers by record name and mark each record as proven, incomplete, or missing.
 - [ ] Port every remaining specialized plugin record and its day/period aggregation.
 - [ ] Verify invalidation, archive locking, temporary/final archive states, blob encoding, numeric precision, segment hashes, and concurrent archiving.
 - [ ] Verify all goal, ecommerce, referrer, action, event, content, device, location, custom-dimension, bot, and performance records against legacy fixtures.
@@ -87,7 +85,7 @@ The current `/` route still returns a 503 foundation response. Only reporting an
 
 - [ ] Port clean installation: requirements, database setup, schema creation, first user/site, configuration writing, and completion checks.
 - [ ] Port the CoreUpdater web and console lifecycles, maintenance mode, version detection, recovery, and post-update cache work.
-- [ ] Port or safely execute all 192 current core and bundled-plugin update files in exact version order.
+- [ ] Port or safely execute all 191 current core and bundled-plugin update files in exact version order.
 - [ ] Preserve state checks, idempotence, transactional boundaries, resumability, and large-table migration strategies.
 - [ ] Add clean-install, old-version upgrade, interrupted-upgrade, retry, and current-schema no-op tests on MySQL/MariaDB.
 - [ ] Do not create a parallel Laravel schema that diverges from the existing Matomo tables.
