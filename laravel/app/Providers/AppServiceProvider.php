@@ -155,6 +155,8 @@ use App\Matomo\Goals\DatabaseGoalRepository;
 use App\Matomo\Goals\FileSiteTrackerCacheInvalidator;
 use App\Matomo\Goals\GoalRepository;
 use App\Matomo\Goals\SiteTrackerCacheInvalidator;
+use App\Matomo\Insights\BuilderCoreInsightReportReader;
+use App\Matomo\Insights\CoreInsightReportReader;
 use App\Matomo\Localization\ApiLanguageResolver;
 use App\Matomo\Localization\DatabaseLanguagePreferenceRepository;
 use App\Matomo\Localization\FilesystemLanguageCatalog;
@@ -1286,6 +1288,7 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(TourSettings::class, ConfiguredTourSettings::class);
+        $this->app->singleton(CoreInsightReportReader::class, BuilderCoreInsightReportReader::class);
         $this->app->singleton(
             TwoFactorAuthenticationResetter::class,
             fn (Application $application): TwoFactorAuthenticationResetter => new DatabaseTwoFactorAuthenticationResetter(
