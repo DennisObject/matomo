@@ -17,7 +17,7 @@ final class PrivacyManagerGranularComplianceApiTest extends TestCase
         $features = $this->createStub(PrivacyFeatureFlags::class);
         $features->method('granularComplianceEnabled')->willReturn(true);
         $settings = $this->createMock(GranularComplianceSettingsProvider::class);
-        $settings->expects($this->once())->method('settings')->with(null)->willReturn([
+        $settings->expects($this->once())->method('settings')->with(null, 'en')->willReturn([
             'policy' => 'cnil_v1',
             'title' => 'CNIL Website Analytics Compliance',
             'description' => 'Policy guidance.',
