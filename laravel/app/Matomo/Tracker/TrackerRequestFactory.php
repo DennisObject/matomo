@@ -16,6 +16,14 @@ use JsonException;
 
 final class TrackerRequestFactory
 {
+    private const int REFERRER_TYPE_DIRECT = 1;
+
+    private const int REFERRER_TYPE_WEBSITE = 3;
+
+    private const int REFERRER_TYPE_CAMPAIGN = 6;
+
+    private const string MASKED_CAMPAIGN_VALUE = '__discarded_by_policy__';
+
     /** @var array<int, array<string, int|string|null>> */
     private array $sitesById = [];
 
@@ -45,6 +53,9 @@ final class TrackerRequestFactory
 
     /** @var array<int, bool> */
     private array $collectsScreenResolutionBySite = [];
+
+    /** @var array<int, bool> */
+    private array $campaignParametersMaskedBySite = [];
 
     public function __construct(
         private readonly ClientIpResolver $ips,
@@ -136,6 +147,16 @@ final class TrackerRequestFactory
         }
 
         $siteId = (int) $siteId;
+        [$referrerType, $referrerName, $referrerKeyword, $ignoreReferrer] = $this->referrerAttribution(
+            $request,
+            $url,
+            $referrer,
+            $siteId,
+        );
+        if ($ignoreReferrer) {
+            $referrer = '';
+        }
+
         $userId = $this->optional($request->input('uid'), 200);
         if ($userId !== null
             && ! ($this->collectsUserIdBySite[$siteId] ??= $this->policy->collectsUserId($siteId))) {
@@ -143,11 +164,22 @@ final class TrackerRequestFactory
         }
 
         if ($referrer !== '') {
+            $referrerMode = $this->referrerAnonymisationBySite[$siteId]
+                ??= $this->policy->referrerAnonymisation($siteId);
             $referrer = $this->anonymisedReferrer(
                 $this->clean($referrer, 1_500),
-                $this->referrerAnonymisationBySite[$siteId]
-                    ??= $this->policy->referrerAnonymisation($siteId),
+                $referrerMode,
             );
+            if ($referrerType === self::REFERRER_TYPE_WEBSITE && $referrerMode === 'exclude_all') {
+                $referrerName = '';
+            }
+        }
+
+        if ($referrerType === self::REFERRER_TYPE_CAMPAIGN
+            && ($this->campaignParametersMaskedBySite[$siteId]
+            ??= $this->policy->masksCampaignParameters($siteId))) {
+            $referrerName = self::MASKED_CAMPAIGN_VALUE;
+            $referrerKeyword = self::MASKED_CAMPAIGN_VALUE;
         }
 
         if ($resolution !== 'unknown'
@@ -174,6 +206,9 @@ final class TrackerRequestFactory
             eventValue: $eventValue === null ? null : (float) $eventValue,
             userId: $userId,
             referrerUrl: $referrer,
+            referrerType: $referrerType,
+            referrerName: $referrerName,
+            referrerKeyword: $referrerKeyword,
             browserLanguage: $this->browserLanguage($request),
             localTime: sprintf('%02d:%02d:%02d', $hour, $minute, $second),
             resolution: $resolution,
@@ -474,6 +509,94 @@ final class TrackerRequestFactory
         }
 
         return $properties;
+    }
+
+    /** @return array{int, string, string, bool} */
+    private function referrerAttribution(Request $request, string $url, string $referrer, int $siteId): array
+    {
+        if ($this->ignoresReferrer($url)) {
+            return [self::REFERRER_TYPE_DIRECT, '', '', true];
+        }
+
+        $campaignNames = $this->configuration->campaignNameParameters();
+        $campaignKeywords = $this->configuration->campaignKeywordParameters();
+        $campaign = $this->queryValue($url, $campaignNames, 70);
+        $keyword = $this->queryValue($url, $campaignKeywords, 255);
+        $requestCampaign = $this->requestValue($request, $campaignNames, 70);
+        if ($requestCampaign !== null) {
+            $campaign = $requestCampaign;
+            $keyword = $this->requestValue($request, $campaignKeywords, 255);
+        }
+
+        if ($campaign !== null) {
+            $referrerHost = parse_url($referrer, PHP_URL_HOST);
+            $keyword ??= is_string($referrerHost) ? $referrerHost : '';
+
+            return [
+                self::REFERRER_TYPE_CAMPAIGN,
+                mb_strtolower($campaign),
+                mb_strtolower($this->clean($keyword, 255)),
+                false,
+            ];
+        }
+
+        $referrerHost = parse_url($referrer, PHP_URL_HOST);
+        if (! is_string($referrerHost) || $referrerHost === '' || $this->belongsToSite($referrer, $siteId)) {
+            return [self::REFERRER_TYPE_DIRECT, '', '', false];
+        }
+
+        return [self::REFERRER_TYPE_WEBSITE, $this->clean(mb_strtolower($referrerHost), 70), '', false];
+    }
+
+    private function ignoresReferrer(string $url): bool
+    {
+        $query = parse_url($url, PHP_URL_QUERY);
+
+        return is_string($query)
+            && $this->parameterValue($query, ['ignore_referrer', 'ignore_referer'], 1) === '1';
+    }
+
+    /** @param list<string> $parameters */
+    private function queryValue(string $url, array $parameters, int $length): ?string
+    {
+        foreach ([PHP_URL_QUERY, PHP_URL_FRAGMENT] as $component) {
+            $value = parse_url($url, $component);
+            if (is_string($value)) {
+                $result = $this->parameterValue($value, $parameters, $length);
+                if ($result !== null) {
+                    return $result;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** @param list<string> $parameters */
+    private function requestValue(Request $request, array $parameters, int $length): ?string
+    {
+        foreach ($parameters as $parameter) {
+            $value = $this->optional($request->input($parameter), $length);
+            if ($value !== null) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    /** @param list<string> $parameters */
+    private function parameterValue(string $input, array $parameters, int $length): ?string
+    {
+        parse_str($input, $values);
+        foreach ($parameters as $parameter) {
+            $value = $this->optional($values[$parameter] ?? null, $length);
+            if ($value !== null) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     private function hasCustomDimension(Request $request): bool

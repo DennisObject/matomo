@@ -100,6 +100,19 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
         return $mode;
     }
 
+    public function masksCampaignParameters(int $siteId): bool
+    {
+        return $this->settings->siteBoolean(
+            $siteId,
+            'PrivacyManager',
+            'campaign_parameter_values_masked',
+        ) === true || $this->compliance->settingEnforced(
+            'PrivacyManager',
+            'CampaignParameterValuesMasked',
+            $siteId,
+        );
+    }
+
     public function collectsScreenResolution(int $siteId): bool
     {
         return ! $this->compliance->settingEnforced(

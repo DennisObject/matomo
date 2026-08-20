@@ -152,6 +152,9 @@ final class DatabaseVisitRecorderTest extends TestCase
             userAgent: 'Test browser',
             userId: 'alice',
             referrerUrl: 'https://search.example/',
+            referrerType: 6,
+            referrerName: 'newsletter',
+            referrerKeyword: 'signup',
             browserLanguage: 'en-us',
             localTime: '14:05:09',
             resolution: '1920x1080',
@@ -171,6 +174,9 @@ final class DatabaseVisitRecorderTest extends TestCase
         $visit = (array) $connection->table('log_visit')->first();
         $this->assertSame('alice', $visit['user_id']);
         $this->assertSame('https://search.example/', $visit['referer_url']);
+        $this->assertSame(6, $visit['referer_type']);
+        $this->assertSame('newsletter', $visit['referer_name']);
+        $this->assertSame('signup', $visit['referer_keyword']);
         $this->assertSame('en-us', $visit['location_browser_lang']);
         $this->assertSame('14:05:09', $visit['visitor_localtime']);
         $this->assertSame('1920x1080', $visit['config_resolution']);
@@ -239,6 +245,9 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedBigInteger('last_idlink_va')->nullable();
             $table->string('user_id', 200)->nullable();
             $table->string('referer_url', 1_500)->nullable();
+            $table->unsignedTinyInteger('referer_type')->nullable();
+            $table->string('referer_name', 70)->nullable();
+            $table->string('referer_keyword', 255)->nullable();
             $table->string('location_browser_lang', 20)->nullable();
             $table->time('visitor_localtime')->nullable();
             $table->string('config_resolution', 18)->nullable();

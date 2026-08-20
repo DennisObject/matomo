@@ -21,5 +21,7 @@ interface TrackingRequestPolicy
 
     public function referrerAnonymisation(int $siteId): string;
 
+    public function masksCampaignParameters(int $siteId): bool;
+
     public function collectsScreenResolution(int $siteId): bool;
 }

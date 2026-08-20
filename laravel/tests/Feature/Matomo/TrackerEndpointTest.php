@@ -256,6 +256,85 @@ final class TrackerEndpointTest extends TestCase
         ]])->assertOk();
     }
 
+    public function test_attributes_campaigns_and_referrers(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->exactly(2))->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->referrerType === 6
+                ? $request->referrerName === 'summer' && $request->referrerKeyword === 'shoes'
+                : $request->referrerType === 3 && $request->referrerName === 'news.example',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'url' => 'https://example.test/?utm_campaign=summer&utm_term=shoes',
+        ]))->assertOk();
+        $this->get($this->url([
+            'urlref' => 'https://news.example/story',
+        ]))->assertOk();
+    }
+
+    public function test_attributes_configured_tracker_parameters_and_ignores_internal_referrers(): void
+    {
+        $this->bindSite(urls: ['https://example.test', 'https://alias.test']);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->exactly(3))->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => match ($request->actionName) {
+                'campaign' => $request->referrerType === 6
+                    && $request->referrerName === 'newsletter'
+                    && $request->referrerKeyword === 'signup',
+                'internal' => $request->referrerType === 1 && $request->referrerUrl === 'https://alias.test/start',
+                'ignored' => $request->referrerType === 1 && $request->referrerUrl === '',
+                default => false,
+            },
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'action_name' => 'campaign',
+            'utm_campaign' => 'Newsletter',
+            'utm_term' => 'Signup',
+        ]))->assertOk();
+        $this->get($this->url([
+            'action_name' => 'internal',
+            'urlref' => 'https://alias.test/start',
+        ]))->assertOk();
+        $this->get($this->url([
+            'action_name' => 'ignored',
+            'url' => 'https://example.test/page?ignore_referrer=1',
+            'urlref' => 'https://news.example/story',
+        ]))->assertOk();
+    }
+
+    public function test_masks_campaign_values_and_anonymises_website_names(): void
+    {
+        $this->bindSite();
+        $this->mutableOptions()->set('PrivacyManager.anonymizeReferrer', 'exclude_all');
+        $settings = $this->createStub(PolicySettingRepository::class);
+        $settings->method('siteBoolean')->willReturnCallback(
+            static fn (int $siteId, string $plugin, string $setting): ?bool => $siteId === 1
+                && $plugin === 'PrivacyManager'
+                && $setting === 'campaign_parameter_values_masked'
+                    ? true
+                    : null,
+        );
+        $this->app->instance(PolicySettingRepository::class, $settings);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->exactly(2))->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->referrerType === 6
+                ? $request->referrerName === '__discarded_by_policy__'
+                    && $request->referrerKeyword === '__discarded_by_policy__'
+                : $request->referrerType === 3
+                    && $request->referrerName === ''
+                    && $request->referrerUrl === '',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['utm_campaign' => 'Private', 'utm_term' => 'Secret']))->assertOk();
+        $this->get($this->url(['urlref' => 'https://news.example/private']))->assertOk();
+    }
+
     public function test_rejects_oversized_bulk_request(): void
     {
         $this->bindSite();
@@ -428,8 +507,11 @@ final class TrackerEndpointTest extends TestCase
             ->assertSeeText('url does not belong to the requested website.');
     }
 
-    /** @param array<string, int|string|null> $overrides */
-    private function bindSite(array $overrides = ['idsite' => 1]): void
+    /**
+     * @param  array<string, int|string|null>  $overrides
+     * @param  list<string>  $urls
+     */
+    private function bindSite(array $overrides = ['idsite' => 1], array $urls = ['https://example.test']): void
     {
         $details = $overrides === [] ? [] : [
             'idsite' => 1,
@@ -443,7 +525,7 @@ final class TrackerEndpointTest extends TestCase
         ];
         $sites = $this->createStub(SiteRepository::class);
         $sites->method('details')->willReturn($details);
-        $sites->method('urls')->willReturn(['https://example.test']);
+        $sites->method('urls')->willReturn($urls);
         $this->app->instance(SiteRepository::class, $sites);
     }
 
