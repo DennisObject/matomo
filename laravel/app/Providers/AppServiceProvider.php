@@ -37,6 +37,7 @@ use App\Matomo\Api\Methods\GoalsReportApiMethodHandler;
 use App\Matomo\Api\Methods\JsTrackerInstallCheckApiMethodHandler;
 use App\Matomo\Api\Methods\LanguagesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
+use App\Matomo\Api\Methods\MultiSitesApiMethodHandler;
 use App\Matomo\Api\Methods\OverlayApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
@@ -1125,6 +1126,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(DevicesDetectionApiMethodHandler::class),
                 $application->make(ActionsApiMethodHandler::class),
                 $application->make(AnnotationsApiMethodHandler::class),
+                $application->make(MultiSitesApiMethodHandler::class),
                 $application->make(EventsApiMethodHandler::class),
                 $application->make(ExampleApiMethodHandler::class),
                 $application->make(ExamplePluginApiMethodHandler::class),
