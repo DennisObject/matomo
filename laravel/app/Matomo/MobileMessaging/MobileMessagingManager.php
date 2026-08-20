@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Matomo\MobileMessaging;
 
+use App\Matomo\Localization\MatomoTranslator;
 use App\Matomo\Options\MutableOptionRepository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Str;
@@ -17,6 +18,7 @@ final readonly class MobileMessagingManager
         private MutableOptionRepository $options,
         private SmsProviderGateway $providers,
         private Dispatcher $events,
+        private MatomoTranslator $translator,
     ) {}
 
     public function delegatedManagement(): bool
@@ -60,11 +62,14 @@ final readonly class MobileMessagingManager
         $this->settings->save($this->credentialLogin($login), $settings);
     }
 
-    public function credit(string $login): int|string
+    public function credit(string $login, string $language): string
     {
         [$provider, $credentials] = $this->credential($login);
+        $credit = $this->providers->credit($provider, $credentials);
 
-        return $this->providers->credit($provider, $credentials);
+        return $provider === 'ASPSMS'
+            ? $this->translator->translate('MobileMessaging_Available_Credits', $language, [(string) $credit])
+            : (string) $credit;
     }
 
     /** @return array<string, array{verified: bool, verificationTries: int, verificationTime: int|null, requestTime: int}> */
