@@ -11,7 +11,7 @@ use Tests\TestCase;
 
 final class DatabaseUserIdentityRepositoryTest extends TestCase
 {
-    public function test_identity_lookups_use_canonical_logins_and_exact_emails(): void
+    public function test_identity_lookups_use_exact_logins_and_emails(): void
     {
         $connection = $this->app->make(ConnectionInterface::class);
         $connection->getSchemaBuilder()->create('user', static function (Blueprint $table): void {
@@ -21,7 +21,8 @@ final class DatabaseUserIdentityRepositoryTest extends TestCase
         $connection->table('user')->insert(['login' => 'Alice', 'email' => 'alice@example.test']);
         $users = new DatabaseUserIdentityRepository($connection);
 
-        $this->assertTrue($users->loginExists('alice'));
+        $this->assertTrue($users->loginExists('Alice'));
+        $this->assertFalse($users->loginExists('alice'));
         $this->assertFalse($users->loginExists('bob'));
         $this->assertTrue($users->emailExists('alice@example.test'));
         $this->assertFalse($users->emailExists('ALICE@example.test'));

@@ -68,7 +68,7 @@ final readonly class UsersManagerUpdateDeleteApiMethodHandler implements ApiMeth
         $parameters = $request->usersManagerUpdateDelete
             ?? throw new LogicException('The UsersManager update parameters were not parsed.');
         $superuser = $this->authorizer->hasSuperUserAccess($request->authentication);
-        if (! $superuser && strcasecmp($requester, $parameters->login) !== 0) {
+        if (! $superuser && $requester !== $parameters->login) {
             return $this->responses->error($request, 'You can only update your own user account.', 401);
         }
 

@@ -38,6 +38,7 @@ final readonly class ReferrersSocialReportBuilder
         array $periods,
         string $segmentHash,
         bool $showMetadata,
+        bool $formatMetrics,
         bool $forceSiteIndex,
         bool $forceDateIndex,
     ): ApiTableReport {
@@ -65,6 +66,7 @@ final readonly class ReferrersSocialReportBuilder
                     $flat,
                     $showDimensions,
                     $showMetadata,
+                    $formatMetrics,
                 ), []);
             }
 
@@ -78,6 +80,7 @@ final readonly class ReferrersSocialReportBuilder
                 $flat,
                 $showDimensions,
                 $showMetadata,
+                $formatMetrics,
             ), $dimensions);
         }
 
@@ -95,6 +98,7 @@ final readonly class ReferrersSocialReportBuilder
                     $flat,
                     $showDimensions,
                     $showMetadata,
+                    $formatMetrics,
                 );
             } else {
                 $period = $periods[0] ?? null;
@@ -107,6 +111,7 @@ final readonly class ReferrersSocialReportBuilder
                     $flat,
                     $showDimensions,
                     $showMetadata,
+                    $formatMetrics,
                 );
             }
         }
@@ -130,6 +135,7 @@ final readonly class ReferrersSocialReportBuilder
         bool $flat,
         bool $showDimensions,
         bool $showMetadata,
+        bool $formatMetrics,
     ): array {
         $rows = [];
 
@@ -143,6 +149,7 @@ final readonly class ReferrersSocialReportBuilder
                 $flat,
                 $showDimensions,
                 $showMetadata,
+                $formatMetrics,
             );
         }
 
@@ -163,6 +170,7 @@ final readonly class ReferrersSocialReportBuilder
         bool $flat,
         bool $showDimensions,
         bool $showMetadata,
+        bool $formatMetrics,
     ): array {
         $socials = $this->socials($socialRecords, $websiteRecords);
         $totals = $this->totals(array_column($socials, 'columns'));
@@ -177,7 +185,7 @@ final readonly class ReferrersSocialReportBuilder
                 }
             }
 
-            return $this->urlRows($urls, $totals, $showMetadata);
+            return $this->urlRows($urls, $totals, $showMetadata, $formatMetrics);
         }
 
         $rows = [];
@@ -185,7 +193,7 @@ final readonly class ReferrersSocialReportBuilder
         foreach ($socials as $social) {
             if ($flat) {
                 foreach ($social['urls'] as $url) {
-                    $row = $this->decorate($url['columns'], $totals);
+                    $row = $this->decorate($url['columns'], $totals, $formatMetrics);
                     $fullUrl = html_entity_decode((string) ($url['columns']['label'] ?? ''), ENT_QUOTES | ENT_HTML5);
                     $row['label'] = $social['name'].' - '.$fullUrl;
                     $this->socialMetadata($row, $social['name'], $showMetadata);
@@ -197,7 +205,7 @@ final readonly class ReferrersSocialReportBuilder
                 continue;
             }
 
-            $row = $this->decorate($social['columns'], $totals);
+            $row = $this->decorate($social['columns'], $totals, $formatMetrics);
             $row['label'] = $social['name'];
             $this->socialMetadata($row, $social['name'], $showMetadata);
 
@@ -206,7 +214,7 @@ final readonly class ReferrersSocialReportBuilder
             }
 
             if ($expanded) {
-                $row['subtable'] = $this->urlRows($social['urls'], $totals, false);
+                $row['subtable'] = $this->urlRows($social['urls'], $totals, false, $formatMetrics);
             }
 
             $rows[] = $row;
@@ -291,13 +299,17 @@ final readonly class ReferrersSocialReportBuilder
      * @param  array<string, float>  $totals
      * @return list<array<string, mixed>>
      */
-    private function urlRows(array $urls, array $totals, bool $showMetadata): array
-    {
+    private function urlRows(
+        array $urls,
+        array $totals,
+        bool $showMetadata,
+        bool $formatMetrics,
+    ): array {
         $rows = [];
 
         foreach ($urls as $urlRow) {
             $url = html_entity_decode((string) ($urlRow['columns']['label'] ?? ''), ENT_QUOTES | ENT_HTML5);
-            $row = $this->decorate($urlRow['columns'], $totals);
+            $row = $this->decorate($urlRow['columns'], $totals, $formatMetrics);
             $row['label'] = preg_replace('#^https?://#i', '', $url) ?? $url;
 
             if ($showMetadata) {
@@ -328,7 +340,7 @@ final readonly class ReferrersSocialReportBuilder
      * @param  array<string, float>  $totals
      * @return array<string, mixed>
      */
-    private function decorate(array $columns, array $totals): array
+    private function decorate(array $columns, array $totals, bool $formatMetrics): array
     {
         $row = $columns;
 
@@ -336,7 +348,11 @@ final readonly class ReferrersSocialReportBuilder
             $value = $row[$metric] ?? null;
 
             if (is_int($value) || is_float($value)) {
-                $row[$metric.'_percent_of_total'] = $this->percent($value, $totals[$metric] ?? 0.0);
+                $row[$metric.'_percent_of_total'] = $this->percent(
+                    $value,
+                    $totals[$metric] ?? 0.0,
+                    $formatMetrics,
+                );
             }
         }
 
@@ -397,9 +413,15 @@ final readonly class ReferrersSocialReportBuilder
         return false;
     }
 
-    private function percent(float|int $value, float $total): string
+    private function percent(float|int $value, float $total, bool $format): int|float|string
     {
-        $percent = $total === 0.0 ? 0 : round((float) $value / $total * 100, 1);
+        $quotient = $total === 0.0 ? 0 : round((float) $value / $total, 4);
+
+        if (! $format) {
+            return $quotient;
+        }
+
+        $percent = $quotient * 100;
 
         return rtrim(rtrim(number_format($percent, 1, '.', ''), '0'), '.').'%';
     }
