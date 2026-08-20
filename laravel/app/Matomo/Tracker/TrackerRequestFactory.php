@@ -272,6 +272,7 @@ final class TrackerRequestFactory
             ecommerceTax: $ecommerceValues['ec_tx'],
             ecommerceShipping: $ecommerceValues['ec_sh'],
             ecommerceDiscount: $ecommerceValues['ec_dt'],
+            ecommerceItems: $this->ecommerceItems($request, $orderId),
             userId: $userId,
             referrerUrl: $referrer,
             referrerType: $referrerType,
@@ -740,6 +741,71 @@ final class TrackerRequestFactory
         }
 
         return $timings;
+    }
+
+    /** @return list<array{sku: string, name: string, categories: list<string>, price: float, quantity: int}> */
+    private function ecommerceItems(Request $request, ?string $orderId): array
+    {
+        $items = $request->input('ec_items');
+        if ($items === null || $items === '') {
+            return [];
+        }
+
+        if (is_string($items)) {
+            $items = json_decode($items, true);
+        }
+
+        if ($orderId === null || ! is_array($items) || ! array_is_list($items) || count($items) > 1_000) {
+            throw new InvalidArgumentException('ec_items must be an array attached to an ecommerce order.');
+        }
+
+        $clean = [];
+        $skus = [];
+        $totalQuantity = 0;
+        foreach ($items as $item) {
+            if (! is_array($item) || ! array_is_list($item)
+                || ! isset($item[0]) || (! is_string($item[0]) && ! is_int($item[0]))
+                || trim((string) $item[0]) === '') {
+                throw new InvalidArgumentException('Every ecommerce item must contain a SKU.');
+            }
+
+            $sku = $this->clean((string) $item[0], 255);
+            if (isset($skus[$sku])) {
+                throw new InvalidArgumentException('Every ecommerce item SKU must be unique.');
+            }
+
+            $skus[$sku] = true;
+
+            $name = isset($item[1]) && is_scalar($item[1]) ? trim((string) $item[1]) : '';
+            $categories = $item[2] ?? [];
+            $categories = is_array($categories) ? $categories : [$categories];
+            $categories = array_values(array_slice(array_filter(array_map(
+                static fn (mixed $category): string => is_scalar($category) ? trim((string) $category) : '',
+                $categories,
+            )), 0, 5));
+            $price = $item[3] ?? 0;
+            $quantity = $item[4] ?? 1;
+            if (! is_scalar($price) || ! is_numeric($price) || ! is_finite((float) $price)
+                || filter_var($quantity, FILTER_VALIDATE_INT) === false || (int) $quantity < 1) {
+                throw new InvalidArgumentException('Ecommerce item price or quantity is invalid.');
+            }
+
+            $totalQuantity += (int) $quantity;
+            if ($totalQuantity > 65_535) {
+                throw new InvalidArgumentException('The ecommerce item quantity total is too large.');
+            }
+
+            $price = (float) $price;
+            $clean[] = [
+                'sku' => $sku,
+                'name' => $this->clean($name, 255),
+                'categories' => array_map(fn (string $category): string => $this->clean($category, 255), $categories),
+                'price' => abs($price) > 1_000_000_000_000 ? 0.0 : round($price, 2),
+                'quantity' => (int) $quantity,
+            ];
+        }
+
+        return $clean;
     }
 
     private function searchCount(mixed $value): ?int

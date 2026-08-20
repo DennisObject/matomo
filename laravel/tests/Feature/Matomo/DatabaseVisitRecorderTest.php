@@ -483,6 +483,13 @@ final class DatabaseVisitRecorderTest extends TestCase
             ecommerceTax: 2.5,
             ecommerceShipping: 5.0,
             ecommerceDiscount: 1.0,
+            ecommerceItems: [[
+                'sku' => 'sku-1',
+                'name' => 'Shoes',
+                'categories' => ['Sale', 'Footwear'],
+                'price' => 19.95,
+                'quantity' => 2,
+            ]],
         );
         $recorder->record($order);
         $recorder->record($order);
@@ -494,9 +501,10 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame(1, $visit->visit_total_actions);
         $this->assertSame(1, $visit->visit_goal_converted);
         $this->assertSame(1, $visit->visit_goal_buyer);
-        $this->assertSame(1, $connection->table('log_action')->count());
+        $this->assertSame(5, $connection->table('log_action')->count());
         $this->assertSame(1, $connection->table('log_link_visit_action')->count());
         $this->assertSame(1, $connection->table('log_conversion')->count());
+        $this->assertSame(1, $connection->table('log_conversion_item')->count());
         $this->assertNull($conversion->idaction_url);
         $this->assertNull($conversion->idlink_va);
         $this->assertSame(0, $conversion->idgoal);
@@ -507,6 +515,19 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame(2.5, $conversion->revenue_tax);
         $this->assertSame(5.0, $conversion->revenue_shipping);
         $this->assertSame(1.0, $conversion->revenue_discount);
+        $this->assertSame(2, $conversion->items);
+
+        $item = $connection->table('log_conversion_item')->first();
+        $this->assertInstanceOf(stdClass::class, $item);
+        $this->assertSame('order-17', $item->idorder);
+        $this->assertSame(19.95, $item->price);
+        $this->assertSame(2, $item->quantity);
+        $this->assertSame(0, $item->idaction_category3);
+        $this->assertSame(0, $item->idaction_category4);
+        $this->assertSame(0, $item->idaction_category5);
+        $this->assertSame(1, $connection->table('log_action')->where('type', 5)->count());
+        $this->assertSame(1, $connection->table('log_action')->where('type', 6)->count());
+        $this->assertSame(2, $connection->table('log_action')->where('type', 7)->count());
     }
 
     private function connection(): ConnectionInterface
@@ -602,11 +623,30 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->text('url');
             $table->double('revenue')->nullable();
             $table->double('revenue_subtotal')->nullable();
+            $table->unsignedSmallInteger('items')->nullable();
             $table->double('revenue_tax')->nullable();
             $table->double('revenue_shipping')->nullable();
             $table->double('revenue_discount')->nullable();
             $table->primary(['idvisit', 'idgoal', 'buster']);
             $table->unique(['idsite', 'idorder']);
+        });
+        $schema->create('log_conversion_item', static function (Blueprint $table): void {
+            $table->unsignedInteger('idsite');
+            $table->binary('idvisitor');
+            $table->dateTime('server_time');
+            $table->unsignedBigInteger('idvisit');
+            $table->string('idorder');
+            $table->unsignedInteger('idaction_sku');
+            $table->unsignedInteger('idaction_name');
+            $table->unsignedInteger('idaction_category');
+            $table->unsignedInteger('idaction_category2');
+            $table->unsignedInteger('idaction_category3');
+            $table->unsignedInteger('idaction_category4');
+            $table->unsignedInteger('idaction_category5');
+            $table->double('price');
+            $table->unsignedInteger('quantity');
+            $table->boolean('deleted');
+            $table->primary(['idvisit', 'idorder', 'idaction_sku']);
         });
 
         return $connection;

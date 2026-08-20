@@ -548,6 +548,27 @@ final class TrackerEndpointTest extends TestCase
         ]))->assertOk();
     }
 
+    public function test_validates_ecommerce_items(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->ecommerceItems === [[
+                'sku' => 'sku-1', 'name' => 'Shoes', 'categories' => ['Sale', 'Footwear'],
+                'price' => 19.95, 'quantity' => 2,
+            ]],
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+        $items = [['sku-1', 'Shoes', ['Sale', 'Footwear'], 19.951, 2]];
+
+        $this->get($this->url([
+            'idgoal' => '0',
+            'ec_id' => 'order-1',
+            'revenue' => '39.9',
+            'ec_items' => json_encode($items, JSON_THROW_ON_ERROR),
+        ]))->assertOk();
+    }
+
     public function test_rejects_invalid_ecommerce_orders(): void
     {
         $this->bindSite();
@@ -560,6 +581,20 @@ final class TrackerEndpointTest extends TestCase
             ->assertBadRequest();
         $this->get($this->url(['idgoal' => '0', 'ec_id' => 'order-17', 'ec_tx' => 'INF']))
             ->assertBadRequest();
+        $this->get($this->url(['idgoal' => '0', 'ec_id' => 'order-17', 'ec_items' => '{']))
+            ->assertBadRequest();
+        $this->get($this->url(['ec_items' => '[['.json_encode('sku-1').']]']))
+            ->assertBadRequest();
+        $this->get($this->url([
+            'idgoal' => '0',
+            'ec_id' => 'order-17',
+            'ec_items' => json_encode([['sku-1', 'Shoes', [], 1, 65_536]], JSON_THROW_ON_ERROR),
+        ]))->assertBadRequest();
+        $this->get($this->url([
+            'idgoal' => '0',
+            'ec_id' => 'order-17',
+            'ec_items' => json_encode([['sku-1'], ['sku-1']], JSON_THROW_ON_ERROR),
+        ]))->assertBadRequest();
     }
 
     public function test_anonymizes_ecommerce_order_ids_when_configured(): void

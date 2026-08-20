@@ -230,7 +230,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             return;
         }
 
-        $this->connection->table('log_conversion')->insertOrIgnore([
+        $inserted = $this->connection->table('log_conversion')->insertOrIgnore([
             'idvisit' => $visitId,
             'idsite' => $request->siteId,
             'idvisitor' => $visitor,
@@ -244,8 +244,12 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'revenue_tax' => $request->ecommerceTax,
             'revenue_shipping' => $request->ecommerceShipping,
             'revenue_discount' => $request->ecommerceDiscount,
+            'items' => array_sum(array_column($request->ecommerceItems, 'quantity')),
             ...$request->visitProperties,
         ]);
+        if ($inserted > 0 && $request->ecommerceItems !== []) {
+            $this->recordEcommerceItems($request, $visitId, $visitor, $now, $orderId);
+        }
     }
 
     /** @param array<string, int> $conversionUpdates */
@@ -397,6 +401,51 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         }
 
         return $insertedId;
+    }
+
+    private function recordEcommerceItems(
+        TrackingRequest $request,
+        int $visitId,
+        string $visitor,
+        CarbonImmutable $now,
+        string $orderId,
+    ): void {
+        $rows = [];
+        $actionIds = [];
+        foreach ($request->ecommerceItems as $item) {
+            $categories = array_pad($item['categories'], 5, '');
+            $rows[] = [
+                'idsite' => $request->siteId,
+                'idvisitor' => $visitor,
+                'server_time' => $now->format('Y-m-d H:i:s'),
+                'idvisit' => $visitId,
+                'idorder' => $orderId,
+                'idaction_sku' => $this->ecommerceAction($actionIds, $item['sku'], 5),
+                'idaction_name' => $this->ecommerceAction($actionIds, $item['name'], 6),
+                'idaction_category' => $this->ecommerceAction($actionIds, $categories[0], 7),
+                'idaction_category2' => $this->ecommerceAction($actionIds, $categories[1], 7),
+                'idaction_category3' => $this->ecommerceAction($actionIds, $categories[2], 7),
+                'idaction_category4' => $this->ecommerceAction($actionIds, $categories[3], 7),
+                'idaction_category5' => $this->ecommerceAction($actionIds, $categories[4], 7),
+                'price' => $item['price'],
+                'quantity' => $item['quantity'],
+                'deleted' => 0,
+            ];
+        }
+
+        $this->connection->table('log_conversion_item')->insertOrIgnore($rows);
+    }
+
+    /** @param array<string, int> $actionIds */
+    private function ecommerceAction(array &$actionIds, string $name, int $type): int
+    {
+        if ($name === '') {
+            return 0;
+        }
+
+        $key = $type."\0".$name;
+
+        return $actionIds[$key] ??= $this->action($name, $type, 0);
     }
 
     private function nullableInteger(mixed $value): ?int
