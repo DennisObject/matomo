@@ -153,7 +153,6 @@ final readonly class ResolutionReportBuilder
             }
 
             if ($showMetadata && ! $configuration && ! $isSummary && is_string($label)) {
-                $row['segmentValue'] = $label;
                 $row['segment'] = 'resolution=='.$label;
             }
 
