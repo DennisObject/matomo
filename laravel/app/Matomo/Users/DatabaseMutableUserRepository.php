@@ -102,6 +102,48 @@ final readonly class DatabaseMutableUserRepository implements MutableUserReposit
         });
     }
 
+    public function renewInvitation(
+        string $login,
+        int $expiryDays,
+        bool $linkOnly,
+        string $requester,
+        bool $requesterIsSuperuser,
+    ): array {
+        return $this->connection->transaction(function () use (
+            $login,
+            $expiryDays,
+            $linkOnly,
+            $requester,
+            $requesterIsSuperuser,
+        ): array {
+            $user = $this->connection->table('user')
+                ->where('login', $login)
+                ->whereNotNull('invite_token')
+                ->lockForUpdate()
+                ->first();
+            if ($user === null || ! is_string($user->login ?? null) || ! is_string($user->email ?? null)) {
+                return ['result' => 'not-pending'];
+            }
+
+            if (! $requesterIsSuperuser && ($user->invited_by ?? null) !== $requester) {
+                return ['result' => 'denied'];
+            }
+
+            $token = bin2hex(random_bytes(32));
+            $values = [
+                $linkOnly ? 'invite_link_token' : 'invite_token' => hash('sha512', $token.$this->salt),
+                'invite_expired_at' => CarbonImmutable::now()->addDays($expiryDays)->toDateTimeString(),
+            ];
+            if (! $linkOnly) {
+                $values['invite_link_token'] = null;
+            }
+
+            $this->connection->table('user')->where('login', $user->login)->update($values);
+
+            return ['result' => 'updated', 'email' => $user->email, 'token' => $token];
+        });
+    }
+
     /** @return 'login-exists'|'email-exists'|'login-is-email'|'email-is-login'|null */
     private function conflict(string $login, string $email): ?string
     {

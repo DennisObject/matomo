@@ -38,6 +38,46 @@ final class DatabaseMutableUserRepositoryTest extends TestCase
         $this->assertSame(hash('sha512', $token.'salt'), $stored);
     }
 
+    public function test_inviter_can_generate_separate_link_token(): void
+    {
+        $connection = $this->connection();
+        $users = new DatabaseMutableUserRepository($connection, 'salt');
+        $users->invite('alice', 'alice@example.test', 7, 7, 'admin');
+
+        $result = $users->renewInvitation('alice', 30, true, 'admin', false);
+
+        $this->assertSame('updated', $result['result']);
+        $token = $result['token'] ?? '';
+        $stored = $connection->table('user')->where('login', 'alice')->value('invite_link_token');
+        $this->assertSame(hash('sha512', $token.'salt'), $stored);
+        $this->assertNotNull($connection->table('user')->where('login', 'alice')->value('invite_token'));
+    }
+
+    public function test_other_admin_cannot_rotate_invite_token(): void
+    {
+        $connection = $this->connection();
+        $users = new DatabaseMutableUserRepository($connection, 'salt');
+        $created = $users->invite('alice', 'alice@example.test', 7, 7, 'admin');
+
+        $this->assertSame('denied', $users->renewInvitation('alice', 30, false, 'other', false)['result']);
+        $this->assertSame(
+            hash('sha512', ($created['token'] ?? '').'salt'),
+            $connection->table('user')->where('login', 'alice')->value('invite_token'),
+        );
+    }
+
+    public function test_invitation_renewal_requires_the_exact_login(): void
+    {
+        $connection = $this->connection();
+        $users = new DatabaseMutableUserRepository($connection, 'salt');
+        $users->invite('alice', 'alice@example.test', 7, 7, 'admin');
+
+        $this->assertSame(
+            'not-pending',
+            $users->renewInvitation('alice@example.test', 30, false, 'admin', true)['result'],
+        );
+    }
+
     private function connection(): ConnectionInterface
     {
         $connection = $this->app->make(ConnectionInterface::class);

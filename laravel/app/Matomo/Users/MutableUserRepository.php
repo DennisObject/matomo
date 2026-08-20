@@ -23,4 +23,13 @@ interface MutableUserRepository
         int $expiryDays,
         string $inviter,
     ): array;
+
+    /** @return array{result: 'updated'|'not-pending'|'denied', email?: string, token?: string} */
+    public function renewInvitation(
+        string $login,
+        int $expiryDays,
+        bool $linkOnly,
+        string $requester,
+        bool $requesterIsSuperuser,
+    ): array;
 }
