@@ -171,6 +171,12 @@ final readonly class ApiRequest
     ];
 
     /** @var list<string> */
+    private const array JS_TRACKER_INSTALL_CHECK_METHODS = [
+        'JsTrackerInstallCheck.wasJsTrackerInstallTestSuccessful',
+        'JsTrackerInstallCheck.initiateJsTrackerInstallTest',
+    ];
+
+    /** @var list<string> */
     private const array EXAMPLE_UI_METHODS = [
         'ExampleUI.getTemperaturesEvolution',
         'ExampleUI.getTemperatures',
@@ -249,6 +255,7 @@ final readonly class ApiRequest
         public ?FeedbackRequest $feedback,
         public ?GoalsRequest $goals,
         public ?GoalsReportRequest $goalsReport,
+        public ?JsTrackerInstallCheckRequest $jsTrackerInstallCheck,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -299,6 +306,7 @@ final readonly class ApiRequest
             feedback: null,
             goals: null,
             goalsReport: null,
+            jsTrackerInstallCheck: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -621,6 +629,12 @@ final readonly class ApiRequest
             && in_array($this->method, self::GOALS_REPORT_METHODS, true);
     }
 
+    public function isJsTrackerInstallCheckRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::JS_TRACKER_INSTALL_CHECK_METHODS, true);
+    }
+
     public function isAiProvidersRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::AI_PROVIDERS_METHODS, true);
@@ -701,7 +715,24 @@ final readonly class ApiRequest
             feedback: self::feedback($request, $module, $method),
             goals: self::goals($request, $module, $method),
             goalsReport: self::goalsReport($request, $module, $method),
+            jsTrackerInstallCheck: self::jsTrackerInstallCheck($request, $module, $method),
             authentication: $authentication,
+        );
+    }
+
+    private static function jsTrackerInstallCheck(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?JsTrackerInstallCheckRequest {
+        if ($module !== 'API' || ! in_array($method, self::JS_TRACKER_INSTALL_CHECK_METHODS, true)) {
+            return null;
+        }
+
+        return new JsTrackerInstallCheckRequest(
+            siteId: self::requiredInteger($request, 'idSite'),
+            nonce: self::stringInput($request, 'nonce'),
+            url: self::stringInput($request, 'url'),
         );
     }
 

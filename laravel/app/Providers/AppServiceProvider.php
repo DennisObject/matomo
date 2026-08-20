@@ -29,6 +29,7 @@ use App\Matomo\Api\Methods\ExampleUiApiMethodHandler;
 use App\Matomo\Api\Methods\FeedbackApiMethodHandler;
 use App\Matomo\Api\Methods\GoalsApiMethodHandler;
 use App\Matomo\Api\Methods\GoalsReportApiMethodHandler;
+use App\Matomo\Api\Methods\JsTrackerInstallCheckApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
@@ -741,6 +742,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(FeedbackApiMethodHandler::class),
                 $application->make(GoalsApiMethodHandler::class),
                 $application->make(GoalsReportApiMethodHandler::class),
+                $application->make(JsTrackerInstallCheckApiMethodHandler::class),
                 $application->make(PagePerformanceApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),
