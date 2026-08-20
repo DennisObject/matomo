@@ -114,6 +114,7 @@ final readonly class ReferrersSocialApiMethodHandler implements ApiMethodHandler
             periods: $periods,
             segmentHash: $this->segments->resolve($query->segment),
             showMetadata: $request->showMetadata,
+            formatMetrics: $query->formatMetrics,
             forceSiteIndex: $query->allSites || count($siteIds) > 1,
             forceDateIndex: $forceDateIndex,
         );

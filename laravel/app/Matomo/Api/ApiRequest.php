@@ -2912,6 +2912,7 @@ final readonly class ApiRequest
             typeReferrer: self::reportTypeReferrer($request, $method),
             setReferrerTypeLabel: $method !== 'Referrers.getReferrerType'
                 || self::booleanInput($request, '_setReferrerTypeLabel', true),
+            formatMetrics: self::booleanInput($request, 'format_metrics', true),
         );
     }
 
