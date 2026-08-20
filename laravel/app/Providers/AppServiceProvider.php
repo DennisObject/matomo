@@ -52,6 +52,7 @@ use App\Matomo\Api\Methods\PrivacyManagerColumnApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceReadApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceStatusApiMethodHandler;
+use App\Matomo\Api\Methods\PrivacyManagerDataPurgeApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerDataSubjectsApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerDataSubjectSearchApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerGranularComplianceApiMethodHandler;
@@ -225,9 +226,11 @@ use App\Matomo\Privacy\DatabaseAnonymisationSettingsRepository;
 use App\Matomo\Privacy\DatabaseAnonymizableColumnProvider;
 use App\Matomo\Privacy\DatabaseCompliancePolicyStateRepository;
 use App\Matomo\Privacy\DatabaseComplianceStatusProvider;
+use App\Matomo\Privacy\DatabaseDataPurger;
 use App\Matomo\Privacy\DatabaseDataSubjectFinder;
 use App\Matomo\Privacy\DatabaseDataSubjectRepository;
 use App\Matomo\Privacy\DatabaseRawAnonymisationScheduler;
+use App\Matomo\Privacy\DataPurger;
 use App\Matomo\Privacy\DataSubjectFinder;
 use App\Matomo\Privacy\DataSubjectRepository;
 use App\Matomo\Privacy\DeletionBatchLimits;
@@ -694,6 +697,14 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(SiteRepository::class),
                 $application->make(DeviceDetectionMetadata::class),
                 $application->make(CountryMetadataProvider::class),
+            ),
+        );
+        $this->app->singleton(
+            DataPurger::class,
+            fn (Application $application): DataPurger => new DatabaseDataPurger(
+                $application->make(MatomoDatabase::class)->connection(),
+                $application->make(OptionRepository::class),
+                $application->make(Dispatcher::class),
             ),
         );
         $this->app->singleton(
@@ -1656,6 +1667,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(PrivacyManagerComplianceStatusApiMethodHandler::class),
                 $application->make(PrivacyManagerDataSubjectsApiMethodHandler::class),
                 $application->make(PrivacyManagerDataSubjectSearchApiMethodHandler::class),
+                $application->make(PrivacyManagerDataPurgeApiMethodHandler::class),
                 $application->make(PrivacyManagerGranularComplianceApiMethodHandler::class),
                 $application->make(PrivacyManagerRawAnonymisationApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
