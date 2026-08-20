@@ -22,6 +22,18 @@ final readonly class DatabaseStoredSegmentRepository implements MutableStoredSeg
         return $row instanceof stdClass ? $this->normalize($row) : null;
     }
 
+    public function findByDefinition(string $definition): ?array
+    {
+        $row = $this->connection()
+            ->table('segment')
+            ->where('definition', $definition)
+            ->where('deleted', 0)
+            ->orderBy('name')
+            ->first();
+
+        return $row instanceof stdClass ? $this->normalize($row) : null;
+    }
+
     public function visible(string $login, bool $superUser, ?int $siteId): array
     {
         $query = $this->connection()->table('segment')

@@ -1025,6 +1025,12 @@ final readonly class ApiRequest
             $siteId = (int) $siteValue;
         }
 
+        $report = $method === 'SegmentEditor.getSegmentData';
+
+        if ($report && $siteId === null) {
+            throw new MissingApiParameter('idSite');
+        }
+
         $writes = in_array($method, ['SegmentEditor.add', 'SegmentEditor.update'], true);
 
         return new SegmentEditorRequest(
@@ -1034,6 +1040,9 @@ final readonly class ApiRequest
             $writes ? self::requiredString($request, 'definition') : null,
             $writes ? self::booleanInput($request, 'autoArchive', false) : null,
             $writes ? self::booleanInput($request, 'enabledAllUsers', false) : null,
+            $report ? self::requiredString($request, 'period') : null,
+            $report ? self::requiredString($request, 'date') : null,
+            $report ? self::requiredString($request, 'segment') : null,
         );
     }
 

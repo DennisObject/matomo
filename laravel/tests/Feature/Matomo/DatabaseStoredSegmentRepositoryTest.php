@@ -31,6 +31,8 @@ class DatabaseStoredSegmentRepositoryTest extends TestCase
         $this->assertSame(md5('browserCode==FF'), $repository->find(7)['hash'] ?? null);
 
         $this->assertSame('Mine', $repository->find(1)['name'] ?? null);
+        $this->assertSame('All sites', $repository->findByDefinition('browserCode==FF')['name'] ?? null);
+        $this->assertNull($repository->findByDefinition('missing==value'));
         $this->assertNull($repository->find(99));
         $this->assertSame(
             [6, 7, 1, 2],

@@ -6,6 +6,7 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
+use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
 use App\Matomo\Segments\Events\SegmentDeactivating;
 use App\Matomo\Segments\Events\SegmentUpdating;
 use App\Matomo\Segments\MutableStoredSegmentRepository;
@@ -14,6 +15,7 @@ use App\Matomo\Segments\SegmentCreationAuthorizer;
 use App\Matomo\Segments\SegmentEditorSettings;
 use App\Matomo\Segments\SegmentRearchiveScheduler;
 use App\Matomo\Segments\StoredSegmentRepository;
+use App\Matomo\Sites\SiteRepository;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
@@ -246,6 +248,78 @@ class SegmentEditorApiTest extends TestCase
         ]))->assertBadRequest();
     }
 
+    public function test_returns_preprocessed_segment_totals_and_visit_evolution(): void
+    {
+        $sites = $this->createStub(SiteRepository::class);
+        $sites->method('timezone')->with(1)->willReturn('UTC');
+        $this->app->instance(SiteRepository::class, $sites);
+        $archives = new SegmentVisitsArchiveRepository;
+        $archives->metrics = [
+            '2026-08-15,2026-08-15' => ['nb_visits' => 10, 'nb_actions' => 30],
+            '2026-08-14,2026-08-14' => ['nb_visits' => 5, 'nb_actions' => 12],
+        ];
+        $this->app->instance(VisitsSummaryArchiveRepository::class, $archives);
+        $this->segments->rows = [
+            $this->segment(1, 'Archived', 'alice', 0, 1, definition: 'browserCode==FF', autoArchive: 1),
+        ];
+
+        $this->get($this->url('getSegmentData', [
+            'idSite' => 1,
+            'period' => 'day',
+            'date' => '2026-08-15',
+            'segment' => 'browserCode==FF',
+        ]))
+            ->assertOk()
+            ->assertExactJson([
+                'nb_visits' => 10,
+                'nb_actions' => 30,
+                'evolution_visits_direction' => 'positive',
+                'evolution_visits_icon' => 'plugins/MultiSites/images/arrow_up.svg',
+                'evolution_visits' => '100%',
+            ]);
+    }
+
+    public function test_rejects_report_data_for_a_saved_realtime_segment(): void
+    {
+        $sites = $this->createStub(SiteRepository::class);
+        $sites->method('timezone')->willReturn('UTC');
+        $this->app->instance(SiteRepository::class, $sites);
+        $this->segments->rows = [
+            $this->segment(1, 'Realtime', 'alice', 0, 1, definition: 'browserCode==FF'),
+        ];
+
+        $this->get($this->url('getSegmentData', [
+            'idSite' => 1,
+            'period' => 'day',
+            'date' => '2026-08-15',
+            'segment' => 'browserCode==FF',
+        ]))->assertBadRequest();
+    }
+
+    public function test_compares_a_range_with_the_equal_length_previous_range(): void
+    {
+        $sites = $this->createStub(SiteRepository::class);
+        $sites->method('timezone')->willReturn('UTC');
+        $this->app->instance(SiteRepository::class, $sites);
+        $archives = new SegmentVisitsArchiveRepository;
+        $archives->metrics = [
+            '2026-01-01,2026-01-03' => ['nb_visits' => 4, 'nb_actions' => 9],
+            '2025-12-29,2025-12-31' => ['nb_visits' => 8, 'nb_actions' => 15],
+        ];
+        $this->app->instance(VisitsSummaryArchiveRepository::class, $archives);
+
+        $this->get($this->url('getSegmentData', [
+            'idSite' => 1,
+            'period' => 'range',
+            'date' => '2026-01-01,2026-01-03',
+            'segment' => '',
+        ]))
+            ->assertOk()
+            ->assertJsonPath('evolution_visits_direction', 'negative')
+            ->assertJsonPath('evolution_visits_icon', 'plugins/MultiSites/images/arrow_down.svg')
+            ->assertJsonPath('evolution_visits', '-50%');
+    }
+
     /** @return StoredSegment */
     private function segment(
         int $id,
@@ -255,6 +329,7 @@ class SegmentEditorApiTest extends TestCase
         int $siteId,
         int $deleted = 0,
         string $definition = 'browserCode==FF',
+        int $autoArchive = 0,
     ): array {
         return [
             'idsegment' => $id,
@@ -264,7 +339,7 @@ class SegmentEditorApiTest extends TestCase
             'login' => $login,
             'enable_all_users' => $shared,
             'enable_only_idsite' => $siteId,
-            'auto_archive' => 0,
+            'auto_archive' => $autoArchive,
             'ts_created' => '2026-08-15 12:00:00',
             'ts_last_edit' => null,
             'deleted' => $deleted,
@@ -306,6 +381,17 @@ final class FakeStoredSegmentRepository implements MutableStoredSegmentRepositor
     {
         foreach ($this->rows as $row) {
             if ($row['idsegment'] === $segmentId) {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+
+    public function findByDefinition(string $definition): ?array
+    {
+        foreach ($this->rows as $row) {
+            if ($row['definition'] === $definition && $row['deleted'] === 0) {
                 return $row;
             }
         }
@@ -454,5 +540,26 @@ final class FakeSegmentCacheInvalidator implements SegmentCacheInvalidator
     public function clear(): void
     {
         $this->cleared = true;
+    }
+}
+
+final class SegmentVisitsArchiveRepository implements VisitsSummaryArchiveRepository
+{
+    /** @var array<string, array<string, int|float>> */
+    public array $metrics = [];
+
+    public function metrics(
+        array $siteIds,
+        array $periods,
+        string $segmentHash,
+        array $metrics,
+    ): array {
+        $rows = [];
+
+        foreach ($periods as $period) {
+            $rows[$period->rangeKey()] = $this->metrics[$period->rangeKey()] ?? [];
+        }
+
+        return [$siteIds[0] => $rows];
     }
 }
