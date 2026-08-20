@@ -8,6 +8,7 @@ use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
+use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\ScreenResolutionPolicy;
@@ -107,6 +108,13 @@ abstract class TestCase extends BaseTestCase
                 return false;
             }
         });
+        $this->app->instance(
+            PromoWidgetDismissalRepository::class,
+            new class implements PromoWidgetDismissalRepository
+            {
+                public function dismiss(string $login, string $widgetName, int $timestamp): void {}
+            },
+        );
         $this->app->instance(ReportingSettings::class, new class implements ReportingSettings
         {
             public function periodEnabled(string $period): bool
