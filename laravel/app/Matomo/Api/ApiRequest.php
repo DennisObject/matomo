@@ -66,6 +66,8 @@ final readonly class ApiRequest
         'Contents.getContentPieces',
     ];
 
+    private const string CUSTOM_JS_TRACKER_METHOD = 'CustomJsTracker.doesIncludePluginTrackersAutomatically';
+
     private function __construct(
         public string $module,
         public string $method,
@@ -385,6 +387,11 @@ final readonly class ApiRequest
     public function isContentsRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::CONTENTS_METHODS, true);
+    }
+
+    public function isCustomJsTrackerRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === self::CUSTOM_JS_TRACKER_METHOD;
     }
 
     public function hasSupportedFormat(): bool
