@@ -118,7 +118,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, array<string, string>>  $values
+     * @param  array<array-key, mixed>  $values
      */
     public function structured(ApiRequest $request, array $values): Response
     {
@@ -383,7 +383,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<array-key, array<string, bool|float|int|string|null>>  $values
+     * @param  array<array-key, mixed>  $values
      */
     private function xmlStructured(array $values): Response
     {
@@ -404,7 +404,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<array-key, array<array-key, bool|float|int|string|null>|bool|float|int|string|null>  $values
+     * @param  array<array-key, mixed>  $values
      */
     private function xmlArray(array $values, string $indent): string
     {
@@ -951,7 +951,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<array-key, array<string, bool|float|int|string|null>>  $values
+     * @param  array<array-key, mixed>  $values
      */
     private function originalStructured(ApiRequest $request, array $values): Response
     {
@@ -1095,7 +1095,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<array-key, array<string, bool|float|int|string|null>>  $values
+     * @param  array<array-key, mixed>  $values
      */
     private function jsonStructured(ApiRequest $request, array $values): Response
     {
@@ -1116,7 +1116,7 @@ final class ApiResponseFactory
     }
 
     /**
-     * @param  array<string, array<string, string>>  $values
+     * @param  array<array-key, mixed>  $values
      */
     private function nestedArrayFormatError(array $values): string
     {

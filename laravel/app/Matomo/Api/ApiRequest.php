@@ -75,6 +75,14 @@ final readonly class ApiRequest
     private const string AI_AGENTS_METHOD = 'AIAgents.get';
 
     /** @var list<string> */
+    private const array AI_PROVIDERS_METHODS = [
+        'AIProviders.getSettings',
+        'AIProviders.saveSettings',
+        'AIProviders.testConnection',
+        'AIProviders.disconnectProvider',
+    ];
+
+    /** @var list<string> */
     private const array USER_COUNTRY_METHODS = [
         'UserCountry.getCountry',
         'UserCountry.getContinent',
@@ -120,6 +128,7 @@ final readonly class ApiRequest
         public ?TwoFactorAuthRequest $twoFactorAuth,
         public ?string $locationIp,
         public ?string $locationProviderId,
+        public ?AiProviderRequest $aiProvider,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -162,6 +171,7 @@ final readonly class ApiRequest
             twoFactorAuth: null,
             locationIp: null,
             locationProviderId: null,
+            aiProvider: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -437,6 +447,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === self::AI_AGENTS_METHOD;
     }
 
+    public function isAiProvidersRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::AI_PROVIDERS_METHODS, true);
+    }
+
     public function isTourRequest(): bool
     {
         return $this->module === 'API'
@@ -499,7 +514,30 @@ final readonly class ApiRequest
             twoFactorAuth: self::twoFactorAuth($request, $module, $method),
             locationIp: self::locationIp($request, $module, $method),
             locationProviderId: self::locationProviderId($request, $module, $method),
+            aiProvider: self::aiProvider($request, $module, $method),
             authentication: $authentication,
+        );
+    }
+
+    private static function aiProvider(Request $request, string $module, string $method): ?AiProviderRequest
+    {
+        if ($module !== 'API' || ! in_array($method, self::AI_PROVIDERS_METHODS, true)) {
+            return null;
+        }
+
+        $providerId = self::stringInput($request, 'providerId');
+
+        if (in_array($method, ['AIProviders.testConnection', 'AIProviders.disconnectProvider'], true)
+            && $providerId === '') {
+            throw new MissingApiParameter('providerId');
+        }
+
+        return new AiProviderRequest(
+            providerId: $providerId,
+            defaultProviderId: self::stringInput($request, 'defaultProviderId'),
+            defaultCapabilityLevel: self::stringInput($request, 'defaultCapabilityLevel'),
+            providerConfiguration: self::stringInput($request, 'providerConfiguration', '{}'),
+            providerConfigurations: self::stringInput($request, 'providerConfigurations', '{}'),
         );
     }
 
@@ -1211,6 +1249,12 @@ final readonly class ApiRequest
         }
 
         $value = $input[$key];
+
+        // Laravel converts empty form fields to null before this boundary.
+        // Matomo's API treats those fields as empty strings.
+        if ($value === null) {
+            return '';
+        }
 
         if (! is_scalar($value)) {
             throw new InvalidApiParameter($key);
