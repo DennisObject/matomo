@@ -72,6 +72,24 @@ final readonly class MobileMessagingManager
             : (string) $credit;
     }
 
+    /** @param list<string> $phoneNumbers */
+    public function sendMessage(string $login, string $message, array $phoneNumbers): void
+    {
+        [$provider, $credentials] = $this->credential($login);
+        $verified = array_keys(array_filter(
+            $this->storedPhoneNumbers($login),
+            static fn (array $data): bool => $data['verified'],
+        ));
+        foreach (array_values(array_unique($phoneNumbers)) as $phoneNumber) {
+            $phoneNumber = $this->phoneNumber($phoneNumber);
+            if (! in_array($phoneNumber, $verified, true)) {
+                throw new MobileMessagingException('A scheduled report phone number is not verified.');
+            }
+
+            $this->providers->send($provider, $credentials, $message, $phoneNumber, 'Matomo');
+        }
+    }
+
     /** @return array<string, array{verified: bool, verificationTries: int, verificationTime: int|null, requestTime: int}> */
     public function phoneNumbers(string $login): array
     {

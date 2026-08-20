@@ -72,6 +72,7 @@ use App\Matomo\Api\Methods\ReferrersSocialApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersTypeApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersWebsiteApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
+use App\Matomo\Api\Methods\ScheduledReportsApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorMutationApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorReadApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorReportApiMethodHandler;
@@ -284,6 +285,14 @@ use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\ScreenResolutionPolicy;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
+use App\Matomo\ScheduledReports\DatabaseScheduledReportRepository;
+use App\Matomo\ScheduledReports\DompdfScheduledReportDocumentRenderer;
+use App\Matomo\ScheduledReports\LaravelScheduledReportGenerator;
+use App\Matomo\ScheduledReports\LaravelScheduledReportSender;
+use App\Matomo\ScheduledReports\ScheduledReportDocumentRenderer;
+use App\Matomo\ScheduledReports\ScheduledReportGenerator;
+use App\Matomo\ScheduledReports\ScheduledReportRepository;
+use App\Matomo\ScheduledReports\ScheduledReportSender;
 use App\Matomo\Scheduling\DatabaseScheduledTaskLock;
 use App\Matomo\Scheduling\DatabaseScheduledTaskRunner;
 use App\Matomo\Scheduling\ScheduledTaskLock;
@@ -1658,6 +1667,17 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            ScheduledReportRepository::class,
+            DatabaseScheduledReportRepository::class,
+        );
+        $this->app->singleton(ScheduledReportGenerator::class, LaravelScheduledReportGenerator::class);
+        $this->app->singleton(
+            ScheduledReportDocumentRenderer::class,
+            DompdfScheduledReportDocumentRenderer::class,
+        );
+        $this->app->singleton(ScheduledReportSender::class, LaravelScheduledReportSender::class);
+
+        $this->app->singleton(
             MobileMessagingSettingsRepository::class,
             DatabaseMobileMessagingSettingsRepository::class,
         );
@@ -1710,6 +1730,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(UsersManagerSiteAccessApiMethodHandler::class),
                 $application->make(UsersManagerRoleDirectoryApiMethodHandler::class),
                 $application->make(ResolutionApiMethodHandler::class),
+                $application->make(ScheduledReportsApiMethodHandler::class),
                 $application->make(DevicePluginsApiMethodHandler::class),
                 $application->make(DevicesDetectionApiMethodHandler::class),
                 $application->make(ActionsApiMethodHandler::class),

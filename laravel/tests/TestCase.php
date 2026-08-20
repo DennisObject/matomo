@@ -77,6 +77,10 @@ use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\ScreenResolutionPolicy;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
+use App\Matomo\ScheduledReports\RenderedScheduledReport;
+use App\Matomo\ScheduledReports\ScheduledReportGenerator;
+use App\Matomo\ScheduledReports\ScheduledReportRepository;
+use App\Matomo\ScheduledReports\ScheduledReportSender;
 use App\Matomo\Scheduling\ScheduledTaskRunner;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
@@ -749,6 +753,41 @@ abstract class TestCase extends BaseTestCase
                 string $text,
                 string $phoneNumber,
                 string $from,
+            ): void {}
+        });
+        $this->app->instance(ScheduledReportRepository::class, new class implements ScheduledReportRepository
+        {
+            public function create(array $report): int
+            {
+                return 1;
+            }
+
+            public function update(int $idReport, array $changes): void {}
+
+            public function find(
+                ?int $idSite,
+                ?string $period,
+                ?int $idReport,
+                ?string $login,
+                ?int $idSegment,
+            ): array {
+                return [];
+            }
+        });
+        $this->app->instance(ScheduledReportGenerator::class, new class implements ScheduledReportGenerator
+        {
+            public function generate(array $report, string $date, string $period, Request $request): string
+            {
+                return '<html></html>';
+            }
+        });
+        $this->app->instance(ScheduledReportSender::class, new class implements ScheduledReportSender
+        {
+            public function send(
+                array $recipients,
+                string $subject,
+                string $html,
+                ?RenderedScheduledReport $attachment = null,
             ): void {}
         });
         $this->app->instance(PluginState::class, new class implements PluginState
