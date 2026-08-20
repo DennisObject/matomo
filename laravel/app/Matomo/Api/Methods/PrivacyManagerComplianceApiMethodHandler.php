@@ -6,6 +6,7 @@ namespace App\Matomo\Api\Methods;
 
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
+use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Privacy\CompliancePolicyCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -16,6 +17,7 @@ final readonly class PrivacyManagerComplianceApiMethodHandler implements ApiMeth
     public function __construct(
         private ApiResponseFactory $responses,
         private CompliancePolicyCatalog $policies,
+        private LanguageResolver $languages,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -29,6 +31,8 @@ final readonly class PrivacyManagerComplianceApiMethodHandler implements ApiMeth
             throw new LogicException('The privacy compliance handler does not support this request.');
         }
 
-        return $this->responses->rows($request, $this->policies->all());
+        $language = $this->languages->resolve($httpRequest, $request->authentication);
+
+        return $this->responses->rows($request, $this->policies->all($language));
     }
 }

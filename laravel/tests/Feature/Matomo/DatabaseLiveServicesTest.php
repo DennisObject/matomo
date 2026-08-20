@@ -30,13 +30,19 @@ final class DatabaseLiveServicesTest extends TestCase
             ['idsite' => 2, 'plugin_name' => 'Live', 'setting_name' => 'disable_visitor_profile', 'setting_value' => '1'],
             ['idsite' => 7, 'plugin_name' => 'Live', 'setting_name' => 'disable_visitor_log', 'setting_value' => '1'],
         ]);
+        $connection->table('plugin_setting')->insert([
+            'plugin_name' => 'Live',
+            'user_login' => '',
+            'setting_name' => 'disable_visitor_profile',
+            'setting_value' => '1',
+        ]);
         $policy = new DatabaseLiveAccessPolicy($connection);
 
         $this->assertTrue($policy->visitorLogEnabled(2));
         $this->assertFalse($policy->visitorProfileEnabled(2));
         $this->assertFalse($policy->visitorLogEnabled(7));
         $this->assertFalse($policy->visitorProfileEnabled(7));
-        $this->assertTrue($policy->visitorProfileEnabled(9));
+        $this->assertFalse($policy->visitorProfileEnabled(9));
     }
 
     public function test_counters_use_table_timestamps_and_segment_matched_visits(): void
@@ -106,6 +112,9 @@ final class DatabaseLiveServicesTest extends TestCase
         $this->assertFalse(
             $repository->adjacentVisitorId(2, '0304', '2026-08-15 10:00:00', null, false),
         );
+        $this->assertFalse(
+            $repository->adjacentVisitorId(2, 'invalid', '2026-08-15 10:00:00', null, true),
+        );
     }
 
     public function test_visit_details_are_normalized_and_actions_are_batched(): void
@@ -146,19 +155,26 @@ final class DatabaseLiveServicesTest extends TestCase
         $this->assertSame('returning', $rows[0]['visitorType']);
         $this->assertSame('https://example.test/page', $rows[0]['actionDetails'][0]['url']);
         $this->assertSame('Page title', $rows[0]['actionDetails'][0]['pageTitle']);
+        $this->assertSame([], $repository->visits([2], null, null, null, null, 0, 10, visitorId: 'invalid'));
     }
 
     private function connection(): Connection
     {
         $connection = $this->app->make('db')->connection();
         $schema = $connection->getSchemaBuilder();
-        foreach (['site_setting', 'log_visit', 'log_link_visit_action', 'log_conversion', 'log_action'] as $name) {
+        foreach (['site_setting', 'plugin_setting', 'log_visit', 'log_link_visit_action', 'log_conversion', 'log_action'] as $name) {
             $schema->dropIfExists($name);
         }
 
         $schema->create('site_setting', static function (Blueprint $table): void {
             $table->integer('idsite');
             $table->string('plugin_name');
+            $table->string('setting_name');
+            $table->string('setting_value')->nullable();
+        });
+        $schema->create('plugin_setting', static function (Blueprint $table): void {
+            $table->string('plugin_name');
+            $table->string('user_login')->default('');
             $table->string('setting_name');
             $table->string('setting_value')->nullable();
         });
