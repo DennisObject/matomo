@@ -48,6 +48,7 @@ use App\Matomo\Api\Methods\MultiSitesApiMethodHandler;
 use App\Matomo\Api\Methods\OverlayApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
+use App\Matomo\Api\Methods\ReferrersCampaignApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersDistinctApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersOverviewApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
@@ -1369,6 +1370,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(OverlayApiMethodHandler::class),
                 $application->make(PagePerformanceApiMethodHandler::class),
                 $application->make(ReferrersDistinctApiMethodHandler::class),
+                $application->make(ReferrersCampaignApiMethodHandler::class),
                 $application->make(ReferrersOverviewApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),

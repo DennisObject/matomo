@@ -89,6 +89,17 @@ final readonly class ApiRequest
 
     private const string REFERRERS_OVERVIEW_METHOD = 'Referrers.get';
 
+    /** @var list<string> */
+    private const array REFERRERS_CAMPAIGN_METHODS = [
+        'Referrers.getCampaigns',
+        'Referrers.getKeywordsFromCampaignId',
+    ];
+
+    /** @var list<string> */
+    private const array REFERRERS_REQUIRED_SUBTABLE_METHODS = [
+        'Referrers.getKeywordsFromCampaignId',
+    ];
+
     private const string USER_ID_METHOD = 'UserId.getUsers';
 
     /** @var list<string> */
@@ -732,6 +743,12 @@ final readonly class ApiRequest
     public function isReferrersOverviewRequest(): bool
     {
         return $this->module === 'API' && $this->method === self::REFERRERS_OVERVIEW_METHOD;
+    }
+
+    public function isReferrersCampaignRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::REFERRERS_CAMPAIGN_METHODS, true);
     }
 
     public function isVisitFrequencyRequest(): bool
@@ -2457,6 +2474,7 @@ final readonly class ApiRequest
                 && $method !== self::PAGE_PERFORMANCE_METHOD
                 && ! in_array($method, self::REFERRERS_DISTINCT_METHODS, true)
                 && $method !== self::REFERRERS_OVERVIEW_METHOD
+                && ! in_array($method, self::REFERRERS_CAMPAIGN_METHODS, true)
                 && $method !== self::USER_ID_METHOD
                 && ! in_array($method, self::ACTIONS_METHODS, true)
                 && ! in_array($method, self::EXAMPLE_PLUGIN_REPORT_METHODS, true)
@@ -2533,6 +2551,7 @@ final readonly class ApiRequest
             && ! in_array($method, self::EVENTS_SUBTABLE_METHODS, true)
             && ! in_array($method, self::ACTIONS_SUBTABLE_METHODS, true)
             && ! in_array($method, self::BOT_TRACKING_SUBTABLE_METHODS, true)
+            && ! in_array($method, self::REFERRERS_REQUIRED_SUBTABLE_METHODS, true)
             && $method !== 'CustomDimensions.getCustomDimension') {
             return null;
         }
@@ -2541,7 +2560,8 @@ final readonly class ApiRequest
 
         if (in_array($value, [null, '', false, 'false', '0'], true)) {
             if ((in_array($method, self::EVENTS_SUBTABLE_METHODS, true)
-                || in_array($method, self::BOT_TRACKING_SUBTABLE_METHODS, true))
+                || in_array($method, self::BOT_TRACKING_SUBTABLE_METHODS, true)
+                || in_array($method, self::REFERRERS_REQUIRED_SUBTABLE_METHODS, true))
                 && ! in_array($value, ['0', 0], true)) {
                 throw new MissingApiParameter('idSubtable');
             }
