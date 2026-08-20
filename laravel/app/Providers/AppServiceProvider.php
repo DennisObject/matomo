@@ -78,6 +78,7 @@ use App\Matomo\Api\Methods\UsersManagerReadApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerRoleDirectoryApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerSecurityMutationApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerSiteAccessApiMethodHandler;
+use App\Matomo\Api\Methods\UsersManagerTokenNewsletterApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerUpdateDeleteApiMethodHandler;
 use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
 use App\Matomo\Api\Methods\VisitorInterestApiMethodHandler;
@@ -291,11 +292,13 @@ use App\Matomo\Users\DatabaseUserIdentityRepository;
 use App\Matomo\Users\DatabaseUserPreferenceRepository;
 use App\Matomo\Users\DatabaseUserRoleDirectoryRepository;
 use App\Matomo\Users\DatabaseUserSiteAccessRepository;
+use App\Matomo\Users\HttpNewsletterSubscriber;
 use App\Matomo\Users\LaravelAnonymousAccessNotifier;
 use App\Matomo\Users\LaravelUserInvitationLinkFactory;
 use App\Matomo\Users\LaravelUserInvitationNotifier;
 use App\Matomo\Users\MutableUserRepository;
 use App\Matomo\Users\MutableUserSiteAccessRepository;
+use App\Matomo\Users\NewsletterSubscriber;
 use App\Matomo\Users\UserDirectoryRepository;
 use App\Matomo\Users\UserIdentityRepository;
 use App\Matomo\Users\UserInvitationLinkFactory;
@@ -589,6 +592,20 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(Mailer::class),
                 $application->make(UserInvitationLinkFactory::class),
             ),
+        );
+        $this->app->singleton(
+            NewsletterSubscriber::class,
+            function (Application $application): NewsletterSubscriber {
+                $endpoint = $application->make(Repository::class)->get('matomo.newsletter_endpoint', '');
+
+                return new HttpNewsletterSubscriber(
+                    $application->make(HttpFactory::class),
+                    $application->make(ConnectionInterface::class),
+                    is_string($endpoint) ? $endpoint : '',
+                    $application->make(InstallationConfig::class)->internetFeaturesEnabled(),
+                    $application->make(InstallationConfig::class)->defaultLanguage(),
+                );
+            },
         );
         $this->app->singleton(
             MutableUserSiteAccessRepository::class,
@@ -1489,6 +1506,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(UsersManagerInviteMaintenanceApiMethodHandler::class),
                 $application->make(UsersManagerSecurityMutationApiMethodHandler::class),
                 $application->make(UsersManagerUpdateDeleteApiMethodHandler::class),
+                $application->make(UsersManagerTokenNewsletterApiMethodHandler::class),
                 $application->make(UsersManagerIdentityApiMethodHandler::class),
                 $application->make(UsersManagerPreferenceApiMethodHandler::class),
                 $application->make(UsersManagerReadApiMethodHandler::class),
