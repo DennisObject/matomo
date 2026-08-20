@@ -52,6 +52,7 @@ use App\Matomo\Api\Methods\PrivacyManagerColumnApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceReadApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceStatusApiMethodHandler;
+use App\Matomo\Api\Methods\PrivacyManagerDataSubjectsApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerGranularComplianceApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerRawAnonymisationApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerSettingsApiMethodHandler;
@@ -223,7 +224,9 @@ use App\Matomo\Privacy\DatabaseAnonymisationSettingsRepository;
 use App\Matomo\Privacy\DatabaseAnonymizableColumnProvider;
 use App\Matomo\Privacy\DatabaseCompliancePolicyStateRepository;
 use App\Matomo\Privacy\DatabaseComplianceStatusProvider;
+use App\Matomo\Privacy\DatabaseDataSubjectRepository;
 use App\Matomo\Privacy\DatabaseRawAnonymisationScheduler;
+use App\Matomo\Privacy\DataSubjectRepository;
 use App\Matomo\Privacy\DeletionBatchLimits;
 use App\Matomo\Privacy\GranularComplianceSettingsProvider;
 use App\Matomo\Privacy\PrivacyFeatureFlags;
@@ -669,6 +672,15 @@ class AppServiceProvider extends ServiceProvider
             AnonymisationSettingsRepository::class,
             fn (Application $application): AnonymisationSettingsRepository => new DatabaseAnonymisationSettingsRepository(
                 $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            DataSubjectRepository::class,
+            fn (Application $application): DataSubjectRepository => new DatabaseDataSubjectRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+                $application->make(Dispatcher::class),
+                $application->make(ArchiveInvalidationManager::class),
+                $application->make(SiteRepository::class),
             ),
         );
         $this->app->singleton(
@@ -1629,6 +1641,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(PrivacyManagerComplianceApiMethodHandler::class),
                 $application->make(PrivacyManagerComplianceReadApiMethodHandler::class),
                 $application->make(PrivacyManagerComplianceStatusApiMethodHandler::class),
+                $application->make(PrivacyManagerDataSubjectsApiMethodHandler::class),
                 $application->make(PrivacyManagerGranularComplianceApiMethodHandler::class),
                 $application->make(PrivacyManagerRawAnonymisationApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),

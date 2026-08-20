@@ -51,6 +51,7 @@ use App\Matomo\Privacy\AnonymisationSettingsRepository;
 use App\Matomo\Privacy\AnonymizableColumnProvider;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Privacy\ComplianceStatusProvider;
+use App\Matomo\Privacy\DataSubjectRepository;
 use App\Matomo\Privacy\DeletionBatchLimits;
 use App\Matomo\Privacy\GranularComplianceSettingsProvider;
 use App\Matomo\Privacy\PrivacyFeatureFlags;
@@ -458,6 +459,10 @@ abstract class TestCase extends BaseTestCase
         $this->app->instance(
             AnonymisationSettingsRepository::class,
             $this->createStub(AnonymisationSettingsRepository::class),
+        );
+        $this->app->instance(
+            DataSubjectRepository::class,
+            $this->createStub(DataSubjectRepository::class),
         );
         $this->app->instance(
             CompliancePolicyStateRepository::class,
