@@ -59,6 +59,22 @@ class ReferrersSocialApiTest extends TestCase
             ->assertJsonPath('0.label', 'facebook.com/a');
     }
 
+    public function test_returns_unformatted_percentage_quotients(): void
+    {
+        $this->bindDependencies();
+        $this->bindArchives([
+            'Referrers_urlBySocialNetwork' => [
+                $this->row('Facebook', 1, 2),
+                $this->row('Instagram', 2, 4),
+            ],
+        ]);
+
+        $this->get($this->url('getSocials').'&format_metrics=0')
+            ->assertOk()
+            ->assertJsonPath('0.nb_visits_percent_of_total', 0.3333)
+            ->assertJsonPath('1.nb_visits_percent_of_total', 0.6667);
+    }
+
     public function test_falls_back_to_grouped_website_archives_only_when_social_archive_is_empty(): void
     {
         $this->bindDependencies();

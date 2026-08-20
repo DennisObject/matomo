@@ -33,6 +33,7 @@ class InstallationConfigTest extends TestCase
         $this->assertSame('matomo_', $configuration->databaseConnection()['prefix']);
         $this->assertSame('secret-salt', $configuration->salt());
         $this->assertTrue($configuration->onlyAllowSecureTokens());
+        $this->assertSame(-1, $configuration->apiBulkRequestLimit());
         $this->assertSame(1_209_600, $configuration->sessionLifetime());
         $this->assertSame(3_600, $configuration->sessionIdleTimeout());
         $this->assertSame(['10.0.0.0/8'], $configuration->loginAllowlistIps());

@@ -14,7 +14,14 @@ final readonly class ProcessedReportRequest
         public string $apiModule,
         public string $apiAction,
         public array $apiParameters,
+        public ?string $segment,
+        public ?string $goalId,
+        public ?string $language,
+        public bool $showTimer,
         public bool $hideMetricsDocumentation,
+        public ?int $subtableId,
         public bool $showRawMetrics,
+        public ?string $formatMetrics,
+        public ?int $dimensionId,
     ) {}
 }

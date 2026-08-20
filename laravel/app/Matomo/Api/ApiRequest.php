@@ -565,6 +565,13 @@ final readonly class ApiRequest
         return self::make($request, self::authentication($request));
     }
 
+    public static function fromRequestWithAuthentication(
+        Request $request,
+        ApiAuthentication $authentication,
+    ): self {
+        return self::make($request, $authentication);
+    }
+
     public static function withoutAuthentication(Request $request): self
     {
         return new self(
@@ -3136,7 +3143,11 @@ final readonly class ApiRequest
             siteId: $siteId,
             apiModule: self::nullableStringInput($request, 'apiModule'),
             apiAction: self::nullableStringInput($request, 'apiAction'),
+            apiParameters: self::mixedParameterMap($request, 'apiParameters'),
+            period: self::nullableStringInput($request, 'period'),
+            date: self::nullableStringInput($request, 'date'),
             hideMetricsDocumentation: self::booleanInput($request, 'hideMetricsDoc', false),
+            showSubtableReports: self::booleanInput($request, 'showSubtableReports', false),
         );
     }
 
@@ -3157,6 +3168,10 @@ final readonly class ApiRequest
 
         $urls = [];
         foreach ($input as $url) {
+            if ($url === null) {
+                $url = '';
+            }
+
             if (! is_string($url)) {
                 throw new InvalidApiParameter('urls', 'Every URL must be an API query string.');
             }
@@ -3186,6 +3201,13 @@ final readonly class ApiRequest
             throw new InvalidApiParameter('apiParameters', 'The value must be an array or query string.');
         }
 
+        if ($apiParameters !== [] && array_is_list($apiParameters)) {
+            throw new InvalidApiParameter('apiParameters', 'The value must be an object or query string.');
+        }
+
+        $subtableId = self::nullableIntegerOrFalse($request, 'idSubtable');
+        $dimensionId = self::nullableIntegerOrFalse($request, 'idDimension');
+
         return new ProcessedReportRequest(
             siteId: self::requiredInteger($request, 'idSite'),
             period: self::requiredString($request, 'period'),
@@ -3193,8 +3215,15 @@ final readonly class ApiRequest
             apiModule: self::requiredString($request, 'apiModule'),
             apiAction: self::requiredString($request, 'apiAction'),
             apiParameters: $apiParameters,
+            segment: self::nullableStringInput($request, 'segment') ?: null,
+            goalId: self::nullableStringInput($request, 'idGoal') ?: null,
+            language: self::nullableStringInput($request, 'language') ?: null,
+            showTimer: self::booleanInput($request, 'showTimer', true),
             hideMetricsDocumentation: self::booleanInput($request, 'hideMetricsDoc', false),
+            subtableId: $subtableId === false ? null : $subtableId,
             showRawMetrics: self::booleanInput($request, 'showRawMetrics', false),
+            formatMetrics: self::nullableStringInput($request, 'format_metrics'),
+            dimensionId: $dimensionId === false ? null : $dimensionId,
         );
     }
 
@@ -4003,6 +4032,7 @@ final readonly class ApiRequest
             typeReferrer: self::reportTypeReferrer($request, $method),
             setReferrerTypeLabel: $method !== 'Referrers.getReferrerType'
                 || self::booleanInput($request, '_setReferrerTypeLabel', true),
+            formatMetrics: self::booleanInput($request, 'format_metrics', true),
         );
     }
 
