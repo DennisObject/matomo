@@ -61,6 +61,8 @@ use App\Matomo\Archiving\ArchiveActionQueryFactory;
 use App\Matomo\Archiving\ArchiveConversionQueryFactory;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Archiving\ArchiveVisitQueryFactory;
+use App\Matomo\Archiving\BotTrackingArchiveConfiguration;
+use App\Matomo\Archiving\BotTrackingOverviewArchiveCollector;
 use App\Matomo\Archiving\BrowserLanguageArchiveLabeler;
 use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
@@ -738,6 +740,21 @@ class AppServiceProvider extends ServiceProvider
                 );
             },
         );
+        $this->app->singleton(
+            BotTrackingArchiveConfiguration::class,
+            function (Application $application): BotTrackingArchiveConfiguration {
+                $path = $application->make(Repository::class)->get('matomo.config_path');
+
+                if (! is_string($path) || $path === '') {
+                    throw new RuntimeException('The Matomo configuration path is invalid.');
+                }
+
+                return BotTrackingArchiveConfiguration::fromFiles(
+                    base_path('../config/global.ini.php'),
+                    $path,
+                );
+            },
+        );
         $this->app->singleton(ActionArchivePathResolver::class);
         $this->app->singleton(
             BrowserLanguageArchiveLabeler::class,
@@ -819,6 +836,18 @@ class AppServiceProvider extends ServiceProvider
                 segments: $application->make(SegmentHashResolver::class),
                 blobs: $application->make(HierarchicalBlobArchiveRepository::class),
                 sites: $application->make(SiteRepository::class),
+            ),
+        );
+        $this->app->singleton(
+            BotTrackingOverviewArchiveCollector::class,
+            fn (Application $application): BotTrackingOverviewArchiveCollector => new BotTrackingOverviewArchiveCollector(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                subperiods: $application->make(ReportingSubperiodFactory::class),
+                segments: $application->make(SegmentHashResolver::class),
+                blobs: $application->make(HierarchicalBlobArchiveRepository::class),
+                numbers: $application->make(NumericArchiveRepository::class),
+                sites: $application->make(SiteRepository::class),
+                configuration: $application->make(BotTrackingArchiveConfiguration::class),
             ),
         );
         $this->app->singleton(
@@ -1217,6 +1246,7 @@ class AppServiceProvider extends ServiceProvider
         $events->listen(ArchiveReportsCollecting::class, EcommerceItemArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, EventArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, ContentArchiveCollector::class);
+        $events->listen(ArchiveReportsCollecting::class, BotTrackingOverviewArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, ExamplePluginArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, PagePerformanceArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, ActionArchiveCollector::class);
