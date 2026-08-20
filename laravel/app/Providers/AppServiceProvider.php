@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Matomo\Api\Methods\AiAgentsApiMethodHandler;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Api\Methods\ContentsApiMethodHandler;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
@@ -391,6 +392,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(CustomJsTrackerApiMethodHandler::class),
                 $application->make(ProfessionalServicesApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
+                $application->make(AiAgentsApiMethodHandler::class),
             ]),
         );
     }

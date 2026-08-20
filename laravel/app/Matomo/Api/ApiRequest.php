@@ -72,6 +72,8 @@ final readonly class ApiRequest
 
     private const string LOGIN_METHOD = 'Login.unblockBruteForceIPs';
 
+    private const string AI_AGENTS_METHOD = 'AIAgents.get';
+
     private function __construct(
         public string $module,
         public string $method,
@@ -408,6 +410,11 @@ final readonly class ApiRequest
     public function isLoginRequest(): bool
     {
         return $this->module === 'API' && $this->method === self::LOGIN_METHOD;
+    }
+
+    public function isAiAgentsRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === self::AI_AGENTS_METHOD;
     }
 
     public function hasSupportedFormat(): bool
@@ -793,7 +800,8 @@ final readonly class ApiRequest
                 && $method !== self::DEVICE_PLUGINS_METHOD
                 && $method !== self::PAGE_PERFORMANCE_METHOD
                 && $method !== self::USER_ID_METHOD
-                && ! in_array($method, self::CONTENTS_METHODS, true))) {
+                && ! in_array($method, self::CONTENTS_METHODS, true)
+                && $method !== self::AI_AGENTS_METHOD)) {
             return null;
         }
 
