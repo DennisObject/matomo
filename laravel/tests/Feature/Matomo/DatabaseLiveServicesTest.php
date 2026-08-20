@@ -7,6 +7,7 @@ namespace Tests\Feature\Matomo;
 use App\Matomo\Archiving\VisitSegmentApplicator;
 use App\Matomo\Live\DatabaseLiveAccessPolicy;
 use App\Matomo\Live\DatabaseLiveCounterRepository;
+use App\Matomo\Live\DatabaseLiveVisitorIdentityRepository;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
@@ -72,6 +73,31 @@ final class DatabaseLiveServicesTest extends TestCase
             'visitors' => 1,
             'visitsConverted' => 2,
         ], $repository->counters([2], 30, 'userId==person'));
+    }
+
+    public function test_visitor_identity_queries_are_ordered_bounded_and_hex_encoded(): void
+    {
+        $connection = $this->connection();
+        $connection->table('log_visit')->insert([
+            ['idvisit' => 1, 'idsite' => 2, 'idvisitor' => "\x01\x02", 'user_id' => 'person', 'visit_last_action_time' => '2026-08-14 10:00:00'],
+            ['idvisit' => 2, 'idsite' => 2, 'idvisitor' => "\x03\x04", 'user_id' => 'other', 'visit_last_action_time' => '2026-08-15 10:00:00'],
+            ['idvisit' => 3, 'idsite' => 7, 'idvisitor' => "\x05\x06", 'user_id' => 'person', 'visit_last_action_time' => '2026-08-16 10:00:00'],
+        ]);
+        $segments = $this->createStub(VisitSegmentApplicator::class);
+        $segments->method('apply')->willReturnCallback(static function (Builder $query, ?string $segment): bool {
+            if ($segment !== null) {
+                $query->where('log_visit.user_id', 'person');
+            }
+
+            return true;
+        });
+        $repository = new DatabaseLiveVisitorIdentityRepository($connection, $segments);
+
+        $this->assertSame('0102', $repository->mostRecentVisitorId(2, 'userId==person'));
+        $this->assertSame(
+            '2026-08-15 10:00:00',
+            $repository->mostRecentVisitDateTime([2, 7], '2026-08-14 12:00:00', '2026-08-15 23:59:59'),
+        );
     }
 
     private function connection(): Connection

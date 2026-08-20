@@ -18,5 +18,7 @@ final readonly class LiveRequest
         public ?string $segment,
         public array $showColumns,
         public array $hideColumns,
+        public ?string $period = null,
+        public ?string $date = null,
     ) {}
 }
