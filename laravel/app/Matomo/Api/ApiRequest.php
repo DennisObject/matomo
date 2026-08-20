@@ -3275,8 +3275,14 @@ final readonly class ApiRequest
             return null;
         }
 
+        $site = self::requiredString($request, 'idSite');
+        if ($site !== 'all' && ((string) (int) $site !== $site || (int) $site < 1)) {
+            throw new InvalidApiParameter('idSite', "The parameter 'idSite=' contains an invalid value.");
+        }
+
         return new SegmentSuggestionsRequest(
-            siteId: self::requiredInteger($request, 'idSite'),
+            siteId: $site === 'all' ? null : (int) $site,
+            allSites: $site === 'all',
             segmentName: self::requiredString($request, 'segmentName'),
         );
     }

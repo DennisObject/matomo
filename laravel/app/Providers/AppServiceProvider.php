@@ -318,6 +318,7 @@ use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\EgressHostResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Segments\ConfiguredSegmentEditorSettings;
+use App\Matomo\Segments\ConfiguredSegmentSuggestionPolicy;
 use App\Matomo\Segments\DatabaseSegmentValueRepository;
 use App\Matomo\Segments\DatabaseStoredSegmentRepository;
 use App\Matomo\Segments\LaravelSegmentCacheInvalidator;
@@ -329,6 +330,7 @@ use App\Matomo\Segments\SegmentCreationPolicy;
 use App\Matomo\Segments\SegmentEditorSettings;
 use App\Matomo\Segments\SegmentMetadataCatalog;
 use App\Matomo\Segments\SegmentRearchiveScheduler;
+use App\Matomo\Segments\SegmentSuggestionPolicy;
 use App\Matomo\Segments\SegmentValueRepository;
 use App\Matomo\Segments\StoredSegmentRepository;
 use App\Matomo\Settings\DatabasePolicySettingRepository;
@@ -1747,6 +1749,12 @@ class AppServiceProvider extends ServiceProvider
                 translator: $application->make(MatomoTranslator::class),
                 dimensions: $application->make(CustomDimensionRepository::class),
                 catalogPath: resource_path('matomo/segment-metadata.php'),
+            ),
+        );
+        $this->app->singleton(
+            SegmentSuggestionPolicy::class,
+            fn (Application $application): SegmentSuggestionPolicy => new ConfiguredSegmentSuggestionPolicy(
+                static fn (): InstallationConfig => $application->make(InstallationConfig::class),
             ),
         );
         $this->app->singleton(SegmentValueRepository::class, DatabaseSegmentValueRepository::class);
