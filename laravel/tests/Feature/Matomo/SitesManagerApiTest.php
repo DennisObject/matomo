@@ -25,6 +25,40 @@ use Tests\TestCase;
 
 class SitesManagerApiTest extends TestCase
 {
+    public function test_javascript_tracking_code_requires_view_access_before_site_reads(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasViewAccessToSite')->willReturn(false);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('urls');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get('/index.php?module=API&method=SitesManager.getJavascriptTag'.
+            '&idSite=7&piwikUrl=analytics.example.test&mergeSubdomains=1'.
+            '&format=json&token_auth=invalid-token')
+            ->assertUnauthorized()
+            ->assertJsonPath(
+                'message',
+                "You can't access this resource as it requires 'view' access for the website id = 7.",
+            );
+    }
+
+    public function test_tracking_code_parameters_are_validated_at_the_request_boundary(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->never())->method('hasViewAccessToSite');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+
+        $this->get('/index.php?module=API&method=SitesManager.getJavascriptTag'.
+            '&idSite=7&visitorCustomVariables=invalid&format=json')
+            ->assertBadRequest()
+            ->assertJsonPath(
+                'message',
+                'The API parameter [visitorCustomVariables] must be a scalar value.',
+            );
+    }
+
     public function test_consent_manager_detection_uses_the_stored_site_url(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
