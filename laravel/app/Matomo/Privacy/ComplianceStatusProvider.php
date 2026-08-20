@@ -13,5 +13,5 @@ interface ComplianceStatusProvider
      *     complianceRequirements: list<array{name: string, value: string, notes: string}>
      * }
      */
-    public function status(?int $idSite): array;
+    public function status(?int $idSite, string $language): array;
 }

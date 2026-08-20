@@ -50,6 +50,18 @@ final class UsersManagerUpdateDeleteApiTest extends TestCase
             ->assertUnauthorized();
     }
 
+    public function test_user_identity_is_case_sensitive_for_self_updates(): void
+    {
+        $this->authorize('Alice', false, false);
+        $users = $this->createMock(MutableUserRepository::class);
+        $users->expects($this->never())->method('update');
+        $this->app->instance(MutableUserRepository::class, $users);
+
+        $this->get('/index.php?module=API&method=UsersManager.updateUser'.
+            '&userLogin=alice&email=new%40example.test&format=json&token_auth=alice-token')
+            ->assertUnauthorized();
+    }
+
     public function test_admin_only_sees_not_found_when_deleting_unowned_user(): void
     {
         $this->authorize('admin', false, true);

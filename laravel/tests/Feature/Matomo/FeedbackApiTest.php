@@ -77,6 +77,41 @@ class FeedbackApiTest extends TestCase
         ]);
     }
 
+    public function test_redacts_auth_token_from_feedback_referrer(): void
+    {
+        $this->allowFeedbackFor('alice');
+        $this->useLanguage('en');
+        $this->app->instance(FeedbackFeatureNameResolver::class, new class implements FeedbackFeatureNameResolver
+        {
+            public function englishName(string $featureName, string $language): string
+            {
+                return $featureName;
+            }
+        });
+        $store = $this->createStub(FeedbackStore::class);
+        $store->method('emailForLogin')->willReturn('alice@example.test');
+        $this->app->instance(FeedbackStore::class, $store);
+        $mailer = $this->createMock(FeedbackMailer::class);
+        $mailer->expects($this->once())->method('send')->with(
+            'feedback@matomo.org',
+            'alice@example.test',
+            '[ Feedback Feature - Matomo ] +1 for Report',
+            $this->callback(static fn (string $body): bool => str_contains(
+                $body,
+                'URL: https://analytics.example.test/?module=CoreHome&token_auth=[redacted]&idSite=1',
+            ) && ! str_contains($body, 'secret-token')),
+            'localhost',
+        );
+        $this->app->instance(FeedbackMailer::class, $mailer);
+
+        $this->post(
+            '/index.php?module=API&method=Feedback.sendFeedbackForFeature&format=json'.
+            '&token_auth=user-token',
+            ['featureName' => 'Report', 'like' => '1', 'message' => 'Useful report'],
+            ['Referer' => 'https://analytics.example.test/?module=CoreHome&token_auth=secret-token&idSite=1'],
+        )->assertOk()->assertExactJson(['value' => 'success']);
+    }
+
     public function test_sends_survey_feedback_and_sets_six_month_reminder(): void
     {
         CarbonImmutable::setTestNow('2026-08-31 18:00:00 UTC');

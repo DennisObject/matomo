@@ -60,6 +60,7 @@ use App\Matomo\Privacy\ComplianceStatusProvider;
 use App\Matomo\Privacy\DataPurger;
 use App\Matomo\Privacy\DataSubjectFinder;
 use App\Matomo\Privacy\DataSubjectRepository;
+use App\Matomo\Privacy\DeletionBatchLimits;
 use App\Matomo\Privacy\GranularComplianceSettingsProvider;
 use App\Matomo\Privacy\PrivacyFeatureFlags;
 use App\Matomo\Privacy\RawAnonymisationScheduler;
@@ -96,6 +97,7 @@ use App\Matomo\Users\MutableUserRepository;
 use App\Matomo\Users\NewsletterSubscriber;
 use App\Matomo\Users\UserInvitationLinkFactory;
 use App\Matomo\Users\UserInvitationNotifier;
+use App\Matomo\Users\UserPreferenceDefaults;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Request;
 
@@ -113,6 +115,25 @@ abstract class TestCase extends BaseTestCase
             }
         });
         $this->app->instance(MutableSiteRepository::class, $this->createStub(MutableSiteRepository::class));
+        $this->app->instance(UserPreferenceDefaults::class, new class implements UserPreferenceDefaults
+        {
+            public function reportDate(): string
+            {
+                return 'yesterday';
+            }
+        });
+        $this->app->instance(DeletionBatchLimits::class, new class implements DeletionBatchLimits
+        {
+            public function logs(): int
+            {
+                return 100_000;
+            }
+
+            public function unusedActions(): int
+            {
+                return 100_000;
+            }
+        });
 
         $this->app->instance(FeedbackStore::class, new class implements FeedbackStore
         {

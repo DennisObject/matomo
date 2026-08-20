@@ -50,6 +50,22 @@ class ReferrersAiApiTest extends TestCase
             ->assertJsonPath('0.subtable.0.label', 'A useful page');
     }
 
+    public function test_returns_unformatted_percentage_quotients(): void
+    {
+        $this->bindDependencies();
+        $this->bindArchives([
+            'Referrers_entryUrlByAIAssistant' => [
+                $this->row('ChatGPT', 1, 2),
+                $this->row('Claude', 2, 4),
+            ],
+        ]);
+
+        $this->get($this->url('getAIAssistants').'&format_metrics=0')
+            ->assertOk()
+            ->assertJsonPath('0.nb_visits_percent_of_total', 0.3333)
+            ->assertJsonPath('1.nb_visits_percent_of_total', 0.6667);
+    }
+
     public function test_returns_all_or_selected_entry_urls_and_titles(): void
     {
         $this->bindDependencies();
