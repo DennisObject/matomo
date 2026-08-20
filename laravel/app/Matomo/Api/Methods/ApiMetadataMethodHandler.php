@@ -8,6 +8,7 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Localization\LanguageResolver;
+use App\Matomo\Reporting\ReportMetadataCatalog;
 use App\Matomo\Segments\SegmentMetadataCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -20,15 +21,20 @@ final readonly class ApiMetadataMethodHandler implements ApiMethodHandler
         private ApiResponseFactory $responses,
         private LanguageResolver $languages,
         private SegmentMetadataCatalog $segments,
+        private ReportMetadataCatalog $reports,
     ) {}
 
     public function supports(ApiRequest $request): bool
     {
-        return $request->segmentsMetadata !== null;
+        return $request->segmentsMetadata !== null || $request->reportMetadata !== null;
     }
 
     public function handle(ApiRequest $request, Request $httpRequest): Response
     {
+        if ($request->reportMetadata !== null) {
+            return $this->reportMetadata($request, $httpRequest);
+        }
+
         $parameters = $request->segmentsMetadata
             ?? throw new LogicException('The API metadata parameters are missing.');
         if (! $parameters->hideImplementationData || $parameters->showAllSegments) {
@@ -67,5 +73,44 @@ final readonly class ApiMetadataMethodHandler implements ApiMethodHandler
             $language,
             ! in_array($login, [null, '', 'anonymous'], true),
         ));
+    }
+
+    private function reportMetadata(ApiRequest $request, Request $httpRequest): Response
+    {
+        $parameters = $request->reportMetadata
+            ?? throw new LogicException('The report metadata parameters are missing.');
+        if (! $this->authorizer->hasViewAccessToSite($request->authentication, $parameters->siteId)) {
+            return $this->responses->error($request, "You do not have view access to website {$parameters->siteId}.", 401);
+        }
+
+        if ($parameters->apiParameters !== [] || $parameters->period !== null || $parameters->date !== null
+            || $parameters->showSubtableReports) {
+            return $this->responses->error(
+                $request,
+                'Dynamic report metadata is not available in the Laravel runtime.',
+                501,
+            );
+        }
+
+        $language = $this->languages->resolve($httpRequest, $request->authentication);
+        if ($parameters->method === 'API.getMetadata') {
+            if ($parameters->apiModule === null || $parameters->apiAction === null) {
+                return $this->responses->error($request, 'The apiModule and apiAction parameters are required.', 400);
+            }
+
+            $report = $this->reports->find(
+                $parameters->apiModule,
+                $parameters->apiAction,
+                $language,
+                $parameters->hideMetricsDocumentation,
+            );
+
+            return $this->responses->structured($request, $report === null ? [] : [$report]);
+        }
+
+        return $this->responses->structured(
+            $request,
+            $this->reports->all($language, $parameters->hideMetricsDocumentation),
+        );
     }
 }

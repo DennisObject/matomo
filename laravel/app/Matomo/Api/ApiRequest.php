@@ -550,6 +550,7 @@ final readonly class ApiRequest
         public ?ScheduledReportsRequest $scheduledReports,
         public ?CorePluginsAdminRequest $corePluginsAdmin,
         public ?SegmentsMetadataRequest $segmentsMetadata,
+        public ?ReportMetadataRequest $reportMetadata,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -647,6 +648,7 @@ final readonly class ApiRequest
             scheduledReports: null,
             corePluginsAdmin: null,
             segmentsMetadata: null,
+            reportMetadata: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1273,6 +1275,7 @@ final readonly class ApiRequest
             scheduledReports: self::scheduledReports($request, $module, $method),
             corePluginsAdmin: self::corePluginsAdmin($request, $module, $method),
             segmentsMetadata: self::segmentsMetadata($request, $module, $method),
+            reportMetadata: self::reportMetadata($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -3096,6 +3099,36 @@ final readonly class ApiRequest
             siteIds: array_values(array_unique($siteIds)),
             hideImplementationData: self::booleanInput($request, '_hideImplementationData', true),
             showAllSegments: self::booleanInput($request, '_showAllSegments', false),
+        );
+    }
+
+    private static function reportMetadata(Request $request, string $module, string $method): ?ReportMetadataRequest
+    {
+        if ($module !== 'API' || ! in_array($method, ['API.getReportMetadata', 'API.getMetadata'], true)) {
+            return null;
+        }
+
+        $siteId = self::nullablePositiveIntegerInput($request, 'idSite');
+        if ($siteId === null) {
+            $siteIds = self::nullableStringInput($request, 'idSites');
+            $first = $siteIds === null ? null : explode(',', $siteIds)[0];
+            if ($first === null || filter_var($first, FILTER_VALIDATE_INT) === false || (int) $first < 1) {
+                throw new MissingApiParameter('idSite');
+            }
+
+            $siteId = (int) $first;
+        }
+
+        return new ReportMetadataRequest(
+            method: $method,
+            siteId: $siteId,
+            apiModule: self::nullableStringInput($request, 'apiModule'),
+            apiAction: self::nullableStringInput($request, 'apiAction'),
+            apiParameters: self::mixedParameterMap($request, 'apiParameters'),
+            period: self::nullableStringInput($request, 'period'),
+            date: self::nullableStringInput($request, 'date'),
+            hideMetricsDocumentation: self::booleanInput($request, 'hideMetricsDoc', false),
+            showSubtableReports: self::booleanInput($request, 'showSubtableReports', false),
         );
     }
 
