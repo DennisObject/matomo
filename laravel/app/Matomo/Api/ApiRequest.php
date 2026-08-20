@@ -552,6 +552,7 @@ final readonly class ApiRequest
         public ?SegmentsMetadataRequest $segmentsMetadata,
         public ?ReportMetadataRequest $reportMetadata,
         public ?BulkApiRequest $bulk,
+        public ?ProcessedReportRequest $processedReport,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -658,6 +659,7 @@ final readonly class ApiRequest
             segmentsMetadata: null,
             reportMetadata: null,
             bulk: null,
+            processedReport: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1286,6 +1288,7 @@ final readonly class ApiRequest
             segmentsMetadata: self::segmentsMetadata($request, $module, $method),
             reportMetadata: self::reportMetadata($request, $module, $method),
             bulk: self::bulk($request, $module, $method),
+            processedReport: self::processedReport($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -3174,6 +3177,51 @@ final readonly class ApiRequest
         }
 
         return new BulkApiRequest($urls);
+    }
+
+    private static function processedReport(Request $request, string $module, string $method): ?ProcessedReportRequest
+    {
+        if ($module !== 'API' || $method !== 'API.getProcessedReport') {
+            return null;
+        }
+
+        $apiParameters = self::inputValue($request, 'apiParameters');
+        if (is_string($apiParameters) && $apiParameters !== '') {
+            parse_str($apiParameters, $apiParameters);
+        }
+
+        if (in_array($apiParameters, [null, false, ''], true)) {
+            $apiParameters = [];
+        }
+
+        if (! is_array($apiParameters)) {
+            throw new InvalidApiParameter('apiParameters', 'The value must be an array or query string.');
+        }
+
+        if ($apiParameters !== [] && array_is_list($apiParameters)) {
+            throw new InvalidApiParameter('apiParameters', 'The value must be an object or query string.');
+        }
+
+        $subtableId = self::nullableIntegerOrFalse($request, 'idSubtable');
+        $dimensionId = self::nullableIntegerOrFalse($request, 'idDimension');
+
+        return new ProcessedReportRequest(
+            siteId: self::requiredInteger($request, 'idSite'),
+            period: self::requiredString($request, 'period'),
+            date: self::requiredString($request, 'date'),
+            apiModule: self::requiredString($request, 'apiModule'),
+            apiAction: self::requiredString($request, 'apiAction'),
+            apiParameters: $apiParameters,
+            segment: self::nullableStringInput($request, 'segment') ?: null,
+            goalId: self::nullableStringInput($request, 'idGoal') ?: null,
+            language: self::nullableStringInput($request, 'language') ?: null,
+            showTimer: self::booleanInput($request, 'showTimer', true),
+            hideMetricsDocumentation: self::booleanInput($request, 'hideMetricsDoc', false),
+            subtableId: $subtableId === false ? null : $subtableId,
+            showRawMetrics: self::booleanInput($request, 'showRawMetrics', false),
+            formatMetrics: self::nullableStringInput($request, 'format_metrics'),
+            dimensionId: $dimensionId === false ? null : $dimensionId,
+        );
     }
 
     private static function scheduledReports(Request $request, string $module, string $method): ?ScheduledReportsRequest

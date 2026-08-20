@@ -67,6 +67,7 @@ use App\Matomo\Api\Methods\PrivacyManagerDataSubjectSearchApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerGranularComplianceApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerRawAnonymisationApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerSettingsApiMethodHandler;
+use App\Matomo\Api\Methods\ProcessedReportApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersAiApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersCampaignApiMethodHandler;
@@ -1781,6 +1782,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(CoreApiMethodHandler::class),
                 $application->make(ApiMetadataMethodHandler::class),
                 $application->make(BulkApiMethodHandler::class),
+                $application->make(ProcessedReportApiMethodHandler::class),
                 $application->make(CorePluginsAdminApiMethodHandler::class),
                 $application->make(CoreAdminHomeApiMethodHandler::class),
                 $application->make(SitesManagerApiMethodHandler::class),
