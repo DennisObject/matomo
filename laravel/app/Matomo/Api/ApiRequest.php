@@ -70,6 +70,8 @@ final readonly class ApiRequest
 
     private const string PROFESSIONAL_SERVICES_METHOD = 'ProfessionalServices.dismissWidget';
 
+    private const string LOGIN_METHOD = 'Login.unblockBruteForceIPs';
+
     private function __construct(
         public string $module,
         public string $method,
@@ -401,6 +403,11 @@ final readonly class ApiRequest
     public function isProfessionalServicesRequest(): bool
     {
         return $this->module === 'API' && $this->method === self::PROFESSIONAL_SERVICES_METHOD;
+    }
+
+    public function isLoginRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === self::LOGIN_METHOD;
     }
 
     public function hasSupportedFormat(): bool

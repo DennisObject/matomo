@@ -6,6 +6,7 @@ namespace Tests;
 
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Localization\LanguageResolver;
+use App\Matomo\Login\BruteForceUnblocker;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
@@ -115,6 +116,13 @@ abstract class TestCase extends BaseTestCase
                 public function dismiss(string $login, string $widgetName, int $timestamp): void {}
             },
         );
+        $this->app->instance(BruteForceUnblocker::class, new class implements BruteForceUnblocker
+        {
+            public function unblockCurrentlyBlocked(): int
+            {
+                return 0;
+            }
+        });
         $this->app->instance(ReportingSettings::class, new class implements ReportingSettings
         {
             public function periodEnabled(string $period): bool
