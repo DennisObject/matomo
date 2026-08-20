@@ -23,6 +23,17 @@ final readonly class DatabaseLiveAccessPolicy implements LiveAccessPolicy
 
     private function disabled(int $siteId, string $setting): bool
     {
+        if ($this->connection->getSchemaBuilder()->hasTable('plugin_setting')) {
+            $global = $this->connection->table('plugin_setting')
+                ->where('plugin_name', 'Live')
+                ->where('user_login', '')
+                ->where('setting_name', $setting)
+                ->value('setting_value');
+            if (in_array($global, [true, 1, '1', 'true'], true)) {
+                return true;
+            }
+        }
+
         if (! $this->connection->getSchemaBuilder()->hasTable('site_setting')) {
             return false;
         }
@@ -33,6 +44,6 @@ final readonly class DatabaseLiveAccessPolicy implements LiveAccessPolicy
             ->where('setting_name', $setting)
             ->value('setting_value');
 
-        return in_array($value, [true, 1, '1'], true);
+        return in_array($value, [true, 1, '1', 'true'], true);
     }
 }

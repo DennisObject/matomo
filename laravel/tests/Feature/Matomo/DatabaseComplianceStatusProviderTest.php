@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\Config\InstallationConfig;
+use App\Matomo\Localization\MatomoTranslator;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Privacy\DatabaseComplianceStatusProvider;
@@ -53,7 +54,7 @@ final class DatabaseComplianceStatusProviderTest extends TestCase
     {
         $provider = $this->provider([], true);
 
-        $result = $provider->status(7);
+        $result = $provider->status(7, 'en');
         $requirements = $result['complianceRequirements'];
 
         $this->assertTrue($result['complianceModeEnforced']);
@@ -73,7 +74,7 @@ final class DatabaseComplianceStatusProviderTest extends TestCase
             'PrivacyManager.ipAddressMaskLength' => '4',
         ], false);
 
-        $requirements = $provider->status(null)['complianceRequirements'];
+        $requirements = $provider->status(null, 'en')['complianceRequirements'];
         $byName = array_column($requirements, null, 'name');
 
         $this->assertSame('non_compliant', $byName['IP Anonymisation Enabled']['value']);
@@ -147,6 +148,7 @@ final class DatabaseComplianceStatusProviderTest extends TestCase
             $options,
             $policies,
             InstallationConfig::fromFile($this->configurationPath),
+            $this->app->make(MatomoTranslator::class),
         );
     }
 }

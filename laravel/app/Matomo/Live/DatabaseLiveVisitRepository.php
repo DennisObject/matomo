@@ -60,6 +60,10 @@ final readonly class DatabaseLiveVisitRepository implements LiveVisitRepository
         }
 
         if ($visitorId !== null) {
+            if (strlen($visitorId) % 2 !== 0 || ! ctype_xdigit($visitorId)) {
+                return [];
+            }
+
             $binary = hex2bin($visitorId);
             if ($binary === false) {
                 return [];
