@@ -74,6 +74,18 @@ final readonly class ApiRequest
 
     private const string AI_AGENTS_METHOD = 'AIAgents.get';
 
+    /** @var list<string> */
+    private const array USER_COUNTRY_METHODS = [
+        'UserCountry.getCountry',
+        'UserCountry.getContinent',
+        'UserCountry.getRegion',
+        'UserCountry.getCity',
+        'UserCountry.getCountryCodeMapping',
+        'UserCountry.getNumberOfDistinctCountries',
+        'UserCountry.getLocationFromIP',
+        'UserCountry.setLocationProvider',
+    ];
+
     private function __construct(
         public string $module,
         public string $method,
@@ -106,6 +118,8 @@ final readonly class ApiRequest
         public array $siteTypesToExclude,
         public ?VisitsSummaryRequest $visitsSummary,
         public ?TwoFactorAuthRequest $twoFactorAuth,
+        public ?string $locationIp,
+        public ?string $locationProviderId,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -146,6 +160,8 @@ final readonly class ApiRequest
             siteTypesToExclude: [],
             visitsSummary: null,
             twoFactorAuth: null,
+            locationIp: null,
+            locationProviderId: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -432,6 +448,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'TwoFactorAuth.resetTwoFactorAuth';
     }
 
+    public function isUserCountryRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::USER_COUNTRY_METHODS, true);
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -476,6 +497,8 @@ final readonly class ApiRequest
             siteTypesToExclude: self::siteTypesToExclude($request, $module, $method),
             visitsSummary: self::visitsSummary($request, $module, $method),
             twoFactorAuth: self::twoFactorAuth($request, $module, $method),
+            locationIp: self::locationIp($request, $module, $method),
+            locationProviderId: self::locationProviderId($request, $module, $method),
             authentication: $authentication,
         );
     }
@@ -529,6 +552,42 @@ final readonly class ApiRequest
             userLogin: $userLogin,
             passwordConfirmation: self::stringInput($request, 'passwordConfirmation'),
         );
+    }
+
+    private static function locationIp(Request $request, string $module, string $method): ?string
+    {
+        if ($module !== 'API' || $method !== 'UserCountry.getLocationFromIP') {
+            return null;
+        }
+
+        $ip = self::nullableStringInput($request, 'ip');
+
+        return in_array($ip, [null, '', '0'], true) ? null : $ip;
+    }
+
+    private static function locationProviderId(Request $request, string $module, string $method): ?string
+    {
+        if ($module !== 'API') {
+            return null;
+        }
+
+        if ($method === 'UserCountry.getLocationFromIP') {
+            $provider = self::nullableStringInput($request, 'provider');
+
+            return in_array($provider, [null, '', '0'], true) ? null : $provider;
+        }
+
+        if ($method !== 'UserCountry.setLocationProvider') {
+            return null;
+        }
+
+        $provider = self::nullableStringInput($request, 'providerId');
+
+        if ($provider === null || $provider === '') {
+            throw new MissingApiParameter('providerId');
+        }
+
+        return $provider;
     }
 
     private static function siteId(Request $request, string $module, string $method): ?int
@@ -857,7 +916,14 @@ final readonly class ApiRequest
                 && $method !== self::PAGE_PERFORMANCE_METHOD
                 && $method !== self::USER_ID_METHOD
                 && ! in_array($method, self::CONTENTS_METHODS, true)
-                && $method !== self::AI_AGENTS_METHOD)) {
+                && $method !== self::AI_AGENTS_METHOD
+                && ! in_array($method, [
+                    'UserCountry.getCountry',
+                    'UserCountry.getContinent',
+                    'UserCountry.getRegion',
+                    'UserCountry.getCity',
+                    'UserCountry.getNumberOfDistinctCountries',
+                ], true))) {
             return null;
         }
 

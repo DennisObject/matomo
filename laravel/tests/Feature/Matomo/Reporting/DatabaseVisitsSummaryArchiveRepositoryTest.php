@@ -71,6 +71,27 @@ class DatabaseVisitsSummaryArchiveRepositoryTest extends TestCase
         ], $repository->metrics([3], [$this->day()], $hash, ['nb_visits']));
     }
 
+    public function test_reads_metrics_from_a_named_plugin_archive(): void
+    {
+        $connection = $this->archiveConnection();
+        $this->createArchiveTable($connection->getSchemaBuilder());
+        $connection->table('archive_numeric_2026_08')->insert([
+            $this->archiveRow(30, 'done.UserCountry', 1, '2026-08-15 00:00:00'),
+            $this->archiveRow(30, 'UserCountry_distinctCountries', 4, '2026-08-15 00:00:00'),
+        ]);
+        $repository = new DatabaseVisitsSummaryArchiveRepository($connection);
+
+        $this->assertSame([
+            3 => ['2026-08-14,2026-08-14' => ['UserCountry_distinctCountries' => 4]],
+        ], $repository->pluginMetrics(
+            [3],
+            [$this->day()],
+            '',
+            ['UserCountry_distinctCountries'],
+            'UserCountry',
+        ));
+    }
+
     private function archiveConnection(): Connection
     {
         config()->set('database.connections.matomo_archive_test', [

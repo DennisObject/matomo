@@ -8,7 +8,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
 use stdClass;
 
-final readonly class DatabaseBlobArchiveRepository implements BlobArchiveRepository
+final readonly class DatabaseBlobArchiveRepository implements BlobArchiveMetadataRepository, BlobArchiveRepository
 {
     private const int DONE_PARTIAL = 5;
 
@@ -18,6 +18,19 @@ final readonly class DatabaseBlobArchiveRepository implements BlobArchiveReposit
     public function __construct(private Connection $connection) {}
 
     public function rows(array $siteIds, array $periods, string $segmentHash, string $recordName): array
+    {
+        $rows = [];
+
+        foreach ($this->archives($siteIds, $periods, $segmentHash, $recordName) as $idSite => $siteArchives) {
+            foreach ($siteArchives as $range => $archive) {
+                $rows[$idSite][$range] = $archive->rows;
+            }
+        }
+
+        return $rows;
+    }
+
+    public function archives(array $siteIds, array $periods, string $segmentHash, string $recordName): array
     {
         if ($siteIds === [] || $periods === [] || $recordName === '') {
             return [];
@@ -76,7 +89,11 @@ final readonly class DatabaseBlobArchiveRepository implements BlobArchiveReposit
                 $decoded = $this->decode($value);
 
                 if ($decoded !== null) {
-                    $result[(int) $idSite][$date1.','.$date2] = $decoded;
+                    $archivedAt = $row->ts_archived ?? null;
+                    $result[(int) $idSite][$date1.','.$date2] = new BlobArchive(
+                        $decoded,
+                        is_string($archivedAt) ? $archivedAt : null,
+                    );
                 }
             }
         }

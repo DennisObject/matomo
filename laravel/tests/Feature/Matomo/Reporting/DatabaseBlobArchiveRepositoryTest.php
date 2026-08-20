@@ -27,17 +27,20 @@ class DatabaseBlobArchiveRepositoryTest extends TestCase
             $this->blobRow(11, 'VisitTime_localTime', $this->blob([['label' => 2, 'nb_visits' => 3]]), '2026-08-15 01:00:00'),
         ]);
 
+        $repository = new DatabaseBlobArchiveRepository($connection);
         $this->assertSame([
             3 => ['2026-08-14,2026-08-14' => [[
                 'columns' => ['label' => 2, 'nb_visits' => 3],
                 'metadata' => ['segment' => 'visitLocalHour==2'],
             ]]],
-        ], (new DatabaseBlobArchiveRepository($connection))->rows(
+        ], $repository->rows(
             [3],
             [$this->day()],
             '',
             'VisitTime_localTime',
         ));
+        $archive = $repository->archives([3], [$this->day()], '', 'VisitTime_localTime');
+        $this->assertSame('2026-08-15 01:00:00', $archive[3]['2026-08-14,2026-08-14']->archivedAt);
     }
 
     public function test_rejects_serialized_objects_and_missing_tables(): void

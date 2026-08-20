@@ -60,6 +60,8 @@ final readonly class InstallationConfig
         private bool $geolocationAdminEnabled,
         private bool $customLogoEnabled,
         private bool $browserArchivingTriggerEnabled,
+        private bool $defaultLocationProviderEnabled,
+        private bool $languageToCountryGuessEnabled,
     ) {}
 
     public static function fromFile(string $path): self
@@ -82,6 +84,7 @@ final readonly class InstallationConfig
         $languages = $configuration['Languages'] ?? [];
         $login = $configuration['Login'] ?? [];
         $proxy = $configuration['proxy'] ?? [];
+        $tracker = $configuration['Tracker'] ?? [];
 
         if (! is_array($database)
             || ! is_array($general)
@@ -90,7 +93,8 @@ final readonly class InstallationConfig
             || ! is_array($sitesManager)
             || ! is_array($languages)
             || ! is_array($login)
-            || ! is_array($proxy)) {
+            || ! is_array($proxy)
+            || ! is_array($tracker)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
 
@@ -182,6 +186,16 @@ final readonly class InstallationConfig
             browserArchivingTriggerEnabled: self::boolean(
                 $general,
                 'enable_browser_archiving_triggering',
+                true,
+            ),
+            defaultLocationProviderEnabled: self::boolean(
+                $tracker,
+                'enable_default_location_provider',
+                true,
+            ),
+            languageToCountryGuessEnabled: self::boolean(
+                $tracker,
+                'enable_language_to_country_guess',
                 true,
             ),
         );
@@ -391,6 +405,16 @@ final readonly class InstallationConfig
     public function browserArchivingTriggerEnabled(): bool
     {
         return $this->browserArchivingTriggerEnabled;
+    }
+
+    public function defaultLocationProviderEnabled(): bool
+    {
+        return $this->defaultLocationProviderEnabled;
+    }
+
+    public function languageToCountryGuessEnabled(): bool
+    {
+        return $this->languageToCountryGuessEnabled;
     }
 
     /**

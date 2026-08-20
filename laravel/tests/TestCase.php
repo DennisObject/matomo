@@ -6,6 +6,9 @@ namespace Tests;
 
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
+use App\Matomo\Geolocation\CountryMetadataProvider;
+use App\Matomo\Geolocation\GeolocationProviderRegistry;
+use App\Matomo\Geolocation\GeolocationSettings;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Login\BruteForceUnblocker;
 use App\Matomo\Login\LoginAttemptGuard;
@@ -13,7 +16,9 @@ use App\Matomo\Login\LoginAttemptStatus;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
+use App\Matomo\Reporting\BlobArchiveMetadataRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
+use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\ScreenResolutionPolicy;
 use App\Matomo\Reporting\SegmentHashResolver;
@@ -71,6 +76,71 @@ abstract class TestCase extends BaseTestCase
             public function resolve(Request $request, ApiAuthentication $authentication): string
             {
                 return 'en';
+            }
+        });
+        $this->app->instance(CountryMetadataProvider::class, new class implements CountryMetadataProvider
+        {
+            public function codes(): array
+            {
+                return [];
+            }
+
+            public function continentCode(string $countryCode): string
+            {
+                return 'unk';
+            }
+
+            public function countryName(string $countryCode, string $language): string
+            {
+                return $countryCode;
+            }
+
+            public function continentName(string $continentCode, string $language): string
+            {
+                return $continentCode;
+            }
+
+            public function flag(string $countryCode): string
+            {
+                return 'plugins/Morpheus/icons/dist/flags/xx.png';
+            }
+
+            public function regionName(string $countryCode, string $regionCode, string $language): string
+            {
+                return $regionCode;
+            }
+
+            public function regionCodeForName(string $countryCode, string $regionName): string
+            {
+                return '';
+            }
+
+            public function convertLegacyRegion(string $countryCode, string $regionCode): array
+            {
+                return ['country' => $countryCode, 'region' => $regionCode];
+            }
+        });
+        $this->app->instance(
+            GeolocationProviderRegistry::class,
+            new class implements GeolocationProviderRegistry
+            {
+                public function locate(
+                    string $ipAddress,
+                    string $browserLanguage,
+                    string $currentIpAddress,
+                    ?string $providerId = null,
+                ): ?array {
+                    return null;
+                }
+
+                public function setCurrent(string $providerId): void {}
+            },
+        );
+        $this->app->instance(GeolocationSettings::class, new class implements GeolocationSettings
+        {
+            public function adminEnabled(): bool
+            {
+                return true;
             }
         });
         $this->app->instance(CurrencyProvider::class, new class implements CurrencyProvider
@@ -268,9 +338,32 @@ abstract class TestCase extends BaseTestCase
                 return [];
             }
         });
+        $this->app->instance(NumericArchiveRepository::class, new class implements NumericArchiveRepository
+        {
+            public function pluginMetrics(
+                array $siteIds,
+                array $periods,
+                string $segmentHash,
+                array $metrics,
+                string $pluginName,
+            ): array {
+                return [];
+            }
+        });
         $this->app->instance(BlobArchiveRepository::class, new class implements BlobArchiveRepository
         {
             public function rows(
+                array $siteIds,
+                array $periods,
+                string $segmentHash,
+                string $recordName,
+            ): array {
+                return [];
+            }
+        });
+        $this->app->instance(BlobArchiveMetadataRepository::class, new class implements BlobArchiveMetadataRepository
+        {
+            public function archives(
                 array $siteIds,
                 array $periods,
                 string $segmentHash,
