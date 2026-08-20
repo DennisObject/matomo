@@ -329,6 +329,62 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame($contentInteraction->idaction, $link->idaction_content_interaction);
     }
 
+    public function test_heartbeats_only_update_the_active_matching_visit_duration(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $startedAt = CarbonImmutable::parse('2026-08-20 12:00:00', 'UTC');
+        CarbonImmutable::setTestNow($startedAt);
+        $recorder->record(new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/page',
+            actionName: '',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+        ));
+
+        CarbonImmutable::setTestNow($startedAt->addSeconds(45));
+        $recorder->record(new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/ignored',
+            actionName: 'Ignored',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            heartbeat: true,
+        ));
+        $recorder->record(new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/ignored',
+            actionName: 'Ignored',
+            visitorId: 'fedcba9876543210',
+            ipAddress: '192.0.2.1',
+            userAgent: 'Other browser',
+            heartbeat: true,
+        ));
+
+        CarbonImmutable::setTestNow($startedAt->addSeconds(1_801));
+        $recorder->record(new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/ignored',
+            actionName: 'Ignored',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            heartbeat: true,
+        ));
+
+        $visit = $connection->table('log_visit')->first();
+        $this->assertInstanceOf(stdClass::class, $visit);
+        $this->assertSame(1, $visit->visit_total_actions);
+        $this->assertSame(45, $visit->visit_total_time);
+        $this->assertSame('2026-08-20 12:00:00', $visit->visit_last_action_time);
+        $this->assertSame(1, $connection->table('log_visit')->count());
+        $this->assertSame(1, $connection->table('log_action')->count());
+        $this->assertSame(1, $connection->table('log_link_visit_action')->count());
+    }
+
     private function connection(): ConnectionInterface
     {
         config()->set('database.connections.tracker_test', ['driver' => 'sqlite', 'database' => ':memory:']);

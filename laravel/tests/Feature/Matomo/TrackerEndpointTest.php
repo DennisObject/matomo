@@ -409,6 +409,18 @@ final class TrackerEndpointTest extends TestCase
         ]))->assertOk();
     }
 
+    public function test_marks_heartbeat_requests(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->heartbeat,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['ping' => '1']))->assertOk();
+    }
+
     public function test_rejects_blank_content_names(): void
     {
         $this->bindSite();

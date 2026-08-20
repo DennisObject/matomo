@@ -233,6 +233,7 @@ final class TrackerRequestFactory
             localTime: sprintf('%02d:%02d:%02d', $hour, $minute, $second),
             resolution: $resolution,
             cookiesEnabled: $request->boolean('cookie', false),
+            heartbeat: in_array($request->input('ping'), [1, '1', true], true),
             visitProperties: $visitProperties,
             actionProperties: $actionProperties,
             performanceTimings: $this->performanceTimings($request, $actionType),

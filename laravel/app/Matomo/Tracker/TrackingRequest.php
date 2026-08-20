@@ -30,6 +30,7 @@ final readonly class TrackingRequest
         public string $localTime = '00:00:00',
         public string $resolution = 'unknown',
         public bool $cookiesEnabled = false,
+        public bool $heartbeat = false,
         public int $referrerType = 1,
         public string $referrerName = '',
         public string $referrerKeyword = '',

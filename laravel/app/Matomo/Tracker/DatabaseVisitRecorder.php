@@ -33,6 +33,12 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
 
         $now = CarbonImmutable::now('UTC');
         $this->connection->transaction(function () use ($request, $visitor, $ip, $now): void {
+            if ($request->heartbeat) {
+                $this->recordHeartbeat($request->siteId, $visitor, $now);
+
+                return;
+            }
+
             if ($request->actionType === 8) {
                 $urlId = null;
                 $nameId = $this->action($request->actionName, 8, null);
@@ -131,6 +137,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 'visit_total_actions',
                 'visit_total_events',
                 'visit_total_searches',
+                'visit_total_time',
                 'visit_exit_idaction_url',
                 'visit_exit_idaction_name',
             ])
@@ -147,6 +154,24 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             ->first();
 
         return $visit instanceof stdClass ? $visit : null;
+    }
+
+    private function recordHeartbeat(int $siteId, string $visitor, CarbonImmutable $now): void
+    {
+        $visit = $this->recentVisit($siteId, $visitor, $now);
+        if ($visit === null) {
+            return;
+        }
+
+        $firstAction = CarbonImmutable::parse($visit->visit_first_action_time, 'UTC');
+        $totalTime = max(
+            (int) $visit->visit_total_time,
+            (int) $now->diffInSeconds($firstAction, true),
+        );
+
+        $this->connection->table('log_visit')
+            ->where('idvisit', (int) $visit->idvisit)
+            ->update(['visit_total_time' => $totalTime]);
     }
 
     private function createVisit(
