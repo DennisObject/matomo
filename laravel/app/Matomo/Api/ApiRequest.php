@@ -206,6 +206,19 @@ final readonly class ApiRequest
     ];
 
     /** @var list<string> */
+    private const array SEGMENT_EDITOR_METHODS = [
+        'SegmentEditor.isUserCanAddNewSegment',
+        'SegmentEditor.delete',
+        'SegmentEditor.update',
+        'SegmentEditor.add',
+        'SegmentEditor.star',
+        'SegmentEditor.unstar',
+        'SegmentEditor.get',
+        'SegmentEditor.getAll',
+        'SegmentEditor.getSegmentData',
+    ];
+
+    /** @var list<string> */
     private const array DB_STATS_METHODS = [
         'DBStats.getGeneralInformation',
         'DBStats.getDBStatus',
@@ -416,6 +429,7 @@ final readonly class ApiRequest
         public ?TransitionsRequest $transitions,
         public ?BotTrackingRealtimeRequest $botTrackingRealtime,
         public ?CustomDimensionsRequest $customDimensions,
+        public ?SegmentEditorRequest $segmentEditor,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -477,6 +491,7 @@ final readonly class ApiRequest
             transitions: null,
             botTrackingRealtime: null,
             customDimensions: null,
+            segmentEditor: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -800,6 +815,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::CUSTOM_DIMENSIONS_METHODS, true);
     }
 
+    public function isSegmentEditorRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::SEGMENT_EDITOR_METHODS, true);
+    }
+
     public function isExampleApiRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::EXAMPLE_API_METHODS, true);
@@ -965,9 +985,47 @@ final readonly class ApiRequest
             transitions: self::transitions($request, $module, $method),
             botTrackingRealtime: self::botTrackingRealtime($request, $module, $method),
             customDimensions: self::customDimensions($request, $module, $method),
+            segmentEditor: self::segmentEditor($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
+    }
+
+    private static function segmentEditor(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?SegmentEditorRequest {
+        if ($module !== 'API' || ! in_array($method, self::SEGMENT_EDITOR_METHODS, true)) {
+            return null;
+        }
+
+        $needsSegmentId = in_array($method, [
+            'SegmentEditor.delete',
+            'SegmentEditor.update',
+            'SegmentEditor.star',
+            'SegmentEditor.unstar',
+            'SegmentEditor.get',
+        ], true);
+        $segmentId = $needsSegmentId ? self::requiredInteger($request, 'idSegment') : null;
+
+        if ($segmentId !== null && $segmentId < 1) {
+            throw new InvalidApiParameter('idSegment');
+        }
+
+        $siteValue = self::inputValue($request, 'idSite');
+        $siteId = null;
+
+        if (! in_array($siteValue, [null, '', false, 0, '0'], true)) {
+            if (! is_scalar($siteValue)
+                || preg_match('/^[1-9][0-9]*$/D', (string) $siteValue) !== 1) {
+                throw new InvalidApiParameter('idSite');
+            }
+
+            $siteId = (int) $siteValue;
+        }
+
+        return new SegmentEditorRequest($segmentId, $siteId);
     }
 
     private static function customDimensions(
