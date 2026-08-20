@@ -1854,6 +1854,24 @@ class SitesManagerApiTest extends TestCase
             ->assertExactJson(['value' => true]);
     }
 
+    public function test_superuser_sets_backward_compatible_timezone_alias(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasSuperUserAccess')->willReturn(true);
+        $timezones = $this->createStub(TimezoneProvider::class);
+        $timezones->method('all')->willReturn(['UTC' => ['UTC' => 'UTC']]);
+        $options = $this->createMock(MutableOptionRepository::class);
+        $options->expects($this->once())->method('set')->with('SitesManager_DefaultTimezone', 'America/Montreal');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(TimezoneProvider::class, $timezones);
+        $this->app->instance(MutableOptionRepository::class, $options);
+
+        $this->get('/index.php?module=API&method=SitesManager.setDefaultTimezone'.
+            '&defaultTimezone=America%2FMontreal&format=json&token_auth=super-token')
+            ->assertOk()
+            ->assertExactJson(['value' => true]);
+    }
+
     public function test_default_setting_writes_require_superuser_before_mutation(): void
     {
         $authorizer = $this->createStub(ApiAccessAuthorizer::class);

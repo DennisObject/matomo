@@ -117,6 +117,7 @@ final readonly class ReferrersSearchApiMethodHandler implements ApiMethodHandler
             segmentHash: $this->segments->resolve($query->segment),
             language: $this->languages->resolve($httpRequest, $request->authentication),
             showMetadata: $request->showMetadata,
+            formatMetrics: $query->formatMetrics,
             forceSiteIndex: $query->allSites || count($siteIds) > 1,
             forceDateIndex: $forceDateIndex,
         );

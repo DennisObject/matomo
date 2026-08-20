@@ -31,6 +31,7 @@ final readonly class ReferrersWebsiteReportBuilder
         array $periods,
         string $segmentHash,
         bool $showMetadata,
+        bool $formatMetrics,
         bool $forceSiteIndex,
         bool $forceDateIndex,
     ): ApiTableReport {
@@ -60,6 +61,7 @@ final readonly class ReferrersWebsiteReportBuilder
                     $flat,
                     $showDimensions,
                     $showMetadata,
+                    $formatMetrics,
                 ), []);
             }
 
@@ -72,6 +74,7 @@ final readonly class ReferrersWebsiteReportBuilder
                 $flat,
                 $showDimensions,
                 $showMetadata,
+                $formatMetrics,
             ), $dimensions);
         }
 
@@ -88,6 +91,7 @@ final readonly class ReferrersWebsiteReportBuilder
                     $flat,
                     $showDimensions,
                     $showMetadata,
+                    $formatMetrics,
                 )
                 : $this->singlePeriodRows(
                     $archives[$idSite] ?? [],
@@ -98,6 +102,7 @@ final readonly class ReferrersWebsiteReportBuilder
                     $flat,
                     $showDimensions,
                     $showMetadata,
+                    $formatMetrics,
                 );
         }
 
@@ -118,6 +123,7 @@ final readonly class ReferrersWebsiteReportBuilder
         bool $flat,
         bool $showDimensions,
         bool $showMetadata,
+        bool $formatMetrics,
     ): array {
         $rows = [];
 
@@ -130,6 +136,7 @@ final readonly class ReferrersWebsiteReportBuilder
                 $flat,
                 $showDimensions,
                 $showMetadata,
+                $formatMetrics,
             );
         }
 
@@ -149,6 +156,7 @@ final readonly class ReferrersWebsiteReportBuilder
         bool $flat,
         bool $showDimensions,
         bool $showMetadata,
+        bool $formatMetrics,
     ): array {
         return $period === null ? [] : $this->rows(
             $archives[$period->rangeKey()] ?? [],
@@ -158,6 +166,7 @@ final readonly class ReferrersWebsiteReportBuilder
             $flat,
             $showDimensions,
             $showMetadata,
+            $formatMetrics,
         );
     }
 
@@ -173,6 +182,7 @@ final readonly class ReferrersWebsiteReportBuilder
         bool $flat,
         bool $showDimensions,
         bool $showMetadata,
+        bool $formatMetrics,
     ): array {
         if ($method === 'Referrers.getUrlsFromWebsiteId') {
             return $this->urlRows(
@@ -182,13 +192,14 @@ final readonly class ReferrersWebsiteReportBuilder
                 $showDimensions,
                 false,
                 true,
+                $formatMetrics,
             );
         }
 
         $roots = $records[self::RECORD] ?? [];
 
         if ($flat) {
-            return $this->flatRows($roots, $records, $showDimensions, $showMetadata);
+            return $this->flatRows($roots, $records, $showDimensions, $showMetadata, $formatMetrics);
         }
 
         $totals = $this->totals($roots);
@@ -196,7 +207,7 @@ final readonly class ReferrersWebsiteReportBuilder
 
         foreach ($roots as $archiveRow) {
             $website = (string) ($archiveRow['columns']['label'] ?? '');
-            $row = $this->decorate($archiveRow['columns'], $totals);
+            $row = $this->decorate($archiveRow['columns'], $totals, $formatMetrics);
 
             if ($showMetadata) {
                 $row = [...$row, ...$archiveRow['metadata']];
@@ -217,6 +228,7 @@ final readonly class ReferrersWebsiteReportBuilder
                     $showDimensions,
                     false,
                     false,
+                    $formatMetrics,
                 );
             }
 
@@ -236,6 +248,7 @@ final readonly class ReferrersWebsiteReportBuilder
         array $records,
         bool $showDimensions,
         bool $showMetadata,
+        bool $formatMetrics,
     ): array {
         $all = [];
 
@@ -244,7 +257,7 @@ final readonly class ReferrersWebsiteReportBuilder
             $subtableId = $root['subtableId'];
 
             if ($subtableId === null) {
-                $row = $this->decorate($root['columns'], $this->totals($roots));
+                $row = $this->decorate($root['columns'], $this->totals($roots), $formatMetrics);
                 $row['Referrers_Website'] = $website;
                 $all[] = $row;
 
@@ -260,6 +273,7 @@ final readonly class ReferrersWebsiteReportBuilder
                     $showDimensions,
                     true,
                     false,
+                    $formatMetrics,
                 ),
             ];
         }
@@ -267,7 +281,7 @@ final readonly class ReferrersWebsiteReportBuilder
         $totals = $this->totalsFromRows($all);
 
         foreach ($all as &$row) {
-            $row = $this->decorate($row, $totals);
+            $row = $this->decorate($row, $totals, $formatMetrics);
         }
 
         unset($row);
@@ -286,6 +300,7 @@ final readonly class ReferrersWebsiteReportBuilder
         bool $showDimensions,
         bool $flat = false,
         bool $directPath = false,
+        bool $formatMetrics = true,
     ): array {
         if ($flat || $directPath) {
             $archiveRows = $this->groupByPath($archiveRows);
@@ -296,7 +311,7 @@ final readonly class ReferrersWebsiteReportBuilder
 
         foreach ($archiveRows as $archiveRow) {
             $url = html_entity_decode((string) ($archiveRow['columns']['label'] ?? ''), ENT_QUOTES | ENT_HTML5);
-            $row = $this->decorate($archiveRow['columns'], $totals);
+            $row = $this->decorate($archiveRow['columns'], $totals, $formatMetrics);
             $path = $this->path($url);
             $row['label'] = $flat && $website !== null
                 ? $website.'/'.$path
@@ -363,7 +378,7 @@ final readonly class ReferrersWebsiteReportBuilder
      * @param  array<string, float>  $totals
      * @return array<string, mixed>
      */
-    private function decorate(array $columns, array $totals): array
+    private function decorate(array $columns, array $totals, bool $formatMetrics): array
     {
         $row = $columns;
 
@@ -371,7 +386,11 @@ final readonly class ReferrersWebsiteReportBuilder
             $value = $row[$metric] ?? null;
 
             if (is_int($value) || is_float($value)) {
-                $row[$metric.'_percent_of_total'] = $this->percent($value, $totals[$metric] ?? 0.0);
+                $row[$metric.'_percent_of_total'] = $this->percent(
+                    $value,
+                    $totals[$metric] ?? 0.0,
+                    $formatMetrics,
+                );
             }
         }
 
@@ -409,9 +428,15 @@ final readonly class ReferrersWebsiteReportBuilder
         return $totals;
     }
 
-    private function percent(float|int $value, float $total): string
+    private function percent(float|int $value, float $total, bool $format): int|float|string
     {
-        $percent = $total === 0.0 ? 0 : round((float) $value / $total * 100, 1);
+        $quotient = $total === 0.0 ? 0 : round((float) $value / $total, 4);
+
+        if (! $format) {
+            return $quotient;
+        }
+
+        $percent = $quotient * 100;
 
         return rtrim(rtrim(number_format($percent, 1, '.', ''), '0'), '.').'%';
     }

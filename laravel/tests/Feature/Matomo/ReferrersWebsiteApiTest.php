@@ -49,6 +49,22 @@ class ReferrersWebsiteApiTest extends TestCase
             ->assertJsonPath('0.url', 'https://example.com/path');
     }
 
+    public function test_returns_unformatted_percentage_quotients(): void
+    {
+        $this->bindViewAccess();
+        $this->bindRecords([
+            'Referrers_urlByWebsite' => [
+                $this->row('example.com', 1, 2),
+                $this->row('example.net', 2, 4),
+            ],
+        ]);
+
+        $this->get($this->url('getWebsites').'&format_metrics=0')
+            ->assertOk()
+            ->assertJsonPath('0.nb_visits_percent_of_total', 0.3333)
+            ->assertJsonPath('1.nb_visits_percent_of_total', 0.6667);
+    }
+
     public function test_flattens_urls_with_legacy_dimension_labels(): void
     {
         $this->bindViewAccess();
