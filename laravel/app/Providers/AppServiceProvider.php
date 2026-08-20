@@ -12,6 +12,7 @@ use App\Matomo\AiProviders\AiProviderSettingsRepository;
 use App\Matomo\AiProviders\BuiltInAiProviderCatalog;
 use App\Matomo\AiProviders\DatabaseAiProviderSettingsRepository;
 use App\Matomo\AiProviders\HttpAiProviderConnectionTester;
+use App\Matomo\Api\Methods\ActionsApiMethodHandler;
 use App\Matomo\Api\Methods\AiAgentsApiMethodHandler;
 use App\Matomo\Api\Methods\AiProvidersApiMethodHandler;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
@@ -48,6 +49,9 @@ use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
 use App\Matomo\Api\Methods\VisitorInterestApiMethodHandler;
 use App\Matomo\Api\Methods\VisitsSummaryApiMethodHandler;
 use App\Matomo\Api\Methods\VisitTimeApiMethodHandler;
+use App\Matomo\Archiving\ActionArchiveCollector;
+use App\Matomo\Archiving\ActionArchiveConfiguration;
+use App\Matomo\Archiving\ActionArchivePathResolver;
 use App\Matomo\Archiving\ArchiveActionQueryFactory;
 use App\Matomo\Archiving\ArchiveConversionQueryFactory;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
@@ -61,9 +65,11 @@ use App\Matomo\Archiving\DatabaseArchiveInvalidationManager;
 use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\EcommerceItemArchiveCollector;
 use App\Matomo\Archiving\EventArchiveCollector;
+use App\Matomo\Archiving\Events\ActionArchiveMetricsCollecting;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\ExamplePluginArchiveCollector;
 use App\Matomo\Archiving\GoalArchiveCollector;
+use App\Matomo\Archiving\PagePerformanceActionArchiveMetrics;
 use App\Matomo\Archiving\PagePerformanceArchiveCollector;
 use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Archiving\ReportingSubperiodFactory;
@@ -682,6 +688,22 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(
+            ActionArchiveConfiguration::class,
+            function (Application $application): ActionArchiveConfiguration {
+                $path = $application->make(Repository::class)->get('matomo.config_path');
+
+                if (! is_string($path) || $path === '') {
+                    throw new RuntimeException('The Matomo configuration path is invalid.');
+                }
+
+                return ActionArchiveConfiguration::fromFiles(
+                    base_path('../config/global.ini.php'),
+                    $path,
+                );
+            },
+        );
+        $this->app->singleton(ActionArchivePathResolver::class);
+        $this->app->singleton(
             BrowserLanguageArchiveLabeler::class,
             fn (Application $application): BrowserLanguageArchiveLabeler => new BrowserLanguageArchiveLabeler(
                 languageCodes: $this->stringResourceKeys(
@@ -786,6 +808,33 @@ class AppServiceProvider extends ServiceProvider
                 numbers: $application->make(NumericArchiveRepository::class),
                 sites: $application->make(SiteRepository::class),
                 caps: $application->make(InstallationConfig::class)->pagePerformanceTimingCaps(),
+            ),
+        );
+        $this->app->singleton(
+            PagePerformanceActionArchiveMetrics::class,
+            fn (Application $application): PagePerformanceActionArchiveMetrics => new PagePerformanceActionArchiveMetrics(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                plugins: $application->make(PluginState::class),
+                caps: $application->make(InstallationConfig::class)->pagePerformanceTimingCaps(),
+            ),
+        );
+        $this->app->singleton(
+            ActionArchiveCollector::class,
+            fn (Application $application): ActionArchiveCollector => new ActionArchiveCollector(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                actionQueries: $application->make(ArchiveActionQueryFactory::class),
+                conversionQueries: $application->make(ArchiveConversionQueryFactory::class),
+                visitQueries: $application->make(ArchiveVisitQueryFactory::class),
+                subperiods: $application->make(ReportingSubperiodFactory::class),
+                segments: $application->make(SegmentHashResolver::class),
+                blobs: $application->make(HierarchicalBlobArchiveRepository::class),
+                numbers: $application->make(NumericArchiveRepository::class),
+                sites: $application->make(SiteRepository::class),
+                goals: $application->make(GoalRepository::class),
+                plugins: $application->make(PluginState::class),
+                configuration: $application->make(ActionArchiveConfiguration::class),
+                paths: $application->make(ActionArchivePathResolver::class),
+                events: $application->make(Dispatcher::class),
             ),
         );
         $this->app->singleton(
@@ -1065,6 +1114,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ResolutionApiMethodHandler::class),
                 $application->make(DevicePluginsApiMethodHandler::class),
                 $application->make(DevicesDetectionApiMethodHandler::class),
+                $application->make(ActionsApiMethodHandler::class),
                 $application->make(EventsApiMethodHandler::class),
                 $application->make(ExampleApiMethodHandler::class),
                 $application->make(ExamplePluginApiMethodHandler::class),
@@ -1098,6 +1148,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(Dispatcher $events): void
     {
+        $events->listen(ActionArchiveMetricsCollecting::class, PagePerformanceActionArchiveMetrics::class);
         $events->listen(ArchiveReportsCollecting::class, VisitDimensionArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, VisitAggregateArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, GoalArchiveCollector::class);
@@ -1106,6 +1157,7 @@ class AppServiceProvider extends ServiceProvider
         $events->listen(ArchiveReportsCollecting::class, ContentArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, ExamplePluginArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, PagePerformanceArchiveCollector::class);
+        $events->listen(ArchiveReportsCollecting::class, ActionArchiveCollector::class);
     }
 
     /**

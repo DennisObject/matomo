@@ -78,6 +78,42 @@ final readonly class ApiRequest
     private const string USER_ID_METHOD = 'UserId.getUsers';
 
     /** @var list<string> */
+    private const array ACTIONS_METHODS = [
+        'Actions.get',
+        'Actions.getPageUrls',
+        'Actions.getPageUrlsFollowingSiteSearch',
+        'Actions.getPageTitlesFollowingSiteSearch',
+        'Actions.getEntryPageUrls',
+        'Actions.getExitPageUrls',
+        'Actions.getPageUrl',
+        'Actions.getPageTitles',
+        'Actions.getEntryPageTitles',
+        'Actions.getExitPageTitles',
+        'Actions.getPageTitle',
+        'Actions.getDownloads',
+        'Actions.getDownload',
+        'Actions.getOutlinks',
+        'Actions.getOutlink',
+        'Actions.getSiteSearchKeywords',
+        'Actions.getSiteSearchNoResultKeywords',
+        'Actions.getSiteSearchCategories',
+    ];
+
+    /** @var list<string> */
+    private const array ACTIONS_SUBTABLE_METHODS = [
+        'Actions.getPageUrls',
+        'Actions.getPageUrlsFollowingSiteSearch',
+        'Actions.getPageTitlesFollowingSiteSearch',
+        'Actions.getEntryPageUrls',
+        'Actions.getExitPageUrls',
+        'Actions.getPageTitles',
+        'Actions.getEntryPageTitles',
+        'Actions.getExitPageTitles',
+        'Actions.getDownloads',
+        'Actions.getOutlinks',
+    ];
+
+    /** @var list<string> */
     private const array EVENTS_METHODS = [
         'Events.getCategory',
         'Events.getAction',
@@ -280,6 +316,7 @@ final readonly class ApiRequest
         /** @var list<string> */
         public array $siteTypesToExclude,
         public ?VisitsSummaryRequest $visitsSummary,
+        public ?ActionsRequest $actions,
         public ?TwoFactorAuthRequest $twoFactorAuth,
         public ?string $locationIp,
         public ?string $locationProviderId,
@@ -334,6 +371,7 @@ final readonly class ApiRequest
             minimumSiteAccessRole: null,
             siteTypesToExclude: [],
             visitsSummary: null,
+            actions: null,
             twoFactorAuth: null,
             locationIp: null,
             locationProviderId: null,
@@ -609,6 +647,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::EVENTS_METHODS, true);
     }
 
+    public function isActionsRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::ACTIONS_METHODS, true);
+    }
+
     public function isContentsRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::CONTENTS_METHODS, true);
@@ -768,6 +811,7 @@ final readonly class ApiRequest
             minimumSiteAccessRole: self::minimumSiteAccessRole($request, $module, $method),
             siteTypesToExclude: self::siteTypesToExclude($request, $module, $method),
             visitsSummary: self::visitsSummary($request, $module, $method),
+            actions: self::actions($request, $module, $method),
             twoFactorAuth: self::twoFactorAuth($request, $module, $method),
             locationIp: self::locationIp($request, $module, $method),
             locationProviderId: self::locationProviderId($request, $module, $method),
@@ -1757,6 +1801,7 @@ final readonly class ApiRequest
                 && ! in_array($method, self::DEVICES_DETECTION_METHODS, true)
                 && $method !== self::PAGE_PERFORMANCE_METHOD
                 && $method !== self::USER_ID_METHOD
+                && ! in_array($method, self::ACTIONS_METHODS, true)
                 && ! in_array($method, self::EXAMPLE_PLUGIN_REPORT_METHODS, true)
                 && $method !== self::EXAMPLE_REPORT_METHOD
                 && ! in_array($method, self::EVENTS_METHODS, true)
@@ -1821,7 +1866,8 @@ final readonly class ApiRequest
     private static function reportSubtableId(Request $request, string $method): ?int
     {
         if (! in_array($method, self::CONTENTS_METHODS, true)
-            && ! in_array($method, self::EVENTS_SUBTABLE_METHODS, true)) {
+            && ! in_array($method, self::EVENTS_SUBTABLE_METHODS, true)
+            && ! in_array($method, self::ACTIONS_SUBTABLE_METHODS, true)) {
             return null;
         }
 
@@ -1844,6 +1890,37 @@ final readonly class ApiRequest
         }
 
         return (int) $value;
+    }
+
+    private static function actions(Request $request, string $module, string $method): ?ActionsRequest
+    {
+        if ($module !== 'API' || ! in_array($method, self::ACTIONS_METHODS, true)) {
+            return null;
+        }
+
+        $parameter = match ($method) {
+            'Actions.getPageUrl' => 'pageUrl',
+            'Actions.getPageTitle' => 'pageName',
+            'Actions.getDownload' => 'downloadUrl',
+            'Actions.getOutlink' => 'outlinkUrl',
+            default => null,
+        };
+        $depth = self::inputValue($request, 'depth');
+
+        if (in_array($depth, [null, '', false, 'false', '0'], true)) {
+            $parsedDepth = null;
+        } elseif (! is_scalar($depth)
+            || (string) (int) $depth !== (string) $depth
+            || (int) $depth < 1) {
+            throw new InvalidApiParameter('depth');
+        } else {
+            $parsedDepth = (int) $depth;
+        }
+
+        return new ActionsRequest(
+            actionValue: $parameter === null ? null : self::requiredString($request, $parameter),
+            depth: $parsedDepth,
+        );
     }
 
     private static function eventsSecondaryDimension(Request $request, string $method): ?string

@@ -97,6 +97,37 @@ class RecursiveArchiveTableTest extends TestCase
         $this->assertSame('https://example.test/docs/start', $leaf[0][1]['url']);
     }
 
+    public function test_nests_goal_metrics_and_keeps_the_largest_pages_before_value(): void
+    {
+        $table = new RecursiveArchiveTable;
+        $table->mergePath(['docs', '/one'], [
+            'nb_visits' => 1,
+            'goal_1_nb_conversions' => 1,
+            'goal_1_nb_conv_pages_before' => 5,
+        ]);
+        $table->mergePath(['docs', '/one'], [
+            'nb_visits' => 1,
+            'goal_1_nb_conversions' => 1,
+            'goal_1_nb_conv_pages_before' => 3,
+        ]);
+        $table->mergePath(['docs', '/two'], [
+            'nb_visits' => 1,
+            'goal_1_nb_conversions' => 1,
+            'goal_1_nb_conv_pages_before' => 4,
+        ]);
+
+        $records = $table->serialized(10, 10, 'nb_visits');
+        $root = unserialize($records[''], ['allowed_classes' => false]);
+        $leaves = unserialize($records['_1'], ['allowed_classes' => false]);
+
+        $this->assertIsArray($root);
+        $this->assertIsArray($leaves);
+        $this->assertSame(3, $root[0][0][10][1][1]);
+        $this->assertSame(5, $root[0][0][10][1][9]);
+        $this->assertSame(2, $leaves[0][0][10][1][1]);
+        $this->assertSame(5, $leaves[0][0][10][1][9]);
+    }
+
     public function test_rejects_invalid_serialization_limits(): void
     {
         $this->expectException(InvalidArgumentException::class);
