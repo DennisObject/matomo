@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Matomo;
 
+use App\Matomo\Localization\MatomoTranslator;
 use App\Matomo\Privacy\CnilGranularComplianceSettingsProvider;
 use App\Matomo\Privacy\CompliancePolicyCatalog;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
@@ -53,10 +54,10 @@ final class CnilGranularComplianceSettingsProviderTest extends TestCase
         $provider = new CnilGranularComplianceSettingsProvider(
             $status,
             $policies,
-            new CompliancePolicyCatalog,
+            new CompliancePolicyCatalog($this->createStub(MatomoTranslator::class)),
         );
 
-        $result = $provider->settings(7);
+        $result = $provider->settings(7, 'en');
 
         $this->assertSame('cnil_v1', $result['policy']);
         $this->assertTrue($result['policyEnforced']);
