@@ -53,6 +53,7 @@ use App\Matomo\Api\Methods\PrivacyManagerComplianceApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceReadApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceStatusApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerDataSubjectsApiMethodHandler;
+use App\Matomo\Api\Methods\PrivacyManagerDataSubjectSearchApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerGranularComplianceApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerRawAnonymisationApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerSettingsApiMethodHandler;
@@ -224,8 +225,10 @@ use App\Matomo\Privacy\DatabaseAnonymisationSettingsRepository;
 use App\Matomo\Privacy\DatabaseAnonymizableColumnProvider;
 use App\Matomo\Privacy\DatabaseCompliancePolicyStateRepository;
 use App\Matomo\Privacy\DatabaseComplianceStatusProvider;
+use App\Matomo\Privacy\DatabaseDataSubjectFinder;
 use App\Matomo\Privacy\DatabaseDataSubjectRepository;
 use App\Matomo\Privacy\DatabaseRawAnonymisationScheduler;
+use App\Matomo\Privacy\DataSubjectFinder;
 use App\Matomo\Privacy\DataSubjectRepository;
 use App\Matomo\Privacy\DeletionBatchLimits;
 use App\Matomo\Privacy\GranularComplianceSettingsProvider;
@@ -681,6 +684,16 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(Dispatcher::class),
                 $application->make(ArchiveInvalidationManager::class),
                 $application->make(SiteRepository::class),
+            ),
+        );
+        $this->app->singleton(
+            DataSubjectFinder::class,
+            fn (Application $application): DataSubjectFinder => new DatabaseDataSubjectFinder(
+                $application->make(MatomoDatabase::class)->connection(),
+                $application->make(VisitSegmentApplicator::class),
+                $application->make(SiteRepository::class),
+                $application->make(DeviceDetectionMetadata::class),
+                $application->make(CountryMetadataProvider::class),
             ),
         );
         $this->app->singleton(
@@ -1642,6 +1655,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(PrivacyManagerComplianceReadApiMethodHandler::class),
                 $application->make(PrivacyManagerComplianceStatusApiMethodHandler::class),
                 $application->make(PrivacyManagerDataSubjectsApiMethodHandler::class),
+                $application->make(PrivacyManagerDataSubjectSearchApiMethodHandler::class),
                 $application->make(PrivacyManagerGranularComplianceApiMethodHandler::class),
                 $application->make(PrivacyManagerRawAnonymisationApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),

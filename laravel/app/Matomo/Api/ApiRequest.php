@@ -543,6 +543,7 @@ final readonly class ApiRequest
         public ?PrivacyAnonymisationSettingsRequest $privacyAnonymisationSettings,
         public ?PrivacyRawAnonymisationRequest $privacyRawAnonymisation,
         public ?PrivacyDataSubjectsRequest $privacyDataSubjects,
+        public ?PrivacyDataSubjectSearchRequest $privacyDataSubjectSearch,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -631,6 +632,7 @@ final readonly class ApiRequest
             privacyAnonymisationSettings: null,
             privacyRawAnonymisation: null,
             privacyDataSubjects: null,
+            privacyDataSubjectSearch: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1248,6 +1250,7 @@ final readonly class ApiRequest
             privacyAnonymisationSettings: self::privacyAnonymisationSettings($request, $module, $method),
             privacyRawAnonymisation: self::privacyRawAnonymisation($request, $module, $method),
             privacyDataSubjects: self::privacyDataSubjects($request, $module, $method),
+            privacyDataSubjectSearch: self::privacyDataSubjectSearch($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2916,6 +2919,24 @@ final readonly class ApiRequest
         return new PrivacyDataSubjectsRequest(
             visits: $visits,
             delete: $method === 'PrivacyManager.deleteDataSubjects',
+        );
+    }
+
+    private static function privacyDataSubjectSearch(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?PrivacyDataSubjectSearchRequest {
+        if ($module !== 'API' || $method !== 'PrivacyManager.findDataSubjects') {
+            return null;
+        }
+
+        [$siteIds, $allSites] = self::reportSiteIds($request);
+
+        return new PrivacyDataSubjectSearchRequest(
+            siteIds: $siteIds,
+            allSites: $allSites,
+            segment: self::requiredString($request, 'segment'),
         );
     }
 
