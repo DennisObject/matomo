@@ -146,7 +146,7 @@ final readonly class FeedbackApiMethodHandler implements ApiMethodHandler
     private function send(Request $request, string $login, string $subject, string $body): void
     {
         $body .= 'Matomo '.Version::VERSION."\n";
-        $body .= 'URL: '.($request->headers->get('referer') ?? '')."\n";
+        $body .= 'URL: '.$this->feedbackReferrer($request)."\n";
 
         $this->mailer->send(
             recipient: $this->settings->recipient(),
@@ -164,6 +164,15 @@ final readonly class FeedbackApiMethodHandler implements ApiMethodHandler
         }
 
         return defined('ABSPATH') && function_exists('add_action') ? 'Wordpress' : 'On-Premise';
+    }
+
+    private function feedbackReferrer(Request $request): string
+    {
+        return preg_replace(
+            '/([?&]token_auth=)[^&#]*/i',
+            '$1[redacted]',
+            $request->headers->get('referer') ?? '',
+        ) ?? '';
     }
 
     private function nextReminderDate(): string
