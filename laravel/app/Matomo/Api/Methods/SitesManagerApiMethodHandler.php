@@ -843,6 +843,16 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             );
         }
 
+        $incoming = $this->normalizeSiteUrls($request->siteAliasUrls ?? []);
+
+        if ($incoming === null) {
+            return $this->responses->error($request, 'One of the provided URLs is not a valid URL.', 400);
+        }
+
+        if ($request->method === 'SitesManager.addSiteAliasUrls' && $incoming === []) {
+            return $this->responses->scalar($request, 0);
+        }
+
         $mainUrl = $this->sites->mainUrl($idSite);
 
         if ($mainUrl === null) {
@@ -851,12 +861,6 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
                 "An unexpected website was found in the request: website id was set to '{$idSite}' .",
                 500,
             );
-        }
-
-        $incoming = $this->normalizeSiteUrls($request->siteAliasUrls ?? []);
-
-        if ($incoming === null) {
-            return $this->responses->error($request, 'One of the provided URLs is not a valid URL.', 400);
         }
 
         $initial = $this->normalizeSiteUrls($this->sites->urls($idSite)) ?? [$mainUrl];
@@ -889,26 +893,25 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         $normalized = [];
 
         foreach ($urls as $url) {
-            $url = trim(urldecode($url));
-
             if ($url === '') {
                 continue;
             }
 
-            if (! str_contains($url, '://')) {
-                $url = str_starts_with($url, '//') ? 'http:'.$url : 'http://'.$url;
-            }
+            $url = urldecode($url);
 
             if (strlen($url) > 5 && str_ends_with($url, '/')) {
                 $url = substr($url, 0, -1);
             }
 
-            $parts = parse_url($url);
+            $scheme = parse_url($url, PHP_URL_SCHEME);
 
-            if (! is_array($parts)
-                || ! in_array($parts['scheme'] ?? null, ['http', 'https'], true)
-                || ! is_string($parts['host'] ?? null)
-                || $parts['host'] === '') {
+            if (empty($scheme) && ! str_contains($url, '://')) {
+                $url = str_starts_with($url, '//') ? 'http:'.$url : 'http://'.$url;
+            }
+
+            $url = trim($url);
+
+            if (! $this->looksLikeUrl($url)) {
                 return null;
             }
 
