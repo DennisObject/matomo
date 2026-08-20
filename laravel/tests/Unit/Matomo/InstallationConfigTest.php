@@ -33,6 +33,8 @@ class InstallationConfigTest extends TestCase
         $this->assertSame('matomo_', $configuration->databaseConnection()['prefix']);
         $this->assertSame('secret-salt', $configuration->salt());
         $this->assertTrue($configuration->onlyAllowSecureTokens());
+        $this->assertSame(-1, $configuration->apiBulkRequestLimit());
+        $this->assertTrue($configuration->segmentSuggestedValuesEnabled());
         $this->assertSame(1_209_600, $configuration->sessionLifetime());
         $this->assertSame(3_600, $configuration->sessionIdleTimeout());
         $this->assertSame(['10.0.0.0/8'], $configuration->loginAllowlistIps());
@@ -107,6 +109,9 @@ class InstallationConfigTest extends TestCase
         $this->assertContains('utm_campaign', $configuration->campaignNameParameters());
         $this->assertContains('utm_term', $configuration->campaignKeywordParameters());
         $this->assertSame(1024, $configuration->pageMaximumLength());
+        $this->assertTrue($configuration->trackingEnabled());
+        $this->assertSame(1_800, $configuration->visitStandardLength());
+        $this->assertSame('matomo_ignore', $configuration->ignoreVisitsCookieName());
         $this->assertSame(100, $configuration->liveAiChatbotsMaximumRows());
         $this->assertSame(100, $configuration->liveAiChatbotsTopPageUrlsMaximumRows());
         $this->assertSame(-1.0, $configuration->liveQueryMaximumExecutionTime());
@@ -134,6 +139,7 @@ class InstallationConfigTest extends TestCase
             live_ai_chatbots_top_page_urls_maximum_rows = 23
             live_query_max_execution_time = 1.5
             live_visitor_profile_max_visits_to_aggregate = 31
+            enable_segment_suggested_values = 0
             INI,
             extraTracker: <<<'INI'
             enable_default_location_provider = 0
@@ -142,6 +148,9 @@ class InstallationConfigTest extends TestCase
             campaign_var_name = "campaign"
             campaign_keyword_var_name = "keyword"
             page_maximum_length = 2048
+            record_statistics = 0
+            visit_standard_length = 900
+            ignore_visits_cookie_name = "custom_ignore"
 
             [Tracker_7]
             use_third_party_id_cookie = 1
@@ -167,10 +176,14 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(23, $configuration->liveAiChatbotsTopPageUrlsMaximumRows());
         $this->assertSame(1.5, $configuration->liveQueryMaximumExecutionTime());
         $this->assertSame(31, $configuration->liveVisitorProfileMaximumVisits());
+        $this->assertFalse($configuration->segmentSuggestedValuesEnabled());
         $this->assertSame(['session', 'secret'], $configuration->urlQueryParametersToExclude());
         $this->assertSame(['campaign'], $configuration->campaignNameParameters());
         $this->assertSame(['keyword'], $configuration->campaignKeywordParameters());
         $this->assertSame(2048, $configuration->pageMaximumLength());
+        $this->assertFalse($configuration->trackingEnabled());
+        $this->assertSame(900, $configuration->visitStandardLength());
+        $this->assertSame('custom_ignore', $configuration->ignoreVisitsCookieName());
         $this->assertTrue($configuration->thirdPartyCookiesEnabled(7));
         $this->assertFalse($configuration->thirdPartyCookiesEnabled(8));
     }

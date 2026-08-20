@@ -5,11 +5,23 @@ declare(strict_types=1);
 namespace App\Matomo\Tracker;
 
 use Carbon\CarbonImmutable;
-use Illuminate\Database\Connection;
+use Illuminate\Database\ConnectionInterface;
+use stdClass;
 
 final readonly class DatabaseVisitRecorder implements VisitRecorder
 {
-    public function __construct(private Connection $connection) {}
+    /** @var array<string, int> */
+    private const array URL_PREFIXES = [
+        'http://www.' => 1,
+        'http://' => 0,
+        'https://www.' => 3,
+        'https://' => 2,
+    ];
+
+    public function __construct(
+        private ConnectionInterface $connection,
+        private int $visitStandardLength = 1_800,
+    ) {}
 
     public function record(TrackingRequest $request): void
     {
@@ -19,75 +31,181 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             return;
         }
 
-        $now = CarbonImmutable::now('UTC')->format('Y-m-d H:i:s');
+        $now = CarbonImmutable::now('UTC');
         $this->connection->transaction(function () use ($request, $visitor, $ip, $now): void {
-            $url = $this->action($request->url, $request->actionType);
-            $name = $request->actionName === '' ? null : $this->action($request->actionName, 4);
-            $visitId = $this->connection->table('log_visit')->where('idsite', $request->siteId)->where('idvisitor', $visitor)->where('visit_last_action_time', '>=', CarbonImmutable::parse($now)->subMinutes(30)->format('Y-m-d H:i:s'))->value('idvisit');
-            if (! is_numeric($visitId)) {
-                $visit = [
-                    'idsite' => $request->siteId, 'idvisitor' => $visitor, 'visit_last_action_time' => $now,
-                    'config_id' => substr(hash('sha256', $request->siteId.$request->ipAddress.$request->userAgent, true), 0, 8), 'location_ip' => $ip,
-                    'visit_first_action_time' => $now, 'visit_entry_idaction_url' => $url,
-                    'visit_entry_idaction_name' => $name ?? 0, 'visit_exit_idaction_url' => $url,
-                    'visit_exit_idaction_name' => $name ?? 0, 'visit_total_actions' => 1,
-                    'visit_total_events' => $request->actionType === 10 ? 1 : 0, 'visit_total_time' => 0,
-                    'visit_total_searches' => 0, 'visit_goal_converted' => 0, 'visit_goal_buyer' => 0,
-                    'visitor_returning' => 0, 'visitor_count_visits' => 1, 'visitor_days_since_last' => 0,
-                    'visitor_days_since_first' => 0, 'visitor_days_since_order' => 0,
-                    'config_resolution' => '', 'config_windowsmedia' => 0, 'config_silverlight' => 0,
-                    'config_java' => 0, 'config_pdf' => 0, 'config_quicktime' => 0, 'config_realplayer' => 0,
-                    'config_flash' => 0, 'config_browser_version' => '', 'config_browser_name' => '',
-                    'config_browser_engine' => '', 'config_os' => '', 'config_cookie' => 0,
-                    'location_country' => '', 'location_browser_lang' => '', 'visitor_localtime' => '00:00:00',
-                    'referer_url' => '',
-                ];
-                $visitId = $this->connection->table('log_visit')->insertGetId($this->available('log_visit', $visit), 'idvisit');
-            } else {
-                $updates = [
-                    'visit_last_action_time' => $now, 'visit_exit_idaction_url' => $url,
-                    'visit_exit_idaction_name' => $name ?? 0,
-                ];
-                $query = $this->connection->table('log_visit')->where('idvisit', (int) $visitId);
-                $query->update($this->available('log_visit', $updates));
-                $query->increment('visit_total_actions');
-                if ($request->actionType === 10) {
-                    $query->increment('visit_total_events');
-                }
-            }
+            [$urlName, $urlPrefix] = in_array($request->actionType, [1, 10], true)
+                ? $this->normalizedUrl($request->url)
+                : [$request->url, null];
+            $urlId = $this->action($urlName, $request->actionType, $urlPrefix);
+            $nameId = $request->actionType === 1 && $request->actionName !== ''
+                ? $this->action($request->actionName, 4, null)
+                : null;
+            $visit = $this->recentVisit($request->siteId, $visitor, $now);
+            $visitId = $visit === null
+                ? $this->createVisit($request, $visitor, $ip, $now, $urlId, $nameId)
+                : (int) $visit->idvisit;
+            $position = $visit === null ? 1 : max(1, (int) $visit->visit_total_actions + 1);
+            $totalEvents = ($visit === null ? 0 : (int) $visit->visit_total_events)
+                + ($request->actionType === 10 ? 1 : 0);
+            $previousUrlId = $visit === null ? 0 : (int) ($visit->visit_exit_idaction_url ?? 0);
+            $previousNameId = $visit === null ? null : $this->nullableInteger($visit->visit_exit_idaction_name ?? null);
+            $secondsSincePreviousAction = $visit === null
+                ? 0
+                : max(0, $now->diffInSeconds(CarbonImmutable::parse($visit->visit_last_action_time, 'UTC'), true));
 
             $action = [
-                'idsite' => $request->siteId, 'idvisitor' => $visitor, 'idvisit' => (int) $visitId,
-                'idaction_url' => $url, 'idaction_name' => $name, 'server_time' => $now, 'idaction_url_ref' => 0,
-                'time_spent_ref_action' => 0,
+                'idsite' => $request->siteId,
+                'idvisitor' => $visitor,
+                'idvisit' => $visitId,
+                'idaction_url' => $urlId,
+                'idaction_name' => $nameId,
+                'idaction_url_ref' => $previousUrlId,
+                'idaction_name_ref' => $previousNameId,
+                'server_time' => $now->format('Y-m-d H:i:s'),
+                'pageview_position' => $position,
+                'time_spent_ref_action' => $secondsSincePreviousAction,
             ];
             if ($request->eventCategory !== null && $request->eventAction !== null) {
-                $action['idaction_event_category'] = $this->action($request->eventCategory, 10);
-                $action['idaction_event_action'] = $this->action($request->eventAction, 11);
-                $action['idaction_event_name'] = $request->eventName === null ? null : $this->action($request->eventName, 12);
+                $action['idaction_event_category'] = $this->action($request->eventCategory, 10, null);
+                $action['idaction_event_action'] = $this->action($request->eventAction, 11, null);
+                $action['idaction_event_name'] = $request->eventName === null
+                    ? null
+                    : $this->action($request->eventName, 12, null);
                 $action['custom_float'] = $request->eventValue;
             }
 
-            $this->connection->table('log_link_visit_action')->insert($this->available('log_link_visit_action', $action));
+            $linkId = (int) $this->connection->table('log_link_visit_action')->insertGetId(
+                $action,
+                'idlink_va',
+            );
+
+            $this->updateVisit($visitId, $visit, $now, $urlId, $nameId, $position, $totalEvents, $linkId);
         });
     }
 
-    private function action(string $name, int $type): int
+    private function recentVisit(int $siteId, string $visitor, CarbonImmutable $now): ?stdClass
     {
-        $hash = (int) sprintf('%u', crc32($name));
-        $id = $this->connection->table('log_action')->where(['type' => $type, 'hash' => $hash, 'name' => $name])->value('idaction');
+        $visit = $this->connection->table('log_visit')
+            ->select([
+                'idvisit',
+                'visit_first_action_time',
+                'visit_last_action_time',
+                'visit_total_actions',
+                'visit_total_events',
+                'visit_exit_idaction_url',
+                'visit_exit_idaction_name',
+            ])
+            ->where('idsite', $siteId)
+            ->where('idvisitor', $visitor)
+            ->where(
+                'visit_last_action_time',
+                '>=',
+                $now->subSeconds($this->visitStandardLength)->format('Y-m-d H:i:s'),
+            )
+            ->orderByDesc('visit_last_action_time')
+            ->orderByDesc('idvisit')
+            ->lockForUpdate()
+            ->first();
 
-        return is_numeric($id) ? (int) $id : (int) $this->connection->table('log_action')->insertGetId(['name' => $name, 'hash' => $hash, 'type' => $type, 'url_prefix' => 0], 'idaction');
+        return $visit instanceof stdClass ? $visit : null;
     }
 
-    /**
-     * @param  array<string, mixed>  $values
-     * @return array<string, mixed>
-     */
-    private function available(string $table, array $values): array
-    {
-        $columns = array_flip($this->connection->getSchemaBuilder()->getColumnListing($table));
+    private function createVisit(
+        TrackingRequest $request,
+        string $visitor,
+        string $ip,
+        CarbonImmutable $now,
+        int $urlId,
+        ?int $nameId,
+    ): int {
+        $timestamp = $now->format('Y-m-d H:i:s');
 
-        return array_intersect_key($values, $columns);
+        return (int) $this->connection->table('log_visit')->insertGetId([
+            'idsite' => $request->siteId,
+            'idvisitor' => $visitor,
+            'visit_first_action_time' => $timestamp,
+            'visit_last_action_time' => $timestamp,
+            'config_id' => substr(hash('sha256', $request->visitorId.$request->userAgent, true), 0, 8),
+            'location_ip' => $ip,
+            'visit_entry_idaction_url' => $urlId,
+            'visit_entry_idaction_name' => $nameId,
+            'visit_exit_idaction_url' => $urlId,
+            'visit_exit_idaction_name' => $nameId,
+            'visit_total_actions' => 1,
+            'visit_total_events' => $request->actionType === 10 ? 1 : 0,
+            'visit_total_interactions' => 1,
+            'visit_total_time' => 0,
+        ], 'idvisit');
+    }
+
+    private function updateVisit(
+        int $visitId,
+        ?stdClass $visit,
+        CarbonImmutable $now,
+        int $urlId,
+        ?int $nameId,
+        int $position,
+        int $totalEvents,
+        int $linkId,
+    ): void {
+        $firstAction = $visit === null
+            ? $now
+            : CarbonImmutable::parse($visit->visit_first_action_time, 'UTC');
+
+        $this->connection->table('log_visit')->where('idvisit', $visitId)->update([
+            'visit_last_action_time' => $now->format('Y-m-d H:i:s'),
+            'visit_exit_idaction_url' => $urlId,
+            'visit_exit_idaction_name' => $nameId,
+            'visit_total_actions' => $position,
+            'visit_total_events' => $totalEvents,
+            'visit_total_interactions' => $position,
+            'visit_total_time' => max(0, $now->diffInSeconds($firstAction, true)),
+            'last_idlink_va' => $linkId,
+        ]);
+    }
+
+    /** @return array{string, int|null} */
+    private function normalizedUrl(string $url): array
+    {
+        $lowercaseUrl = strtolower($url);
+        foreach (self::URL_PREFIXES as $prefix => $id) {
+            if (str_starts_with($lowercaseUrl, $prefix)) {
+                return [substr($url, strlen($prefix)), $id];
+            }
+        }
+
+        return [$url, null];
+    }
+
+    private function action(string $name, int $type, ?int $urlPrefix): int
+    {
+        $hash = (int) sprintf('%u', crc32($name));
+        $query = fn () => $this->connection->table('log_action')
+            ->where(['type' => $type, 'hash' => $hash, 'name' => $name])
+            ->orderBy('idaction');
+        $id = $query()->value('idaction');
+        if (is_numeric($id)) {
+            return (int) $id;
+        }
+
+        $insertedId = (int) $this->connection->table('log_action')->insertGetId([
+            'name' => $name,
+            'hash' => $hash,
+            'type' => $type,
+            'url_prefix' => $urlPrefix,
+        ], 'idaction');
+        $firstId = $query()->value('idaction');
+        if (is_numeric($firstId) && (int) $firstId !== $insertedId) {
+            $this->connection->table('log_action')->where('idaction', $insertedId)->delete();
+
+            return (int) $firstId;
+        }
+
+        return $insertedId;
+    }
+
+    private function nullableInteger(mixed $value): ?int
+    {
+        return is_numeric($value) ? (int) $value : null;
     }
 }

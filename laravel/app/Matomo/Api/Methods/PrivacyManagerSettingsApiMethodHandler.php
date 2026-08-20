@@ -10,6 +10,7 @@ use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Geolocation\TrackerCacheInvalidator;
 use App\Matomo\Options\MutableOptionRepository;
+use App\Matomo\Privacy\DeletionBatchLimits;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use LogicException;
@@ -22,6 +23,7 @@ final readonly class PrivacyManagerSettingsApiMethodHandler implements ApiMethod
         private MutableOptionRepository $options,
         private PasswordConfirmationVerifier $passwords,
         private TrackerCacheInvalidator $trackerCache,
+        private DeletionBatchLimits $deletionBatchLimits,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -61,7 +63,14 @@ final readonly class PrivacyManagerSettingsApiMethodHandler implements ApiMethod
             return $this->responses->error($request, 'The password confirmation is invalid.', 403);
         }
 
-        foreach ($parameters->values as $name => $value) {
+        $values = $parameters->values;
+        if ($request->method === 'PrivacyManager.setDeleteReportsSettings') {
+            $values['delete_logs_max_rows_per_query'] = $this->deletionBatchLimits->logs();
+            $values['delete_logs_unused_actions_max_rows_per_query'] =
+                $this->deletionBatchLimits->unusedActions();
+        }
+
+        foreach ($values as $name => $value) {
             $this->options->set($name, (string) $value);
         }
 
