@@ -7,5 +7,5 @@ namespace App\Matomo\Privacy;
 interface GranularComplianceSettingsProvider
 {
     /** @return array<string, mixed> */
-    public function settings(?int $idSite): array;
+    public function settings(?int $idSite, string $language): array;
 }

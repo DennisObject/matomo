@@ -39,6 +39,14 @@ final readonly class ApiMetadataMethodHandler implements ApiMethodHandler
 
         $parameters = $request->segmentsMetadata
             ?? throw new LogicException('The API metadata parameters are missing.');
+        if (! $parameters->hideImplementationData || $parameters->showAllSegments) {
+            return $this->responses->error(
+                $request,
+                'Internal segment metadata is not available in the Laravel runtime.',
+                501,
+            );
+        }
+
         if ($parameters->siteIds === []) {
             if (! $this->authorizer->hasSomeViewAccess($request->authentication)) {
                 return $this->responses->error(
@@ -75,6 +83,15 @@ final readonly class ApiMetadataMethodHandler implements ApiMethodHandler
             ?? throw new LogicException('The report metadata parameters are missing.');
         if (! $this->authorizer->hasViewAccessToSite($request->authentication, $parameters->siteId)) {
             return $this->responses->error($request, "You do not have view access to website {$parameters->siteId}.", 401);
+        }
+
+        if ($parameters->apiParameters !== [] || $parameters->period !== null || $parameters->date !== null
+            || $parameters->showSubtableReports) {
+            return $this->responses->error(
+                $request,
+                'Dynamic report metadata is not available in the Laravel runtime.',
+                501,
+            );
         }
 
         $language = $this->languages->resolve($httpRequest, $request->authentication);
