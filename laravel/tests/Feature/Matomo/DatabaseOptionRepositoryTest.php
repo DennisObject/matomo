@@ -45,5 +45,9 @@ class DatabaseOptionRepositoryTest extends TestCase
         $this->assertSame(1, $connection->table('option')
             ->where('option_name', 'SitesManager_DefaultTimezone')
             ->value('autoload'));
+
+        $options->delete('new-option');
+
+        $this->assertNull($options->value('new-option'));
     }
 }

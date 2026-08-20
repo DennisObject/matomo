@@ -453,6 +453,16 @@ final readonly class ApiRequest
         'UserCountry.setLocationProvider',
     ];
 
+    /** @var list<string> */
+    private const array SITES_MANAGER_GLOBAL_SETTING_METHODS = [
+        'SitesManager.setGlobalExcludedIps',
+        'SitesManager.setGlobalSearchParameters',
+        'SitesManager.setGlobalExcludedUserAgents',
+        'SitesManager.setGlobalExcludedReferrers',
+        'SitesManager.setKeepURLFragmentsGlobal',
+        'SitesManager.setGlobalQueryParamExclusion',
+    ];
+
     private function __construct(
         public string $module,
         public string $method,
@@ -508,6 +518,7 @@ final readonly class ApiRequest
         public ?CustomDimensionsRequest $customDimensions,
         public ?SegmentEditorRequest $segmentEditor,
         public ?InsightsRequest $insights,
+        public ?SitesManagerGlobalSettingsRequest $sitesManagerGlobalSettings,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -572,6 +583,7 @@ final readonly class ApiRequest
             customDimensions: null,
             segmentEditor: null,
             insights: null,
+            sitesManagerGlobalSettings: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1063,6 +1075,12 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::USER_COUNTRY_METHODS, true);
     }
 
+    public function isSitesManagerGlobalSettingsRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::SITES_MANAGER_GLOBAL_SETTING_METHODS, true);
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -1130,6 +1148,7 @@ final readonly class ApiRequest
             customDimensions: self::customDimensions($request, $module, $method),
             segmentEditor: self::segmentEditor($request, $module, $method),
             insights: self::insights($request, $module, $method),
+            sitesManagerGlobalSettings: self::sitesManagerGlobalSettings($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2380,6 +2399,45 @@ final readonly class ApiRequest
         }
 
         return $value;
+    }
+
+    private static function sitesManagerGlobalSettings(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?SitesManagerGlobalSettingsRequest {
+        if ($module !== 'API' || ! in_array($method, self::SITES_MANAGER_GLOBAL_SETTING_METHODS, true)) {
+            return null;
+        }
+
+        $required = static function (Request $request, string $name): string {
+            $value = self::nullableStringInput($request, $name);
+
+            if ($value === null) {
+                throw new MissingApiParameter($name);
+            }
+
+            return $value;
+        };
+
+        return new SitesManagerGlobalSettingsRequest(
+            excludedIps: $method === 'SitesManager.setGlobalExcludedIps'
+                ? $required($request, 'excludedIps') : null,
+            searchKeywordParameters: $method === 'SitesManager.setGlobalSearchParameters'
+                ? $required($request, 'searchKeywordParameters') : null,
+            searchCategoryParameters: $method === 'SitesManager.setGlobalSearchParameters'
+                ? $required($request, 'searchCategoryParameters') : null,
+            excludedUserAgents: $method === 'SitesManager.setGlobalExcludedUserAgents'
+                ? $required($request, 'excludedUserAgents') : null,
+            excludedReferrers: $method === 'SitesManager.setGlobalExcludedReferrers'
+                ? $required($request, 'excludedReferrers') : null,
+            keepUrlFragments: $method === 'SitesManager.setKeepURLFragmentsGlobal'
+                ? self::booleanInput($request, 'enabled', false) : null,
+            queryParameterExclusionType: $method === 'SitesManager.setGlobalQueryParamExclusion'
+                ? $required($request, 'exclusionType') : null,
+            queryParametersToExclude: $method === 'SitesManager.setGlobalQueryParamExclusion'
+                ? self::nullableStringInput($request, 'queryParamsToExclude') : null,
+        );
     }
 
     private static function timezoneCountryCode(Request $request, string $module, string $method): ?string

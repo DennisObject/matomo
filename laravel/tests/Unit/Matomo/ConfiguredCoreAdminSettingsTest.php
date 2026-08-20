@@ -61,6 +61,8 @@ INI);
             {
                 $this->writes[] = compact('name', 'value', 'autoload');
             }
+
+            public function delete(string $name): void {}
         };
         $cache = new class implements TrackerCacheInvalidator
         {
