@@ -15,6 +15,7 @@ use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
+use App\Matomo\Api\Methods\TourApiMethodHandler;
 use App\Matomo\Api\Methods\UserIdApiMethodHandler;
 use App\Matomo\Api\Methods\UserLanguageApiMethodHandler;
 use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
@@ -74,6 +75,10 @@ use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
+use App\Matomo\Tour\ConfiguredTourSettings;
+use App\Matomo\Tour\DatabaseTourDataRepository;
+use App\Matomo\Tour\TourDataRepository;
+use App\Matomo\Tour\TourSettings;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -217,12 +222,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             MatomoTranslator::class,
-            fn (): MatomoTranslator => new JsonMatomoTranslator([
-                base_path('../lang'),
-                base_path('../plugins/Intl/lang'),
-                base_path('../plugins/SitesManager/lang'),
-                base_path('../plugins/Contents/lang'),
-            ]),
+            fn (): MatomoTranslator => new JsonMatomoTranslator($this->translationDirectories()),
         );
 
         $this->app->singleton(
@@ -348,6 +348,14 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            TourDataRepository::class,
+            fn (Application $application): TourDataRepository => new DatabaseTourDataRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(TourSettings::class, ConfiguredTourSettings::class);
+
+        $this->app->singleton(
             ClientIpResolver::class,
             function (Application $application): ClientIpResolver {
                 $installation = $application->make(InstallationConfig::class);
@@ -393,6 +401,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ProfessionalServicesApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),
+                $application->make(TourApiMethodHandler::class),
             ]),
         );
     }
@@ -466,5 +475,19 @@ class AppServiceProvider extends ServiceProvider
             $configuration['Languages']['Languages'],
             is_string(...),
         ));
+    }
+
+    /** @return list<string> */
+    private function translationDirectories(): array
+    {
+        $directories = [base_path('../lang')];
+        $pluginDirectories = glob(base_path('../plugins/*/lang'), GLOB_ONLYDIR);
+
+        if (is_array($pluginDirectories)) {
+            sort($pluginDirectories);
+            $directories = [...$directories, ...$pluginDirectories];
+        }
+
+        return $directories;
     }
 }

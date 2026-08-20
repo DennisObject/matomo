@@ -63,6 +63,12 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(12, $configuration->configuredLoginMaxAllowedRetries());
         $this->assertSame(45, $configuration->configuredLoginAllowedRetriesTimeRange());
         $this->assertSame(['10.1.*.*'], $configuration->configuredLoginBruteForceAllowlist());
+        $this->assertTrue($configuration->usersAdminEnabled());
+        $this->assertTrue($configuration->sitesAdminEnabled());
+        $this->assertTrue($configuration->generalSettingsAdminEnabled());
+        $this->assertTrue($configuration->geolocationAdminEnabled());
+        $this->assertTrue($configuration->customLogoEnabled());
+        $this->assertTrue($configuration->browserArchivingTriggerEnabled());
     }
 
     public function test_loads_reporting_overrides(): void
@@ -74,6 +80,12 @@ class InstallationConfigTest extends TestCase
             enable_processing_unique_visitors_year = 1
             enabled_periods_API = "day,month"
             anonymous_user_enable_use_segments_API = 0
+            enable_users_admin = 0
+            enable_sites_admin = 0
+            enable_general_settings_admin = 0
+            enable_geolocation_admin = 0
+            enable_custom_logo = 0
+            enable_browser_archiving_triggering = 0
             INI,
         ));
 
@@ -82,6 +94,12 @@ class InstallationConfigTest extends TestCase
         $this->assertTrue($configuration->reportingPeriodEnabled('month'));
         $this->assertFalse($configuration->reportingPeriodEnabled('week'));
         $this->assertFalse($configuration->anonymousSegmentsEnabled());
+        $this->assertFalse($configuration->usersAdminEnabled());
+        $this->assertFalse($configuration->sitesAdminEnabled());
+        $this->assertFalse($configuration->generalSettingsAdminEnabled());
+        $this->assertFalse($configuration->geolocationAdminEnabled());
+        $this->assertFalse($configuration->customLogoEnabled());
+        $this->assertFalse($configuration->browserArchivingTriggerEnabled());
     }
 
     public function test_rejects_unsafe_table_prefix(): void

@@ -24,6 +24,8 @@ use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
+use App\Matomo\Tour\TourDataRepository;
+use App\Matomo\Tour\TourSettings;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Request;
 
@@ -121,6 +123,77 @@ abstract class TestCase extends BaseTestCase
             public function unblockCurrentlyBlocked(): int
             {
                 return 0;
+            }
+        });
+        $this->app->instance(TourDataRepository::class, new class implements TourDataRepository
+        {
+            public function progress(string $login): array
+            {
+                return [];
+            }
+
+            public function skip(string $login, string $challengeId): void {}
+
+            public function hasTrackedData(): bool
+            {
+                return false;
+            }
+
+            public function hasAddedWebsite(string $login): bool
+            {
+                return false;
+            }
+
+            public function hasAddedScheduledReport(string $login): bool
+            {
+                return false;
+            }
+
+            public function hasCustomizedDashboard(string $login): bool
+            {
+                return false;
+            }
+
+            public function hasAddedSegment(string $login): bool
+            {
+                return false;
+            }
+
+            public function usesTwoFactorAuthentication(string $login): bool
+            {
+                return false;
+            }
+        });
+        $this->app->instance(TourSettings::class, new class implements TourSettings
+        {
+            public function usersAdminEnabled(): bool
+            {
+                return true;
+            }
+
+            public function sitesAdminEnabled(): bool
+            {
+                return true;
+            }
+
+            public function generalSettingsAdminEnabled(): bool
+            {
+                return true;
+            }
+
+            public function geolocationAdminEnabled(): bool
+            {
+                return true;
+            }
+
+            public function customLogoEnabled(): bool
+            {
+                return true;
+            }
+
+            public function browserArchivingTriggerEnabled(): bool
+            {
+                return true;
             }
         });
         $this->app->instance(ReportingSettings::class, new class implements ReportingSettings

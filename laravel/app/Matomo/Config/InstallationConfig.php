@@ -54,6 +54,12 @@ final readonly class InstallationConfig
         private ?int $configuredLoginAllowedRetriesTimeRange,
         /** @var list<string>|null */
         private ?array $configuredLoginBruteForceAllowlist,
+        private bool $usersAdminEnabled,
+        private bool $sitesAdminEnabled,
+        private bool $generalSettingsAdminEnabled,
+        private bool $geolocationAdminEnabled,
+        private bool $customLogoEnabled,
+        private bool $browserArchivingTriggerEnabled,
     ) {}
 
     public static function fromFile(string $path): self
@@ -163,6 +169,20 @@ final readonly class InstallationConfig
             configuredLoginBruteForceAllowlist: self::nullableStringList(
                 $login,
                 'whitelisteBruteForceIps',
+            ),
+            usersAdminEnabled: self::boolean($general, 'enable_users_admin', true),
+            sitesAdminEnabled: self::boolean($general, 'enable_sites_admin', true),
+            generalSettingsAdminEnabled: self::boolean(
+                $general,
+                'enable_general_settings_admin',
+                true,
+            ),
+            geolocationAdminEnabled: self::boolean($general, 'enable_geolocation_admin', true),
+            customLogoEnabled: self::boolean($general, 'enable_custom_logo', true),
+            browserArchivingTriggerEnabled: self::boolean(
+                $general,
+                'enable_browser_archiving_triggering',
+                true,
             ),
         );
     }
@@ -341,6 +361,36 @@ final readonly class InstallationConfig
     public function configuredLoginBruteForceAllowlist(): ?array
     {
         return $this->configuredLoginBruteForceAllowlist;
+    }
+
+    public function usersAdminEnabled(): bool
+    {
+        return $this->usersAdminEnabled;
+    }
+
+    public function sitesAdminEnabled(): bool
+    {
+        return $this->sitesAdminEnabled;
+    }
+
+    public function generalSettingsAdminEnabled(): bool
+    {
+        return $this->generalSettingsAdminEnabled;
+    }
+
+    public function geolocationAdminEnabled(): bool
+    {
+        return $this->geolocationAdminEnabled;
+    }
+
+    public function customLogoEnabled(): bool
+    {
+        return $this->customLogoEnabled;
+    }
+
+    public function browserArchivingTriggerEnabled(): bool
+    {
+        return $this->browserArchivingTriggerEnabled;
     }
 
     /**
