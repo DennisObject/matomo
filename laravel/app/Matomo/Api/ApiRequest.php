@@ -54,6 +54,8 @@ final readonly class ApiRequest
         'Resolution.getConfiguration',
     ];
 
+    private const string DEVICE_PLUGINS_METHOD = 'DevicePlugins.getPlugin';
+
     private function __construct(
         public string $module,
         public string $method,
@@ -353,6 +355,11 @@ final readonly class ApiRequest
     {
         return $this->module === 'API'
             && in_array($this->method, self::RESOLUTION_METHODS, true);
+    }
+
+    public function isDevicePluginsRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === self::DEVICE_PLUGINS_METHOD;
     }
 
     public function hasSupportedFormat(): bool
@@ -718,7 +725,8 @@ final readonly class ApiRequest
                 && ! in_array($method, self::VISIT_TIME_METHODS, true)
                 && ! in_array($method, self::VISITOR_INTEREST_METHODS, true)
                 && ! in_array($method, self::USER_LANGUAGE_METHODS, true)
-                && ! in_array($method, self::RESOLUTION_METHODS, true))) {
+                && ! in_array($method, self::RESOLUTION_METHODS, true)
+                && $method !== self::DEVICE_PLUGINS_METHOD)) {
             return null;
         }
 
