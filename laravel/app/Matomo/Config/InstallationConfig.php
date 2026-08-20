@@ -97,6 +97,9 @@ final readonly class InstallationConfig
         /** @var list<string> */
         private array $campaignKeywordParameters,
         private int $pageMaximumLength,
+        private bool $trackingEnabled,
+        private int $visitStandardLength,
+        private string $ignoreVisitsCookieName,
         private int $liveAiChatbotsMaximumRows,
         private int $liveAiChatbotsTopPageUrlsMaximumRows,
         private int $liveVisitorProfileMaximumVisits,
@@ -364,6 +367,9 @@ final readonly class InstallationConfig
                 ],
             ),
             pageMaximumLength: self::positiveInteger($tracker, 'page_maximum_length', 1024),
+            trackingEnabled: self::boolean($tracker, 'record_statistics', true),
+            visitStandardLength: self::positiveInteger($tracker, 'visit_standard_length', 1_800),
+            ignoreVisitsCookieName: self::string($tracker, 'ignore_visits_cookie_name', 'matomo_ignore'),
             liveAiChatbotsMaximumRows: self::positiveInteger(
                 $general,
                 'live_ai_chatbots_maximum_rows',
@@ -770,6 +776,21 @@ final readonly class InstallationConfig
     public function pageMaximumLength(): int
     {
         return $this->pageMaximumLength;
+    }
+
+    public function trackingEnabled(): bool
+    {
+        return $this->trackingEnabled;
+    }
+
+    public function visitStandardLength(): int
+    {
+        return $this->visitStandardLength;
+    }
+
+    public function ignoreVisitsCookieName(): string
+    {
+        return $this->ignoreVisitsCookieName;
     }
 
     public function liveAiChatbotsMaximumRows(): int

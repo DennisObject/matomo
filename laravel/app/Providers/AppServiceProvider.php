@@ -357,6 +357,10 @@ use App\Matomo\Tour\ConfiguredTourSettings;
 use App\Matomo\Tour\DatabaseTourDataRepository;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
+use App\Matomo\Tracker\ConfiguredTrackingRequestPolicy;
+use App\Matomo\Tracker\DatabaseVisitRecorder;
+use App\Matomo\Tracker\TrackingRequestPolicy;
+use App\Matomo\Tracker\VisitRecorder;
 use App\Matomo\TrackingFailures\DatabaseTrackingFailureRepository;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
 use App\Matomo\Transitions\ConfiguredTransitionsPeriodPolicy;
@@ -1557,6 +1561,14 @@ class AppServiceProvider extends ServiceProvider
             fn (): TrackerFileAvailability => new LocalTrackerFileAvailability(
                 base_path('../js/piwik.min.js'),
                 base_path('../matomo.js'),
+            ),
+        );
+        $this->app->singleton(TrackingRequestPolicy::class, ConfiguredTrackingRequestPolicy::class);
+        $this->app->singleton(
+            VisitRecorder::class,
+            fn (Application $application): VisitRecorder => new DatabaseVisitRecorder(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                visitStandardLength: $application->make(InstallationConfig::class)->visitStandardLength(),
             ),
         );
 
