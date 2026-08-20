@@ -27,6 +27,7 @@ use App\Matomo\Plugins\PluginState;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Reporting\BlobArchiveMetadataRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
+use App\Matomo\Reporting\DeviceModelPolicy;
 use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\ScreenResolutionPolicy;
@@ -400,6 +401,13 @@ abstract class TestCase extends BaseTestCase
             }
         });
         $this->app->instance(ScreenResolutionPolicy::class, new class implements ScreenResolutionPolicy
+        {
+            public function detectionDisabled(int $idSite): bool
+            {
+                return false;
+            }
+        });
+        $this->app->instance(DeviceModelPolicy::class, new class implements DeviceModelPolicy
         {
             public function detectionDisabled(int $idSite): bool
             {

@@ -20,6 +20,7 @@ use App\Matomo\Api\Methods\CoreApiMethodHandler;
 use App\Matomo\Api\Methods\CustomJsTrackerApiMethodHandler;
 use App\Matomo\Api\Methods\DashboardApiMethodHandler;
 use App\Matomo\Api\Methods\DevicePluginsApiMethodHandler;
+use App\Matomo\Api\Methods\DevicesDetectionApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
@@ -85,11 +86,14 @@ use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Reporting\BlobArchiveMetadataRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\CarbonReportingPeriodFactory;
+use App\Matomo\Reporting\ConfiguredDeviceModelPolicy;
 use App\Matomo\Reporting\ConfiguredReportingSettings;
 use App\Matomo\Reporting\ConfiguredScreenResolutionPolicy;
 use App\Matomo\Reporting\DatabaseBlobArchiveRepository;
 use App\Matomo\Reporting\DatabaseSegmentHashResolver;
 use App\Matomo\Reporting\DatabaseVisitsSummaryArchiveRepository;
+use App\Matomo\Reporting\DeviceDetectionMetadata;
+use App\Matomo\Reporting\DeviceModelPolicy;
 use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Reporting\ReportingPeriodFactory;
 use App\Matomo\Reporting\ReportingSettings;
@@ -314,6 +318,20 @@ class AppServiceProvider extends ServiceProvider
             fn (Application $application): ScreenResolutionPolicy => new ConfiguredScreenResolutionPolicy(
                 settings: $application->make(PolicySettingRepository::class),
                 configuredCnilPolicy: $application->make(InstallationConfig::class)->configuredCnilPolicy(),
+            ),
+        );
+        $this->app->singleton(
+            DeviceModelPolicy::class,
+            fn (Application $application): DeviceModelPolicy => new ConfiguredDeviceModelPolicy(
+                settings: $application->make(PolicySettingRepository::class),
+                configuredCnilPolicy: $application->make(InstallationConfig::class)->configuredCnilPolicy(),
+            ),
+        );
+        $this->app->singleton(
+            DeviceDetectionMetadata::class,
+            fn (Application $application): DeviceDetectionMetadata => new DeviceDetectionMetadata(
+                translator: $application->make(MatomoTranslator::class),
+                rootPath: base_path('..'),
             ),
         );
 
@@ -645,6 +663,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(UserLanguageApiMethodHandler::class),
                 $application->make(ResolutionApiMethodHandler::class),
                 $application->make(DevicePluginsApiMethodHandler::class),
+                $application->make(DevicesDetectionApiMethodHandler::class),
                 $application->make(PagePerformanceApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),
