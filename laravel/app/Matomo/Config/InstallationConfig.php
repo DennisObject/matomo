@@ -42,6 +42,7 @@ final readonly class InstallationConfig
         /** @var list<string>|null */
         private ?array $commonPiiParameters,
         private string $defaultLanguage,
+        private string $defaultReportDate,
         private string $languageCookieName,
         private string $feedbackEmailAddress,
         private bool $emailsEnabled,
@@ -99,6 +100,8 @@ final readonly class InstallationConfig
         private bool $realtimeSegmentsAllowed,
         private bool $browserArchivingAvailableForSegments,
         private string $processNewSegmentsFrom,
+        private int $deleteLogsMaxRowsPerQuery,
+        private int $deleteLogsUnusedActionsMaxRowsPerQuery,
     ) {}
 
     public static function fromFile(string $path): self
@@ -126,6 +129,7 @@ final readonly class InstallationConfig
         $aiProviders = $configuration['AIProviders'] ?? [];
         $segments = $configuration['Segments'] ?? [];
         $pagePerformance = $configuration['PagePerformance'] ?? [];
+        $deleteLogs = $configuration['Deletelogs'] ?? [];
 
         if (! is_array($database)
             || ! is_array($general)
@@ -139,7 +143,8 @@ final readonly class InstallationConfig
             || ! is_array($development)
             || ! is_array($aiProviders)
             || ! is_array($segments)
-            || ! is_array($pagePerformance)) {
+            || ! is_array($pagePerformance)
+            || ! is_array($deleteLogs)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
 
@@ -197,6 +202,7 @@ final readonly class InstallationConfig
             ),
             commonPiiParameters: self::nullableStringList($sitesManager, 'CommonPIIParams'),
             defaultLanguage: strtolower(self::string($general, 'default_language', 'en')),
+            defaultReportDate: self::string($general, 'default_day', 'yesterday'),
             languageCookieName: self::string($general, 'language_cookie_name', 'matomo_lang'),
             feedbackEmailAddress: self::string(
                 $general,
@@ -367,6 +373,16 @@ final readonly class InstallationConfig
                 'process_new_segments_from',
                 'beginning_of_time',
             ),
+            deleteLogsMaxRowsPerQuery: self::positiveInteger(
+                $deleteLogs,
+                'delete_logs_max_rows_per_query',
+                100_000,
+            ),
+            deleteLogsUnusedActionsMaxRowsPerQuery: self::positiveInteger(
+                $deleteLogs,
+                'delete_logs_unused_actions_max_rows_per_query',
+                100_000,
+            ),
         );
     }
 
@@ -500,6 +516,11 @@ final readonly class InstallationConfig
     public function defaultLanguage(): string
     {
         return $this->defaultLanguage;
+    }
+
+    public function defaultReportDate(): string
+    {
+        return $this->defaultReportDate;
     }
 
     public function languageCookieName(): string
@@ -732,6 +753,16 @@ final readonly class InstallationConfig
     public function processNewSegmentsFrom(): string
     {
         return $this->processNewSegmentsFrom;
+    }
+
+    public function deleteLogsMaxRowsPerQuery(): int
+    {
+        return $this->deleteLogsMaxRowsPerQuery;
+    }
+
+    public function deleteLogsUnusedActionsMaxRowsPerQuery(): int
+    {
+        return $this->deleteLogsUnusedActionsMaxRowsPerQuery;
     }
 
     /** @param array<string, mixed> $general */
