@@ -19,6 +19,7 @@ use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
+use DateTimeZone;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -456,9 +457,13 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
             $timezone = $request->timezone
                 ?? throw new LogicException('The default timezone was not parsed.');
-            $validTimezones = array_merge(...array_values($this->timezones->all('en', true)));
+            $utcOffsets = $this->timezones->all('en', false)['UTC'] ?? [];
+            $validTimezones = [
+                ...DateTimeZone::listIdentifiers(DateTimeZone::ALL_WITH_BC),
+                ...array_keys($utcOffsets),
+            ];
 
-            if (! array_key_exists($timezone, $validTimezones)) {
+            if (! in_array($timezone, $validTimezones, true)) {
                 return $this->responses->error(
                     $request,
                     "The timezone \"{$timezone}\" is not valid. Please enter a valid timezone.",
