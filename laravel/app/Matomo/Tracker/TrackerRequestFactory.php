@@ -72,6 +72,7 @@ final class TrackerRequestFactory
         private readonly InstallationConfig $configuration,
         private readonly CustomDimensionRepository $dimensions,
         private readonly GoalRepository $goals,
+        private readonly TrackerDeviceDetector $devices,
     ) {}
 
     public function make(Request $request): ?TrackingRequest
@@ -122,7 +123,7 @@ final class TrackerRequestFactory
         }
 
         $ipAddress = $this->customIpAddress($request, $siteId) ?? $this->ips->resolve($request);
-        $userAgent = mb_substr((string) $request->userAgent(), 0, 512);
+        $userAgent = $this->userAgent($request);
         if ($this->excludesVisit($site, $ipAddress, $userAgent)) {
             return null;
         }
@@ -311,6 +312,15 @@ final class TrackerRequestFactory
             performanceTimings: $this->performanceTimings($request, $actionType),
             visitorCookie: $this->visitorCookie($request, $siteId, $visitorId),
             recordedAt: $this->recordedAt($request, $siteId),
+            device: $this->devices->detect(
+                $userAgent,
+                $this->clientHints($request),
+                $request,
+                $siteId,
+                $ipAddress,
+                $this->browserLanguage($request),
+                $this->configuration->salt(),
+            ),
         );
     }
 
@@ -590,6 +600,31 @@ final class TrackerRequestFactory
         }
 
         return CarbonImmutable::createFromTimestampUTC($seconds);
+    }
+
+    private function userAgent(Request $request): string
+    {
+        $userAgent = $request->input('ua');
+        if (! is_string($userAgent) || $userAgent === '') {
+            $userAgent = (string) $request->userAgent();
+        }
+
+        return mb_substr($userAgent, 0, 512);
+    }
+
+    /** @return array<string, mixed> */
+    private function clientHints(Request $request): array
+    {
+        $hints = $request->input('uadata');
+        if (is_string($hints) && $hints !== '') {
+            try {
+                $hints = json_decode($hints, true, flags: JSON_THROW_ON_ERROR);
+            } catch (JsonException) {
+                return [];
+            }
+        }
+
+        return is_array($hints) ? $hints : [];
     }
 
     private function visitorCookie(Request $request, int $siteId, string $visitorId): ?IssuedTrackerCookie
