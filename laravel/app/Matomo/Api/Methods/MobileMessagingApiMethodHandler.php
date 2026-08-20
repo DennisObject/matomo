@@ -7,6 +7,7 @@ namespace App\Matomo\Api\Methods;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\MobileMessaging\MobileMessagingException;
 use App\Matomo\MobileMessaging\MobileMessagingManager;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ final readonly class MobileMessagingApiMethodHandler implements ApiMethodHandler
         private ApiAccessAuthorizer $authorizer,
         private ApiResponseFactory $responses,
         private MobileMessagingManager $mobileMessaging,
+        private LanguageResolver $languages,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -63,6 +65,7 @@ final readonly class MobileMessagingApiMethodHandler implements ApiMethodHandler
         }
 
         $effectiveLogin = $login ?? '';
+        $language = $this->languages->resolve($httpRequest, $request->authentication);
         try {
             $result = match ($request->method) {
                 'MobileMessaging.areSMSAPICredentialProvided' => $this->mobileMessaging->credentialsProvided($effectiveLogin),
@@ -70,7 +73,7 @@ final readonly class MobileMessagingApiMethodHandler implements ApiMethodHandler
                 'MobileMessaging.setSMSAPICredential' => $this->setCredentials($effectiveLogin, $parameters->provider ?? '', $parameters->credentials),
                 'MobileMessaging.addPhoneNumber' => $this->addPhoneNumber($effectiveLogin, $parameters->phoneNumber ?? ''),
                 'MobileMessaging.resendVerificationCode' => $this->resendCode($effectiveLogin, $parameters->phoneNumber ?? ''),
-                'MobileMessaging.getCreditLeft' => $this->mobileMessaging->credit($effectiveLogin),
+                'MobileMessaging.getCreditLeft' => $this->mobileMessaging->credit($effectiveLogin, $language),
                 'MobileMessaging.getPhoneNumbers' => $this->mobileMessaging->phoneNumbers($effectiveLogin),
                 'MobileMessaging.removePhoneNumber' => $this->removePhoneNumber($effectiveLogin, $parameters->phoneNumber ?? ''),
                 'MobileMessaging.validatePhoneNumber' => $this->mobileMessaging->validatePhoneNumber(
