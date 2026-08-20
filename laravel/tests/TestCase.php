@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Tests;
 
 use App\Matomo\Authentication\ApiAuthentication;
+use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Login\BruteForceUnblocker;
+use App\Matomo\Login\LoginAttemptGuard;
+use App\Matomo\Login\LoginAttemptStatus;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
@@ -26,6 +29,7 @@ use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
+use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Request;
 
@@ -36,6 +40,32 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         $this->app->instance(ClientIpResolver::class, new ClientIpResolver([], [], true));
+        $this->app->instance(LoginAttemptGuard::class, new class implements LoginAttemptGuard
+        {
+            public function status(string $ipAddress, string $login): LoginAttemptStatus
+            {
+                return LoginAttemptStatus::Allowed;
+            }
+
+            public function recordFailure(string $ipAddress, string $login): void {}
+        });
+        $this->app->instance(
+            PasswordConfirmationVerifier::class,
+            new class implements PasswordConfirmationVerifier
+            {
+                public function isCorrect(string $login, string $password): bool
+                {
+                    return false;
+                }
+            },
+        );
+        $this->app->instance(
+            TwoFactorAuthenticationResetter::class,
+            new class implements TwoFactorAuthenticationResetter
+            {
+                public function reset(string $login): void {}
+            },
+        );
         $this->app->instance(LanguageResolver::class, new class implements LanguageResolver
         {
             public function resolve(Request $request, ApiAuthentication $authentication): string
