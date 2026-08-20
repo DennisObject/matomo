@@ -8,6 +8,7 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Localization\LanguageResolver;
+use App\Matomo\Reporting\NavigationMetadataCatalog;
 use App\Matomo\Reporting\ReportMetadataCatalog;
 use App\Matomo\Segments\SegmentMetadataCatalog;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ final readonly class ApiMetadataMethodHandler implements ApiMethodHandler
         private LanguageResolver $languages,
         private SegmentMetadataCatalog $segments,
         private ReportMetadataCatalog $reports,
+        private NavigationMetadataCatalog $navigation,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -99,6 +101,14 @@ final readonly class ApiMetadataMethodHandler implements ApiMethodHandler
 
         if ($parameters->method === 'API.getGlossaryMetrics') {
             return $this->responses->structured($request, $this->reports->metricsGlossary($language));
+        }
+
+        if ($parameters->method === 'API.getReportPagesMetadata') {
+            return $this->responses->structured($request, $this->navigation->reportPages($language));
+        }
+
+        if ($parameters->method === 'API.getWidgetMetadata') {
+            return $this->responses->structured($request, $this->navigation->widgets($language));
         }
 
         if ($parameters->method === 'API.getMetadata') {

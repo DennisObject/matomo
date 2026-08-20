@@ -287,6 +287,7 @@ use App\Matomo\Reporting\DeviceDetectionMetadata;
 use App\Matomo\Reporting\DeviceModelPolicy;
 use App\Matomo\Reporting\DurationFormatter;
 use App\Matomo\Reporting\HierarchicalBlobArchiveRepository;
+use App\Matomo\Reporting\NavigationMetadataCatalog;
 use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Reporting\ReportingPeriodFactory;
 use App\Matomo\Reporting\ReportingSettings;
@@ -1738,6 +1739,13 @@ class AppServiceProvider extends ServiceProvider
             fn (Application $application): ReportMetadataCatalog => new ReportMetadataCatalog(
                 translator: $application->make(MatomoTranslator::class),
                 catalogPath: resource_path('matomo/report-metadata.php'),
+            ),
+        );
+        $this->app->singleton(
+            NavigationMetadataCatalog::class,
+            fn (Application $application): NavigationMetadataCatalog => new NavigationMetadataCatalog(
+                translator: $application->make(MatomoTranslator::class),
+                resourceDirectory: resource_path('matomo'),
             ),
         );
         $this->app->singleton(

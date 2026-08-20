@@ -3106,6 +3106,7 @@ final readonly class ApiRequest
     {
         if ($module !== 'API' || ! in_array($method, [
             'API.getReportMetadata', 'API.getMetadata', 'API.getGlossaryReports', 'API.getGlossaryMetrics',
+            'API.getReportPagesMetadata', 'API.getWidgetMetadata',
         ], true)) {
             return null;
         }
