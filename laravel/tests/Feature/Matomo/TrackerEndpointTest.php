@@ -523,6 +523,60 @@ final class TrackerEndpointTest extends TestCase
         ]))->assertOk();
     }
 
+    public function test_validates_and_records_ecommerce_orders(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->ecommerceOrderId === 'order-17'
+                && $request->goalRevenue === 42.56
+                && $request->ecommerceSubtotal === 35.12
+                && $request->ecommerceTax === 2.56
+                && $request->ecommerceShipping === 5.0
+                && $request->ecommerceDiscount === 1.25,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'idgoal' => '0',
+            'ec_id' => 'order-17',
+            'revenue' => '42.555',
+            'ec_st' => '35.123',
+            'ec_tx' => '2.555',
+            'ec_sh' => '5',
+            'ec_dt' => '1.25',
+        ]))->assertOk();
+    }
+
+    public function test_rejects_invalid_ecommerce_orders(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['idgoal' => '4', 'ec_id' => 'order-17']))->assertBadRequest();
+        $this->get($this->url(['idgoal' => '0', 'ec_id' => 'order-17', 'revenue' => 'invalid']))
+            ->assertBadRequest();
+        $this->get($this->url(['idgoal' => '0', 'ec_id' => 'order-17', 'ec_tx' => 'INF']))
+            ->assertBadRequest();
+    }
+
+    public function test_anonymizes_ecommerce_order_ids_when_configured(): void
+    {
+        $this->bindSite();
+        $this->mutableOptions()->set('PrivacyManager.anonymizeOrderId', '1');
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->goalRevenue === 0.0
+                && $request->ecommerceOrderId !== 'order-17'
+                && preg_match('/^[a-f0-9]{40}$/D', (string) $request->ecommerceOrderId) === 1,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['idgoal' => '0', 'ec_id' => 'order-17']))->assertOk();
+    }
+
     public function test_ignores_page_performance_timings_for_non_pageviews(): void
     {
         $this->bindSite();

@@ -21,6 +21,8 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
 
     private const string REFERRER_OPTION = 'PrivacyManager.anonymizeReferrer';
 
+    private const string ORDER_ID_OPTION = 'PrivacyManager.anonymizeOrderId';
+
     public function __construct(
         private InstallationConfig $configuration,
         private OptionRepository $options,
@@ -76,6 +78,15 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
         $maskLength = $this->integerOption(self::IP_MASK_OPTION, $siteId, 2);
 
         return IP::fromStringIP($ipAddress)->anonymize(max(0, min(4, $maskLength)))->toString();
+    }
+
+    public function storedOrderId(int $siteId, string $orderId): string
+    {
+        if (! $this->booleanOption(self::ORDER_ID_OPTION, $siteId, false)) {
+            return $orderId;
+        }
+
+        return hash_hmac('sha1', random_bytes(16).$orderId, $this->configuration->salt());
     }
 
     public function collectsUserId(int $siteId): bool

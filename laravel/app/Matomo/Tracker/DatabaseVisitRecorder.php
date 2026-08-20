@@ -45,6 +45,12 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 return;
             }
 
+            if ($request->ecommerceOrderId !== null) {
+                $this->recordEcommerceOrder($request, $visitor, $ip, $now);
+
+                return;
+            }
+
             if ($request->actionType === 8) {
                 $urlId = null;
                 $nameId = $this->action($request->actionName, 8, null);
@@ -186,6 +192,70 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         string $ip,
         CarbonImmutable $now,
     ): void {
+        $visitId = $this->conversionVisit(
+            $request,
+            $visitor,
+            $ip,
+            $now,
+            ['visit_goal_converted' => 1],
+        );
+        $this->connection->table('log_conversion')->insertOrIgnore([
+            'idvisit' => $visitId,
+            'idsite' => $request->siteId,
+            'idvisitor' => $visitor,
+            'server_time' => $now->format('Y-m-d H:i:s'),
+            'idgoal' => $request->goalId,
+            'buster' => $request->goalAllowsMultiple ? random_int(1, 4_294_967_295) : 0,
+            'url' => $request->url,
+            'revenue' => $request->goalRevenue,
+            ...$request->visitProperties,
+        ]);
+    }
+
+    private function recordEcommerceOrder(
+        TrackingRequest $request,
+        string $visitor,
+        string $ip,
+        CarbonImmutable $now,
+    ): void {
+        $visitId = $this->conversionVisit(
+            $request,
+            $visitor,
+            $ip,
+            $now,
+            ['visit_goal_converted' => 1, 'visit_goal_buyer' => 1],
+        );
+        $orderId = $request->ecommerceOrderId;
+        if ($orderId === null) {
+            return;
+        }
+
+        $this->connection->table('log_conversion')->insertOrIgnore([
+            'idvisit' => $visitId,
+            'idsite' => $request->siteId,
+            'idvisitor' => $visitor,
+            'server_time' => $now->format('Y-m-d H:i:s'),
+            'idgoal' => 0,
+            'buster' => (int) base_convert(substr(md5($orderId), 0, 8), 16, 10),
+            'idorder' => $orderId,
+            'url' => $request->url,
+            'revenue' => $request->goalRevenue,
+            'revenue_subtotal' => $request->ecommerceSubtotal,
+            'revenue_tax' => $request->ecommerceTax,
+            'revenue_shipping' => $request->ecommerceShipping,
+            'revenue_discount' => $request->ecommerceDiscount,
+            ...$request->visitProperties,
+        ]);
+    }
+
+    /** @param array<string, int> $conversionUpdates */
+    private function conversionVisit(
+        TrackingRequest $request,
+        string $visitor,
+        string $ip,
+        CarbonImmutable $now,
+        array $conversionUpdates,
+    ): int {
         $visit = $this->recentVisit($request->siteId, $visitor, $now);
         $visitId = $visit === null
             ? $this->createVisit($request, $visitor, $ip, $now, null, null, false)
@@ -200,7 +270,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         $visitUpdates = [
             'visit_last_action_time' => $now->format('Y-m-d H:i:s'),
             'visit_total_time' => $totalTime,
-            'visit_goal_converted' => 1,
+            ...$conversionUpdates,
             ...$request->visitProperties,
         ];
         if ($request->userId !== null) {
@@ -208,17 +278,8 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         }
 
         $this->connection->table('log_visit')->where('idvisit', $visitId)->update($visitUpdates);
-        $this->connection->table('log_conversion')->insertOrIgnore([
-            'idvisit' => $visitId,
-            'idsite' => $request->siteId,
-            'idvisitor' => $visitor,
-            'server_time' => $now->format('Y-m-d H:i:s'),
-            'idgoal' => $request->goalId,
-            'buster' => $request->goalAllowsMultiple ? random_int(1, 4_294_967_295) : 0,
-            'url' => $request->url,
-            'revenue' => $request->goalRevenue,
-            ...$request->visitProperties,
-        ]);
+
+        return $visitId;
     }
 
     private function createVisit(

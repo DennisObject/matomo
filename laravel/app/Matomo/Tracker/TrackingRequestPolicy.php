@@ -17,6 +17,8 @@ interface TrackingRequestPolicy
 
     public function storedIpAddress(int $siteId, string $ipAddress): string;
 
+    public function storedOrderId(int $siteId, string $orderId): string;
+
     public function collectsUserId(int $siteId): bool;
 
     public function referrerAnonymisation(int $siteId): string;

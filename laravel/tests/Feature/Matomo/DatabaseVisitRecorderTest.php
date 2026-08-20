@@ -454,6 +454,61 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame(1, $connection->table('log_conversion')->count());
     }
 
+    public function test_ecommerce_orders_convert_visits_without_recording_actions(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $startedAt = CarbonImmutable::parse('2026-08-20 12:00:00', 'UTC');
+        CarbonImmutable::setTestNow($startedAt);
+        $recorder->record(new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/page',
+            actionName: '',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+        ));
+
+        CarbonImmutable::setTestNow($startedAt->addSeconds(60));
+        $order = new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/order',
+            actionName: 'Ignored',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            goalRevenue: 42.5,
+            ecommerceOrderId: 'order-17',
+            ecommerceSubtotal: 35.0,
+            ecommerceTax: 2.5,
+            ecommerceShipping: 5.0,
+            ecommerceDiscount: 1.0,
+        );
+        $recorder->record($order);
+        $recorder->record($order);
+
+        $visit = $connection->table('log_visit')->first();
+        $conversion = $connection->table('log_conversion')->first();
+        $this->assertInstanceOf(stdClass::class, $visit);
+        $this->assertInstanceOf(stdClass::class, $conversion);
+        $this->assertSame(1, $visit->visit_total_actions);
+        $this->assertSame(1, $visit->visit_goal_converted);
+        $this->assertSame(1, $visit->visit_goal_buyer);
+        $this->assertSame(1, $connection->table('log_action')->count());
+        $this->assertSame(1, $connection->table('log_link_visit_action')->count());
+        $this->assertSame(1, $connection->table('log_conversion')->count());
+        $this->assertNull($conversion->idaction_url);
+        $this->assertNull($conversion->idlink_va);
+        $this->assertSame(0, $conversion->idgoal);
+        $this->assertSame((int) base_convert(substr(md5('order-17'), 0, 8), 16, 10), $conversion->buster);
+        $this->assertSame('order-17', $conversion->idorder);
+        $this->assertSame(42.5, $conversion->revenue);
+        $this->assertSame(35.0, $conversion->revenue_subtotal);
+        $this->assertSame(2.5, $conversion->revenue_tax);
+        $this->assertSame(5.0, $conversion->revenue_shipping);
+        $this->assertSame(1.0, $conversion->revenue_discount);
+    }
+
     private function connection(): ConnectionInterface
     {
         config()->set('database.connections.tracker_test', ['driver' => 'sqlite', 'database' => ':memory:']);
@@ -493,6 +548,7 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->string('custom_var_v1', 200)->nullable();
             $table->string('custom_dimension_1', 250)->nullable();
             $table->boolean('visit_goal_converted')->default(false);
+            $table->boolean('visit_goal_buyer')->default(false);
         });
         $schema->create('log_action', static function (Blueprint $table): void {
             $table->id('idaction');
@@ -542,9 +598,15 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedBigInteger('idlink_va')->nullable();
             $table->integer('idgoal');
             $table->unsignedInteger('buster');
+            $table->string('idorder')->nullable();
             $table->text('url');
             $table->double('revenue')->nullable();
+            $table->double('revenue_subtotal')->nullable();
+            $table->double('revenue_tax')->nullable();
+            $table->double('revenue_shipping')->nullable();
+            $table->double('revenue_discount')->nullable();
             $table->primary(['idvisit', 'idgoal', 'buster']);
+            $table->unique(['idsite', 'idorder']);
         });
 
         return $connection;

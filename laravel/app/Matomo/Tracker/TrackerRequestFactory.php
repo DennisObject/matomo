@@ -145,10 +145,19 @@ final class TrackerRequestFactory
         $searchCategory = $actionType === 8 ? $this->optional($request->input('search_cat'), 200) : null;
         $searchCount = $actionType === 8 ? $this->searchCount($request->input('search_count')) : null;
 
+        $orderId = $this->ecommerceOrderId($request->input('ec_id'));
         $goalIdInput = $request->input('idgoal');
         $goal = null;
         $goalRevenue = null;
-        if ($goalIdInput !== null) {
+        if ($orderId !== null) {
+            if ($goalIdInput !== null
+                && (filter_var($goalIdInput, FILTER_VALIDATE_INT) === false || (int) $goalIdInput !== 0)) {
+                throw new InvalidArgumentException('idgoal must be 0 for ecommerce orders.');
+            }
+
+            $goalRevenue = $this->goalRevenue($request->input('revenue'), 0.0);
+            $orderId = $this->clean($this->policy->storedOrderId($siteId, $orderId), 100);
+        } elseif ($goalIdInput !== null) {
             if (filter_var($goalIdInput, FILTER_VALIDATE_INT) === false || (int) $goalIdInput < 1) {
                 throw new InvalidArgumentException('idgoal must be a positive integer.');
             }
@@ -162,6 +171,13 @@ final class TrackerRequestFactory
                 $request->input('revenue'),
                 (float) ($goal['revenue'] ?? 0),
             );
+        }
+
+        $ecommerceValues = [];
+        foreach (['ec_st', 'ec_tx', 'ec_sh', 'ec_dt'] as $parameter) {
+            $ecommerceValues[$parameter] = $orderId === null
+                ? null
+                : $this->ecommerceRevenue($request->input($parameter));
         }
 
         $referrer = $request->input('urlref', '');
@@ -251,6 +267,11 @@ final class TrackerRequestFactory
             goalId: $goal === null ? null : (int) $goalIdInput,
             goalRevenue: $goalRevenue,
             goalAllowsMultiple: (int) ($goal['allow_multiple'] ?? 0) === 1,
+            ecommerceOrderId: $orderId,
+            ecommerceSubtotal: $ecommerceValues['ec_st'],
+            ecommerceTax: $ecommerceValues['ec_tx'],
+            ecommerceShipping: $ecommerceValues['ec_sh'],
+            ecommerceDiscount: $ecommerceValues['ec_dt'],
             userId: $userId,
             referrerUrl: $referrer,
             referrerType: $referrerType,
@@ -370,6 +391,36 @@ final class TrackerRequestFactory
         $revenue = (float) $value;
 
         return abs($revenue) > 1_000_000_000_000 ? 0.0 : round($revenue, 2);
+    }
+
+    private function ecommerceOrderId(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (! is_string($value) && ! is_int($value)) {
+            throw new InvalidArgumentException('ec_id must be a string or integer.');
+        }
+
+        $orderId = $this->clean((string) $value, $this->configuration->pageMaximumLength());
+
+        return $orderId === '' ? null : $orderId;
+    }
+
+    private function ecommerceRevenue(mixed $value): ?float
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (! is_scalar($value) || ! is_numeric($value) || ! is_finite((float) $value)) {
+            throw new InvalidArgumentException('Ecommerce revenue values must be numeric.');
+        }
+
+        $revenue = (float) $value;
+
+        return abs($revenue) > 1_000_000_000_000 ? null : round($revenue, 2);
     }
 
     private function honorsDoNotTrack(Request $request): bool
