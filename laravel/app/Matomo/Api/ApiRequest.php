@@ -144,6 +144,14 @@ final readonly class ApiRequest
     private const string EXAMPLE_REPORT_METHOD = 'ExampleReport.getExampleReport';
 
     /** @var list<string> */
+    private const array EXAMPLE_UI_METHODS = [
+        'ExampleUI.getTemperaturesEvolution',
+        'ExampleUI.getTemperatures',
+        'ExampleUI.getPlanetRatios',
+        'ExampleUI.getPlanetRatiosWithLogos',
+    ];
+
+    /** @var list<string> */
     private const array DASHBOARD_METHODS = [
         'Dashboard.getDashboards',
         'Dashboard.createNewDashboardForUser',
@@ -210,6 +218,7 @@ final readonly class ApiRequest
         public ?DashboardRequest $dashboard,
         public ?ExampleApiRequest $exampleApi,
         public ?ExamplePluginRequest $examplePlugin,
+        public ?ExampleUiRequest $exampleUi,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -256,6 +265,7 @@ final readonly class ApiRequest
             dashboard: null,
             exampleApi: null,
             examplePlugin: null,
+            exampleUi: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -556,6 +566,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === self::EXAMPLE_REPORT_METHOD;
     }
 
+    public function isExampleUiRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::EXAMPLE_UI_METHODS, true);
+    }
+
     public function isAiProvidersRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::AI_PROVIDERS_METHODS, true);
@@ -632,8 +647,37 @@ final readonly class ApiRequest
             dashboard: self::dashboard($request, $module, $method),
             exampleApi: self::exampleApi($request, $module, $method),
             examplePlugin: self::examplePlugin($request, $module, $method),
+            exampleUi: self::exampleUi($request, $module, $method),
             authentication: $authentication,
         );
+    }
+
+    private static function exampleUi(Request $request, string $module, string $method): ?ExampleUiRequest
+    {
+        if ($module !== 'API' || ! in_array($method, self::EXAMPLE_UI_METHODS, true)) {
+            return null;
+        }
+
+        if ($method !== 'ExampleUI.getTemperaturesEvolution') {
+            return new ExampleUiRequest(null, null);
+        }
+
+        $date = self::nullableStringInput($request, 'date');
+        $period = self::nullableStringInput($request, 'period');
+
+        if ($date === null) {
+            throw new MissingApiParameter('date');
+        }
+
+        if ($period === null) {
+            throw new MissingApiParameter('period');
+        }
+
+        if (! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
+            throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
+        }
+
+        return new ExampleUiRequest($date, $period);
     }
 
     private static function examplePlugin(
