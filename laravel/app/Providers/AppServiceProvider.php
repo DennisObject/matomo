@@ -89,6 +89,8 @@ use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabasePasswordConfirmationVerifier;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
+use App\Matomo\BotTracking\BotTrackingRealtimeRepository;
+use App\Matomo\BotTracking\DatabaseBotTrackingRealtimeRepository;
 use App\Matomo\Config\InstallationConfig;
 use App\Matomo\CoreAdmin\BrandingManager;
 use App\Matomo\CoreAdmin\ConfiguredCoreAdminSettings;
@@ -492,6 +494,19 @@ class AppServiceProvider extends ServiceProvider
             fn (Application $application): HierarchicalBlobArchiveRepository => new DatabaseBlobArchiveRepository(
                 $application->make(MatomoDatabase::class)->connection(),
             ),
+        );
+        $this->app->singleton(
+            BotTrackingRealtimeRepository::class,
+            function (Application $application): BotTrackingRealtimeRepository {
+                $configuration = $application->make(InstallationConfig::class);
+
+                return new DatabaseBotTrackingRealtimeRepository(
+                    connection: $application->make(MatomoDatabase::class)->connection(),
+                    chatbotLimit: $configuration->liveAiChatbotsMaximumRows(),
+                    topPageUrlLimit: $configuration->liveAiChatbotsTopPageUrlsMaximumRows(),
+                    maximumExecutionTime: $configuration->liveQueryMaximumExecutionTime(),
+                );
+            },
         );
 
         $this->app->singleton(

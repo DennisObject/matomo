@@ -21,6 +21,7 @@ use App\Matomo\Archiving\CronArchiveRunResult;
 use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
+use App\Matomo\BotTracking\BotTrackingRealtimeRepository;
 use App\Matomo\CoreAdmin\BrandingManager;
 use App\Matomo\CoreAdmin\CoreAdminSettings;
 use App\Matomo\CoreAdmin\OptOutEmbedCodeGenerator;
@@ -746,6 +747,18 @@ abstract class TestCase extends BaseTestCase
                 array $metrics,
                 string $pluginName,
             ): array {
+                return [];
+            }
+        });
+        $this->app->instance(BotTrackingRealtimeRepository::class, new class implements BotTrackingRealtimeRepository
+        {
+            public function chatbotActivity(array $siteIds, string $startDate, string $endDate): array
+            {
+                return [];
+            }
+
+            public function topPageUrls(array $siteIds, string $startDate, string $endDate): array
+            {
                 return [];
             }
         });

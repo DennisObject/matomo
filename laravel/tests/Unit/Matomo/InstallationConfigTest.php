@@ -104,6 +104,9 @@ class InstallationConfigTest extends TestCase
         $this->assertContains('utm_campaign', $configuration->campaignNameParameters());
         $this->assertContains('utm_term', $configuration->campaignKeywordParameters());
         $this->assertSame(1024, $configuration->pageMaximumLength());
+        $this->assertSame(100, $configuration->liveAiChatbotsMaximumRows());
+        $this->assertSame(100, $configuration->liveAiChatbotsTopPageUrlsMaximumRows());
+        $this->assertSame(-1.0, $configuration->liveQueryMaximumExecutionTime());
     }
 
     public function test_loads_reporting_overrides(): void
@@ -123,6 +126,9 @@ class InstallationConfigTest extends TestCase
             enable_browser_archiving_triggering = 0
             piwik_professional_support_ads_enabled = 0
             overlay_following_pages_limit = 25
+            live_ai_chatbots_maximum_rows = 17
+            live_ai_chatbots_top_page_urls_maximum_rows = 23
+            live_query_max_execution_time = 1.5
             INI,
             extraTracker: <<<'INI'
             enable_default_location_provider = 0
@@ -149,6 +155,9 @@ class InstallationConfigTest extends TestCase
         $this->assertFalse($configuration->languageToCountryGuessEnabled());
         $this->assertFalse($configuration->professionalServicesAdsEnabled());
         $this->assertSame(25, $configuration->overlayFollowingPagesLimit());
+        $this->assertSame(17, $configuration->liveAiChatbotsMaximumRows());
+        $this->assertSame(23, $configuration->liveAiChatbotsTopPageUrlsMaximumRows());
+        $this->assertSame(1.5, $configuration->liveQueryMaximumExecutionTime());
         $this->assertSame(['session', 'secret'], $configuration->urlQueryParametersToExclude());
         $this->assertSame(['campaign'], $configuration->campaignNameParameters());
         $this->assertSame(['keyword'], $configuration->campaignKeywordParameters());

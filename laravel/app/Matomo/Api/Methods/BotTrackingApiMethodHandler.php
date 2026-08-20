@@ -11,12 +11,14 @@ use App\Matomo\Api\ApiTableReport;
 use App\Matomo\Api\VisitsSummaryRequest;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Localization\LanguageResolver;
+use App\Matomo\Reporting\BotTrackingRealtimeReportBuilder;
 use App\Matomo\Reporting\BotTrackingReportBuilder;
 use App\Matomo\Reporting\ReportingPeriod;
 use App\Matomo\Reporting\ReportingPeriodFactory;
 use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\RssReportRenderer;
 use App\Matomo\Sites\SiteRepository;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use InvalidArgumentException;
@@ -32,12 +34,13 @@ final readonly class BotTrackingApiMethodHandler implements ApiMethodHandler
         private ReportingSettings $settings,
         private LanguageResolver $languages,
         private BotTrackingReportBuilder $reports,
+        private BotTrackingRealtimeReportBuilder $realtimeReports,
         private RssReportRenderer $rss,
     ) {}
 
     public function supports(ApiRequest $request): bool
     {
-        return $request->isBotTrackingArchiveRequest();
+        return $request->isBotTrackingArchiveRequest() || $request->isBotTrackingRealtimeRequest();
     }
 
     public function handle(ApiRequest $request, Request $httpRequest): Response
@@ -46,33 +49,16 @@ final readonly class BotTrackingApiMethodHandler implements ApiMethodHandler
             throw new LogicException('The BotTracking API handler does not support this request.');
         }
 
-        $query = $request->visitsSummary
-            ?? throw new LogicException('The BotTracking request was not parsed.');
-        $siteIds = $query->allSites
-            ? $this->authorizer->siteIdsWithAtLeastViewAccess(
-                $request->authentication,
-                $request->restrictSitesToLogin,
-            )
-            : $query->siteIds;
-
-        if ($siteIds === []) {
-            return $this->responses->error(
-                $request,
-                "You can't access this resource as it requires 'view' access.",
-                401,
-            );
+        if ($request->isBotTrackingRealtimeRequest()) {
+            return $this->handleRealtime($request);
         }
 
-        if (! $query->allSites) {
-            foreach ($siteIds as $idSite) {
-                if (! $this->authorizer->hasViewAccessToSite($request->authentication, $idSite)) {
-                    return $this->responses->error(
-                        $request,
-                        "You can't access this resource as it requires 'view' access for the website id = {$idSite}.",
-                        401,
-                    );
-                }
-            }
+        $query = $request->visitsSummary
+            ?? throw new LogicException('The BotTracking request was not parsed.');
+        $siteIds = $this->authorizedSiteIds($request, $query->siteIds, $query->allSites);
+
+        if ($siteIds instanceof Response) {
+            return $siteIds;
         }
 
         if (! $this->settings->periodEnabled($query->period)) {
@@ -129,6 +115,107 @@ final readonly class BotTrackingApiMethodHandler implements ApiMethodHandler
         }
 
         return $this->rssResponse($request, $query, $siteIds[0], $periods, $timezone, $report);
+    }
+
+    private function handleRealtime(ApiRequest $request): Response
+    {
+        $query = $request->botTrackingRealtime
+            ?? throw new LogicException('The BotTracking real-time request was not parsed.');
+        $siteIds = $this->authorizedSiteIds($request, $query->siteIds, $query->allSites);
+
+        if ($siteIds instanceof Response) {
+            return $siteIds;
+        }
+
+        if ($request->format === 'rss' && count($siteIds) !== 1) {
+            return $this->responses->error(
+                $request,
+                "RSS feeds can be generated for one specific website &idSite=X.\n".
+                    'Please specify only one idSite or consider using &format=XML instead.',
+                200,
+            );
+        }
+
+        $report = $this->realtimeReports->build(
+            $request->method,
+            $siteIds,
+            $query->lastMinutes,
+            $request->showMetadata,
+        );
+
+        if ($request->format !== 'rss') {
+            return $this->responses->tableReport($request, $report);
+        }
+
+        return $this->realtimeRssResponse($request, $siteIds[0], $report);
+    }
+
+    private function realtimeRssResponse(
+        ApiRequest $request,
+        int $idSite,
+        ApiTableReport $report,
+    ): Response {
+        $timezone = $this->sites->timezone($idSite) ?? 'UTC';
+        $date = CarbonImmutable::now($timezone)->toDateString();
+        $period = new ReportingPeriod('day', 1, $date, $date, $date);
+        $details = $this->sites->details($idSite);
+        $siteName = is_string($details['name'] ?? null) ? $details['name'] : '';
+
+        try {
+            $content = $this->rss->table(
+                new ApiTableReport([$date => $report->data], ['date']),
+                [$period],
+                $idSite,
+                'day',
+                $siteName,
+                $timezone,
+            );
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            return $this->responses->error($request, $invalidArgumentException->getMessage(), 200);
+        }
+
+        return $this->responses->rss($content);
+    }
+
+    /**
+     * @param  list<int>  $requestedSiteIds
+     * @return list<int>|Response
+     */
+    private function authorizedSiteIds(
+        ApiRequest $request,
+        array $requestedSiteIds,
+        bool $allSites,
+    ): array|Response {
+        $siteIds = $allSites
+            ? $this->authorizer->siteIdsWithAtLeastViewAccess(
+                $request->authentication,
+                $request->restrictSitesToLogin,
+            )
+            : $requestedSiteIds;
+
+        if ($siteIds === []) {
+            return $this->responses->error(
+                $request,
+                "You can't access this resource as it requires 'view' access.",
+                401,
+            );
+        }
+
+        if ($allSites) {
+            return $siteIds;
+        }
+
+        foreach ($siteIds as $idSite) {
+            if (! $this->authorizer->hasViewAccessToSite($request->authentication, $idSite)) {
+                return $this->responses->error(
+                    $request,
+                    "You can't access this resource as it requires 'view' access for the website id = {$idSite}.",
+                    401,
+                );
+            }
+        }
+
+        return $siteIds;
     }
 
     /**

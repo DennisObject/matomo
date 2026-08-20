@@ -89,6 +89,9 @@ final readonly class InstallationConfig
         /** @var list<string> */
         private array $campaignKeywordParameters,
         private int $pageMaximumLength,
+        private int $liveAiChatbotsMaximumRows,
+        private int $liveAiChatbotsTopPageUrlsMaximumRows,
+        private float $liveQueryMaximumExecutionTime,
     ) {}
 
     public static function fromFile(string $path): self
@@ -321,6 +324,21 @@ final readonly class InstallationConfig
                 ],
             ),
             pageMaximumLength: self::positiveInteger($tracker, 'page_maximum_length', 1024),
+            liveAiChatbotsMaximumRows: self::positiveInteger(
+                $general,
+                'live_ai_chatbots_maximum_rows',
+                100,
+            ),
+            liveAiChatbotsTopPageUrlsMaximumRows: self::positiveInteger(
+                $general,
+                'live_ai_chatbots_top_page_urls_maximum_rows',
+                100,
+            ),
+            liveQueryMaximumExecutionTime: self::number(
+                $general,
+                'live_query_max_execution_time',
+                -1.0,
+            ),
         );
     }
 
@@ -644,6 +662,21 @@ final readonly class InstallationConfig
         return $this->pageMaximumLength;
     }
 
+    public function liveAiChatbotsMaximumRows(): int
+    {
+        return $this->liveAiChatbotsMaximumRows;
+    }
+
+    public function liveAiChatbotsTopPageUrlsMaximumRows(): int
+    {
+        return $this->liveAiChatbotsTopPageUrlsMaximumRows;
+    }
+
+    public function liveQueryMaximumExecutionTime(): float
+    {
+        return $this->liveQueryMaximumExecutionTime;
+    }
+
     /** @param array<string, mixed> $general */
     private static function parsedTemporaryPath(array $general): string
     {
@@ -913,6 +946,20 @@ final readonly class InstallationConfig
         $value = self::string($values, $key, (string) $default);
 
         return preg_match('/^[1-9]\d*$/D', $value) === 1 ? (int) $value : $default;
+    }
+
+    /** @param array<string, mixed> $values */
+    private static function number(array $values, string $key, float $default): float
+    {
+        $value = self::string($values, $key, (string) $default);
+
+        if (! is_numeric($value)) {
+            return $default;
+        }
+
+        $number = (float) $value;
+
+        return is_finite($number) ? $number : $default;
     }
 
     /** @param array<string, mixed> $values */
