@@ -7,7 +7,9 @@ return [
         'uniqueId' => 'General_AIAssistants.AIAgents_AIAgentsOverview',
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -19,13 +21,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'AIAgents_AIAgentsOverview',
-            'name' => 'AI Agents Overview',
+            'name' => [
+                'translationKey' => 'AIAgents_AIAgentsOverview',
+            ],
             'order' => '20',
             'help' => '<p>Review how AI agents and human visitors engage with your site at a glance. This overview surfaces combined metrics and trends so you can quickly spot changes before exploring detailed reports.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'AI Agents Over Time',
+                'name' => [
+                    'translationKey' => 'AIAgents_WidgetGraphAIAgents',
+                ],
                 'module' => 'AIAgents',
                 'action' => 'getEvolutionGraph',
                 'order' => '1',
@@ -41,7 +47,9 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'AI Agents Overview',
+                'name' => [
+                    'translationKey' => 'AIAgents_AIAgentsOverview',
+                ],
                 'module' => 'AIAgents',
                 'action' => 'get',
                 'order' => '2',
@@ -62,7 +70,9 @@ return [
         'uniqueId' => 'General_AIAssistants.BotTracking_AIChatbotsContentRequests',
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -74,13 +84,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsContentRequests',
-            'name' => 'AI Chatbots Content Requests',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsContentRequests',
+            ],
             'order' => '15',
             'help' => '<p>This reporting page shows which pages and documents on your website have been requested by AI chatbots such as ChatGPT and similar large language model–based bots. These reports detail which HTML pages and downloadable files (like PDFs, Word, or Excel documents) were accessed, along with those that could not be retrieved due to errors. This helps you understand which content AI systems are referencing, identify broken or inaccessible resources, and ensure your website provides reliable access to information used by AI-driven tools.</p><p>It’s important to note that none of these pages or documents were actually viewed by humans in the traditional way — all requests originate from AI assistants fetching content automatically.</p><p>Currently, these reports only include requests from AI bots that do not execute JavaScript, and exclude traffic from AI crawlers used for model training or AI agents capable of running JavaScript.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'AI Chatbots - No Recent Requests',
+                'name' => [
+                    'translationKey' => 'BotTracking_NoRecentRequestsWidgetTitle',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'noRecentRequestsMessageContentRequests',
                 'order' => '0',
@@ -100,7 +114,9 @@ return [
                 ],
             ],
             1 => [
-                'name' => 'Pages',
+                'name' => [
+                    'translationKey' => 'General_Pages',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'getAIChatbotContentPages',
                 'order' => '110',
@@ -114,7 +130,9 @@ return [
                 'isReport' => '1',
             ],
             2 => [
-                'name' => 'Documents',
+                'name' => [
+                    'translationKey' => 'BotTracking_AIChatbotsContentDocumentsTitle',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'getAIChatbotContentDocuments',
                 'order' => '120',
@@ -128,7 +146,9 @@ return [
                 'isReport' => '1',
             ],
             3 => [
-                'name' => 'Broken Pages and Documents',
+                'name' => [
+                    'translationKey' => 'BotTracking_AIChatbotsBrokenContentTitle',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'getAIChatbotBrokenContent',
                 'order' => '130',
@@ -142,7 +162,9 @@ return [
                 'isReport' => '1',
             ],
             4 => [
-                'name' => 'Human-Favoured Pages',
+                'name' => [
+                    'translationKey' => 'BotTracking_AIChatbotsHumanFavouredPagesTitle',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'getAIChatbotHumanFavouredPages',
                 'order' => '140',
@@ -156,7 +178,9 @@ return [
                 'isReport' => '1',
             ],
             5 => [
-                'name' => 'AI-Favoured Pages',
+                'name' => [
+                    'translationKey' => 'BotTracking_AIChatbotsAIFavouredPagesTitle',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'getAIChatbotAIFavouredPages',
                 'order' => '150',
@@ -175,7 +199,9 @@ return [
         'uniqueId' => 'General_AIAssistants.BotTracking_AIChatbotsOverview',
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -187,13 +213,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsOverview',
-            'name' => 'AI Chatbots Overview',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsOverview',
+            ],
             'order' => '10',
             'help' => '<p>The AI Chatbots Overview page provides insights into website traffic originating from AI chatbots such as ChatGPT and other large language model–based assistants. These reports track key metrics including the number of requests made by these bots, the pages and documents they access, and any errors encountered. They also offer detailed breakdowns showing which bots visit specific page URLs, helping you understand how AI chatbots interact with your content and identify opportunities to improve visibility and accessibility for AI-driven users.</p><p>It’s important to note that none of these pages were actually viewed by humans in the traditional way — all requests originate from AI chatbots fetching content automatically.</p><p>Currently, these reports exclusively include requests from AI chatbots that do not execute JavaScript. They do not include traffic from AI crawlers used for training AI models or from AI agents capable of executing JavaScript.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'AI Chatbots - No Recent Requests',
+                'name' => [
+                    'translationKey' => 'BotTracking_NoRecentRequestsWidgetTitle',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'noRecentRequestsMessage',
                 'order' => '0',
@@ -213,7 +243,9 @@ return [
                 ],
             ],
             1 => [
-                'name' => 'AI Chatbots Over Time',
+                'name' => [
+                    'translationKey' => 'BotTracking_ReportTitleChatbotsOverTime',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'getEvolutionGraph',
                 'order' => '1',
@@ -229,7 +261,9 @@ return [
                 'isReport' => '1',
             ],
             2 => [
-                'name' => 'AI Chatbots Overview',
+                'name' => [
+                    'translationKey' => 'BotTracking_AIChatbotsOverview',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'get',
                 'order' => '2',
@@ -245,7 +279,9 @@ return [
                 'isReport' => '1',
             ],
             3 => [
-                'name' => 'AI Chatbots',
+                'name' => [
+                    'translationKey' => 'BotTracking_AIChatbotsReportTitle',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'getAIChatbotRequests',
                 'order' => '130',
@@ -264,7 +300,9 @@ return [
         'uniqueId' => 'General_AIAssistants.BotTracking_AIChatbotsRealtime',
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -276,13 +314,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsRealtime',
-            'name' => 'AI Chatbots Real-time',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsRealtime',
+            ],
             'order' => '12',
             'help' => '<p>The AI Chatbots Real-time page shows recent AI chatbot activity from raw bot tracking data, including chatbot request volume, unique page URLs, and HTTP error counts.</p><p>These reports are limited to short real-time windows so they remain fast and predictable on large sites.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'AI Chatbots - Last 30 Minutes',
+                'name' => [
+                    'translationKey' => 'BotTracking_AIChatbotsLast30MinutesTitle',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'getAIChatbotsRealTime',
                 'order' => '10',
@@ -297,7 +339,9 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'AI Chatbots - Last 8 Hours',
+                'name' => [
+                    'translationKey' => 'BotTracking_AIChatbotsLast8HoursTitle',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'getAIChatbotsRealTime',
                 'order' => '20',
@@ -312,7 +356,9 @@ return [
                 'isReport' => '1',
             ],
             2 => [
-                'name' => 'Top Page URLs - Last 30 minutes',
+                'name' => [
+                    'translationKey' => 'BotTracking_TopPageUrlsLast30MinutesTitle',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'getTopPageUrlsRealTime',
                 'order' => '30',
@@ -327,7 +373,9 @@ return [
                 'isReport' => '1',
             ],
             3 => [
-                'name' => 'Top Page URLs - Last 8 hours',
+                'name' => [
+                    'translationKey' => 'BotTracking_TopPageUrlsLast8HoursTitle',
+                ],
                 'module' => 'BotTracking',
                 'action' => 'getTopPageUrlsRealTime',
                 'order' => '40',
@@ -347,7 +395,9 @@ return [
         'uniqueId' => 'General_Actions.VisitorInterest_Engagement',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -358,13 +408,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'VisitorInterest_Engagement',
-            'name' => 'Engagement',
+            'name' => [
+                'translationKey' => 'Tour_Engagement',
+            ],
             'order' => '46',
             'help' => '<p>The Engagement section provides reports that help to quantify how many new and returning visitors you get. You can also review reports that break down the average time and number of pages per visit, as well as the number of times a visitor has been to your site and the most common number of days between visits.</p><p>This can help you to optimise for frequency and high-interaction visits in addition to maximising your reach.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Visits per visit duration',
+                'name' => [
+                    'translationKey' => 'VisitorInterest_VisitsPerDuration',
+                ],
                 'module' => 'VisitorInterest',
                 'action' => 'getNumberOfVisitsPerVisitDuration',
                 'order' => '115',
@@ -378,7 +432,9 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'Visits per number of pages',
+                'name' => [
+                    'translationKey' => 'VisitorInterest_VisitsPerNbOfPages',
+                ],
                 'module' => 'VisitorInterest',
                 'action' => 'getNumberOfVisitsPerPage',
                 'order' => '120',
@@ -392,7 +448,9 @@ return [
                 'isReport' => '1',
             ],
             2 => [
-                'name' => 'Visits by visit number',
+                'name' => [
+                    'translationKey' => 'VisitorInterest_visitsByVisitCount',
+                ],
                 'module' => 'VisitorInterest',
                 'action' => 'getNumberOfVisitsByVisitCount',
                 'order' => '125',
@@ -406,7 +464,9 @@ return [
                 'isReport' => '1',
             ],
             3 => [
-                'name' => 'Visits by days since last visit',
+                'name' => [
+                    'translationKey' => 'VisitorInterest_VisitsByDaysSinceLast',
+                ],
                 'module' => 'VisitorInterest',
                 'action' => 'getNumberOfVisitsByDaysSinceLast',
                 'order' => '130',
@@ -420,7 +480,9 @@ return [
                 'isReport' => '1',
             ],
             4 => [
-                'name' => 'Returning Visits Over Time',
+                'name' => [
+                    'translationKey' => 'VisitFrequency_WidgetGraphReturning',
+                ],
                 'module' => 'VisitFrequency',
                 'action' => 'getEvolutionGraph',
                 'order' => '1',
@@ -436,7 +498,9 @@ return [
                 'isReport' => '1',
             ],
             5 => [
-                'name' => 'Frequency Overview',
+                'name' => [
+                    'translationKey' => 'VisitFrequency_WidgetOverview',
+                ],
                 'module' => 'VisitFrequency',
                 'action' => 'get',
                 'order' => '2',
@@ -457,7 +521,9 @@ return [
         'uniqueId' => 'General_Actions.Transitions_Transitions',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -468,24 +534,34 @@ return [
         ],
         'subcategory' => [
             'id' => 'Transitions_Transitions',
-            'name' => 'Transitions',
+            'name' => [
+                'translationKey' => 'Transitions_Transitions',
+            ],
             'order' => '46',
             'help' => '<p>Transitions is a report showing the things your visitors did directly before and after viewing a given page. This page explains how to access, understand, and use the powerful "Transitions" report.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/transitions/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Transitions.getTransitions">More details</a></p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Transitions',
-                'module' => 'Transitions',
+                'name' => [
+                    'translationKey' => 'Transitions_Transitions',
+                ],
+                'module' => [
+                    'translationKey' => 'Transitions_Transitions',
+                ],
                 'action' => 'getTransitions',
                 'order' => '99',
                 'parameters' => [
-                    'module' => 'Transitions',
+                    'module' => [
+                        'translationKey' => 'Transitions_Transitions',
+                    ],
                     'action' => 'getTransitions',
                 ],
                 'uniqueId' => 'widgetTransitionsgetTransitions',
                 'isWide' => '0',
                 'clientComponent' => [
-                    'plugin' => 'Transitions',
+                    'plugin' => [
+                        'translationKey' => 'Transitions_Transitions',
+                    ],
                     'name' => 'TransitionsPage',
                 ],
             ],
@@ -495,7 +571,9 @@ return [
         'uniqueId' => 'General_Actions.General_Downloads',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -506,18 +584,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Downloads',
-            'name' => 'Downloads',
+            'name' => [
+                'translationKey' => 'General_Downloads',
+            ],
             'order' => '35',
             'help' => '<p>In this report, you can see which files your visitors have downloaded.</p><p>What Matomo counts as a download is the click on a download link. Whether the download was completed or not isn\'t known to Matomo.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Downloads',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'General_Downloads',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getDownloads',
                 'order' => '109',
                 'parameters' => [
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getDownloads',
                 ],
                 'uniqueId' => 'widgetActionsgetDownloads',
@@ -531,7 +617,9 @@ return [
         'uniqueId' => 'General_Actions.Actions_SubmenuPagesEntry',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -542,18 +630,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuPagesEntry',
-            'name' => 'Entry pages',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuPagesEntry',
+            ],
             'order' => '10',
             'help' => '<p>This report contains information about the entry pages that were used during the specified period. An entry page is the first page that a user views during their visit.</p><p>The entry URLs are displayed as a folder structure.</p><p>Use the plus and minus icons on the left to navigate.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Entry pages',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_SubmenuPagesEntry',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getEntryPageUrls',
                 'order' => '103',
                 'parameters' => [
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getEntryPageUrls',
                 ],
                 'uniqueId' => 'widgetActionsgetEntryPageUrls',
@@ -562,12 +658,18 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'Entry Page Titles',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_WidgetEntryPageTitles',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getEntryPageTitles',
                 'order' => '106',
                 'parameters' => [
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getEntryPageTitles',
                 ],
                 'uniqueId' => 'widgetActionsgetEntryPageTitles',
@@ -581,7 +683,9 @@ return [
         'uniqueId' => 'General_Actions.Actions_SubmenuPagesExit',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -592,18 +696,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuPagesExit',
-            'name' => 'Exit pages',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuPagesExit',
+            ],
             'order' => '15',
             'help' => '<p>This report contains information about the exit pages that occurred during the specified period. An exit page is the last page that a user views during their visit.</p><p>The exit URLs are displayed as a folder structure.</p><p>Use the plus and minus icons on the left to navigate.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Exit pages',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_SubmenuPagesExit',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getExitPageUrls',
                 'order' => '104',
                 'parameters' => [
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getExitPageUrls',
                 ],
                 'uniqueId' => 'widgetActionsgetExitPageUrls',
@@ -612,12 +724,18 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'Exit page titles',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_ExitPageTitles',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getExitPageTitles',
                 'order' => '107',
                 'parameters' => [
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getExitPageTitles',
                 ],
                 'uniqueId' => 'widgetActionsgetExitPageTitles',
@@ -631,7 +749,9 @@ return [
         'uniqueId' => 'General_Actions.General_Outlinks',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -642,18 +762,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Outlinks',
-            'name' => 'Outlinks',
+            'name' => [
+                'translationKey' => 'General_Outlinks',
+            ],
             'order' => '30',
             'help' => '<p>This report shows a hierarchical list of outlink URLs that were clicked by your visitors. An outlink is a link that leads the visitor away from your website (to another domain).</p><p>Use the plus and minus icons on the left to navigate.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Outlinks',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'General_Outlinks',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getOutlinks',
                 'order' => '108',
                 'parameters' => [
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getOutlinks',
                 ],
                 'uniqueId' => 'widgetActionsgetOutlinks',
@@ -667,7 +795,9 @@ return [
         'uniqueId' => 'General_Actions.Actions_SubmenuPageTitles',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -678,18 +808,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuPageTitles',
-            'name' => 'Page titles',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuPageTitles',
+            ],
             'order' => '20',
             'help' => '<p>This report contains information about the titles of the pages that have been visited.</p><p>The page title is the HTML &lt;title&gt; Tag that most browsers show in their window title.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Page titles',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_SubmenuPageTitles',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getPageTitles',
                 'order' => '105',
                 'parameters' => [
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getPageTitles',
                 ],
                 'uniqueId' => 'widgetActionsgetPageTitles',
@@ -703,7 +841,9 @@ return [
         'uniqueId' => 'General_Actions.General_Pages',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -714,18 +854,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Pages',
-            'name' => 'Pages',
+            'name' => [
+                'translationKey' => 'General_Pages',
+            ],
             'order' => '5',
             'help' => '<p>This report contains information about the page URLs that have been visited.</p><p>The table is organized hierarchically, the URLs are displayed as a folder structure.</p><p>Use the plus and minus icons on the left to navigate.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Pages',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'General_Pages',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getPageUrls',
                 'order' => '102',
                 'parameters' => [
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getPageUrls',
                 ],
                 'uniqueId' => 'widgetActionsgetPageUrls',
@@ -739,7 +887,9 @@ return [
         'uniqueId' => 'General_Actions.Actions_SubmenuSitesearch',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -750,18 +900,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuSitesearch',
-            'name' => 'Site Search',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuSitesearch',
+            ],
             'order' => '25',
             'help' => '<p>The Site Search section shows which keywords visitors use when searching your website. It also displays which pages users view after performing a search and which on-site search keywords return no results at all.</p><p>These reports can give you ideas about missing content on your site, insight into what your visitors are looking for but can’t find easily, and more.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/site-search/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Actions.getSiteSearchCategories">Learn more in the Site Search guide.</a></p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Site Search Keywords',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_WidgetSearchKeywords',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getSiteSearchKeywords',
                 'order' => '115',
                 'parameters' => [
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getSiteSearchKeywords',
                 ],
                 'uniqueId' => 'widgetActionsgetSiteSearchKeywords',
@@ -770,12 +928,18 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'Pages Following a Site Search',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_WidgetPageUrlsFollowingSearch',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getPageUrlsFollowingSiteSearch',
                 'order' => '116',
                 'parameters' => [
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getPageUrlsFollowingSiteSearch',
                 ],
                 'uniqueId' => 'widgetActionsgetPageUrlsFollowingSiteSearch',
@@ -784,12 +948,18 @@ return [
                 'isReport' => '1',
             ],
             2 => [
-                'name' => 'Search Keywords with No Results',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_WidgetSearchNoResultKeywords',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getSiteSearchNoResultKeywords',
                 'order' => '118',
                 'parameters' => [
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getSiteSearchNoResultKeywords',
                 ],
                 'uniqueId' => 'widgetActionsgetSiteSearchNoResultKeywords',
@@ -798,12 +968,18 @@ return [
                 'isReport' => '1',
             ],
             3 => [
-                'name' => 'Page Titles Following a Site Search',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_WidgetPageTitlesFollowingSearch',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getPageTitlesFollowingSiteSearch',
                 'order' => '119',
                 'parameters' => [
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getPageTitlesFollowingSiteSearch',
                 ],
                 'uniqueId' => 'widgetActionsgetPageTitlesFollowingSiteSearch',
@@ -812,12 +988,18 @@ return [
                 'isReport' => '1',
             ],
             4 => [
-                'name' => 'Search Categories',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_WidgetSearchCategories',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getSiteSearchCategories',
                 'order' => '120',
                 'parameters' => [
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getSiteSearchCategories',
                 ],
                 'uniqueId' => 'widgetActionsgetSiteSearchCategories',
@@ -831,7 +1013,9 @@ return [
         'uniqueId' => 'General_Actions.Events_Events',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -842,7 +1026,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Events_Events',
-            'name' => 'Events',
+            'name' => [
+                'translationKey' => 'Events_Events',
+            ],
             'order' => '40',
             'help' => '<p>The Events section offers reports on the custom events associated with your site. Events typically require custom configuration. Once configured you can review reports broken down by category, action and name.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/event-tracking/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Events.getCategory">Learn more about event tracking here.</a></p>',
         ],
@@ -855,7 +1041,9 @@ return [
                 'parameters' => [
                     'module' => 'CoreHome',
                     'action' => 'renderWidgetContainer',
-                    'containerId' => 'Events',
+                    'containerId' => [
+                        'translationKey' => 'Events_Events',
+                    ],
                 ],
                 'uniqueId' => 'widgetEvents',
                 'isWide' => '0',
@@ -863,10 +1051,14 @@ return [
                 'isContainer' => '1',
                 'widgets' => [
                     0 => [
-                        'name' => 'Event Categories',
+                        'name' => [
+                            'translationKey' => 'Events_EventCategories',
+                        ],
                         'category' => [
                             'id' => 'General_Actions',
-                            'name' => 'Actions',
+                            'name' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -877,15 +1069,21 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'Events_Events',
-                            'name' => 'Events',
+                            'name' => [
+                                'translationKey' => 'Events_Events',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Events',
+                        'module' => [
+                            'translationKey' => 'Events_Events',
+                        ],
                         'action' => 'getCategory',
                         'order' => '100',
                         'parameters' => [
-                            'module' => 'Events',
+                            'module' => [
+                                'translationKey' => 'Events_Events',
+                            ],
                             'action' => 'getCategory',
                             'secondaryDimension' => 'eventAction',
                         ],
@@ -895,10 +1093,14 @@ return [
                         'isReport' => '1',
                     ],
                     1 => [
-                        'name' => 'Event Actions',
+                        'name' => [
+                            'translationKey' => 'Events_EventActions',
+                        ],
                         'category' => [
                             'id' => 'General_Actions',
-                            'name' => 'Actions',
+                            'name' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -909,15 +1111,21 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'Events_Events',
-                            'name' => 'Events',
+                            'name' => [
+                                'translationKey' => 'Events_Events',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Events',
+                        'module' => [
+                            'translationKey' => 'Events_Events',
+                        ],
                         'action' => 'getAction',
                         'order' => '101',
                         'parameters' => [
-                            'module' => 'Events',
+                            'module' => [
+                                'translationKey' => 'Events_Events',
+                            ],
                             'action' => 'getAction',
                             'secondaryDimension' => 'eventName',
                         ],
@@ -927,10 +1135,14 @@ return [
                         'isReport' => '1',
                     ],
                     2 => [
-                        'name' => 'Event Names',
+                        'name' => [
+                            'translationKey' => 'Events_EventNames',
+                        ],
                         'category' => [
                             'id' => 'General_Actions',
-                            'name' => 'Actions',
+                            'name' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -941,15 +1153,21 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'Events_Events',
-                            'name' => 'Events',
+                            'name' => [
+                                'translationKey' => 'Events_Events',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Events',
+                        'module' => [
+                            'translationKey' => 'Events_Events',
+                        ],
                         'action' => 'getName',
                         'order' => '102',
                         'parameters' => [
-                            'module' => 'Events',
+                            'module' => [
+                                'translationKey' => 'Events_Events',
+                            ],
                             'action' => 'getName',
                             'secondaryDimension' => 'eventAction',
                         ],
@@ -966,7 +1184,9 @@ return [
         'uniqueId' => 'General_Actions.Contents_Contents',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -977,7 +1197,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Contents_Contents',
-            'name' => 'Contents',
+            'name' => [
+                'translationKey' => 'Contents_Contents',
+            ],
             'order' => '45',
             'help' => '<p>Content tracking helps you determine the popularity of specific pieces of content on any page of your website or app. This section reports the number of impressions and interactions the various pieces of content on your site receive.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/content-tracking?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Contents.getContentNames">Learn more in the Content Tracking guide.</a></p>',
         ],
@@ -990,7 +1212,9 @@ return [
                 'parameters' => [
                     'module' => 'CoreHome',
                     'action' => 'renderWidgetContainer',
-                    'containerId' => 'Contents',
+                    'containerId' => [
+                        'translationKey' => 'Contents_Contents',
+                    ],
                 ],
                 'uniqueId' => 'widgetContents',
                 'isWide' => '0',
@@ -998,10 +1222,14 @@ return [
                 'isContainer' => '1',
                 'widgets' => [
                     0 => [
-                        'name' => 'Content Name',
+                        'name' => [
+                            'translationKey' => 'Contents_ContentName',
+                        ],
                         'category' => [
                             'id' => 'General_Actions',
-                            'name' => 'Actions',
+                            'name' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -1012,15 +1240,21 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'Contents_Contents',
-                            'name' => 'Contents',
+                            'name' => [
+                                'translationKey' => 'Contents_Contents',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Contents',
+                        'module' => [
+                            'translationKey' => 'Contents_Contents',
+                        ],
                         'action' => 'getContentNames',
                         'order' => '135',
                         'parameters' => [
-                            'module' => 'Contents',
+                            'module' => [
+                                'translationKey' => 'Contents_Contents',
+                            ],
                             'action' => 'getContentNames',
                         ],
                         'uniqueId' => 'widgetContentsgetContentNames',
@@ -1029,10 +1263,14 @@ return [
                         'isReport' => '1',
                     ],
                     1 => [
-                        'name' => 'Content Piece',
+                        'name' => [
+                            'translationKey' => 'Contents_ContentPiece',
+                        ],
                         'category' => [
                             'id' => 'General_Actions',
-                            'name' => 'Actions',
+                            'name' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -1043,15 +1281,21 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'Contents_Contents',
-                            'name' => 'Contents',
+                            'name' => [
+                                'translationKey' => 'Contents_Contents',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Contents',
+                        'module' => [
+                            'translationKey' => 'Contents_Contents',
+                        ],
                         'action' => 'getContentPieces',
                         'order' => '136',
                         'parameters' => [
-                            'module' => 'Contents',
+                            'module' => [
+                                'translationKey' => 'Contents_Contents',
+                            ],
                             'action' => 'getContentPieces',
                         ],
                         'uniqueId' => 'widgetContentsgetContentPieces',
@@ -1067,7 +1311,9 @@ return [
         'uniqueId' => 'General_Actions.PagePerformance_Performance',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1078,13 +1324,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'PagePerformance_Performance',
-            'name' => 'Performance',
+            'name' => [
+                'translationKey' => 'PagePerformance_Performance',
+            ],
             'order' => '47',
             'help' => '<p>The Performance section can help you analyse how fast your website or app is performing on the whole and help discover whether you have specific pages that significantly deviate from your averages.</p><p>You can also find reports showing exactly how long each page of your website takes to load and what is contributing to their loading time.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Evolution of page performance metrics',
+                'name' => [
+                    'translationKey' => 'PagePerformance_EvolutionOverPeriod',
+                ],
                 'module' => 'PagePerformance',
                 'action' => 'getEvolutionGraph',
                 'order' => '1',
@@ -1116,14 +1366,20 @@ return [
                 'isReport' => '1',
             ],
             2 => [
-                'name' => 'Page URLs',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_PageUrls',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getPageUrls',
                 'order' => '3',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'tablePerformanceColumns',
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getPageUrls',
                     'performance' => '1',
                 ],
@@ -1133,14 +1389,20 @@ return [
                 'isReport' => '1',
             ],
             3 => [
-                'name' => 'Page titles',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_SubmenuPageTitles',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getPageTitles',
                 'order' => '4',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'tablePerformanceColumns',
-                    'module' => 'Actions',
+                    'module' => [
+                        'translationKey' => 'General_Actions',
+                    ],
                     'action' => 'getPageTitles',
                     'performance' => '1',
                 ],
@@ -1155,7 +1417,9 @@ return [
         'uniqueId' => 'General_Visitors.DevicesDetection_Devices',
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -1166,13 +1430,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'DevicesDetection_Devices',
-            'name' => 'Devices',
+            'name' => [
+                'translationKey' => 'DevicesDetection_Devices',
+            ],
             'order' => '15',
             'help' => '<p>The Devices section helps you understand the technology that your visitors are using to access your site. You will see reports on the type of device and specific models to enable you to optimise your site for the most popular devices.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Device type',
+                'name' => [
+                    'translationKey' => 'DevicesDetection_DeviceType',
+                ],
                 'module' => 'DevicesDetection',
                 'action' => 'getType',
                 'order' => '100',
@@ -1186,7 +1454,9 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'Device model',
+                'name' => [
+                    'translationKey' => 'DevicesDetection_DeviceModel',
+                ],
                 'module' => 'DevicesDetection',
                 'action' => 'getModel',
                 'order' => '102',
@@ -1200,7 +1470,9 @@ return [
                 'isReport' => '1',
             ],
             2 => [
-                'name' => 'Device brand',
+                'name' => [
+                    'translationKey' => 'DevicesDetection_DeviceBrand',
+                ],
                 'module' => 'DevicesDetection',
                 'action' => 'getBrand',
                 'order' => '104',
@@ -1214,12 +1486,18 @@ return [
                 'isReport' => '1',
             ],
             3 => [
-                'name' => 'Screen Resolution',
-                'module' => 'Resolution',
+                'name' => [
+                    'translationKey' => 'Resolution_WidgetResolutions',
+                ],
+                'module' => [
+                    'translationKey' => 'Resolution_ColumnResolution',
+                ],
                 'action' => 'getResolution',
                 'order' => '108',
                 'parameters' => [
-                    'module' => 'Resolution',
+                    'module' => [
+                        'translationKey' => 'Resolution_ColumnResolution',
+                    ],
                     'action' => 'getResolution',
                 ],
                 'uniqueId' => 'widgetResolutiongetResolution',
@@ -1233,7 +1511,9 @@ return [
         'uniqueId' => 'General_Visitors.DevicesDetection_Software',
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -1244,13 +1524,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'DevicesDetection_Software',
-            'name' => 'Software',
+            'name' => [
+                'translationKey' => 'DevicesDetection_Software',
+            ],
             'order' => '20',
             'help' => '<p>The Software section shows the operating systems, browsers and plugins that your visitors are using to access the site so that you can optimise your site to ensure it is fully compatible with the most popular configurations.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Operating System versions',
+                'name' => [
+                    'translationKey' => 'DevicesDetection_OperatingSystemVersions',
+                ],
                 'module' => 'DevicesDetection',
                 'action' => 'getOsVersions',
                 'order' => '102',
@@ -1264,7 +1548,9 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'Browsers',
+                'name' => [
+                    'translationKey' => 'DevicesDetection_Browsers',
+                ],
                 'module' => 'DevicesDetection',
                 'action' => 'getBrowsers',
                 'order' => '105',
@@ -1278,7 +1564,9 @@ return [
                 'isReport' => '1',
             ],
             2 => [
-                'name' => 'Browser version',
+                'name' => [
+                    'translationKey' => 'DevicesDetection_BrowserVersion',
+                ],
                 'module' => 'DevicesDetection',
                 'action' => 'getBrowserVersions',
                 'order' => '106',
@@ -1292,12 +1580,18 @@ return [
                 'isReport' => '1',
             ],
             3 => [
-                'name' => 'Configurations',
-                'module' => 'Resolution',
+                'name' => [
+                    'translationKey' => 'Resolution_Configurations',
+                ],
+                'module' => [
+                    'translationKey' => 'Resolution_ColumnResolution',
+                ],
                 'action' => 'getConfiguration',
                 'order' => '107',
                 'parameters' => [
-                    'module' => 'Resolution',
+                    'module' => [
+                        'translationKey' => 'Resolution_ColumnResolution',
+                    ],
                     'action' => 'getConfiguration',
                 ],
                 'uniqueId' => 'widgetResolutiongetConfiguration',
@@ -1306,7 +1600,9 @@ return [
                 'isReport' => '1',
             ],
             4 => [
-                'name' => 'Operating System families',
+                'name' => [
+                    'translationKey' => 'DevicesDetection_OperatingSystemFamilies',
+                ],
                 'module' => 'DevicesDetection',
                 'action' => 'getOsFamilies',
                 'order' => '108',
@@ -1320,7 +1616,9 @@ return [
                 'isReport' => '1',
             ],
             5 => [
-                'name' => 'Browser engines',
+                'name' => [
+                    'translationKey' => 'DevicesDetection_BrowserEngines',
+                ],
                 'module' => 'DevicesDetection',
                 'action' => 'getBrowserEngines',
                 'order' => '110',
@@ -1334,7 +1632,9 @@ return [
                 'isReport' => '1',
             ],
             6 => [
-                'name' => 'Browser Plugins',
+                'name' => [
+                    'translationKey' => 'DevicePlugins_WidgetPlugins',
+                ],
                 'module' => 'DevicePlugins',
                 'action' => 'getPlugin',
                 'order' => '113',
@@ -1353,7 +1653,9 @@ return [
         'uniqueId' => 'General_Visitors.General_Overview',
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -1364,13 +1666,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Overview',
-            'name' => 'Overview',
+            'name' => [
+                'translationKey' => 'General_Overview',
+            ],
             'order' => '2',
             'help' => '<p>The Visitors Overview helps you understand the popularity of your site. It does this by providing charts that show how many visits your site is receiving over a selected period and the average level of engagement for key features, such as searches and downloads.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Visits Over Time',
+                'name' => [
+                    'translationKey' => 'VisitsSummary_WidgetLastVisits',
+                ],
                 'module' => 'VisitsSummary',
                 'action' => 'getEvolutionGraph',
                 'order' => '5',
@@ -1386,7 +1692,9 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'Visits Overview',
+                'name' => [
+                    'translationKey' => 'VisitsSummary_WidgetVisits',
+                ],
                 'module' => 'VisitsSummary',
                 'action' => 'get',
                 'order' => '10',
@@ -1407,7 +1715,9 @@ return [
         'uniqueId' => 'General_Visitors.UserCountry_SubmenuLocations',
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -1418,13 +1728,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'UserCountry_SubmenuLocations',
-            'name' => 'Locations',
+            'name' => [
+                'translationKey' => 'UserCountry_SubmenuLocations',
+            ],
             'order' => '10',
             'help' => '<p>The "Locations" section is the best way to find out what countries, continents, regions, and cities your website visitors come from — in table and map form. It also says what language their browser is set to, helping identify international visitors in alternative locations.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Visitor Map',
+                'name' => [
+                    'translationKey' => 'UserCountryMap_VisitorMap',
+                ],
                 'module' => 'UserCountryMap',
                 'action' => 'visitorMap',
                 'order' => '1',
@@ -1436,7 +1750,9 @@ return [
                 'isWide' => '0',
             ],
             1 => [
-                'name' => 'Country',
+                'name' => [
+                    'translationKey' => 'UserCountry_Country',
+                ],
                 'module' => 'UserCountry',
                 'action' => 'getCountry',
                 'order' => '105',
@@ -1457,7 +1773,9 @@ return [
                 'parameters' => [
                     'module' => 'CoreHome',
                     'action' => 'renderWidgetContainer',
-                    'containerId' => 'Continent',
+                    'containerId' => [
+                        'translationKey' => 'UserCountry_Continent',
+                    ],
                 ],
                 'uniqueId' => 'widgetContinent',
                 'isWide' => '0',
@@ -1465,10 +1783,14 @@ return [
                 'isContainer' => '1',
                 'widgets' => [
                     0 => [
-                        'name' => 'Continent',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Continent',
+                        ],
                         'category' => [
                             'id' => 'General_Visitors',
-                            'name' => 'Visitors',
+                            'name' => [
+                                'translationKey' => 'General_Visitors',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -1479,7 +1801,9 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'UserCountry_SubmenuLocations',
-                            'name' => 'Locations',
+                            'name' => [
+                                'translationKey' => 'UserCountry_SubmenuLocations',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
@@ -1499,7 +1823,9 @@ return [
                         'name' => '',
                         'category' => [
                             'id' => 'General_Visitors',
-                            'name' => 'Visitors',
+                            'name' => [
+                                'translationKey' => 'General_Visitors',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -1510,7 +1836,9 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'UserCountry_SubmenuLocations',
-                            'name' => 'Locations',
+                            'name' => [
+                                'translationKey' => 'UserCountry_SubmenuLocations',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
@@ -1529,7 +1857,9 @@ return [
                 ],
             ],
             3 => [
-                'name' => 'Region',
+                'name' => [
+                    'translationKey' => 'UserCountry_Region',
+                ],
                 'module' => 'UserCountry',
                 'action' => 'getRegion',
                 'order' => '107',
@@ -1543,7 +1873,9 @@ return [
                 'isReport' => '1',
             ],
             4 => [
-                'name' => 'Web-browser language',
+                'name' => [
+                    'translationKey' => 'UserLanguage_BrowserLanguage',
+                ],
                 'module' => 'UserLanguage',
                 'action' => 'getLanguage',
                 'order' => '108',
@@ -1557,7 +1889,9 @@ return [
                 'isReport' => '1',
             ],
             5 => [
-                'name' => 'City',
+                'name' => [
+                    'translationKey' => 'UserCountry_City',
+                ],
                 'module' => 'UserCountry',
                 'action' => 'getCity',
                 'order' => '110',
@@ -1571,7 +1905,9 @@ return [
                 'isReport' => '1',
             ],
             6 => [
-                'name' => 'Language code',
+                'name' => [
+                    'translationKey' => 'UserLanguage_LanguageCode',
+                ],
                 'module' => 'UserLanguage',
                 'action' => 'getLanguageCode',
                 'order' => '111',
@@ -1590,7 +1926,9 @@ return [
         'uniqueId' => 'General_Visitors.VisitTime_SubmenuTimes',
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -1601,13 +1939,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'VisitTime_SubmenuTimes',
-            'name' => 'Times',
+            'name' => [
+                'translationKey' => 'VisitTime_SubmenuTimes',
+            ],
             'order' => '35',
             'help' => '<p>The "Times" section shows when people visit your site. Popular local times helps you cater your site to their lives. The most popular server times reveals technical demand.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Visits per local time',
+                'name' => [
+                    'translationKey' => 'VisitTime_LocalTime',
+                ],
                 'module' => 'VisitTime',
                 'action' => 'getVisitInformationPerLocalTime',
                 'order' => '115',
@@ -1621,7 +1963,9 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'Visits per hour in the site\'s timezone',
+                'name' => [
+                    'translationKey' => 'VisitTime_SiteTime',
+                ],
                 'module' => 'VisitTime',
                 'action' => 'getVisitInformationPerServerTime',
                 'order' => '120',
@@ -1635,7 +1979,9 @@ return [
                 'isReport' => '1',
             ],
             2 => [
-                'name' => 'Visits by day of the week',
+                'name' => [
+                    'translationKey' => 'VisitTime_VisitsByDayOfWeek',
+                ],
                 'module' => 'VisitTime',
                 'action' => 'getByDayOfWeek',
                 'order' => '125',
@@ -1654,7 +2000,9 @@ return [
         'uniqueId' => 'General_Visitors.UserCountryMap_RealTimeMap',
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -1665,13 +2013,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'UserCountryMap_RealTimeMap',
-            'name' => 'Real-time Map',
+            'name' => [
+                'translationKey' => 'UserCountryMap_RealTimeMap',
+            ],
             'order' => '9',
             'help' => '<p>Shows the location of website visitors the last 30 minutes, and flashes for new ones. Recent visits are shown as large orange bubbles, and older ones as smaller gray ones. It refreshes every five seconds.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Real-time Map',
+                'name' => [
+                    'translationKey' => 'UserCountryMap_RealTimeMap',
+                ],
                 'module' => 'UserCountryMap',
                 'action' => 'realtimeMap',
                 'order' => '15',
@@ -1688,7 +2040,9 @@ return [
         'uniqueId' => 'General_Visitors.General_RealTime',
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -1699,18 +2053,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_RealTime',
-            'name' => 'Real-time',
+            'name' => [
+                'translationKey' => 'General_RealTime',
+            ],
             'order' => '7',
             'help' => '<p>The visits in the real-time report show the real-time flow of visits to your website. It includes a real-time counter of your visits and page views in the last 24 hours and the previous 30 minutes.</p><p>This report refreshes every 5 seconds and displays new visits (or existing visitors that view a new page) at the top of the list with a fade-in effect.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Visits in real-time',
-                'module' => 'Live',
+                'name' => [
+                    'translationKey' => 'Live_VisitorsInRealTime',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Live',
+                ],
                 'action' => 'widget',
                 'order' => '20',
                 'parameters' => [
-                    'module' => 'Live',
+                    'module' => [
+                        'translationKey' => 'General_Live',
+                    ],
                     'action' => 'widget',
                 ],
                 'uniqueId' => 'widgetLivewidget',
@@ -1722,7 +2084,9 @@ return [
         'uniqueId' => 'General_Visitors.Live_VisitorLog',
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -1733,20 +2097,28 @@ return [
         ],
         'subcategory' => [
             'id' => 'Live_VisitorLog',
-            'name' => 'Visits Log',
+            'name' => [
+                'translationKey' => 'Live_VisitsLog',
+            ],
             'order' => '5',
             'help' => '<p>The visits log shows you every visit your website receives in detail. Find out which actions each visitor has performed, how they got to your site, a bit about who they are, and more (while still complying with your local privacy regulations).</p><p>While other reports in Matomo show how your visitors behave at an aggregate level, the visits log provides granular detail. You can also use segments to narrow it down to specific types of visits to understand your visitors better.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/real-time/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Live.getLastVisitsDetails">Learn more in the visit-log guide.</a></p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Visits Log',
-                'module' => 'Live',
+                'name' => [
+                    'translationKey' => 'Live_VisitsLog',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Live',
+                ],
                 'action' => 'getLastVisitsDetails',
                 'order' => '10',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'VisitorLog',
-                    'module' => 'Live',
+                    'module' => [
+                        'translationKey' => 'General_Live',
+                    ],
                     'action' => 'getLastVisitsDetails',
                     'small' => '1',
                 ],
@@ -1761,7 +2133,9 @@ return [
         'uniqueId' => 'General_Visitors.UserId_UserReportTitle',
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -1772,18 +2146,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'UserId_UserReportTitle',
-            'name' => 'User IDs',
+            'name' => [
+                'translationKey' => 'General_UserIds',
+            ],
             'order' => '40',
             'help' => '<p>The user ID report shows visits associated with all your registered and logged in users. Understand website usage by its specific users and find out who your most and least active users are.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/user-id?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.UserId.getUsers"><span class="icon-info"></span> Learn more</a></p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'User IDs',
-                'module' => 'UserId',
+                'name' => [
+                    'translationKey' => 'General_UserIds',
+                ],
+                'module' => [
+                    'translationKey' => 'UserId_UserId',
+                ],
                 'action' => 'getUsers',
                 'order' => '109',
                 'parameters' => [
-                    'module' => 'UserId',
+                    'module' => [
+                        'translationKey' => 'UserId_UserId',
+                    ],
                     'action' => 'getUsers',
                 ],
                 'uniqueId' => 'widgetUserIdgetUsers',
@@ -1797,7 +2179,9 @@ return [
         'uniqueId' => 'General_Visitors.CustomVariables_CustomVariables',
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -1833,7 +2217,9 @@ return [
         'uniqueId' => 'General_Visitors.CoreHome_Segments',
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -1844,13 +2230,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'CoreHome_Segments',
-            'name' => 'Segments',
+            'name' => [
+                'translationKey' => 'CoreHome_Segments',
+            ],
             'order' => '99',
             'help' => '',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Segments',
+                'name' => [
+                    'translationKey' => 'CoreHome_Segments',
+                ],
                 'module' => 'SegmentEditor',
                 'action' => 'manageSegments',
                 'order' => '99',
@@ -1867,7 +2257,9 @@ return [
         'uniqueId' => 'Dashboard_Dashboard.1',
         'category' => [
             'id' => 'Dashboard_Dashboard',
-            'name' => 'Dashboard',
+            'name' => [
+                'translationKey' => 'Dashboard_Dashboard',
+            ],
             'order' => '0',
             'icon' => 'icon-reporting-dashboard',
             'help' => '<p>This is a dashboard page. Dashboards are a collection of Matomo\'s widgets that you add yourself to suit your specific needs. Mix and match any of Matomo\'s widgets to get the data <strong>*you*</strong> need at a glance.</p>',
@@ -1878,18 +2270,24 @@ return [
         ],
         'subcategory' => [
             'id' => '1',
-            'name' => 'Dashboard',
+            'name' => [
+                'translationKey' => 'Dashboard_Dashboard',
+            ],
             'order' => '0',
             'help' => '',
         ],
         'widgets' => [
             0 => [
                 'name' => '',
-                'module' => 'Dashboard',
+                'module' => [
+                    'translationKey' => 'Dashboard_Dashboard',
+                ],
                 'action' => 'embeddedIndex',
                 'order' => '99',
                 'parameters' => [
-                    'module' => 'Dashboard',
+                    'module' => [
+                        'translationKey' => 'Dashboard_Dashboard',
+                    ],
                     'action' => 'embeddedIndex',
                     'idDashboard' => '1',
                 ],
@@ -1902,7 +2300,9 @@ return [
         'uniqueId' => 'Referrers_Referrers.Referrers_AIAssistants',
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -1913,18 +2313,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'Referrers_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '18',
             'help' => '<p>In this table, you can see which AI assistants referred visitors to your site.</p><p>By clicking on a row in the table, you can see which URLs the links to your website were on.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'AI Assistants',
-                'module' => 'Referrers',
+                'name' => [
+                    'translationKey' => 'General_AIAssistants',
+                ],
+                'module' => [
+                    'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                ],
                 'action' => 'getAIAssistants',
                 'order' => '113',
                 'parameters' => [
-                    'module' => 'Referrers',
+                    'module' => [
+                        'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                    ],
                     'action' => 'getAIAssistants',
                 ],
                 'uniqueId' => 'widgetReferrersgetAIAssistants',
@@ -1938,7 +2346,9 @@ return [
         'uniqueId' => 'Referrers_Referrers.Referrers_WidgetGetAll',
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -1949,18 +2359,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'Referrers_WidgetGetAll',
-            'name' => 'All Channels',
+            'name' => [
+                'translationKey' => 'Referrers_WidgetGetAll',
+            ],
             'order' => '5',
             'help' => '<p>This section shows you the number of visits that arrive from different channel types and referrers. Click on the plus or minus buttons to view the referrers within each type.</p><p>You can also analyse the number of actions performed by each of your traffic sources by enabling the table with Visitor engagement metrics view.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Channel Types',
-                'module' => 'Referrers',
+                'name' => [
+                    'translationKey' => 'Referrers_ReferrerTypes',
+                ],
+                'module' => [
+                    'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                ],
                 'action' => 'getReferrerType',
                 'order' => '101',
                 'parameters' => [
-                    'module' => 'Referrers',
+                    'module' => [
+                        'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                    ],
                     'action' => 'getReferrerType',
                 ],
                 'uniqueId' => 'widgetReferrersgetReferrerType',
@@ -1969,12 +2387,18 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'Referrers',
-                'module' => 'Referrers',
+                'name' => [
+                    'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                ],
+                'module' => [
+                    'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                ],
                 'action' => 'getAll',
                 'order' => '102',
                 'parameters' => [
-                    'module' => 'Referrers',
+                    'module' => [
+                        'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                    ],
                     'action' => 'getAll',
                 ],
                 'uniqueId' => 'widgetReferrersgetAll',
@@ -1988,7 +2412,9 @@ return [
         'uniqueId' => 'Referrers_Referrers.Referrers_URLCampaignBuilder',
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -1999,24 +2425,34 @@ return [
         ],
         'subcategory' => [
             'id' => 'Referrers_URLCampaignBuilder',
-            'name' => 'Campaign URL Builder',
+            'name' => [
+                'translationKey' => 'Referrers_URLCampaignBuilder',
+            ],
             'order' => '21',
             'help' => '',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Campaign URL Builder',
-                'module' => 'Referrers',
+                'name' => [
+                    'translationKey' => 'Referrers_URLCampaignBuilder',
+                ],
+                'module' => [
+                    'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                ],
                 'action' => 'getCampaignUrlBuilder',
                 'order' => '99',
                 'parameters' => [
-                    'module' => 'Referrers',
+                    'module' => [
+                        'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                    ],
                     'action' => 'getCampaignUrlBuilder',
                 ],
                 'uniqueId' => 'widgetReferrersgetCampaignUrlBuilder',
                 'isWide' => '0',
                 'clientComponent' => [
-                    'plugin' => 'Referrers',
+                    'plugin' => [
+                        'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                    ],
                     'name' => 'CampaignBuilderWidget',
                     'props' => [
                         'hasExtraPlugin' => '0',
@@ -2029,7 +2465,9 @@ return [
         'uniqueId' => 'Referrers_Referrers.Referrers_Campaigns',
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2040,18 +2478,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'Referrers_Campaigns',
-            'name' => 'Campaigns',
+            'name' => [
+                'translationKey' => 'Referrers_Campaigns',
+            ],
             'order' => '20',
             'help' => '<p>The Campaign Tracking section allows you to analyse the visits associated with the various tracking values that have been linked to your digital campaigns. It can reveal things like, how much traffic your campaigns are bringing in, which creatives are performing best, how engaged campaign visitors are, and whether the campaign is resulting in sales or not.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Campaigns',
-                'module' => 'Referrers',
+                'name' => [
+                    'translationKey' => 'Referrers_Campaigns',
+                ],
+                'module' => [
+                    'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                ],
                 'action' => 'getCampaigns',
                 'order' => '109',
                 'parameters' => [
-                    'module' => 'Referrers',
+                    'module' => [
+                        'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                    ],
                     'action' => 'getCampaigns',
                 ],
                 'uniqueId' => 'widgetReferrersgetCampaigns',
@@ -2065,7 +2511,9 @@ return [
         'uniqueId' => 'Referrers_Referrers.General_Overview',
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2076,20 +2524,28 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Overview',
-            'name' => 'Overview',
+            'name' => [
+                'translationKey' => 'General_Overview',
+            ],
             'order' => '2',
             'help' => '<p>The Acquisition Overview shows you the percentage of your traffic from all sources over a selected date range.</p><p>You can also click on a specific channel type to display it within the evolution graph. This can help you discover which channels contribute the most traffic to your site as well as any potential patterns over time. For example, a certain channel may perform better on weekends.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Evolution over the period',
-                'module' => 'Referrers',
+                'name' => [
+                    'translationKey' => 'General_EvolutionOverPeriod',
+                ],
+                'module' => [
+                    'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                ],
                 'action' => 'getEvolutionGraph',
                 'order' => '9',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'graphEvolution',
-                    'module' => 'Referrers',
+                    'module' => [
+                        'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                    ],
                     'action' => 'getEvolutionGraph',
                     'columns' => [
                         0 => 'nb_visits',
@@ -2101,14 +2557,20 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'Channel Type',
-                'module' => 'Referrers',
+                'name' => [
+                    'translationKey' => 'Referrers_Type',
+                ],
+                'module' => [
+                    'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                ],
                 'action' => 'getSparklines',
                 'order' => '10',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'sparklines',
-                    'module' => 'Referrers',
+                    'module' => [
+                        'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                    ],
                     'action' => 'getSparklines',
                 ],
                 'uniqueId' => 'widgetReferrersgetSparklinesforceView1viewDataTablesparklines',
@@ -2122,7 +2584,9 @@ return [
         'uniqueId' => 'Referrers_Referrers.Referrers_SubmenuSearchEngines',
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2139,12 +2603,18 @@ return [
         ],
         'widgets' => [
             0 => [
-                'name' => 'Keywords',
-                'module' => 'Referrers',
+                'name' => [
+                    'translationKey' => 'Marketplace_PluginKeywords',
+                ],
+                'module' => [
+                    'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                ],
                 'action' => 'getKeywords',
                 'order' => '103',
                 'parameters' => [
-                    'module' => 'Referrers',
+                    'module' => [
+                        'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                    ],
                     'action' => 'getKeywords',
                 ],
                 'uniqueId' => 'widgetReferrersgetKeywords',
@@ -2153,12 +2623,18 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'Search Engines',
-                'module' => 'Referrers',
+                'name' => [
+                    'translationKey' => 'Referrers_SearchEngines',
+                ],
+                'module' => [
+                    'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                ],
                 'action' => 'getSearchEngines',
                 'order' => '107',
                 'parameters' => [
-                    'module' => 'Referrers',
+                    'module' => [
+                        'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                    ],
                     'action' => 'getSearchEngines',
                 ],
                 'uniqueId' => 'widgetReferrersgetSearchEngines',
@@ -2172,7 +2648,9 @@ return [
         'uniqueId' => 'Referrers_Referrers.Referrers_Socials',
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2183,18 +2661,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'Referrers_Socials',
-            'name' => 'Social Networks',
+            'name' => [
+                'translationKey' => 'Referrers_Socials',
+            ],
             'order' => '16',
             'help' => '<p>In this table, you can see which websites referred visitors to your site.</p><p>By clicking on a row in the table, you can see which URLs the links to your website were on.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Social Networks',
-                'module' => 'Referrers',
+                'name' => [
+                    'translationKey' => 'Referrers_Socials',
+                ],
+                'module' => [
+                    'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                ],
                 'action' => 'getSocials',
                 'order' => '111',
                 'parameters' => [
-                    'module' => 'Referrers',
+                    'module' => [
+                        'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                    ],
                     'action' => 'getSocials',
                 ],
                 'uniqueId' => 'widgetReferrersgetSocials',
@@ -2208,7 +2694,9 @@ return [
         'uniqueId' => 'Referrers_Referrers.Referrers_SubmenuWebsitesOnly',
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2219,18 +2707,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'Referrers_SubmenuWebsitesOnly',
-            'name' => 'Websites',
+            'name' => [
+                'translationKey' => 'CorePluginsAdmin_Websites',
+            ],
             'order' => '15',
             'help' => '<p>In this table, you can see which websites referred visitors to your site.</p><p>By clicking on a row in the table, you can see which URLs the links to your website were on.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Websites',
-                'module' => 'Referrers',
+                'name' => [
+                    'translationKey' => 'CorePluginsAdmin_Websites',
+                ],
+                'module' => [
+                    'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                ],
                 'action' => 'getWebsites',
                 'order' => '105',
                 'parameters' => [
-                    'module' => 'Referrers',
+                    'module' => [
+                        'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                    ],
                     'action' => 'getWebsites',
                 ],
                 'uniqueId' => 'widgetReferrersgetWebsites',
@@ -2244,7 +2740,9 @@ return [
         'uniqueId' => 'Goals_Goals.1',
         'category' => [
             'id' => 'Goals_Goals',
-            'name' => 'Goals',
+            'name' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'order' => '25',
             'icon' => 'icon-reporting-goal',
             'help' => '',
@@ -2279,7 +2777,9 @@ return [
                         'name' => '',
                         'category' => [
                             'id' => 'Goals_Goals',
-                            'name' => 'Goals',
+                            'name' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -2294,13 +2794,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getEvolutionGraph',
                         'order' => '5',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'graphEvolution',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getEvolutionGraph',
                             'idGoal' => '1',
                         ],
@@ -2313,7 +2817,9 @@ return [
                         'name' => '',
                         'category' => [
                             'id' => 'Goals_Goals',
-                            'name' => 'Goals',
+                            'name' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -2328,13 +2834,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'get',
                         'order' => '15',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'sparklines',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'get',
                             'idGoal' => '1',
                             'allow_multiple' => '1',
@@ -2345,10 +2855,14 @@ return [
                         'isReport' => '1',
                     ],
                     2 => [
-                        'name' => 'Conversions Overview',
+                        'name' => [
+                            'translationKey' => 'Goals_ConversionsOverview',
+                        ],
                         'category' => [
                             'id' => 'Goals_Goals',
-                            'name' => 'Goals',
+                            'name' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -2363,18 +2877,24 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'goalConversionsOverview',
                         'order' => '25',
                         'parameters' => [
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'goalConversionsOverview',
                             'idGoal' => '1',
                         ],
                         'uniqueId' => 'widgetGoalsgoalConversionsOverviewidGoal1',
                         'isWide' => '0',
                         'middlewareParameters' => [
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'hasConversions',
                             'idGoal' => '1',
                         ],
@@ -2396,7 +2916,9 @@ return [
                 'uniqueId' => 'widgetGoals1',
                 'isWide' => '0',
                 'middlewareParameters' => [
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'hasConversions',
                     'idGoal' => '1',
                 ],
@@ -2404,7 +2926,9 @@ return [
                 'isContainer' => '1',
                 'widgets' => [
                     0 => [
-                        'name' => 'Country',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Country',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -2439,7 +2963,9 @@ return [
                         'isReport' => '1',
                     ],
                     1 => [
-                        'name' => 'Continent',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Continent',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -2474,7 +3000,9 @@ return [
                         'isReport' => '1',
                     ],
                     2 => [
-                        'name' => 'Region',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Region',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -2509,7 +3037,9 @@ return [
                         'isReport' => '1',
                     ],
                     3 => [
-                        'name' => 'City',
+                        'name' => [
+                            'translationKey' => 'UserCountry_City',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -2544,7 +3074,9 @@ return [
                         'isReport' => '1',
                     ],
                     4 => [
-                        'name' => 'Device type',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceType',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -2579,7 +3111,9 @@ return [
                         'isReport' => '1',
                     ],
                     5 => [
-                        'name' => 'Device model',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceModel',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -2614,7 +3148,9 @@ return [
                         'isReport' => '1',
                     ],
                     6 => [
-                        'name' => 'Device brand',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceBrand',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -2649,7 +3185,9 @@ return [
                         'isReport' => '1',
                     ],
                     7 => [
-                        'name' => 'Browsers',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_Browsers',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -2684,7 +3222,9 @@ return [
                         'isReport' => '1',
                     ],
                     8 => [
-                        'name' => 'Visits per hour in the site\'s timezone',
+                        'name' => [
+                            'translationKey' => 'VisitTime_SiteTime',
+                        ],
                         'category' => [
                             'id' => 'Goals by User attribute',
                             'name' => 'Goals by User attribute',
@@ -2754,7 +3294,9 @@ return [
                         'isReport' => '1',
                     ],
                     10 => [
-                        'name' => 'Page URLs',
+                        'name' => [
+                            'translationKey' => 'Actions_PageUrls',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -2772,13 +3314,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getPageUrls',
                         'order' => '101',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getPageUrls',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '1',
@@ -2789,7 +3335,9 @@ return [
                         'isReport' => '1',
                     ],
                     11 => [
-                        'name' => 'Entry pages',
+                        'name' => [
+                            'translationKey' => 'Actions_SubmenuPagesEntry',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -2807,13 +3355,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getEntryPageUrls',
                         'order' => '102',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getEntryPageUrls',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '1',
@@ -2824,7 +3376,9 @@ return [
                         'isReport' => '1',
                     ],
                     12 => [
-                        'name' => 'Entry page titles',
+                        'name' => [
+                            'translationKey' => 'Actions_EntryPageTitles',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -2842,13 +3396,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getEntryPageTitles',
                         'order' => '103',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getEntryPageTitles',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '1',
@@ -2859,7 +3417,9 @@ return [
                         'isReport' => '1',
                     ],
                     13 => [
-                        'name' => 'Page titles',
+                        'name' => [
+                            'translationKey' => 'Actions_SubmenuPageTitles',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -2877,13 +3437,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getPageTitles',
                         'order' => '104',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getPageTitles',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '1',
@@ -2894,7 +3458,9 @@ return [
                         'isReport' => '1',
                     ],
                     14 => [
-                        'name' => 'Channel Type',
+                        'name' => [
+                            'translationKey' => 'Referrers_Type',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -2912,13 +3478,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getReferrerType',
                         'order' => '1',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getReferrerType',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '1',
@@ -2929,7 +3499,9 @@ return [
                         'isReport' => '1',
                     ],
                     15 => [
-                        'name' => 'Keywords',
+                        'name' => [
+                            'translationKey' => 'Marketplace_PluginKeywords',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -2947,13 +3519,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getKeywords',
                         'order' => '2',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getKeywords',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '1',
@@ -2964,7 +3540,9 @@ return [
                         'isReport' => '1',
                     ],
                     16 => [
-                        'name' => 'Search Engines',
+                        'name' => [
+                            'translationKey' => 'Referrers_SearchEngines',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -2982,13 +3560,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getSearchEngines',
                         'order' => '3',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getSearchEngines',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '1',
@@ -2999,7 +3581,9 @@ return [
                         'isReport' => '1',
                     ],
                     17 => [
-                        'name' => 'Websites',
+                        'name' => [
+                            'translationKey' => 'CorePluginsAdmin_Websites',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -3017,13 +3601,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getWebsites',
                         'order' => '4',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getWebsites',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '1',
@@ -3034,7 +3622,9 @@ return [
                         'isReport' => '1',
                     ],
                     18 => [
-                        'name' => 'Social Networks',
+                        'name' => [
+                            'translationKey' => 'Referrers_Socials',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -3052,13 +3642,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getSocials',
                         'order' => '5',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getSocials',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '1',
@@ -3069,7 +3663,9 @@ return [
                         'isReport' => '1',
                     ],
                     19 => [
-                        'name' => 'AI Assistants',
+                        'name' => [
+                            'translationKey' => 'General_AIAssistants',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -3087,13 +3683,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getAIAssistants',
                         'order' => '6',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getAIAssistants',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '1',
@@ -3104,7 +3704,9 @@ return [
                         'isReport' => '1',
                     ],
                     20 => [
-                        'name' => 'Campaigns',
+                        'name' => [
+                            'translationKey' => 'Referrers_Campaigns',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -3122,13 +3724,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getCampaigns',
                         'order' => '7',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getCampaigns',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '1',
@@ -3139,7 +3745,9 @@ return [
                         'isReport' => '1',
                     ],
                     21 => [
-                        'name' => 'Visits to Conversion',
+                        'name' => [
+                            'translationKey' => 'Goals_VisitsUntilConv',
+                        ],
                         'category' => [
                             'id' => 'Goals engagement',
                             'name' => 'Goals engagement',
@@ -3157,13 +3765,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getVisitsUntilConversion',
                         'order' => '201',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'table',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getVisitsUntilConversion',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '1',
@@ -3174,7 +3786,9 @@ return [
                         'isReport' => '1',
                     ],
                     22 => [
-                        'name' => 'Days to Conversion',
+                        'name' => [
+                            'translationKey' => 'Goals_DaysToConv',
+                        ],
                         'category' => [
                             'id' => 'Goals engagement',
                             'name' => 'Goals engagement',
@@ -3192,13 +3806,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getDaysToConversion',
                         'order' => '202',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'table',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getDaysToConversion',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '1',
@@ -3216,7 +3834,9 @@ return [
         'uniqueId' => 'Goals_Goals.2',
         'category' => [
             'id' => 'Goals_Goals',
-            'name' => 'Goals',
+            'name' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'order' => '25',
             'icon' => 'icon-reporting-goal',
             'help' => '',
@@ -3251,7 +3871,9 @@ return [
                         'name' => '',
                         'category' => [
                             'id' => 'Goals_Goals',
-                            'name' => 'Goals',
+                            'name' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -3266,13 +3888,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getEvolutionGraph',
                         'order' => '5',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'graphEvolution',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getEvolutionGraph',
                             'idGoal' => '2',
                         ],
@@ -3285,7 +3911,9 @@ return [
                         'name' => '',
                         'category' => [
                             'id' => 'Goals_Goals',
-                            'name' => 'Goals',
+                            'name' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -3300,13 +3928,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'get',
                         'order' => '15',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'sparklines',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'get',
                             'idGoal' => '2',
                             'allow_multiple' => '0',
@@ -3317,10 +3949,14 @@ return [
                         'isReport' => '1',
                     ],
                     2 => [
-                        'name' => 'Conversions Overview',
+                        'name' => [
+                            'translationKey' => 'Goals_ConversionsOverview',
+                        ],
                         'category' => [
                             'id' => 'Goals_Goals',
-                            'name' => 'Goals',
+                            'name' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -3335,18 +3971,24 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'goalConversionsOverview',
                         'order' => '25',
                         'parameters' => [
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'goalConversionsOverview',
                             'idGoal' => '2',
                         ],
                         'uniqueId' => 'widgetGoalsgoalConversionsOverviewidGoal2',
                         'isWide' => '0',
                         'middlewareParameters' => [
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'hasConversions',
                             'idGoal' => '2',
                         ],
@@ -3368,7 +4010,9 @@ return [
                 'uniqueId' => 'widgetGoals2',
                 'isWide' => '0',
                 'middlewareParameters' => [
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'hasConversions',
                     'idGoal' => '2',
                 ],
@@ -3376,7 +4020,9 @@ return [
                 'isContainer' => '1',
                 'widgets' => [
                     0 => [
-                        'name' => 'Country',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Country',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -3411,7 +4057,9 @@ return [
                         'isReport' => '1',
                     ],
                     1 => [
-                        'name' => 'Continent',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Continent',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -3446,7 +4094,9 @@ return [
                         'isReport' => '1',
                     ],
                     2 => [
-                        'name' => 'Region',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Region',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -3481,7 +4131,9 @@ return [
                         'isReport' => '1',
                     ],
                     3 => [
-                        'name' => 'City',
+                        'name' => [
+                            'translationKey' => 'UserCountry_City',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -3516,7 +4168,9 @@ return [
                         'isReport' => '1',
                     ],
                     4 => [
-                        'name' => 'Device type',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceType',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -3551,7 +4205,9 @@ return [
                         'isReport' => '1',
                     ],
                     5 => [
-                        'name' => 'Device model',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceModel',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -3586,7 +4242,9 @@ return [
                         'isReport' => '1',
                     ],
                     6 => [
-                        'name' => 'Device brand',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceBrand',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -3621,7 +4279,9 @@ return [
                         'isReport' => '1',
                     ],
                     7 => [
-                        'name' => 'Browsers',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_Browsers',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -3656,7 +4316,9 @@ return [
                         'isReport' => '1',
                     ],
                     8 => [
-                        'name' => 'Visits per hour in the site\'s timezone',
+                        'name' => [
+                            'translationKey' => 'VisitTime_SiteTime',
+                        ],
                         'category' => [
                             'id' => 'Goals by User attribute',
                             'name' => 'Goals by User attribute',
@@ -3726,7 +4388,9 @@ return [
                         'isReport' => '1',
                     ],
                     10 => [
-                        'name' => 'Page URLs',
+                        'name' => [
+                            'translationKey' => 'Actions_PageUrls',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -3744,13 +4408,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getPageUrls',
                         'order' => '101',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getPageUrls',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '2',
@@ -3761,7 +4429,9 @@ return [
                         'isReport' => '1',
                     ],
                     11 => [
-                        'name' => 'Entry pages',
+                        'name' => [
+                            'translationKey' => 'Actions_SubmenuPagesEntry',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -3779,13 +4449,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getEntryPageUrls',
                         'order' => '102',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getEntryPageUrls',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '2',
@@ -3796,7 +4470,9 @@ return [
                         'isReport' => '1',
                     ],
                     12 => [
-                        'name' => 'Entry page titles',
+                        'name' => [
+                            'translationKey' => 'Actions_EntryPageTitles',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -3814,13 +4490,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getEntryPageTitles',
                         'order' => '103',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getEntryPageTitles',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '2',
@@ -3831,7 +4511,9 @@ return [
                         'isReport' => '1',
                     ],
                     13 => [
-                        'name' => 'Page titles',
+                        'name' => [
+                            'translationKey' => 'Actions_SubmenuPageTitles',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -3849,13 +4531,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getPageTitles',
                         'order' => '104',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getPageTitles',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '2',
@@ -3866,7 +4552,9 @@ return [
                         'isReport' => '1',
                     ],
                     14 => [
-                        'name' => 'Channel Type',
+                        'name' => [
+                            'translationKey' => 'Referrers_Type',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -3884,13 +4572,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getReferrerType',
                         'order' => '1',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getReferrerType',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '2',
@@ -3901,7 +4593,9 @@ return [
                         'isReport' => '1',
                     ],
                     15 => [
-                        'name' => 'Keywords',
+                        'name' => [
+                            'translationKey' => 'Marketplace_PluginKeywords',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -3919,13 +4613,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getKeywords',
                         'order' => '2',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getKeywords',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '2',
@@ -3936,7 +4634,9 @@ return [
                         'isReport' => '1',
                     ],
                     16 => [
-                        'name' => 'Search Engines',
+                        'name' => [
+                            'translationKey' => 'Referrers_SearchEngines',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -3954,13 +4654,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getSearchEngines',
                         'order' => '3',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getSearchEngines',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '2',
@@ -3971,7 +4675,9 @@ return [
                         'isReport' => '1',
                     ],
                     17 => [
-                        'name' => 'Websites',
+                        'name' => [
+                            'translationKey' => 'CorePluginsAdmin_Websites',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -3989,13 +4695,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getWebsites',
                         'order' => '4',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getWebsites',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '2',
@@ -4006,7 +4716,9 @@ return [
                         'isReport' => '1',
                     ],
                     18 => [
-                        'name' => 'Social Networks',
+                        'name' => [
+                            'translationKey' => 'Referrers_Socials',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -4024,13 +4736,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getSocials',
                         'order' => '5',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getSocials',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '2',
@@ -4041,7 +4757,9 @@ return [
                         'isReport' => '1',
                     ],
                     19 => [
-                        'name' => 'AI Assistants',
+                        'name' => [
+                            'translationKey' => 'General_AIAssistants',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -4059,13 +4777,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getAIAssistants',
                         'order' => '6',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getAIAssistants',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '2',
@@ -4076,7 +4798,9 @@ return [
                         'isReport' => '1',
                     ],
                     20 => [
-                        'name' => 'Campaigns',
+                        'name' => [
+                            'translationKey' => 'Referrers_Campaigns',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -4094,13 +4818,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getCampaigns',
                         'order' => '7',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getCampaigns',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '2',
@@ -4111,7 +4839,9 @@ return [
                         'isReport' => '1',
                     ],
                     21 => [
-                        'name' => 'Visits to Conversion',
+                        'name' => [
+                            'translationKey' => 'Goals_VisitsUntilConv',
+                        ],
                         'category' => [
                             'id' => 'Goals engagement',
                             'name' => 'Goals engagement',
@@ -4129,13 +4859,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getVisitsUntilConversion',
                         'order' => '201',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'table',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getVisitsUntilConversion',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '2',
@@ -4146,7 +4880,9 @@ return [
                         'isReport' => '1',
                     ],
                     22 => [
-                        'name' => 'Days to Conversion',
+                        'name' => [
+                            'translationKey' => 'Goals_DaysToConv',
+                        ],
                         'category' => [
                             'id' => 'Goals engagement',
                             'name' => 'Goals engagement',
@@ -4164,13 +4900,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getDaysToConversion',
                         'order' => '202',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'table',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getDaysToConversion',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '2',
@@ -4188,7 +4928,9 @@ return [
         'uniqueId' => 'Goals_Goals.3',
         'category' => [
             'id' => 'Goals_Goals',
-            'name' => 'Goals',
+            'name' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'order' => '25',
             'icon' => 'icon-reporting-goal',
             'help' => '',
@@ -4223,7 +4965,9 @@ return [
                         'name' => '',
                         'category' => [
                             'id' => 'Goals_Goals',
-                            'name' => 'Goals',
+                            'name' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -4238,13 +4982,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getEvolutionGraph',
                         'order' => '5',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'graphEvolution',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getEvolutionGraph',
                             'idGoal' => '3',
                         ],
@@ -4257,7 +5005,9 @@ return [
                         'name' => '',
                         'category' => [
                             'id' => 'Goals_Goals',
-                            'name' => 'Goals',
+                            'name' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -4272,13 +5022,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'get',
                         'order' => '15',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'sparklines',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'get',
                             'idGoal' => '3',
                             'allow_multiple' => '0',
@@ -4289,10 +5043,14 @@ return [
                         'isReport' => '1',
                     ],
                     2 => [
-                        'name' => 'Conversions Overview',
+                        'name' => [
+                            'translationKey' => 'Goals_ConversionsOverview',
+                        ],
                         'category' => [
                             'id' => 'Goals_Goals',
-                            'name' => 'Goals',
+                            'name' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -4307,18 +5065,24 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'goalConversionsOverview',
                         'order' => '25',
                         'parameters' => [
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'goalConversionsOverview',
                             'idGoal' => '3',
                         ],
                         'uniqueId' => 'widgetGoalsgoalConversionsOverviewidGoal3',
                         'isWide' => '0',
                         'middlewareParameters' => [
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'hasConversions',
                             'idGoal' => '3',
                         ],
@@ -4340,7 +5104,9 @@ return [
                 'uniqueId' => 'widgetGoals3',
                 'isWide' => '0',
                 'middlewareParameters' => [
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'hasConversions',
                     'idGoal' => '3',
                 ],
@@ -4348,7 +5114,9 @@ return [
                 'isContainer' => '1',
                 'widgets' => [
                     0 => [
-                        'name' => 'Country',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Country',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -4383,7 +5151,9 @@ return [
                         'isReport' => '1',
                     ],
                     1 => [
-                        'name' => 'Continent',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Continent',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -4418,7 +5188,9 @@ return [
                         'isReport' => '1',
                     ],
                     2 => [
-                        'name' => 'Region',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Region',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -4453,7 +5225,9 @@ return [
                         'isReport' => '1',
                     ],
                     3 => [
-                        'name' => 'City',
+                        'name' => [
+                            'translationKey' => 'UserCountry_City',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -4488,7 +5262,9 @@ return [
                         'isReport' => '1',
                     ],
                     4 => [
-                        'name' => 'Device type',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceType',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -4523,7 +5299,9 @@ return [
                         'isReport' => '1',
                     ],
                     5 => [
-                        'name' => 'Device model',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceModel',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -4558,7 +5336,9 @@ return [
                         'isReport' => '1',
                     ],
                     6 => [
-                        'name' => 'Device brand',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceBrand',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -4593,7 +5373,9 @@ return [
                         'isReport' => '1',
                     ],
                     7 => [
-                        'name' => 'Browsers',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_Browsers',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -4628,7 +5410,9 @@ return [
                         'isReport' => '1',
                     ],
                     8 => [
-                        'name' => 'Visits per hour in the site\'s timezone',
+                        'name' => [
+                            'translationKey' => 'VisitTime_SiteTime',
+                        ],
                         'category' => [
                             'id' => 'Goals by User attribute',
                             'name' => 'Goals by User attribute',
@@ -4698,7 +5482,9 @@ return [
                         'isReport' => '1',
                     ],
                     10 => [
-                        'name' => 'Page URLs',
+                        'name' => [
+                            'translationKey' => 'Actions_PageUrls',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -4716,13 +5502,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getPageUrls',
                         'order' => '101',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getPageUrls',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '3',
@@ -4733,7 +5523,9 @@ return [
                         'isReport' => '1',
                     ],
                     11 => [
-                        'name' => 'Entry pages',
+                        'name' => [
+                            'translationKey' => 'Actions_SubmenuPagesEntry',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -4751,13 +5543,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getEntryPageUrls',
                         'order' => '102',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getEntryPageUrls',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '3',
@@ -4768,7 +5564,9 @@ return [
                         'isReport' => '1',
                     ],
                     12 => [
-                        'name' => 'Entry page titles',
+                        'name' => [
+                            'translationKey' => 'Actions_EntryPageTitles',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -4786,13 +5584,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getEntryPageTitles',
                         'order' => '103',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getEntryPageTitles',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '3',
@@ -4803,7 +5605,9 @@ return [
                         'isReport' => '1',
                     ],
                     13 => [
-                        'name' => 'Page titles',
+                        'name' => [
+                            'translationKey' => 'Actions_SubmenuPageTitles',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -4821,13 +5625,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getPageTitles',
                         'order' => '104',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getPageTitles',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '3',
@@ -4838,7 +5646,9 @@ return [
                         'isReport' => '1',
                     ],
                     14 => [
-                        'name' => 'Channel Type',
+                        'name' => [
+                            'translationKey' => 'Referrers_Type',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -4856,13 +5666,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getReferrerType',
                         'order' => '1',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getReferrerType',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '3',
@@ -4873,7 +5687,9 @@ return [
                         'isReport' => '1',
                     ],
                     15 => [
-                        'name' => 'Keywords',
+                        'name' => [
+                            'translationKey' => 'Marketplace_PluginKeywords',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -4891,13 +5707,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getKeywords',
                         'order' => '2',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getKeywords',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '3',
@@ -4908,7 +5728,9 @@ return [
                         'isReport' => '1',
                     ],
                     16 => [
-                        'name' => 'Search Engines',
+                        'name' => [
+                            'translationKey' => 'Referrers_SearchEngines',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -4926,13 +5748,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getSearchEngines',
                         'order' => '3',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getSearchEngines',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '3',
@@ -4943,7 +5769,9 @@ return [
                         'isReport' => '1',
                     ],
                     17 => [
-                        'name' => 'Websites',
+                        'name' => [
+                            'translationKey' => 'CorePluginsAdmin_Websites',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -4961,13 +5789,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getWebsites',
                         'order' => '4',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getWebsites',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '3',
@@ -4978,7 +5810,9 @@ return [
                         'isReport' => '1',
                     ],
                     18 => [
-                        'name' => 'Social Networks',
+                        'name' => [
+                            'translationKey' => 'Referrers_Socials',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -4996,13 +5830,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getSocials',
                         'order' => '5',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getSocials',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '3',
@@ -5013,7 +5851,9 @@ return [
                         'isReport' => '1',
                     ],
                     19 => [
-                        'name' => 'AI Assistants',
+                        'name' => [
+                            'translationKey' => 'General_AIAssistants',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -5031,13 +5871,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getAIAssistants',
                         'order' => '6',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getAIAssistants',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '3',
@@ -5048,7 +5892,9 @@ return [
                         'isReport' => '1',
                     ],
                     20 => [
-                        'name' => 'Campaigns',
+                        'name' => [
+                            'translationKey' => 'Referrers_Campaigns',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -5066,13 +5912,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getCampaigns',
                         'order' => '7',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getCampaigns',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '3',
@@ -5083,7 +5933,9 @@ return [
                         'isReport' => '1',
                     ],
                     21 => [
-                        'name' => 'Visits to Conversion',
+                        'name' => [
+                            'translationKey' => 'Goals_VisitsUntilConv',
+                        ],
                         'category' => [
                             'id' => 'Goals engagement',
                             'name' => 'Goals engagement',
@@ -5101,13 +5953,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getVisitsUntilConversion',
                         'order' => '201',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'table',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getVisitsUntilConversion',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '3',
@@ -5118,7 +5974,9 @@ return [
                         'isReport' => '1',
                     ],
                     22 => [
-                        'name' => 'Days to Conversion',
+                        'name' => [
+                            'translationKey' => 'Goals_DaysToConv',
+                        ],
                         'category' => [
                             'id' => 'Goals engagement',
                             'name' => 'Goals engagement',
@@ -5136,13 +5994,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getDaysToConversion',
                         'order' => '202',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'table',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getDaysToConversion',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '3',
@@ -5160,7 +6022,9 @@ return [
         'uniqueId' => 'Goals_Goals.General_Overview',
         'category' => [
             'id' => 'Goals_Goals',
-            'name' => 'Goals',
+            'name' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'order' => '25',
             'icon' => 'icon-reporting-goal',
             'help' => '',
@@ -5171,13 +6035,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Overview',
-            'name' => 'Overview',
+            'name' => [
+                'translationKey' => 'General_Overview',
+            ],
             'order' => '2',
             'help' => '<p>The Goals Overview reports on the performance of the goals defined for your website. You can access your goal’s conversion percentages, amount of revenue generated and full reports for each.</p><p>Click on an individual metric within the sparkline chart to focus on it within the full-sized evolution graph.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/tracking-goals-web-analytics/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Goals.Overview">Learn more in our Goals guide here.</a></p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Overview',
+                'name' => [
+                    'translationKey' => 'General_Overview',
+                ],
                 'module' => 'CoreHome',
                 'action' => 'renderWidgetContainer',
                 'order' => '0',
@@ -5195,7 +6063,9 @@ return [
                         'name' => '',
                         'category' => [
                             'id' => 'Goals_Goals',
-                            'name' => 'Goals',
+                            'name' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -5206,17 +6076,23 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'General_Overview',
-                            'name' => 'Overview',
+                            'name' => [
+                                'translationKey' => 'General_Overview',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getEvolutionGraph',
                         'order' => '5',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'graphEvolution',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getEvolutionGraph',
                         ],
                         'uniqueId' => 'widgetGoalsgetEvolutionGraphforceView1viewDataTablegraphEvolution',
@@ -5228,7 +6104,9 @@ return [
                         'name' => '',
                         'category' => [
                             'id' => 'Goals_Goals',
-                            'name' => 'Goals',
+                            'name' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -5239,17 +6117,23 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'General_Overview',
-                            'name' => 'Overview',
+                            'name' => [
+                                'translationKey' => 'General_Overview',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getMetrics',
                         'order' => '15',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'sparklines',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getMetrics',
                         ],
                         'uniqueId' => 'widgetGoalsgetMetricsforceView1viewDataTablesparklines',
@@ -5261,7 +6145,9 @@ return [
                         'name' => '',
                         'category' => [
                             'id' => 'Goals_Goals',
-                            'name' => 'Goals',
+                            'name' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -5272,15 +6158,21 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'General_Overview',
-                            'name' => 'Overview',
+                            'name' => [
+                                'translationKey' => 'General_Overview',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getSparklines',
                         'order' => '25',
                         'parameters' => [
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getSparklines',
                         ],
                         'uniqueId' => 'widgetGoalsgetSparklines',
@@ -5291,26 +6183,34 @@ return [
                 ],
             ],
             1 => [
-                'name' => 'Conversions overview by type of visit',
+                'name' => [
+                    'translationKey' => 'Goals_ConversionsOverviewBy',
+                ],
                 'module' => 'CoreHome',
                 'action' => 'renderWidgetContainer',
                 'order' => '35',
                 'parameters' => [
                     'module' => 'CoreHome',
                     'action' => 'renderWidgetContainer',
-                    'containerId' => 'Goals',
+                    'containerId' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                 ],
                 'uniqueId' => 'widgetGoals',
                 'isWide' => '0',
                 'middlewareParameters' => [
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'hasConversions',
                 ],
                 'layout' => 'ByDimension',
                 'isContainer' => '1',
                 'widgets' => [
                     0 => [
-                        'name' => 'Country',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Country',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -5345,7 +6245,9 @@ return [
                         'isReport' => '1',
                     ],
                     1 => [
-                        'name' => 'Continent',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Continent',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -5380,7 +6282,9 @@ return [
                         'isReport' => '1',
                     ],
                     2 => [
-                        'name' => 'Region',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Region',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -5415,7 +6319,9 @@ return [
                         'isReport' => '1',
                     ],
                     3 => [
-                        'name' => 'City',
+                        'name' => [
+                            'translationKey' => 'UserCountry_City',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -5450,7 +6356,9 @@ return [
                         'isReport' => '1',
                     ],
                     4 => [
-                        'name' => 'Device type',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceType',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -5485,7 +6393,9 @@ return [
                         'isReport' => '1',
                     ],
                     5 => [
-                        'name' => 'Device model',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceModel',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -5520,7 +6430,9 @@ return [
                         'isReport' => '1',
                     ],
                     6 => [
-                        'name' => 'Device brand',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceBrand',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -5555,7 +6467,9 @@ return [
                         'isReport' => '1',
                     ],
                     7 => [
-                        'name' => 'Browsers',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_Browsers',
+                        ],
                         'category' => [
                             'id' => 'Goals by User location',
                             'name' => 'Goals by User location',
@@ -5590,7 +6504,9 @@ return [
                         'isReport' => '1',
                     ],
                     8 => [
-                        'name' => 'Visits per hour in the site\'s timezone',
+                        'name' => [
+                            'translationKey' => 'VisitTime_SiteTime',
+                        ],
                         'category' => [
                             'id' => 'Goals by User attribute',
                             'name' => 'Goals by User attribute',
@@ -5660,7 +6576,9 @@ return [
                         'isReport' => '1',
                     ],
                     10 => [
-                        'name' => 'Page URLs',
+                        'name' => [
+                            'translationKey' => 'Actions_PageUrls',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -5678,13 +6596,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getPageUrls',
                         'order' => '101',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getPageUrls',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '0',
@@ -5695,7 +6617,9 @@ return [
                         'isReport' => '1',
                     ],
                     11 => [
-                        'name' => 'Entry pages',
+                        'name' => [
+                            'translationKey' => 'Actions_SubmenuPagesEntry',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -5713,13 +6637,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getEntryPageUrls',
                         'order' => '102',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getEntryPageUrls',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '0',
@@ -5730,7 +6658,9 @@ return [
                         'isReport' => '1',
                     ],
                     12 => [
-                        'name' => 'Entry page titles',
+                        'name' => [
+                            'translationKey' => 'Actions_EntryPageTitles',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -5748,13 +6678,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getEntryPageTitles',
                         'order' => '103',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getEntryPageTitles',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '0',
@@ -5765,7 +6699,9 @@ return [
                         'isReport' => '1',
                     ],
                     13 => [
-                        'name' => 'Page titles',
+                        'name' => [
+                            'translationKey' => 'Actions_SubmenuPageTitles',
+                        ],
                         'category' => [
                             'id' => 'Goals by Pages',
                             'name' => 'Goals by Pages',
@@ -5783,13 +6719,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getPageTitles',
                         'order' => '104',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getPageTitles',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '0',
@@ -5800,7 +6740,9 @@ return [
                         'isReport' => '1',
                     ],
                     14 => [
-                        'name' => 'Channel Type',
+                        'name' => [
+                            'translationKey' => 'Referrers_Type',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -5818,13 +6760,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getReferrerType',
                         'order' => '1',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getReferrerType',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '0',
@@ -5835,7 +6781,9 @@ return [
                         'isReport' => '1',
                     ],
                     15 => [
-                        'name' => 'Keywords',
+                        'name' => [
+                            'translationKey' => 'Marketplace_PluginKeywords',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -5853,13 +6801,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getKeywords',
                         'order' => '2',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getKeywords',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '0',
@@ -5870,7 +6822,9 @@ return [
                         'isReport' => '1',
                     ],
                     16 => [
-                        'name' => 'Search Engines',
+                        'name' => [
+                            'translationKey' => 'Referrers_SearchEngines',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -5888,13 +6842,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getSearchEngines',
                         'order' => '3',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getSearchEngines',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '0',
@@ -5905,7 +6863,9 @@ return [
                         'isReport' => '1',
                     ],
                     17 => [
-                        'name' => 'Websites',
+                        'name' => [
+                            'translationKey' => 'CorePluginsAdmin_Websites',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -5923,13 +6883,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getWebsites',
                         'order' => '4',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getWebsites',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '0',
@@ -5940,7 +6904,9 @@ return [
                         'isReport' => '1',
                     ],
                     18 => [
-                        'name' => 'Social Networks',
+                        'name' => [
+                            'translationKey' => 'Referrers_Socials',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -5958,13 +6924,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getSocials',
                         'order' => '5',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getSocials',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '0',
@@ -5975,7 +6945,9 @@ return [
                         'isReport' => '1',
                     ],
                     19 => [
-                        'name' => 'AI Assistants',
+                        'name' => [
+                            'translationKey' => 'General_AIAssistants',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -5993,13 +6965,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getAIAssistants',
                         'order' => '6',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getAIAssistants',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '0',
@@ -6010,7 +6986,9 @@ return [
                         'isReport' => '1',
                     ],
                     20 => [
-                        'name' => 'Campaigns',
+                        'name' => [
+                            'translationKey' => 'Referrers_Campaigns',
+                        ],
                         'category' => [
                             'id' => 'Goals by Referrers',
                             'name' => 'Goals by Referrers',
@@ -6028,13 +7006,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getCampaigns',
                         'order' => '7',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getCampaigns',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '0',
@@ -6045,7 +7027,9 @@ return [
                         'isReport' => '1',
                     ],
                     21 => [
-                        'name' => 'Visits to Conversion',
+                        'name' => [
+                            'translationKey' => 'Goals_VisitsUntilConv',
+                        ],
                         'category' => [
                             'id' => 'Goals engagement',
                             'name' => 'Goals engagement',
@@ -6063,13 +7047,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getVisitsUntilConversion',
                         'order' => '201',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'table',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getVisitsUntilConversion',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '0',
@@ -6080,7 +7068,9 @@ return [
                         'isReport' => '1',
                     ],
                     22 => [
-                        'name' => 'Days to Conversion',
+                        'name' => [
+                            'translationKey' => 'Goals_DaysToConv',
+                        ],
                         'category' => [
                             'id' => 'Goals engagement',
                             'name' => 'Goals engagement',
@@ -6098,13 +7088,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getDaysToConversion',
                         'order' => '202',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'table',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getDaysToConversion',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => '0',
@@ -6122,7 +7116,9 @@ return [
         'uniqueId' => 'Goals_Goals.Goals_ManageGoals',
         'category' => [
             'id' => 'Goals_Goals',
-            'name' => 'Goals',
+            'name' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'order' => '25',
             'icon' => 'icon-reporting-goal',
             'help' => '',
@@ -6133,18 +7129,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'Goals_ManageGoals',
-            'name' => 'Manage Goals',
+            'name' => [
+                'translationKey' => 'Goals_ManageGoals',
+            ],
             'order' => '800',
             'help' => '<p>This section allows you to create and edit Goals for specific actions which visitors take on your site, such as visiting a certain page or submitting a specific form. Goal reports vary but can help you track your website performance against business objectives such as lead generation, online sales and increased brand exposure.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/tracking-goals-web-analytics/">Learn more in our Goals guide here.</a></p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Manage Goals',
-                'module' => 'Goals',
+                'name' => [
+                    'translationKey' => 'Goals_ManageGoals',
+                ],
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'editGoals',
                 'order' => '99',
                 'parameters' => [
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'editGoals',
                 ],
                 'uniqueId' => 'widgetGoalseditGoals',
@@ -6156,7 +7160,9 @@ return [
         'uniqueId' => 'Goals_Ecommerce.Goals_EcommerceLog',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -6167,18 +7173,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'Goals_EcommerceLog',
-            'name' => 'Ecommerce Log',
+            'name' => [
+                'translationKey' => 'Goals_EcommerceLog',
+            ],
             'order' => '5',
             'help' => '<p>The Ecommerce log provides granular session-level data so you can look at the full session for each user that either made a purchase or abandoned their cart. This can help you understand what users do before and after purchasing to reveal optimisation opportunities.</p><p>Data on this page is updated in real-time.</p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Ecommerce Log',
-                'module' => 'Ecommerce',
+                'name' => [
+                    'translationKey' => 'Goals_EcommerceLog',
+                ],
+                'module' => [
+                    'translationKey' => 'Goals_Ecommerce',
+                ],
                 'action' => 'getEcommerceLog',
                 'order' => '99',
                 'parameters' => [
-                    'module' => 'Ecommerce',
+                    'module' => [
+                        'translationKey' => 'Goals_Ecommerce',
+                    ],
                     'action' => 'getEcommerceLog',
                 ],
                 'uniqueId' => 'widgetEcommercegetEcommerceLog',
@@ -6190,7 +7204,9 @@ return [
         'uniqueId' => 'Goals_Ecommerce.General_Overview',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -6201,13 +7217,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Overview',
-            'name' => 'Overview',
+            'name' => [
+                'translationKey' => 'General_Overview',
+            ],
             'order' => '2',
             'help' => '<p>The Ecommerce Overview section is the best place to get a high-level view of your online store’s performance. At a glance, you can see how many sales you’re making, how much revenue you are generating, and your website’s conversion rate.</p><p>Click on an individual metric within the sparkline chart to focus on it within the full-sized evolution graph.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/ecommerce-analytics/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Ecommerce.Overview">Learn more in our Ecommerce guide here.</a></p>',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Ecommerce Overview',
+                'name' => [
+                    'translationKey' => 'Goals_EcommerceOverview',
+                ],
                 'module' => 'CoreHome',
                 'action' => 'renderWidgetContainer',
                 'order' => '1',
@@ -6225,7 +7245,9 @@ return [
                         'name' => '',
                         'category' => [
                             'id' => 'Goals_Ecommerce',
-                            'name' => 'Ecommerce',
+                            'name' => [
+                                'translationKey' => 'Goals_Ecommerce',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -6236,17 +7258,23 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'General_Overview',
-                            'name' => 'Overview',
+                            'name' => [
+                                'translationKey' => 'General_Overview',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getEvolutionGraph',
                         'order' => '5',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'graphEvolution',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getEvolutionGraph',
                             'idGoal' => 'ecommerceOrder',
                         ],
@@ -6259,7 +7287,9 @@ return [
                         'name' => '',
                         'category' => [
                             'id' => 'Goals_Ecommerce',
-                            'name' => 'Ecommerce',
+                            'name' => [
+                                'translationKey' => 'Goals_Ecommerce',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -6270,17 +7300,23 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'General_Overview',
-                            'name' => 'Overview',
+                            'name' => [
+                                'translationKey' => 'General_Overview',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Ecommerce',
+                        'module' => [
+                            'translationKey' => 'Goals_Ecommerce',
+                        ],
                         'action' => 'getSparklines',
                         'order' => '15',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'sparklines',
-                            'module' => 'Ecommerce',
+                            'module' => [
+                                'translationKey' => 'Goals_Ecommerce',
+                            ],
                             'action' => 'getSparklines',
                             'idGoal' => 'ecommerceOrder',
                         ],
@@ -6290,10 +7326,14 @@ return [
                         'isReport' => '1',
                     ],
                     2 => [
-                        'name' => 'Conversions Overview',
+                        'name' => [
+                            'translationKey' => 'Goals_ConversionsOverview',
+                        ],
                         'category' => [
                             'id' => 'Goals_Goals',
-                            'name' => 'Goals',
+                            'name' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -6308,18 +7348,24 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Ecommerce',
+                        'module' => [
+                            'translationKey' => 'Goals_Ecommerce',
+                        ],
                         'action' => 'getConversionsOverview',
                         'order' => '25',
                         'parameters' => [
-                            'module' => 'Ecommerce',
+                            'module' => [
+                                'translationKey' => 'Goals_Ecommerce',
+                            ],
                             'action' => 'getConversionsOverview',
                             'idGoal' => 'ecommerceOrder',
                         ],
                         'uniqueId' => 'widgetEcommercegetConversionsOverviewidGoalecommerceOrder',
                         'isWide' => '0',
                         'middlewareParameters' => [
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'hasConversions',
                             'idGoal' => 'ecommerceOrder',
                         ],
@@ -6334,7 +7380,9 @@ return [
         'uniqueId' => 'Goals_Ecommerce.Goals_Products',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -6345,7 +7393,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Goals_Products',
-            'name' => 'Products',
+            'name' => [
+                'translationKey' => 'Goals_Products',
+            ],
             'order' => '10',
             'help' => '<p>The Products view can help you identify products and categories that are over-performing or under-performing to reveal trends and opportunities related to your product selection and store pages.</p>',
         ],
@@ -6358,7 +7408,9 @@ return [
                 'parameters' => [
                     'module' => 'CoreHome',
                     'action' => 'renderWidgetContainer',
-                    'containerId' => 'Products',
+                    'containerId' => [
+                        'translationKey' => 'Goals_Products',
+                    ],
                 ],
                 'uniqueId' => 'widgetProducts',
                 'isWide' => '0',
@@ -6366,10 +7418,14 @@ return [
                 'isContainer' => '1',
                 'widgets' => [
                     0 => [
-                        'name' => 'Product Name',
+                        'name' => [
+                            'translationKey' => 'Goals_ProductName',
+                        ],
                         'category' => [
                             'id' => 'Goals_Ecommerce',
-                            'name' => 'Ecommerce',
+                            'name' => [
+                                'translationKey' => 'Goals_Ecommerce',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -6380,15 +7436,21 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'Goals_Products',
-                            'name' => 'Products',
+                            'name' => [
+                                'translationKey' => 'Goals_Products',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getItemsName',
                         'order' => '130',
                         'parameters' => [
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getItemsName',
                         ],
                         'uniqueId' => 'widgetGoalsgetItemsName',
@@ -6397,10 +7459,14 @@ return [
                         'isReport' => '1',
                     ],
                     1 => [
-                        'name' => 'Product SKU',
+                        'name' => [
+                            'translationKey' => 'Goals_ProductSKU',
+                        ],
                         'category' => [
                             'id' => 'Goals_Ecommerce',
-                            'name' => 'Ecommerce',
+                            'name' => [
+                                'translationKey' => 'Goals_Ecommerce',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -6411,15 +7477,21 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'Goals_Products',
-                            'name' => 'Products',
+                            'name' => [
+                                'translationKey' => 'Goals_Products',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getItemsSku',
                         'order' => '131',
                         'parameters' => [
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getItemsSku',
                         ],
                         'uniqueId' => 'widgetGoalsgetItemsSku',
@@ -6428,10 +7500,14 @@ return [
                         'isReport' => '1',
                     ],
                     2 => [
-                        'name' => 'Product Category',
+                        'name' => [
+                            'translationKey' => 'Goals_ProductCategory',
+                        ],
                         'category' => [
                             'id' => 'Goals_Ecommerce',
-                            'name' => 'Ecommerce',
+                            'name' => [
+                                'translationKey' => 'Goals_Ecommerce',
+                            ],
                             'order' => '99',
                             'icon' => '',
                             'help' => '',
@@ -6442,15 +7518,21 @@ return [
                         ],
                         'subcategory' => [
                             'id' => 'Goals_Products',
-                            'name' => 'Products',
+                            'name' => [
+                                'translationKey' => 'Goals_Products',
+                            ],
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getItemsCategory',
                         'order' => '132',
                         'parameters' => [
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getItemsCategory',
                         ],
                         'uniqueId' => 'widgetGoalsgetItemsCategory',
@@ -6466,7 +7548,9 @@ return [
         'uniqueId' => 'Goals_Ecommerce.Ecommerce_Sales',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -6477,7 +7561,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
@@ -6499,7 +7585,9 @@ return [
                 'isContainer' => '1',
                 'widgets' => [
                     0 => [
-                        'name' => 'Country',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Country',
+                        ],
                         'category' => [
                             'id' => 'Sales by User location',
                             'name' => 'Sales by User location',
@@ -6535,7 +7623,9 @@ return [
                         'isReport' => '1',
                     ],
                     1 => [
-                        'name' => 'Continent',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Continent',
+                        ],
                         'category' => [
                             'id' => 'Sales by User location',
                             'name' => 'Sales by User location',
@@ -6571,7 +7661,9 @@ return [
                         'isReport' => '1',
                     ],
                     2 => [
-                        'name' => 'Region',
+                        'name' => [
+                            'translationKey' => 'UserCountry_Region',
+                        ],
                         'category' => [
                             'id' => 'Sales by User location',
                             'name' => 'Sales by User location',
@@ -6607,7 +7699,9 @@ return [
                         'isReport' => '1',
                     ],
                     3 => [
-                        'name' => 'City',
+                        'name' => [
+                            'translationKey' => 'UserCountry_City',
+                        ],
                         'category' => [
                             'id' => 'Sales by User location',
                             'name' => 'Sales by User location',
@@ -6643,7 +7737,9 @@ return [
                         'isReport' => '1',
                     ],
                     4 => [
-                        'name' => 'Device type',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceType',
+                        ],
                         'category' => [
                             'id' => 'Sales by User location',
                             'name' => 'Sales by User location',
@@ -6679,7 +7775,9 @@ return [
                         'isReport' => '1',
                     ],
                     5 => [
-                        'name' => 'Device model',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceModel',
+                        ],
                         'category' => [
                             'id' => 'Sales by User location',
                             'name' => 'Sales by User location',
@@ -6715,7 +7813,9 @@ return [
                         'isReport' => '1',
                     ],
                     6 => [
-                        'name' => 'Device brand',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_DeviceBrand',
+                        ],
                         'category' => [
                             'id' => 'Sales by User location',
                             'name' => 'Sales by User location',
@@ -6751,7 +7851,9 @@ return [
                         'isReport' => '1',
                     ],
                     7 => [
-                        'name' => 'Browsers',
+                        'name' => [
+                            'translationKey' => 'DevicesDetection_Browsers',
+                        ],
                         'category' => [
                             'id' => 'Sales by User location',
                             'name' => 'Sales by User location',
@@ -6787,7 +7889,9 @@ return [
                         'isReport' => '1',
                     ],
                     8 => [
-                        'name' => 'Visits per hour in the site\'s timezone',
+                        'name' => [
+                            'translationKey' => 'VisitTime_SiteTime',
+                        ],
                         'category' => [
                             'id' => 'Sales by User attribute',
                             'name' => 'Sales by User attribute',
@@ -6859,7 +7963,9 @@ return [
                         'isReport' => '1',
                     ],
                     10 => [
-                        'name' => 'Page URLs',
+                        'name' => [
+                            'translationKey' => 'Actions_PageUrls',
+                        ],
                         'category' => [
                             'id' => 'Sales by Pages',
                             'name' => 'Sales by Pages',
@@ -6877,13 +7983,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getPageUrls',
                         'order' => '101',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getPageUrls',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => 'ecommerceOrder',
@@ -6895,7 +8005,9 @@ return [
                         'isReport' => '1',
                     ],
                     11 => [
-                        'name' => 'Entry pages',
+                        'name' => [
+                            'translationKey' => 'Actions_SubmenuPagesEntry',
+                        ],
                         'category' => [
                             'id' => 'Sales by Pages',
                             'name' => 'Sales by Pages',
@@ -6913,13 +8025,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getEntryPageUrls',
                         'order' => '102',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getEntryPageUrls',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => 'ecommerceOrder',
@@ -6931,7 +8047,9 @@ return [
                         'isReport' => '1',
                     ],
                     12 => [
-                        'name' => 'Entry page titles',
+                        'name' => [
+                            'translationKey' => 'Actions_EntryPageTitles',
+                        ],
                         'category' => [
                             'id' => 'Sales by Pages',
                             'name' => 'Sales by Pages',
@@ -6949,13 +8067,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getEntryPageTitles',
                         'order' => '103',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getEntryPageTitles',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => 'ecommerceOrder',
@@ -6967,7 +8089,9 @@ return [
                         'isReport' => '1',
                     ],
                     13 => [
-                        'name' => 'Page titles',
+                        'name' => [
+                            'translationKey' => 'Actions_SubmenuPageTitles',
+                        ],
                         'category' => [
                             'id' => 'Sales by Pages',
                             'name' => 'Sales by Pages',
@@ -6985,13 +8109,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Actions',
+                        'module' => [
+                            'translationKey' => 'General_Actions',
+                        ],
                         'action' => 'getPageTitles',
                         'order' => '104',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Actions',
+                            'module' => [
+                                'translationKey' => 'General_Actions',
+                            ],
                             'action' => 'getPageTitles',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => 'ecommerceOrder',
@@ -7003,7 +8131,9 @@ return [
                         'isReport' => '1',
                     ],
                     14 => [
-                        'name' => 'Channel Type',
+                        'name' => [
+                            'translationKey' => 'Referrers_Type',
+                        ],
                         'category' => [
                             'id' => 'Sales by Referrers',
                             'name' => 'Sales by Referrers',
@@ -7021,13 +8151,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getReferrerType',
                         'order' => '1',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getReferrerType',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => 'ecommerceOrder',
@@ -7039,7 +8173,9 @@ return [
                         'isReport' => '1',
                     ],
                     15 => [
-                        'name' => 'Keywords',
+                        'name' => [
+                            'translationKey' => 'Marketplace_PluginKeywords',
+                        ],
                         'category' => [
                             'id' => 'Sales by Referrers',
                             'name' => 'Sales by Referrers',
@@ -7057,13 +8193,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getKeywords',
                         'order' => '2',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getKeywords',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => 'ecommerceOrder',
@@ -7075,7 +8215,9 @@ return [
                         'isReport' => '1',
                     ],
                     16 => [
-                        'name' => 'Search Engines',
+                        'name' => [
+                            'translationKey' => 'Referrers_SearchEngines',
+                        ],
                         'category' => [
                             'id' => 'Sales by Referrers',
                             'name' => 'Sales by Referrers',
@@ -7093,13 +8235,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getSearchEngines',
                         'order' => '3',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getSearchEngines',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => 'ecommerceOrder',
@@ -7111,7 +8257,9 @@ return [
                         'isReport' => '1',
                     ],
                     17 => [
-                        'name' => 'Websites',
+                        'name' => [
+                            'translationKey' => 'CorePluginsAdmin_Websites',
+                        ],
                         'category' => [
                             'id' => 'Sales by Referrers',
                             'name' => 'Sales by Referrers',
@@ -7129,13 +8277,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getWebsites',
                         'order' => '4',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getWebsites',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => 'ecommerceOrder',
@@ -7147,7 +8299,9 @@ return [
                         'isReport' => '1',
                     ],
                     18 => [
-                        'name' => 'Social Networks',
+                        'name' => [
+                            'translationKey' => 'Referrers_Socials',
+                        ],
                         'category' => [
                             'id' => 'Sales by Referrers',
                             'name' => 'Sales by Referrers',
@@ -7165,13 +8319,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getSocials',
                         'order' => '5',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getSocials',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => 'ecommerceOrder',
@@ -7183,7 +8341,9 @@ return [
                         'isReport' => '1',
                     ],
                     19 => [
-                        'name' => 'AI Assistants',
+                        'name' => [
+                            'translationKey' => 'General_AIAssistants',
+                        ],
                         'category' => [
                             'id' => 'Sales by Referrers',
                             'name' => 'Sales by Referrers',
@@ -7201,13 +8361,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getAIAssistants',
                         'order' => '6',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getAIAssistants',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => 'ecommerceOrder',
@@ -7219,7 +8383,9 @@ return [
                         'isReport' => '1',
                     ],
                     20 => [
-                        'name' => 'Campaigns',
+                        'name' => [
+                            'translationKey' => 'Referrers_Campaigns',
+                        ],
                         'category' => [
                             'id' => 'Sales by Referrers',
                             'name' => 'Sales by Referrers',
@@ -7237,13 +8403,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Referrers',
+                        'module' => [
+                            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                        ],
                         'action' => 'getCampaigns',
                         'order' => '7',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'tableGoals',
-                            'module' => 'Referrers',
+                            'module' => [
+                                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+                            ],
                             'action' => 'getCampaigns',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => 'ecommerceOrder',
@@ -7255,7 +8425,9 @@ return [
                         'isReport' => '1',
                     ],
                     21 => [
-                        'name' => 'Visits to Conversion',
+                        'name' => [
+                            'translationKey' => 'Goals_VisitsUntilConv',
+                        ],
                         'category' => [
                             'id' => 'Sales engagement',
                             'name' => 'Sales engagement',
@@ -7273,13 +8445,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getVisitsUntilConversion',
                         'order' => '201',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'table',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getVisitsUntilConversion',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => 'ecommerceOrder',
@@ -7291,7 +8467,9 @@ return [
                         'isReport' => '1',
                     ],
                     22 => [
-                        'name' => 'Days to Conversion',
+                        'name' => [
+                            'translationKey' => 'Goals_DaysToConv',
+                        ],
                         'category' => [
                             'id' => 'Sales engagement',
                             'name' => 'Sales engagement',
@@ -7309,13 +8487,17 @@ return [
                             'order' => '99',
                             'help' => '',
                         ],
-                        'module' => 'Goals',
+                        'module' => [
+                            'translationKey' => 'Goals_Goals',
+                        ],
                         'action' => 'getDaysToConversion',
                         'order' => '202',
                         'parameters' => [
                             'forceView' => '1',
                             'viewDataTable' => 'table',
-                            'module' => 'Goals',
+                            'module' => [
+                                'translationKey' => 'Goals_Goals',
+                            ],
                             'action' => 'getDaysToConversion',
                             'documentationForGoalsPage' => '1',
                             'idGoal' => 'ecommerceOrder',
@@ -7334,7 +8516,9 @@ return [
         'uniqueId' => 'Marketplace_Marketplace.Marketplace_Browse',
         'category' => [
             'id' => 'Marketplace_Marketplace',
-            'name' => 'Marketplace',
+            'name' => [
+                'translationKey' => 'Marketplace_Marketplace',
+            ],
             'order' => '200',
             'icon' => '',
             'help' => '',
@@ -7345,18 +8529,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'Marketplace_Browse',
-            'name' => 'Browse',
+            'name' => [
+                'translationKey' => 'Marketplace_Browse',
+            ],
             'order' => '5',
             'help' => '',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Marketplace',
-                'module' => 'Marketplace',
+                'name' => [
+                    'translationKey' => 'Marketplace_Marketplace',
+                ],
+                'module' => [
+                    'translationKey' => 'Marketplace_Marketplace',
+                ],
                 'action' => 'overview',
                 'order' => '19',
                 'parameters' => [
-                    'module' => 'Marketplace',
+                    'module' => [
+                        'translationKey' => 'Marketplace_Marketplace',
+                    ],
                     'action' => 'overview',
                     'embed' => '1',
                 ],
@@ -7369,7 +8561,9 @@ return [
         'uniqueId' => 'Marketplace_Marketplace.Marketplace_PaidPlugins',
         'category' => [
             'id' => 'Marketplace_Marketplace',
-            'name' => 'Marketplace',
+            'name' => [
+                'translationKey' => 'Marketplace_Marketplace',
+            ],
             'order' => '200',
             'icon' => '',
             'help' => '',
@@ -7380,18 +8574,26 @@ return [
         ],
         'subcategory' => [
             'id' => 'Marketplace_PaidPlugins',
-            'name' => 'Premium Features',
+            'name' => [
+                'translationKey' => 'Marketplace_PaidPlugins',
+            ],
             'order' => '99',
             'help' => '',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Premium Features',
-                'module' => 'Marketplace',
+                'name' => [
+                    'translationKey' => 'Marketplace_PaidPlugins',
+                ],
+                'module' => [
+                    'translationKey' => 'Marketplace_Marketplace',
+                ],
                 'action' => 'getPremiumFeatures',
                 'order' => '20',
                 'parameters' => [
-                    'module' => 'Marketplace',
+                    'module' => [
+                        'translationKey' => 'Marketplace_Marketplace',
+                    ],
                     'action' => 'getPremiumFeatures',
                 ],
                 'uniqueId' => 'widgetMarketplacegetPremiumFeatures',
@@ -7403,7 +8605,9 @@ return [
         'uniqueId' => 'ProfessionalServices_PromoAbTesting.ProfessionalServices_PromoOverview',
         'category' => [
             'id' => 'ProfessionalServices_PromoAbTesting',
-            'name' => 'A/B Tests',
+            'name' => [
+                'translationKey' => 'ProfessionalServices_PromoAbTesting',
+            ],
             'order' => '51',
             'icon' => 'icon-lab',
             'help' => '',
@@ -7414,7 +8618,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'ProfessionalServices_PromoOverview',
-            'name' => 'Overview',
+            'name' => [
+                'translationKey' => 'General_Overview',
+            ],
             'order' => '99',
             'help' => '',
         ],
@@ -7437,7 +8643,9 @@ return [
         'uniqueId' => 'ProfessionalServices_PromoCrashAnalytics.ProfessionalServices_PromoOverview',
         'category' => [
             'id' => 'ProfessionalServices_PromoCrashAnalytics',
-            'name' => 'Crashes',
+            'name' => [
+                'translationKey' => 'ProfessionalServices_PromoCrashAnalytics',
+            ],
             'order' => '70',
             'icon' => 'icon-bug',
             'help' => '',
@@ -7448,7 +8656,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'ProfessionalServices_PromoOverview',
-            'name' => 'Overview',
+            'name' => [
+                'translationKey' => 'General_Overview',
+            ],
             'order' => '99',
             'help' => '',
         ],
@@ -7471,7 +8681,9 @@ return [
         'uniqueId' => 'ProfessionalServices_PromoCustomReports.ProfessionalServices_PromoManage',
         'category' => [
             'id' => 'ProfessionalServices_PromoCustomReports',
-            'name' => 'Custom Reports',
+            'name' => [
+                'translationKey' => 'ProfessionalServices_PromoCustomReports',
+            ],
             'order' => '65',
             'icon' => 'icon-business',
             'help' => '',
@@ -7482,7 +8694,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'ProfessionalServices_PromoManage',
-            'name' => 'Manage',
+            'name' => [
+                'translationKey' => 'ProfessionalServices_PromoManage',
+            ],
             'order' => '99',
             'help' => '',
         ],
@@ -7505,7 +8719,9 @@ return [
         'uniqueId' => 'ProfessionalServices_PromoFormAnalytics.ProfessionalServices_PromoOverview',
         'category' => [
             'id' => 'ProfessionalServices_PromoFormAnalytics',
-            'name' => 'Forms',
+            'name' => [
+                'translationKey' => 'ProfessionalServices_PromoFormAnalytics',
+            ],
             'order' => '49',
             'icon' => 'icon-form',
             'help' => '',
@@ -7516,7 +8732,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'ProfessionalServices_PromoOverview',
-            'name' => 'Overview',
+            'name' => [
+                'translationKey' => 'General_Overview',
+            ],
             'order' => '99',
             'help' => '',
         ],
@@ -7539,7 +8757,9 @@ return [
         'uniqueId' => 'ProfessionalServices_PromoFunnels.ProfessionalServices_PromoOverview',
         'category' => [
             'id' => 'ProfessionalServices_PromoFunnels',
-            'name' => 'Funnels',
+            'name' => [
+                'translationKey' => 'ProfessionalServices_PromoFunnels',
+            ],
             'order' => '28',
             'icon' => 'icon-funnel',
             'help' => '',
@@ -7550,7 +8770,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'ProfessionalServices_PromoOverview',
-            'name' => 'Overview',
+            'name' => [
+                'translationKey' => 'General_Overview',
+            ],
             'order' => '99',
             'help' => '',
         ],
@@ -7573,7 +8795,9 @@ return [
         'uniqueId' => 'ProfessionalServices_PromoHeatmaps.ProfessionalServices_PromoManage',
         'category' => [
             'id' => 'ProfessionalServices_PromoHeatmaps',
-            'name' => 'Heatmaps',
+            'name' => [
+                'translationKey' => 'ProfessionalServices_PromoHeatmaps',
+            ],
             'order' => '58',
             'icon' => 'icon-drop',
             'help' => '',
@@ -7584,7 +8808,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'ProfessionalServices_PromoManage',
-            'name' => 'Manage',
+            'name' => [
+                'translationKey' => 'ProfessionalServices_PromoManage',
+            ],
             'order' => '99',
             'help' => '',
         ],
@@ -7607,7 +8833,9 @@ return [
         'uniqueId' => 'ProfessionalServices_PromoMediaAnalytics.ProfessionalServices_PromoOverview',
         'category' => [
             'id' => 'ProfessionalServices_PromoMediaAnalytics',
-            'name' => 'Media',
+            'name' => [
+                'translationKey' => 'ProfessionalServices_PromoMediaAnalytics',
+            ],
             'order' => '50',
             'icon' => 'icon-folder-charts',
             'help' => '',
@@ -7618,7 +8846,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'ProfessionalServices_PromoOverview',
-            'name' => 'Overview',
+            'name' => [
+                'translationKey' => 'General_Overview',
+            ],
             'order' => '99',
             'help' => '',
         ],
@@ -7641,7 +8871,9 @@ return [
         'uniqueId' => 'ProfessionalServices_PromoSessionRecording.ProfessionalServices_PromoManage',
         'category' => [
             'id' => 'ProfessionalServices_PromoSessionRecording',
-            'name' => 'Session Recordings',
+            'name' => [
+                'translationKey' => 'ProfessionalServices_PromoSessionRecording',
+            ],
             'order' => '59',
             'icon' => 'icon-play',
             'help' => '',
@@ -7652,7 +8884,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'ProfessionalServices_PromoManage',
-            'name' => 'Manage',
+            'name' => [
+                'translationKey' => 'ProfessionalServices_PromoManage',
+            ],
             'order' => '99',
             'help' => '',
         ],
@@ -7675,7 +8909,9 @@ return [
         'uniqueId' => 'ExampleUI_UiFramework.ExampleUI_GetTemperaturesDataTable',
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -7686,13 +8922,17 @@ return [
         ],
         'subcategory' => [
             'id' => 'ExampleUI_GetTemperaturesDataTable',
-            'name' => 'Data tables',
+            'name' => [
+                'translationKey' => 'ExampleUI_GetTemperaturesDataTable',
+            ],
             'order' => '99',
             'help' => '',
         ],
         'widgets' => [
             0 => [
-                'name' => 'Data tables',
+                'name' => [
+                    'translationKey' => 'ExampleUI_GetTemperaturesDataTable',
+                ],
                 'module' => 'ExampleUI',
                 'action' => 'getTemperatures',
                 'order' => '210',
@@ -7711,7 +8951,9 @@ return [
         'uniqueId' => 'ExampleUI_UiFramework.Bar graph',
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -7728,7 +8970,9 @@ return [
         ],
         'widgets' => [
             0 => [
-                'name' => 'Data tables',
+                'name' => [
+                    'translationKey' => 'ExampleUI_GetTemperaturesDataTable',
+                ],
                 'module' => 'ExampleUI',
                 'action' => 'getTemperatures',
                 'order' => '210',
@@ -7749,7 +8993,9 @@ return [
         'uniqueId' => 'ExampleUI_UiFramework.Treemap',
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -7787,7 +9033,9 @@ return [
         'uniqueId' => 'ExampleUI_UiFramework.Sparklines',
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -7804,7 +9052,9 @@ return [
         ],
         'widgets' => [
             0 => [
-                'name' => 'Temperatures evolution over time',
+                'name' => [
+                    'translationKey' => 'ExampleUI_GetTemperaturesEvolution',
+                ],
                 'module' => 'ExampleUI',
                 'action' => 'getTemperaturesEvolution',
                 'order' => '211',
@@ -7825,7 +9075,9 @@ return [
         'uniqueId' => 'ExampleUI_UiFramework.Evolution Graph',
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -7842,7 +9094,9 @@ return [
         ],
         'widgets' => [
             0 => [
-                'name' => 'Evolution of server temperatures over the last few days',
+                'name' => [
+                    'translationKey' => 'ExampleUI_TemperaturesEvolution',
+                ],
                 'module' => 'ExampleUI',
                 'action' => 'getTemperaturesEvolution',
                 'order' => '211',
@@ -7867,7 +9121,9 @@ return [
         'uniqueId' => 'ExampleUI_UiFramework.Pie graph',
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -7903,7 +9159,9 @@ return [
         'uniqueId' => 'ExampleUI_UiFramework.Tag clouds',
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',

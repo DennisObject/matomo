@@ -8,6 +8,8 @@ use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Privacy\Events\DataSubjectLogTablesCollecting;
 use App\Matomo\Privacy\Events\DataSubjectsDeleting;
 use App\Matomo\Privacy\Events\DataSubjectsExporting;
+use App\Matomo\Sites\SiteRepository;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
@@ -19,6 +21,7 @@ final readonly class DatabaseDataSubjectRepository implements DataSubjectReposit
         private Connection $connection,
         private Dispatcher $events,
         private ArchiveInvalidationManager $archiveInvalidations,
+        private SiteRepository $sites,
     ) {}
 
     public function export(array $visits): array
@@ -44,7 +47,7 @@ final readonly class DatabaseDataSubjectRepository implements DataSubjectReposit
 
     public function delete(array $visits): array
     {
-        $dates = $this->visitDates($visits);
+        $datesBySite = $this->visitDatesBySite($visits);
         $deleted = $this->connection->transaction(function () use ($visits): array {
             $result = [];
             foreach ($this->tables() as $table) {
@@ -61,9 +64,9 @@ final readonly class DatabaseDataSubjectRepository implements DataSubjectReposit
             return $event->deleted;
         });
 
-        if ($dates !== []) {
+        foreach ($datesBySite as $idSite => $dates) {
             $this->archiveInvalidations->invalidate(
-                array_values(array_unique(array_column($visits, 'idsite'))),
+                [$idSite],
                 $dates,
                 null,
                 null,
@@ -160,18 +163,34 @@ final readonly class DatabaseDataSubjectRepository implements DataSubjectReposit
 
     /**
      * @param  list<array{idsite: int, idvisit: int}>  $visits
-     * @return list<string>
+     * @return array<int, list<string>>
      */
-    private function visitDates(array $visits): array
+    private function visitDatesBySite(array $visits): array
     {
         if (! $this->connection->getSchemaBuilder()->hasTable('log_visit')) {
             return [];
         }
 
         $table = new DataSubjectLogTable('log_visit', 'idvisit', 'idsite', 'idvisit', 100);
-        $dates = $this->visitQuery($table, $visits)->pluck('visit_last_action_time')
-            ->map(static fn (mixed $date): string => substr((string) $date, 0, 10))->all();
+        $rows = $this->visitQuery($table, $visits)
+            ->select(['idsite', 'visit_last_action_time'])
+            ->get();
+        $dates = [];
+        foreach ($rows as $row) {
+            $idSite = (int) $row->idsite;
+            $timezone = $this->sites->timezone($idSite) ?? 'UTC';
+            $dates[$idSite][] = CarbonImmutable::parse(
+                (string) $row->visit_last_action_time,
+                'UTC',
+            )->setTimezone($timezone)->toDateString();
+        }
 
-        return array_values(array_unique(array_filter($dates)));
+        foreach ($dates as &$siteDates) {
+            $siteDates = array_values(array_unique($siteDates));
+        }
+
+        unset($siteDates);
+
+        return $dates;
     }
 }
