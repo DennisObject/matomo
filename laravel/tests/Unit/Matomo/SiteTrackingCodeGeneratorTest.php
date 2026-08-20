@@ -69,7 +69,17 @@ final class SiteTrackingCodeGeneratorTest extends TestCase
     {
         $events = new Dispatcher;
         $events->listen(JavascriptTrackingCodeGenerating::class, function (JavascriptTrackingCodeGenerating $event): void {
-            self::assertSame(7, $event->parameters['siteId']);
+            self::assertSame([
+                'mergeSubdomains' => false,
+                'groupPageTitlesByDomain' => false,
+                'mergeAliasUrls' => false,
+                'visitorCustomVariables' => [],
+                'pageCustomVariables' => [],
+                'customCampaignNameQueryParam' => '',
+                'customCampaignKeywordParam' => '',
+                'doNotTrack' => false,
+                'disableCampaignParameters' => false,
+            ], $event->parameters);
             $event->code['optionsBeforeTrackerUrl'] = "_paq.push(['requireConsent']);\n    ";
             $event->code['matomoJsFilename'] = 'custom.js';
         });
@@ -78,6 +88,24 @@ final class SiteTrackingCodeGeneratorTest extends TestCase
 
         self::assertStringContainsString("_paq.push(['requireConsent'])", $code);
         self::assertStringContainsString("u+'custom.js'", $code);
+    }
+
+    public function test_javascript_event_can_set_a_separate_https_collector(): void
+    {
+        $events = new Dispatcher;
+        $events->listen(JavascriptTrackingCodeGenerating::class, function (JavascriptTrackingCodeGenerating $event): void {
+            $event->code['httpsPiwikUrl'] = 'secure.example.test/<collector>';
+        });
+
+        $code = $this->generator(null, [], $events)->javascript($this->request());
+
+        self::assertStringContainsString(
+            'document.location.protocol === "https:"',
+            $code,
+        );
+        self::assertStringContainsString('"https://secure.example.test/\\u003Ccollector\\u003E/"', $code);
+        self::assertStringContainsString('"http://analytics.example.test/matomo/"', $code);
+        self::assertStringNotContainsString('<collector>', $code);
     }
 
     public function test_generates_encoded_image_code_and_dispatches_mutable_event(): void
