@@ -66,6 +66,39 @@ final class DatabaseMutableUserRepositoryTest extends TestCase
         );
     }
 
+    public function test_only_superuser_is_protected_and_access_is_removed_on_grant(): void
+    {
+        $connection = $this->connection();
+        $connection->table('user')->insert([
+            'login' => 'admin', 'password' => '', 'email' => 'admin@example.test',
+            'date_registered' => '2026-01-01 00:00:00', 'superuser_access' => 1,
+            'ts_password_modified' => '2026-01-01 00:00:00',
+        ]);
+        $users = new DatabaseMutableUserRepository($connection, 'salt');
+
+        $this->assertSame('only-superuser', $users->setSuperuser('admin', false));
+        $users->create('alice', 'secret1', 'alice@example.test', false, 7);
+        $this->assertSame('updated', $users->setSuperuser('alice', true));
+        $this->assertFalse($connection->table('access')->where('login', 'alice')->exists());
+    }
+
+    public function test_logout_removes_matching_sessions_only(): void
+    {
+        $connection = $this->connection();
+        $users = new DatabaseMutableUserRepository($connection, 'salt');
+        $users->create('alice', 'secret1', 'alice@example.test', false, null);
+
+        $marker = 's:9:"user.name";s:5:"alice"';
+        $connection->table('session')->insert([
+            ['id' => 'alice', 'data' => base64_encode($marker)],
+            ['id' => 'other', 'data' => base64_encode('unrelated')],
+        ]);
+
+        $this->assertTrue($users->deleteSessions('alice'));
+        $this->assertFalse($connection->table('session')->where('id', 'alice')->exists());
+        $this->assertTrue($connection->table('session')->where('id', 'other')->exists());
+    }
+
     public function test_invitation_renewal_requires_the_exact_login(): void
     {
         $connection = $this->connection();
@@ -99,6 +132,10 @@ final class DatabaseMutableUserRepositoryTest extends TestCase
             $table->string('login');
             $table->unsignedInteger('idsite');
             $table->string('access');
+        });
+        $schema->create('session', static function (Blueprint $table): void {
+            $table->string('id');
+            $table->text('data');
         });
 
         return $connection;

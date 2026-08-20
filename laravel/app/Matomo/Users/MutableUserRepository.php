@@ -32,4 +32,9 @@ interface MutableUserRepository
         string $requester,
         bool $requesterIsSuperuser,
     ): array;
+
+    /** @return 'updated'|'not-found'|'only-superuser' */
+    public function setSuperuser(string $login, bool $enabled): string;
+
+    public function deleteSessions(string $login): bool;
 }
