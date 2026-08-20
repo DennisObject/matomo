@@ -200,6 +200,26 @@ final class ApiResponseFactory
         };
     }
 
+    public function tableReport(ApiRequest $request, ApiTableReport $report): Response
+    {
+        $rows = $report->flattenedRows();
+
+        return match ($request->format) {
+            'console' => $this->consoleRows($request, $rows),
+            'csv', 'tsv' => $this->spreadsheetRows($request, $rows),
+            'html' => $this->htmlRows($rows),
+            'json' => $this->jsonEncoded($request, json_encode($report->data, JSON_THROW_ON_ERROR), 200),
+            'original' => $this->response(
+                $request->serialize ? serialize($report->data) : var_export($report->data, true),
+                200,
+                'text/plain; charset=utf-8',
+            ),
+            'xml' => $this->xmlTableReport($report),
+            'rss' => throw new LogicException('RSS table reporting requires report context.'),
+            default => throw new LogicException('The API response format is not supported.'),
+        };
+    }
+
     public function error(ApiRequest $request, string $message, int $status): Response
     {
         return match ($request->format) {
@@ -481,6 +501,76 @@ final class ApiResponseFactory
             200,
             'text/xml; charset=utf-8',
         );
+    }
+
+    private function xmlTableReport(ApiTableReport $report): Response
+    {
+        if (! $report->isMapped()) {
+            return $this->xmlRows($report->flattenedRows());
+        }
+
+        return $this->response(
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<results>\n".
+                $this->xmlTableMap($report->data, $report->dimensions, 0, "\t").'</results>',
+            200,
+            'text/xml; charset=utf-8',
+        );
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $data
+     * @param  list<'idSite'|'date'>  $dimensions
+     */
+    private function xmlTableMap(array $data, array $dimensions, int $depth, string $indent): string
+    {
+        $xml = '';
+        $dimension = $dimensions[$depth];
+        $leaf = ! isset($dimensions[$depth + 1]);
+
+        foreach ($data as $key => $value) {
+            if (! is_array($value)) {
+                continue;
+            }
+
+            $attribute = $this->escape($dimension).'="'.$this->escape((string) $key).'"';
+            $xml .= "{$indent}<result {$attribute}>\n";
+            $xml .= $leaf
+                ? $this->xmlTableRows($value, $indent."\t")
+                : $this->xmlTableMap($value, $dimensions, $depth + 1, $indent."\t");
+            $xml .= "{$indent}</result>\n";
+        }
+
+        return $xml;
+    }
+
+    /** @param array<array-key, mixed> $rows */
+    private function xmlTableRows(array $rows, string $indent): string
+    {
+        $xml = '';
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $xml .= "{$indent}<row>\n";
+
+            foreach ($row as $name => $value) {
+                if (! is_string($name)
+                    || (! is_float($value) && ! is_int($value) && ! is_string($value) && $value !== null)) {
+                    continue;
+                }
+
+                $text = $this->scalarText($value, false);
+                $xml .= $text === ''
+                    ? "{$indent}\t<{$name} />\n"
+                    : "{$indent}\t<{$name}>{$this->escape($text)}</{$name}>\n";
+            }
+
+            $xml .= "{$indent}</row>\n";
+        }
+
+        return $xml;
     }
 
     /**

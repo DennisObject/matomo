@@ -24,8 +24,10 @@ use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\ConfiguredPluginState;
 use App\Matomo\Plugins\PluginState;
+use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\CarbonReportingPeriodFactory;
 use App\Matomo\Reporting\ConfiguredReportingSettings;
+use App\Matomo\Reporting\DatabaseBlobArchiveRepository;
 use App\Matomo\Reporting\DatabaseSegmentHashResolver;
 use App\Matomo\Reporting\DatabaseVisitsSummaryArchiveRepository;
 use App\Matomo\Reporting\ReportingPeriodFactory;
@@ -143,6 +145,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             VisitsSummaryArchiveRepository::class,
             fn (Application $application): VisitsSummaryArchiveRepository => new DatabaseVisitsSummaryArchiveRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
+            BlobArchiveRepository::class,
+            fn (Application $application): BlobArchiveRepository => new DatabaseBlobArchiveRepository(
                 $application->make(MatomoDatabase::class)->connection(),
             ),
         );
