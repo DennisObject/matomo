@@ -75,6 +75,15 @@ final readonly class ApiRequest
     private const string AI_AGENTS_METHOD = 'AIAgents.get';
 
     /** @var list<string> */
+    private const array DASHBOARD_METHODS = [
+        'Dashboard.getDashboards',
+        'Dashboard.createNewDashboardForUser',
+        'Dashboard.removeDashboard',
+        'Dashboard.copyDashboardToUser',
+        'Dashboard.resetDashboardLayout',
+    ];
+
+    /** @var list<string> */
     private const array AI_PROVIDERS_METHODS = [
         'AIProviders.getSettings',
         'AIProviders.saveSettings',
@@ -129,6 +138,7 @@ final readonly class ApiRequest
         public ?string $locationIp,
         public ?string $locationProviderId,
         public ?AiProviderRequest $aiProvider,
+        public ?DashboardRequest $dashboard,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -172,6 +182,7 @@ final readonly class ApiRequest
             locationIp: null,
             locationProviderId: null,
             aiProvider: null,
+            dashboard: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -452,6 +463,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::AI_PROVIDERS_METHODS, true);
     }
 
+    public function isDashboardRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::DASHBOARD_METHODS, true);
+    }
+
     public function isTourRequest(): bool
     {
         return $this->module === 'API'
@@ -515,8 +531,66 @@ final readonly class ApiRequest
             locationIp: self::locationIp($request, $module, $method),
             locationProviderId: self::locationProviderId($request, $module, $method),
             aiProvider: self::aiProvider($request, $module, $method),
+            dashboard: self::dashboard($request, $module, $method),
             authentication: $authentication,
         );
+    }
+
+    private static function dashboard(Request $request, string $module, string $method): ?DashboardRequest
+    {
+        if ($module !== 'API' || ! in_array($method, self::DASHBOARD_METHODS, true)) {
+            return null;
+        }
+
+        $requiresId = in_array($method, [
+            'Dashboard.removeDashboard',
+            'Dashboard.copyDashboardToUser',
+            'Dashboard.resetDashboardLayout',
+        ], true);
+        $dashboardId = $requiresId ? self::requiredInteger($request, 'idDashboard') : null;
+        $login = self::legacySanitizedStringInput($request, 'login');
+        $copyToUser = self::legacySanitizedStringInput($request, 'copyToUser');
+
+        if ($method === 'Dashboard.createNewDashboardForUser' && $login === '') {
+            throw new MissingApiParameter('login');
+        }
+
+        if ($method === 'Dashboard.copyDashboardToUser' && $copyToUser === '') {
+            throw new MissingApiParameter('copyToUser');
+        }
+
+        return new DashboardRequest(
+            login: $login,
+            dashboardName: self::legacySanitizedStringInput($request, 'dashboardName'),
+            copyToUser: $copyToUser,
+            dashboardId: $dashboardId,
+            returnDefaultIfEmpty: self::booleanFromArray($request->query->all(), 'returnDefaultIfEmpty')
+                ?? self::booleanFromArray($request->request->all(), 'returnDefaultIfEmpty')
+                ?? true,
+            addDefaultWidgets: self::booleanFromArray($request->query->all(), 'addDefaultWidgets')
+                ?? self::booleanFromArray($request->request->all(), 'addDefaultWidgets')
+                ?? true,
+        );
+    }
+
+    private static function requiredInteger(Request $request, string $parameter): int
+    {
+        $value = self::inputValue($request, $parameter);
+
+        if ($value === null || $value === '' || ! is_scalar($value)
+            || (string) (int) $value !== (string) $value) {
+            throw new MissingApiParameter($parameter);
+        }
+
+        return (int) $value;
+    }
+
+    private static function legacySanitizedStringInput(Request $request, string $key): string
+    {
+        $value = self::stringInput($request, $key);
+        $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML401, 'UTF-8');
+
+        return htmlspecialchars($value, ENT_QUOTES | ENT_HTML401, 'UTF-8');
     }
 
     private static function aiProvider(Request $request, string $module, string $method): ?AiProviderRequest

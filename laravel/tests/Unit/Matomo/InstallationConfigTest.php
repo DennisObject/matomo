@@ -71,6 +71,7 @@ class InstallationConfigTest extends TestCase
         $this->assertTrue($configuration->browserArchivingTriggerEnabled());
         $this->assertTrue($configuration->defaultLocationProviderEnabled());
         $this->assertTrue($configuration->languageToCountryGuessEnabled());
+        $this->assertTrue($configuration->professionalServicesAdsEnabled());
         $this->assertSame([
             'defaultProvider' => 'openai',
             'openaiApiKey' => 'managed-key',
@@ -92,6 +93,7 @@ class InstallationConfigTest extends TestCase
             enable_geolocation_admin = 0
             enable_custom_logo = 0
             enable_browser_archiving_triggering = 0
+            piwik_professional_support_ads_enabled = 0
             INI,
             extraTracker: <<<'INI'
             enable_default_location_provider = 0
@@ -112,6 +114,7 @@ class InstallationConfigTest extends TestCase
         $this->assertFalse($configuration->browserArchivingTriggerEnabled());
         $this->assertFalse($configuration->defaultLocationProviderEnabled());
         $this->assertFalse($configuration->languageToCountryGuessEnabled());
+        $this->assertFalse($configuration->professionalServicesAdsEnabled());
     }
 
     public function test_rejects_unsafe_table_prefix(): void
@@ -120,6 +123,19 @@ class InstallationConfigTest extends TestCase
         $this->expectExceptionMessage('The Matomo database table prefix is invalid.');
 
         InstallationConfig::fromFile($this->configurationFile(tablesPrefix: 'matomo`; DROP TABLE user;'));
+    }
+
+    public function test_legacy_professional_service_ads_setting_can_enable_ads(): void
+    {
+        $configuration = InstallationConfig::fromFile($this->configurationFile(
+            tablesPrefix: 'matomo_',
+            extraGeneral: <<<'INI'
+            piwik_professional_support_ads_enabled = 0
+            piwik_pro_ads_enabled = 1
+            INI,
+        ));
+
+        $this->assertTrue($configuration->professionalServicesAdsEnabled());
     }
 
     private function configurationFile(

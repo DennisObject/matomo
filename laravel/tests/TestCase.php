@@ -12,6 +12,9 @@ use App\Matomo\AiProviders\AiProviderSettingsRepository;
 use App\Matomo\AiProviders\AiProviderStoredSettings;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
+use App\Matomo\Dashboard\DashboardLayoutProvider;
+use App\Matomo\Dashboard\DashboardRecipientPolicy;
+use App\Matomo\Dashboard\DashboardRepository;
 use App\Matomo\Geolocation\CountryMetadataProvider;
 use App\Matomo\Geolocation\GeolocationProviderRegistry;
 use App\Matomo\Geolocation\GeolocationSettings;
@@ -114,6 +117,46 @@ abstract class TestCase extends BaseTestCase
                 public function reset(string $login): void {}
             },
         );
+        $this->app->instance(DashboardRepository::class, new class implements DashboardRepository
+        {
+            public function all(string $login): array
+            {
+                return [];
+            }
+
+            public function layout(string $login, int $dashboardId): ?string
+            {
+                return null;
+            }
+
+            public function create(string $login, string $name, string $layout): int
+            {
+                return 1;
+            }
+
+            public function delete(string $login, int $dashboardId): void {}
+
+            public function updateLayout(string $login, int $dashboardId, string $layout): void {}
+        });
+        $this->app->instance(DashboardRecipientPolicy::class, new class implements DashboardRecipientPolicy
+        {
+            public function canCopyTo(ApiAuthentication $authentication, string $login): bool
+            {
+                return false;
+            }
+        });
+        $this->app->instance(DashboardLayoutProvider::class, new class implements DashboardLayoutProvider
+        {
+            public function defaultLayout(ApiAuthentication $authentication): string
+            {
+                return '{"config":{"layout":"33-33-33"},"columns":[]}';
+            }
+
+            public function visibleWidgets(string $layout): array
+            {
+                return [];
+            }
+        });
         $this->app->instance(LanguageResolver::class, new class implements LanguageResolver
         {
             public function resolve(Request $request, ApiAuthentication $authentication): string
