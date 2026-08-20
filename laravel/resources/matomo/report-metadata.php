@@ -4,28 +4,62 @@ declare(strict_types=1);
 
 return [
     0 => [
-        'category' => 'All Websites',
-        'name' => 'All Websites dashboard',
+        'category' => [
+            'translationKey' => 'General_MultiSitesSummary',
+        ],
+        'name' => [
+            'translationKey' => 'General_AllWebsitesDashboard',
+        ],
         'module' => 'MultiSites',
         'action' => 'getAll',
-        'dimension' => 'Website',
-        'documentation' => 'This report gives you an informational overview for each of your websites, containing the most general metrics about your visitors.',
+        'dimension' => [
+            'translationKey' => 'General_Website',
+        ],
+        'documentation' => [
+            'translationKey' => 'MultiSites_AllWebsitesDashboardDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_actions' => 'Actions',
-            'nb_pageviews' => 'Pageviews',
-            'hits' => 'Hits',
-            'ai_chatbots_requests' => 'AI Chatbots Requests',
-            'revenue' => 'Revenue',
-            'nb_conversions' => 'Conversions',
-            'orders' => 'Ecommerce Orders',
-            'ecommerce_revenue' => 'Product Revenue',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_pageviews' => [
+                'translationKey' => 'General_ColumnPageviews',
+            ],
+            'hits' => [
+                'translationKey' => 'General_ColumnHits',
+            ],
+            'ai_chatbots_requests' => [
+                'translationKey' => 'MultiSites_AiChatbotsRequests',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'orders' => [
+                'translationKey' => 'General_EcommerceOrders',
+            ],
+            'ecommerce_revenue' => [
+                'translationKey' => 'General_ProductRevenue',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_pageviews' => 'The number of times this page was visited.',
-            'hits' => 'The total count of all interactions recorded on your website, including page views, link clicks, downloads, and events.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_pageviews' => [
+                'translationKey' => 'General_ColumnPageviewsDocumentation',
+            ],
+            'hits' => [
+                'translationKey' => 'General_ColumnHitsDocumentation',
+            ],
         ],
         'processedMetrics' => [
             'visits_evolution' => 'Visits Evolution',
@@ -61,28 +95,62 @@ return [
         'uniqueId' => 'MultiSites_getAll',
     ],
     1 => [
-        'category' => 'All Websites',
-        'name' => 'Single Website dashboard',
+        'category' => [
+            'translationKey' => 'General_MultiSitesSummary',
+        ],
+        'name' => [
+            'translationKey' => 'General_SingleWebsitesDashboard',
+        ],
         'module' => 'MultiSites',
         'action' => 'getOne',
-        'dimension' => 'Website',
-        'documentation' => 'This report gives you an informational overview for a specific website, containing the most general metrics about your visitors.',
+        'dimension' => [
+            'translationKey' => 'General_Website',
+        ],
+        'documentation' => [
+            'translationKey' => 'MultiSites_SingleWebsitesDashboardDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_actions' => 'Actions',
-            'nb_pageviews' => 'Pageviews',
-            'hits' => 'Hits',
-            'ai_chatbots_requests' => 'AI Chatbots Requests',
-            'revenue' => 'Revenue',
-            'nb_conversions' => 'Conversions',
-            'orders' => 'Ecommerce Orders',
-            'ecommerce_revenue' => 'Product Revenue',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_pageviews' => [
+                'translationKey' => 'General_ColumnPageviews',
+            ],
+            'hits' => [
+                'translationKey' => 'General_ColumnHits',
+            ],
+            'ai_chatbots_requests' => [
+                'translationKey' => 'MultiSites_AiChatbotsRequests',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'orders' => [
+                'translationKey' => 'General_EcommerceOrders',
+            ],
+            'ecommerce_revenue' => [
+                'translationKey' => 'General_ProductRevenue',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_pageviews' => 'The number of times this page was visited.',
-            'hits' => 'The total count of all interactions recorded on your website, including page views, link clicks, downloads, and events.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_pageviews' => [
+                'translationKey' => 'General_ColumnPageviewsDocumentation',
+            ],
+            'hits' => [
+                'translationKey' => 'General_ColumnHitsDocumentation',
+            ],
         ],
         'processedMetrics' => [
             'visits_evolution' => 'Visits Evolution',
@@ -118,32 +186,70 @@ return [
         'uniqueId' => 'MultiSites_getOne',
     ],
     2 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Overview',
-        'name' => 'Visits Summary',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'General_Overview',
+        ],
+        'name' => [
+            'translationKey' => 'VisitsSummary_VisitsSummary',
+        ],
         'module' => 'VisitsSummary',
         'action' => 'get',
-        'documentation' => 'This report provides a very general overview of how your visitors behave.',
+        'documentation' => [
+            'translationKey' => 'VisitsSummary_VisitsSummaryReportDocumentation',
+        ],
         'metrics' => [
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_visits' => 'Visits',
-            'nb_users' => 'Users',
-            'nb_actions' => 'Actions',
-            'max_actions' => 'Maximum actions in one visit',
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'max_actions' => [
+                'translationKey' => 'General_ColumnMaxActions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'bounce_rate' => 'Bounce Rate',
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Visit Duration (in seconds)',
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_VisitDuration',
+            ],
         ],
         'metricTypes' => [
             'nb_uniq_visitors' => 'number',
@@ -158,33 +264,73 @@ return [
         'uniqueId' => 'VisitsSummary_get',
     ],
     3 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Locations',
-        'name' => 'Country',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'UserCountry_SubmenuLocations',
+        ],
+        'name' => [
+            'translationKey' => 'UserCountry_Country',
+        ],
         'module' => 'UserCountry',
         'action' => 'getCountry',
-        'dimension' => 'Country',
-        'documentation' => 'Shows which country your visitors connected from when accessing your website.',
+        'dimension' => [
+            'translationKey' => 'UserCountry_Country',
+        ],
+        'documentation' => [
+            'translationKey' => 'UserCountry_getCountryDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -197,11 +343,17 @@ return [
             'conversion_rate' => 'percent',
         ],
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -212,33 +364,73 @@ return [
         'uniqueId' => 'UserCountry_getCountry',
     ],
     4 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Locations',
-        'name' => 'Continent',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'UserCountry_SubmenuLocations',
+        ],
+        'name' => [
+            'translationKey' => 'UserCountry_Continent',
+        ],
         'module' => 'UserCountry',
         'action' => 'getContinent',
-        'dimension' => 'Continent',
-        'documentation' => 'Shows which continent your visitors connected from when accessing your website.',
+        'dimension' => [
+            'translationKey' => 'UserCountry_Continent',
+        ],
+        'documentation' => [
+            'translationKey' => 'UserCountry_getContinentDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -251,11 +443,17 @@ return [
             'conversion_rate' => 'percent',
         ],
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -266,33 +464,71 @@ return [
         'uniqueId' => 'UserCountry_getContinent',
     ],
     5 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Locations',
-        'name' => 'Region',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'UserCountry_SubmenuLocations',
+        ],
+        'name' => [
+            'translationKey' => 'UserCountry_Region',
+        ],
         'module' => 'UserCountry',
         'action' => 'getRegion',
-        'dimension' => 'Region',
+        'dimension' => [
+            'translationKey' => 'UserCountry_Region',
+        ],
         'documentation' => 'Shows which region your visitors connected from when accessing website.<br/>Set up GeoIP in the Geolocation admin tab to provide data for this report. The commercial <a target="_blank" rel="noreferrer noopener" href="http://www.maxmind.com/?rId=piwik">MaxMind</a> GeoIP databases are more accurate than the gratis ones. <a target="_blank" rel="noreferrer noopener" href="http://www.maxmind.com/en/city_accuracy?rId=piwik">Click here</a> to see how accurate they are.',
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -305,11 +541,17 @@ return [
             'conversion_rate' => 'percent',
         ],
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -320,34 +562,76 @@ return [
         'uniqueId' => 'UserCountry_getRegion',
     ],
     6 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Locations',
-        'name' => 'Web-browser language',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'UserCountry_SubmenuLocations',
+        ],
+        'name' => [
+            'translationKey' => 'UserLanguage_BrowserLanguage',
+        ],
         'module' => 'UserLanguage',
         'action' => 'getLanguage',
-        'dimension' => 'Language',
-        'documentation' => 'Shows which language the visitor\'s browsers are using. (e.g. "French")',
+        'dimension' => [
+            'translationKey' => 'General_Language',
+        ],
+        'documentation' => [
+            'translationKey' => 'UserLanguage_getLanguageDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -361,7 +645,9 @@ return [
         ],
         'relatedReports' => [
             0 => [
-                'name' => 'Language code',
+                'name' => [
+                    'translationKey' => 'UserLanguage_LanguageCode',
+                ],
                 'module' => 'UserLanguage',
                 'action' => 'getLanguageCode',
             ],
@@ -369,33 +655,71 @@ return [
         'uniqueId' => 'UserLanguage_getLanguage',
     ],
     7 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Locations',
-        'name' => 'City',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'UserCountry_SubmenuLocations',
+        ],
+        'name' => [
+            'translationKey' => 'UserCountry_City',
+        ],
         'module' => 'UserCountry',
         'action' => 'getCity',
-        'dimension' => 'City',
+        'dimension' => [
+            'translationKey' => 'UserCountry_City',
+        ],
         'documentation' => 'Shows the cities your visitors connected from when accessing your website.<br/>Set up GeoIP in the Geolocation admin tab to provide data for this report. The commercial <a target="_blank" rel="noreferrer noopener" href="http://www.maxmind.com/?rId=piwik">MaxMind</a> GeoIP databases are more accurate than the gratis ones. <a target="_blank" rel="noreferrer noopener" href="http://www.maxmind.com/en/city_accuracy?rId=piwik">Click here</a> to see how accurate they are.',
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -408,11 +732,17 @@ return [
             'conversion_rate' => 'percent',
         ],
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -423,34 +753,76 @@ return [
         'uniqueId' => 'UserCountry_getCity',
     ],
     8 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Locations',
-        'name' => 'Language code',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'UserCountry_SubmenuLocations',
+        ],
+        'name' => [
+            'translationKey' => 'UserLanguage_LanguageCode',
+        ],
         'module' => 'UserLanguage',
         'action' => 'getLanguageCode',
-        'dimension' => 'Language',
-        'documentation' => 'Shows which exact language code the visitor\'s browsers is set to. (e.g. "German — Austria (de-at)")',
+        'dimension' => [
+            'translationKey' => 'General_Language',
+        ],
+        'documentation' => [
+            'translationKey' => 'UserLanguage_getLanguageCodeDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -464,7 +836,9 @@ return [
         ],
         'relatedReports' => [
             0 => [
-                'name' => 'Web-browser language',
+                'name' => [
+                    'translationKey' => 'UserLanguage_BrowserLanguage',
+                ],
                 'module' => 'UserLanguage',
                 'action' => 'getLanguage',
             ],
@@ -472,33 +846,73 @@ return [
         'uniqueId' => 'UserLanguage_getLanguageCode',
     ],
     9 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Devices',
-        'name' => 'Device type',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'DevicesDetection_Devices',
+        ],
+        'name' => [
+            'translationKey' => 'DevicesDetection_DeviceType',
+        ],
         'module' => 'DevicesDetection',
         'action' => 'getType',
-        'dimension' => 'Device type',
-        'documentation' => 'This report shows the types of devices your visitors were using. This report will always show all device types Matomo is able to detect, even if there were no visits with a specific type.',
+        'dimension' => [
+            'translationKey' => 'DevicesDetection_DeviceType',
+        ],
+        'documentation' => [
+            'translationKey' => 'DevicesDetection_DeviceTypeReportDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -511,11 +925,17 @@ return [
             'conversion_rate' => 'percent',
         ],
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -526,33 +946,73 @@ return [
         'uniqueId' => 'DevicesDetection_getType',
     ],
     10 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Devices',
-        'name' => 'Device model',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'DevicesDetection_Devices',
+        ],
+        'name' => [
+            'translationKey' => 'DevicesDetection_DeviceModel',
+        ],
         'module' => 'DevicesDetection',
         'action' => 'getModel',
-        'dimension' => 'Device model',
-        'documentation' => 'This report shows the devices your visitors are using. Each model is displayed combined with the device brand as some model names are used by multiple brands.',
+        'dimension' => [
+            'translationKey' => 'DevicesDetection_DeviceModel',
+        ],
+        'documentation' => [
+            'translationKey' => 'DevicesDetection_DeviceModelReportDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -565,11 +1025,17 @@ return [
             'conversion_rate' => 'percent',
         ],
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -580,33 +1046,73 @@ return [
         'uniqueId' => 'DevicesDetection_getModel',
     ],
     11 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Devices',
-        'name' => 'Device brand',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'DevicesDetection_Devices',
+        ],
+        'name' => [
+            'translationKey' => 'DevicesDetection_DeviceBrand',
+        ],
         'module' => 'DevicesDetection',
         'action' => 'getBrand',
-        'dimension' => 'Device brand',
-        'documentation' => 'This report shows the brands / manufacturers of the devices your visitors were using. In most cases this information is only available for non-desktop devices.',
+        'dimension' => [
+            'translationKey' => 'DevicesDetection_DeviceBrand',
+        ],
+        'documentation' => [
+            'translationKey' => 'DevicesDetection_DeviceBrandReportDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -619,11 +1125,17 @@ return [
             'conversion_rate' => 'percent',
         ],
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -634,34 +1146,78 @@ return [
         'uniqueId' => 'DevicesDetection_getBrand',
     ],
     12 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Devices',
-        'name' => 'Screen Resolution',
-        'module' => 'Resolution',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'DevicesDetection_Devices',
+        ],
+        'name' => [
+            'translationKey' => 'Resolution_WidgetResolutions',
+        ],
+        'module' => [
+            'translationKey' => 'Resolution_ColumnResolution',
+        ],
         'action' => 'getResolution',
-        'dimension' => 'Resolution',
-        'documentation' => 'This report shows the screen resolutions your visitors used when viewing your website.',
+        'dimension' => [
+            'translationKey' => 'Resolution_ColumnResolution',
+        ],
+        'documentation' => [
+            'translationKey' => 'Resolution_WidgetResolutionsDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -675,42 +1231,88 @@ return [
         ],
         'relatedReports' => [
             0 => [
-                'name' => 'Configurations',
-                'module' => 'Resolution',
+                'name' => [
+                    'translationKey' => 'Resolution_Configurations',
+                ],
+                'module' => [
+                    'translationKey' => 'Resolution_ColumnResolution',
+                ],
                 'action' => 'getConfiguration',
             ],
         ],
         'uniqueId' => 'Resolution_getResolution',
     ],
     13 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Software',
-        'name' => 'Operating System versions',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'DevicesDetection_Software',
+        ],
+        'name' => [
+            'translationKey' => 'DevicesDetection_OperatingSystemVersions',
+        ],
         'module' => 'DevicesDetection',
         'action' => 'getOsVersions',
-        'dimension' => 'Operating system version',
-        'documentation' => 'This report shows you the operating systems your visitors are using. Each version and distribution is shown separately.',
+        'dimension' => [
+            'translationKey' => 'DevicesDetection_ColumnOperatingSystemVersion',
+        ],
+        'documentation' => [
+            'translationKey' => 'DevicesDetection_OperatingSystemVersionsReportDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -724,7 +1326,9 @@ return [
         ],
         'relatedReports' => [
             0 => [
-                'name' => 'Operating System families',
+                'name' => [
+                    'translationKey' => 'DevicesDetection_OperatingSystemFamilies',
+                ],
                 'module' => 'DevicesDetection',
                 'action' => 'getOsFamilies',
             ],
@@ -732,33 +1336,73 @@ return [
         'uniqueId' => 'DevicesDetection_getOsVersions',
     ],
     14 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Software',
-        'name' => 'Browsers',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'DevicesDetection_Software',
+        ],
+        'name' => [
+            'translationKey' => 'DevicesDetection_Browsers',
+        ],
         'module' => 'DevicesDetection',
         'action' => 'getBrowsers',
-        'dimension' => 'Browser',
-        'documentation' => 'This report contains information about what kind of browser your visitors were using.',
+        'dimension' => [
+            'translationKey' => 'DevicesDetection_ColumnBrowser',
+        ],
+        'documentation' => [
+            'translationKey' => 'DevicesDetection_WidgetBrowsersDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -772,17 +1416,25 @@ return [
         ],
         'relatedReports' => [
             0 => [
-                'name' => 'Browser version',
+                'name' => [
+                    'translationKey' => 'DevicesDetection_BrowserVersion',
+                ],
                 'module' => 'DevicesDetection',
                 'action' => 'getBrowserVersions',
             ],
         ],
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -793,34 +1445,76 @@ return [
         'uniqueId' => 'DevicesDetection_getBrowsers',
     ],
     15 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Software',
-        'name' => 'Browser version',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'DevicesDetection_Software',
+        ],
+        'name' => [
+            'translationKey' => 'DevicesDetection_BrowserVersion',
+        ],
         'module' => 'DevicesDetection',
         'action' => 'getBrowserVersions',
-        'dimension' => 'Browser version',
-        'documentation' => 'This report contains information about what kind of browser your visitors were using. Each browser version is listed separately.',
+        'dimension' => [
+            'translationKey' => 'DevicesDetection_BrowserVersion',
+        ],
+        'documentation' => [
+            'translationKey' => 'DevicesDetection_WidgetBrowserVersionsDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -834,7 +1528,9 @@ return [
         ],
         'relatedReports' => [
             0 => [
-                'name' => 'Browsers',
+                'name' => [
+                    'translationKey' => 'DevicesDetection_Browsers',
+                ],
                 'module' => 'DevicesDetection',
                 'action' => 'getBrowsers',
             ],
@@ -842,34 +1538,78 @@ return [
         'uniqueId' => 'DevicesDetection_getBrowserVersions',
     ],
     16 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Software',
-        'name' => 'Configurations',
-        'module' => 'Resolution',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'DevicesDetection_Software',
+        ],
+        'name' => [
+            'translationKey' => 'Resolution_Configurations',
+        ],
+        'module' => [
+            'translationKey' => 'Resolution_ColumnResolution',
+        ],
         'action' => 'getConfiguration',
-        'dimension' => 'Configuration',
-        'documentation' => 'This report shows the most common overall configurations that your visitors had. A configuration is the combination of an operating system, a browser type and a screen resolution.',
+        'dimension' => [
+            'translationKey' => 'Resolution_ColumnConfiguration',
+        ],
+        'documentation' => [
+            'translationKey' => 'Resolution_WidgetGlobalVisitorsDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -883,42 +1623,88 @@ return [
         ],
         'relatedReports' => [
             0 => [
-                'name' => 'Screen Resolution',
-                'module' => 'Resolution',
+                'name' => [
+                    'translationKey' => 'Resolution_WidgetResolutions',
+                ],
+                'module' => [
+                    'translationKey' => 'Resolution_ColumnResolution',
+                ],
                 'action' => 'getResolution',
             ],
         ],
         'uniqueId' => 'Resolution_getConfiguration',
     ],
     17 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Software',
-        'name' => 'Operating System families',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'DevicesDetection_Software',
+        ],
+        'name' => [
+            'translationKey' => 'DevicesDetection_OperatingSystemFamilies',
+        ],
         'module' => 'DevicesDetection',
         'action' => 'getOsFamilies',
-        'dimension' => 'Operating system family',
-        'documentation' => 'This report shows you the operating systems your visitors are using grouped by operating system family. An operating system family consists of different versions or distributions.',
+        'dimension' => [
+            'translationKey' => 'DevicesDetection_OperatingSystemFamily',
+        ],
+        'documentation' => [
+            'translationKey' => 'DevicesDetection_OperatingSystemFamiliesReportDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -932,7 +1718,9 @@ return [
         ],
         'relatedReports' => [
             0 => [
-                'name' => 'Operating System versions',
+                'name' => [
+                    'translationKey' => 'DevicesDetection_OperatingSystemVersions',
+                ],
                 'module' => 'DevicesDetection',
                 'action' => 'getOsVersions',
             ],
@@ -940,34 +1728,74 @@ return [
         'uniqueId' => 'DevicesDetection_getOsFamilies',
     ],
     18 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Software',
-        'name' => 'Browser engines',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'DevicesDetection_Software',
+        ],
+        'name' => [
+            'translationKey' => 'DevicesDetection_BrowserEngines',
+        ],
         'module' => 'DevicesDetection',
         'action' => 'getBrowserEngines',
-        'dimension' => 'Browser engine',
+        'dimension' => [
+            'translationKey' => 'DevicesDetection_BrowserEngine',
+        ],
         'documentation' => 'This report shows your visitors\' browsers broken down into browser engines. <br /> The most important information for web developers is what kind of rendering engine their visitors are using. The labels contain the names of the engines followed by the most common browser using that engine in brackets.',
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -982,19 +1810,35 @@ return [
         'uniqueId' => 'DevicesDetection_getBrowserEngines',
     ],
     19 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Software',
-        'name' => 'Browser Plugins',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'DevicesDetection_Software',
+        ],
+        'name' => [
+            'translationKey' => 'DevicePlugins_WidgetPlugins',
+        ],
         'module' => 'DevicePlugins',
         'action' => 'getPlugin',
-        'dimension' => 'Plugin',
-        'documentation' => 'This report shows which browser plugins your visitors had enabled. This information might be important for choosing the right way to deliver your content.',
+        'dimension' => [
+            'translationKey' => 'General_Plugin',
+        ],
+        'documentation' => [
+            'translationKey' => 'DevicePlugins_WidgetPluginsDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_visits_percentage' => 'The percentage of total visits where the plugin was detected. A visit may include multiple plugins. The value is rounded down to whole numbers.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_visits_percentage' => [
+                'translationKey' => 'DevicePlugins_ColumnPercentageVisitsDocumentation',
+            ],
         ],
         'processedMetrics' => [
             'nb_visits_percentage' => '% Visits',
@@ -1007,34 +1851,74 @@ return [
         'uniqueId' => 'DevicePlugins_getPlugin',
     ],
     20 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Times',
-        'name' => 'Visits per local time',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'VisitTime_SubmenuTimes',
+        ],
+        'name' => [
+            'translationKey' => 'VisitTime_LocalTime',
+        ],
         'module' => 'VisitTime',
         'action' => 'getVisitInformationPerLocalTime',
-        'dimension' => 'Local time — hour (start of visit)',
+        'dimension' => [
+            'translationKey' => 'VisitTime_ColumnLocalHour',
+        ],
         'documentation' => 'This graph shows what time it was in the <strong> visitors\' time zones </strong> during their visits.',
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -1049,7 +1933,9 @@ return [
         'constantRowsCount' => '1',
         'relatedReports' => [
             0 => [
-                'name' => 'Visits by day of the week',
+                'name' => [
+                    'translationKey' => 'VisitTime_VisitsByDayOfWeek',
+                ],
                 'module' => 'VisitTime',
                 'action' => 'getByDayOfWeek',
             ],
@@ -1057,33 +1943,71 @@ return [
         'uniqueId' => 'VisitTime_getVisitInformationPerLocalTime',
     ],
     21 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Times',
-        'name' => 'Visits per hour in the site\'s timezone',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'VisitTime_SubmenuTimes',
+        ],
+        'name' => [
+            'translationKey' => 'VisitTime_SiteTime',
+        ],
         'module' => 'VisitTime',
         'action' => 'getVisitInformationPerServerTime',
-        'dimension' => 'Site time — hour (start of visit)',
+        'dimension' => [
+            'translationKey' => 'VisitTime_ColumnVisitStartSiteHour',
+        ],
         'documentation' => 'This graph shows what time it was in the <strong> site\'s time zone </strong> during the visits.',
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -1097,11 +2021,17 @@ return [
         ],
         'constantRowsCount' => '1',
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -1112,34 +2042,76 @@ return [
         'uniqueId' => 'VisitTime_getVisitInformationPerServerTime',
     ],
     22 => [
-        'category' => 'Visitors',
-        'subcategory' => 'Times',
-        'name' => 'Visits by day of the week',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'VisitTime_SubmenuTimes',
+        ],
+        'name' => [
+            'translationKey' => 'VisitTime_VisitsByDayOfWeek',
+        ],
         'module' => 'VisitTime',
         'action' => 'getByDayOfWeek',
-        'dimension' => 'Day of the week',
-        'documentation' => 'This graph shows the number of visits your website received on each day of the week.',
+        'dimension' => [
+            'translationKey' => 'VisitTime_DayOfWeek',
+        ],
+        'documentation' => [
+            'translationKey' => 'VisitTime_WidgetByDayOfWeekDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -1154,7 +2126,9 @@ return [
         'constantRowsCount' => '1',
         'relatedReports' => [
             0 => [
-                'name' => 'Visits per local time',
+                'name' => [
+                    'translationKey' => 'VisitTime_LocalTime',
+                ],
                 'module' => 'VisitTime',
                 'action' => 'getVisitInformationPerLocalTime',
             ],
@@ -1162,34 +2136,76 @@ return [
         'uniqueId' => 'VisitTime_getByDayOfWeek',
     ],
     23 => [
-        'category' => 'Visitors',
-        'subcategory' => 'User IDs',
-        'name' => 'User IDs',
-        'module' => 'UserId',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
+        'subcategory' => [
+            'translationKey' => 'General_UserIds',
+        ],
+        'name' => [
+            'translationKey' => 'General_UserIds',
+        ],
+        'module' => [
+            'translationKey' => 'UserId_UserId',
+        ],
         'action' => 'getUsers',
-        'dimension' => 'UserId',
-        'documentation' => 'Shows visits and other general metrics for every individual User ID.',
+        'dimension' => [
+            'translationKey' => 'UserId_UserId',
+        ],
+        'documentation' => [
+            'translationKey' => 'UserId_UserReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/user-id/',
         'metrics' => [
-            'label' => 'Label',
-            'nb_visits' => 'Visits',
-            'nb_actions' => 'Actions',
-            'nb_visits_converted' => 'Visits with Conversions',
+            'label' => [
+                'translationKey' => 'General_ColumnLabel',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_visits_converted' => [
+                'translationKey' => 'General_ColumnVisitsWithConversions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_visits_converted' => 'Number of visits where at least one goal was successfully converted.',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_visits_converted' => [
+                'translationKey' => 'General_VisitConvertedGoalDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -1203,7 +2219,9 @@ return [
         'uniqueId' => 'UserId_getUsers',
     ],
     24 => [
-        'category' => 'Visitors',
+        'category' => [
+            'translationKey' => 'General_Visitors',
+        ],
         'subcategory' => 'Custom Variables',
         'name' => 'Custom Variables',
         'module' => 'CustomVariables',
@@ -1216,25 +2234,55 @@ return [
             'CustomVariables_CustomVariableValue' => 'Custom Variable value',
         ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -1248,11 +2296,17 @@ return [
         ],
         'actionToLoadSubTables' => 'getCustomVariablesValuesFromNameId',
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -1263,35 +2317,79 @@ return [
         'uniqueId' => 'CustomVariables_getCustomVariables',
     ],
     25 => [
-        'category' => 'Behaviour',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
         'name' => 'Actions - Main metrics',
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'get',
-        'documentation' => 'This report provides a very basic overview of what actions your visitors take on your website.',
+        'documentation' => [
+            'translationKey' => 'Actions_MainMetricsReportDocumentation',
+        ],
         'metrics' => [
-            'nb_pageviews' => 'Pageviews',
-            'nb_uniq_pageviews' => 'Unique Pageviews',
-            'nb_downloads' => 'Downloads',
-            'nb_uniq_downloads' => 'Unique Downloads',
-            'nb_outlinks' => 'Outlinks',
-            'nb_uniq_outlinks' => 'Unique Outlinks',
-            'nb_searches' => 'Searches',
-            'nb_keywords' => 'Unique Keywords',
-            'hits' => 'Hits',
+            'nb_pageviews' => [
+                'translationKey' => 'General_ColumnPageviews',
+            ],
+            'nb_uniq_pageviews' => [
+                'translationKey' => 'General_ColumnUniquePageviews',
+            ],
+            'nb_downloads' => [
+                'translationKey' => 'General_Downloads',
+            ],
+            'nb_uniq_downloads' => [
+                'translationKey' => 'Actions_ColumnUniqueDownloads',
+            ],
+            'nb_outlinks' => [
+                'translationKey' => 'General_Outlinks',
+            ],
+            'nb_uniq_outlinks' => [
+                'translationKey' => 'Actions_ColumnUniqueOutlinks',
+            ],
+            'nb_searches' => [
+                'translationKey' => 'Actions_ColumnSearches',
+            ],
+            'nb_keywords' => [
+                'translationKey' => 'Actions_ColumnSiteSearchKeywords',
+            ],
+            'hits' => [
+                'translationKey' => 'General_ColumnHits',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_pageviews' => 'The number of times this page was visited.',
-            'nb_uniq_pageviews' => 'The number of visits that included this page. If a page was viewed multiple times during one visit, it is only counted once.',
-            'nb_downloads' => 'The number of times this link was clicked.',
-            'nb_uniq_downloads' => 'The number of visits that involved a click on this link. If a link was clicked multiple times during one visit, it is only counted once.',
-            'nb_outlinks' => 'The number of times this link was clicked.',
-            'nb_uniq_outlinks' => 'The number of visits that involved a click on this link. If a link was clicked multiple times during one visit, it is only counted once.',
-            'nb_searches' => 'The number of visits that searched for this keyword on your website\'s search engine.',
-            'hits' => 'The total count of all interactions recorded on your website, including page views, link clicks, downloads, and events.',
-            'avg_time_generation' => 'The average time it took to generate the page. This metric includes the time it took the server to generate the web page, plus the time it took for the visitor to download the response from the server. A lower \'Avg. generation time\' means a faster website for your visitors!',
+            'nb_pageviews' => [
+                'translationKey' => 'General_ColumnPageviewsDocumentation',
+            ],
+            'nb_uniq_pageviews' => [
+                'translationKey' => 'General_ColumnUniquePageviewsDocumentation',
+            ],
+            'nb_downloads' => [
+                'translationKey' => 'Actions_ColumnClicksDocumentation',
+            ],
+            'nb_uniq_downloads' => [
+                'translationKey' => 'Actions_ColumnUniqueClicksDocumentation',
+            ],
+            'nb_outlinks' => [
+                'translationKey' => 'Actions_ColumnClicksDocumentation',
+            ],
+            'nb_uniq_outlinks' => [
+                'translationKey' => 'Actions_ColumnUniqueClicksDocumentation',
+            ],
+            'nb_searches' => [
+                'translationKey' => 'Actions_ColumnSearchesDocumentation',
+            ],
+            'hits' => [
+                'translationKey' => 'General_ColumnHitsDocumentation',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTimeDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'avg_time_generation' => 'Avg. generation time',
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTime',
+            ],
         ],
         'metricTypes' => [
             'nb_pageviews' => 'number',
@@ -1308,7 +2406,9 @@ return [
         'uniqueId' => 'Actions_get',
     ],
     26 => [
-        'category' => 'Behaviour',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
         'name' => 'Bandwidth - Main metrics',
         'module' => 'Bandwidth',
         'action' => 'get',
@@ -1330,30 +2430,64 @@ return [
         'uniqueId' => 'Bandwidth_get',
     ],
     27 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Pages',
-        'name' => 'Page URLs',
-        'module' => 'Actions',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'General_Pages',
+        ],
+        'name' => [
+            'translationKey' => 'Actions_PageUrls',
+        ],
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getPageUrls',
-        'dimension' => 'Page URL',
+        'dimension' => [
+            'translationKey' => 'Actions_ColumnPageURL',
+        ],
         'documentation' => 'This report contains information about the page URLs that have been visited. <br /> The table is organized hierarchically, the URLs are displayed as a folder structure.<br />Use the plus and minus icons on the left to navigate.',
         'metrics' => [
-            'nb_hits' => 'Pageviews',
-            'nb_visits' => 'Unique Pageviews',
+            'nb_hits' => [
+                'translationKey' => 'General_ColumnPageviews',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnUniquePageviews',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_hits' => 'The number of times this page was visited.',
-            'nb_visits' => 'The number of visits that included this page. If a page was viewed multiple times during one visit, it is only counted once.',
-            'avg_time_on_page' => 'The average amount of time visitors spent on this page (only the page, not the entire website).',
-            'bounce_rate' => 'The percentage of visits that started on this page and left the website straight away.',
-            'exit_rate' => 'The percentage of visits that left the website after viewing this page.',
-            'avg_time_generation' => 'The average time it took to generate the page. This metric includes the time it took the server to generate the web page, plus the time it took for the visitor to download the response from the server. A lower \'Avg. generation time\' means a faster website for your visitors!',
+            'nb_hits' => [
+                'translationKey' => 'General_ColumnPageviewsDocumentation',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnUniquePageviewsDocumentation',
+            ],
+            'avg_time_on_page' => [
+                'translationKey' => 'General_ColumnAverageTimeOnPageDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnPageBounceRateDocumentation',
+            ],
+            'exit_rate' => [
+                'translationKey' => 'General_ColumnExitRateDocumentation',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTimeDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'avg_time_on_page' => 'Avg. time on page',
-            'bounce_rate' => 'Bounce Rate',
-            'exit_rate' => 'Exit rate',
-            'avg_time_generation' => 'Avg. generation time',
+            'avg_time_on_page' => [
+                'translationKey' => 'General_ColumnAverageTimeOnPage',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'exit_rate' => [
+                'translationKey' => 'General_ColumnExitRate',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTime',
+            ],
         ],
         'metricTypes' => [
             'nb_hits' => 'number',
@@ -1366,24 +2500,42 @@ return [
         'actionToLoadSubTables' => 'getPageUrls',
         'relatedReports' => [
             0 => [
-                'name' => 'Entry pages',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_SubmenuPagesEntry',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getEntryPageUrls',
             ],
             1 => [
-                'name' => 'Exit pages',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_SubmenuPagesExit',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getExitPageUrls',
             ],
         ],
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'nb_conversions_attrib' => 'Conversions',
-            'revenue_attrib' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'nb_conversions_attrib' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue_attrib' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
-            'nb_conversions_page_rate' => 'Viewed before conversion rate',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
+            'nb_conversions_page_rate' => [
+                'translationKey' => 'Goals_ConversionRatePageViewedBeforeGeneric',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -1396,26 +2548,52 @@ return [
         'uniqueId' => 'Actions_getPageUrls',
     ],
     28 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Entry pages',
-        'name' => 'Entry pages',
-        'module' => 'Actions',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Actions_SubmenuPagesEntry',
+        ],
+        'name' => [
+            'translationKey' => 'Actions_SubmenuPagesEntry',
+        ],
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getEntryPageUrls',
-        'dimension' => 'Entry Page URL',
+        'dimension' => [
+            'translationKey' => 'Actions_ColumnEntryPageURL',
+        ],
         'documentation' => 'This report contains information about the entry pages that were used during the specified period. An entry page is the first page that a user views during their visit. <br /> The entry URLs are displayed as a folder structure.<br />Use the plus and minus icons on the left to navigate.',
         'metrics' => [
-            'entry_nb_visits' => 'Entrances',
-            'entry_bounce_count' => 'Bounces',
+            'entry_nb_visits' => [
+                'translationKey' => 'General_ColumnEntrances',
+            ],
+            'entry_bounce_count' => [
+                'translationKey' => 'General_ColumnBounces',
+            ],
         ],
         'metricsDocumentation' => [
-            'entry_nb_visits' => 'Number of visits that started on this page.',
-            'entry_bounce_count' => 'Number of visits that started and ended on this page. This means that the visitor left the website after viewing only this page.',
-            'bounce_rate' => 'The percentage of visits that started on this page and left the website straight away.',
-            'avg_time_generation' => 'The average time it took to generate the page. This metric includes the time it took the server to generate the web page, plus the time it took for the visitor to download the response from the server. A lower \'Avg. generation time\' means a faster website for your visitors!',
+            'entry_nb_visits' => [
+                'translationKey' => 'General_ColumnEntrancesDocumentation',
+            ],
+            'entry_bounce_count' => [
+                'translationKey' => 'General_ColumnBouncesDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnPageBounceRateDocumentation',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTimeDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'bounce_rate' => 'Bounce Rate',
-            'avg_time_generation' => 'Avg. generation time',
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTime',
+            ],
         ],
         'metricTypes' => [
             'entry_nb_visits' => 'number',
@@ -1428,20 +2606,36 @@ return [
         'actionToLoadSubTables' => 'getEntryPageUrls',
         'relatedReports' => [
             0 => [
-                'name' => 'Entry page titles',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_EntryPageTitles',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getEntryPageTitles',
             ],
         ],
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'nb_conversions_entry' => 'Conversions',
-            'revenue_entry' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'nb_conversions_entry' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue_entry' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
-            'revenue_per_entry' => 'Revenue per Entry',
-            'nb_conversions_entry_rate' => 'Conversion Rate',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
+            'revenue_per_entry' => [
+                'translationKey' => 'General_ColumnValuePerEntry',
+            ],
+            'nb_conversions_entry_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -1455,26 +2649,52 @@ return [
         'uniqueId' => 'Actions_getEntryPageUrls',
     ],
     29 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Entry pages',
-        'name' => 'Entry page titles',
-        'module' => 'Actions',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Actions_SubmenuPagesEntry',
+        ],
+        'name' => [
+            'translationKey' => 'Actions_EntryPageTitles',
+        ],
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getEntryPageTitles',
-        'dimension' => 'Entry Page title',
+        'dimension' => [
+            'translationKey' => 'Actions_ColumnEntryPageTitle',
+        ],
         'documentation' => 'This report contains information about the titles of entry pages that were used during the specified period. Use the plus and minus icons on the left to navigate.',
         'metrics' => [
-            'entry_nb_visits' => 'Entrances',
-            'entry_bounce_count' => 'Bounces',
+            'entry_nb_visits' => [
+                'translationKey' => 'General_ColumnEntrances',
+            ],
+            'entry_bounce_count' => [
+                'translationKey' => 'General_ColumnBounces',
+            ],
         ],
         'metricsDocumentation' => [
-            'entry_nb_visits' => 'Number of visits that started on this page.',
-            'entry_bounce_count' => 'Number of visits that started and ended on this page. This means that the visitor left the website after viewing only this page.',
-            'bounce_rate' => 'The percentage of visits that started on this page and left the website straight away.',
-            'avg_time_generation' => 'The average time it took to generate the page. This metric includes the time it took the server to generate the web page, plus the time it took for the visitor to download the response from the server. A lower \'Avg. generation time\' means a faster website for your visitors!',
+            'entry_nb_visits' => [
+                'translationKey' => 'General_ColumnEntrancesDocumentation',
+            ],
+            'entry_bounce_count' => [
+                'translationKey' => 'General_ColumnBouncesDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnPageBounceRateDocumentation',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTimeDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'bounce_rate' => 'Bounce Rate',
-            'avg_time_generation' => 'Avg. generation time',
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTime',
+            ],
         ],
         'metricTypes' => [
             'entry_nb_visits' => 'number',
@@ -1487,25 +2707,45 @@ return [
         'actionToLoadSubTables' => 'getEntryPageTitles',
         'relatedReports' => [
             0 => [
-                'name' => 'Page titles',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_SubmenuPageTitles',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getPageTitles',
             ],
             1 => [
-                'name' => 'Entry pages',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_SubmenuPagesEntry',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getEntryPageUrls',
             ],
         ],
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'nb_conversions_entry' => 'Conversions',
-            'revenue_entry' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'nb_conversions_entry' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue_entry' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
-            'revenue_per_entry' => 'Revenue per Entry',
-            'nb_conversions_entry_rate' => 'Conversion Rate',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
+            'revenue_per_entry' => [
+                'translationKey' => 'General_ColumnValuePerEntry',
+            ],
+            'nb_conversions_entry_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -1519,28 +2759,58 @@ return [
         'uniqueId' => 'Actions_getEntryPageTitles',
     ],
     30 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Exit pages',
-        'name' => 'Exit pages',
-        'module' => 'Actions',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Actions_SubmenuPagesExit',
+        ],
+        'name' => [
+            'translationKey' => 'Actions_SubmenuPagesExit',
+        ],
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getExitPageUrls',
-        'dimension' => 'Exit Page URL',
+        'dimension' => [
+            'translationKey' => 'Actions_ColumnExitPageURL',
+        ],
         'documentation' => 'This report contains information about the exit pages that occurred during the specified period. An exit page is the last page that a user views during their visit. <br /> The exit URLs are displayed as a folder structure.<br />Use the plus and minus icons on the left to navigate.',
         'metrics' => [
-            'exit_nb_visits' => 'Exits',
-            'nb_visits' => 'Unique Pageviews',
+            'exit_nb_visits' => [
+                'translationKey' => 'General_ColumnExits',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnUniquePageviews',
+            ],
         ],
         'metricsDocumentation' => [
-            'exit_nb_visits' => 'Number of visits that ended on this page.',
-            'nb_visits' => 'The number of visits that included this page. If a page was viewed multiple times during one visit, it is only counted once.',
-            'avg_time_on_page' => 'The average amount of time visitors spent on this page (only the page, not the entire website).',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'exit_rate' => 'The percentage of visits that left the website after viewing this page.',
-            'avg_time_generation' => 'The average time it took to generate the page. This metric includes the time it took the server to generate the web page, plus the time it took for the visitor to download the response from the server. A lower \'Avg. generation time\' means a faster website for your visitors!',
+            'exit_nb_visits' => [
+                'translationKey' => 'General_ColumnExitsDocumentation',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnUniquePageviewsDocumentation',
+            ],
+            'avg_time_on_page' => [
+                'translationKey' => 'General_ColumnAverageTimeOnPageDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'exit_rate' => [
+                'translationKey' => 'General_ColumnExitRateDocumentation',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTimeDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'exit_rate' => 'Exit rate',
-            'avg_time_generation' => 'Avg. generation time',
+            'exit_rate' => [
+                'translationKey' => 'General_ColumnExitRate',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTime',
+            ],
         ],
         'metricTypes' => [
             'exit_nb_visits' => 'number',
@@ -1553,34 +2823,64 @@ return [
         'actionToLoadSubTables' => 'getExitPageUrls',
         'relatedReports' => [
             0 => [
-                'name' => 'Exit page titles',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_ExitPageTitles',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getExitPageTitles',
             ],
         ],
         'uniqueId' => 'Actions_getExitPageUrls',
     ],
     31 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Exit pages',
-        'name' => 'Exit page titles',
-        'module' => 'Actions',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Actions_SubmenuPagesExit',
+        ],
+        'name' => [
+            'translationKey' => 'Actions_ExitPageTitles',
+        ],
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getExitPageTitles',
-        'dimension' => 'Exit Page Title',
+        'dimension' => [
+            'translationKey' => 'Actions_ColumnExitPageTitle',
+        ],
         'documentation' => 'This report contains information about the titles of exit pages that occurred during the specified period. Use the plus and minus icons on the left to navigate.',
         'metrics' => [
-            'exit_nb_visits' => 'Exits',
-            'nb_visits' => 'Unique Pageviews',
+            'exit_nb_visits' => [
+                'translationKey' => 'General_ColumnExits',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnUniquePageviews',
+            ],
         ],
         'metricsDocumentation' => [
-            'exit_nb_visits' => 'Number of visits that ended on this page.',
-            'nb_visits' => 'The number of visits that included this page. If a page was viewed multiple times during one visit, it is only counted once.',
-            'exit_rate' => 'The percentage of visits that left the website after viewing this page.',
-            'avg_time_generation' => 'The average time it took to generate the page. This metric includes the time it took the server to generate the web page, plus the time it took for the visitor to download the response from the server. A lower \'Avg. generation time\' means a faster website for your visitors!',
+            'exit_nb_visits' => [
+                'translationKey' => 'General_ColumnExitsDocumentation',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnUniquePageviewsDocumentation',
+            ],
+            'exit_rate' => [
+                'translationKey' => 'General_ColumnExitRateDocumentation',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTimeDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'exit_rate' => 'Exit rate',
-            'avg_time_generation' => 'Avg. generation time',
+            'exit_rate' => [
+                'translationKey' => 'General_ColumnExitRate',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTime',
+            ],
         ],
         'metricTypes' => [
             'exit_nb_visits' => 'number',
@@ -1593,43 +2893,85 @@ return [
         'actionToLoadSubTables' => 'getExitPageTitles',
         'relatedReports' => [
             0 => [
-                'name' => 'Page titles',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_SubmenuPageTitles',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getPageTitles',
             ],
             1 => [
-                'name' => 'Exit pages',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_SubmenuPagesExit',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getExitPageUrls',
             ],
         ],
         'uniqueId' => 'Actions_getExitPageTitles',
     ],
     32 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Page titles',
-        'name' => 'Page titles',
-        'module' => 'Actions',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Actions_SubmenuPageTitles',
+        ],
+        'name' => [
+            'translationKey' => 'Actions_SubmenuPageTitles',
+        ],
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getPageTitles',
-        'dimension' => 'Page Title',
+        'dimension' => [
+            'translationKey' => 'Goals_PageTitle',
+        ],
         'documentation' => 'This report contains information about the titles of the pages that have been visited. <br /> The page title is the HTML <title> Tag that most browsers show in their window title.',
         'metrics' => [
-            'nb_hits' => 'Pageviews',
-            'nb_visits' => 'Unique Pageviews',
+            'nb_hits' => [
+                'translationKey' => 'General_ColumnPageviews',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnUniquePageviews',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_hits' => 'The number of times this page was visited.',
-            'nb_visits' => 'The number of visits that included this page. If a page was viewed multiple times during one visit, it is only counted once.',
-            'avg_time_on_page' => 'The average amount of time visitors spent on this page (only the page, not the entire website).',
-            'bounce_rate' => 'The percentage of visits that started on this page and left the website straight away.',
-            'exit_rate' => 'The percentage of visits that left the website after viewing this page.',
-            'avg_time_generation' => 'The average time it took to generate the page. This metric includes the time it took the server to generate the web page, plus the time it took for the visitor to download the response from the server. A lower \'Avg. generation time\' means a faster website for your visitors!',
+            'nb_hits' => [
+                'translationKey' => 'General_ColumnPageviewsDocumentation',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnUniquePageviewsDocumentation',
+            ],
+            'avg_time_on_page' => [
+                'translationKey' => 'General_ColumnAverageTimeOnPageDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnPageBounceRateDocumentation',
+            ],
+            'exit_rate' => [
+                'translationKey' => 'General_ColumnExitRateDocumentation',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTimeDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'avg_time_on_page' => 'Avg. time on page',
-            'bounce_rate' => 'Bounce Rate',
-            'exit_rate' => 'Exit rate',
-            'avg_time_generation' => 'Avg. generation time',
+            'avg_time_on_page' => [
+                'translationKey' => 'General_ColumnAverageTimeOnPage',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'exit_rate' => [
+                'translationKey' => 'General_ColumnExitRate',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTime',
+            ],
         ],
         'metricTypes' => [
             'nb_hits' => 'number',
@@ -1642,24 +2984,42 @@ return [
         'actionToLoadSubTables' => 'getPageTitles',
         'relatedReports' => [
             0 => [
-                'name' => 'Entry page titles',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_EntryPageTitles',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getEntryPageTitles',
             ],
             1 => [
-                'name' => 'Exit page titles',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_ExitPageTitles',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getExitPageTitles',
             ],
         ],
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'nb_conversions_attrib' => 'Conversions',
-            'revenue_attrib' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'nb_conversions_attrib' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue_attrib' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
-            'nb_conversions_page_rate' => 'Viewed before conversion rate',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
+            'nb_conversions_page_rate' => [
+                'translationKey' => 'Goals_ConversionRatePageViewedBeforeGeneric',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -1672,22 +3032,42 @@ return [
         'uniqueId' => 'Actions_getPageTitles',
     ],
     33 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Site Search',
-        'name' => 'Site Search Keywords',
-        'module' => 'Actions',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Actions_SubmenuSitesearch',
+        ],
+        'name' => [
+            'translationKey' => 'Actions_WidgetSearchKeywords',
+        ],
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getSiteSearchKeywords',
-        'dimension' => 'Keyword',
+        'dimension' => [
+            'translationKey' => 'General_ColumnKeyword',
+        ],
         'documentation' => 'This report lists the Search Keywords that visitors searched for on your internal Search Engine.<br/><br/>Tracking searches that visitors make on your website is a very effective way to learn more about what your audience is looking for, it can help find ideas for new content, new Ecommerce products that potential customers might be searching for, and generally improve the visitors\' experience on your website.',
         'onlineGuideUrl' => 'https://matomo.org/docs/site-search/',
         'metrics' => [
-            'nb_visits' => 'Searches',
-            'nb_pages_per_search' => 'Search Results pages',
+            'nb_visits' => [
+                'translationKey' => 'Actions_ColumnSearches',
+            ],
+            'nb_pages_per_search' => [
+                'translationKey' => 'Actions_ColumnPagesPerSearch',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'The number of visits that searched for this keyword on your website\'s search engine.',
-            'nb_pages_per_search' => 'Visitors will search on your website, and sometimes click "next" to view more results. This is the average number of search results pages viewed for this keyword.',
-            'exit_rate' => 'The percentage of visits that left the website after searching for this Keyword on your Site Search engine.',
+            'nb_visits' => [
+                'translationKey' => 'Actions_ColumnSearchesDocumentation',
+            ],
+            'nb_pages_per_search' => [
+                'translationKey' => 'Actions_ColumnPagesPerSearchDocumentation',
+            ],
+            'exit_rate' => [
+                'translationKey' => 'Actions_ColumnSearchExitsDocumentation',
+            ],
         ],
         'processedMetrics' => [
             'exit_rate' => '% Search Exits',
@@ -1703,21 +3083,39 @@ return [
         'uniqueId' => 'Actions_getSiteSearchKeywords',
     ],
     34 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Site Search',
-        'name' => 'Pages Following a Site Search',
-        'module' => 'Actions',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Actions_SubmenuSitesearch',
+        ],
+        'name' => [
+            'translationKey' => 'Actions_WidgetPageUrlsFollowingSearch',
+        ],
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getPageUrlsFollowingSiteSearch',
-        'dimension' => 'Destination Page',
+        'dimension' => [
+            'translationKey' => 'General_ColumnDestinationPage',
+        ],
         'documentation' => 'When visitors search on your website, they are looking for a particular page, content, product, or service. This report lists the pages that were clicked the most after an internal search. In other words, the list of pages the most searched for by visitors already on your website.<br/>Use the plus and minus icons on the left to navigate.',
         'onlineGuideUrl' => 'https://matomo.org/docs/site-search/',
         'metrics' => [
-            'nb_hits_following_search' => 'Clicked in search results',
-            'nb_hits' => 'Pageviews',
+            'nb_hits_following_search' => [
+                'translationKey' => 'General_ColumnViewedAfterSearch',
+            ],
+            'nb_hits' => [
+                'translationKey' => 'General_ColumnPageviews',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_hits_following_search' => 'The number of times this Page was visited after a visitor did a search on your website, and clicked on this page in the search results.',
-            'nb_hits' => 'The number of times this page was visited.',
+            'nb_hits_following_search' => [
+                'translationKey' => 'General_ColumnViewedAfterSearchDocumentation',
+            ],
+            'nb_hits' => [
+                'translationKey' => 'General_ColumnPageviewsDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_hits_following_search' => 'number',
@@ -1729,28 +3127,48 @@ return [
         ],
         'relatedReports' => [
             0 => [
-                'name' => 'Page Titles Following a Site Search',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_WidgetPageTitlesFollowingSearch',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getPageTitlesFollowingSiteSearch',
             ],
         ],
         'uniqueId' => 'Actions_getPageUrlsFollowingSiteSearch',
     ],
     35 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Site Search',
-        'name' => 'Search Keywords with No Results',
-        'module' => 'Actions',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Actions_SubmenuSitesearch',
+        ],
+        'name' => [
+            'translationKey' => 'Actions_WidgetSearchNoResultKeywords',
+        ],
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getSiteSearchNoResultKeywords',
-        'dimension' => 'Keyword with No Search Result',
+        'dimension' => [
+            'translationKey' => 'Actions_ColumnNoResultKeyword',
+        ],
         'documentation' => 'Tracking searches that visitors make on your website is a very effective way to learn more about what your audience is looking for, it can help find ideas for new content, new Ecommerce products that potential customers might be searching for, and generally improve the visitors\' experience on your website.<br /><br />This report lists the Search Keywords that did not return any Search result: maybe the search engine algorithm can be improved, or maybe your visitors are looking for content that is not (yet) on your website?',
         'onlineGuideUrl' => 'https://matomo.org/docs/site-search/',
         'metrics' => [
-            'nb_visits' => 'Searches',
+            'nb_visits' => [
+                'translationKey' => 'Actions_ColumnSearches',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'The number of visits that searched for this keyword on your website\'s search engine.',
-            'exit_rate' => 'The percentage of visits that left the website after searching for this Keyword on your Site Search engine.',
+            'nb_visits' => [
+                'translationKey' => 'Actions_ColumnSearchesDocumentation',
+            ],
+            'exit_rate' => [
+                'translationKey' => 'Actions_ColumnSearchExitsDocumentation',
+            ],
         ],
         'processedMetrics' => [
             'exit_rate' => '% Search Exits',
@@ -1765,21 +3183,39 @@ return [
         'uniqueId' => 'Actions_getSiteSearchNoResultKeywords',
     ],
     36 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Site Search',
-        'name' => 'Page Titles Following a Site Search',
-        'module' => 'Actions',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Actions_SubmenuSitesearch',
+        ],
+        'name' => [
+            'translationKey' => 'Actions_WidgetPageTitlesFollowingSearch',
+        ],
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getPageTitlesFollowingSiteSearch',
-        'dimension' => 'Destination Page',
+        'dimension' => [
+            'translationKey' => 'General_ColumnDestinationPage',
+        ],
         'documentation' => 'When visitors search on your website, they are looking for a particular page, content, product, or service. This report lists the pages that were clicked the most after an internal search. In other words, the list of pages the most searched for by visitors already on your website.<br/>Use the plus and minus icons on the left to navigate.',
         'onlineGuideUrl' => 'https://matomo.org/docs/site-search/',
         'metrics' => [
-            'nb_hits_following_search' => 'Clicked in search results',
-            'nb_hits' => 'Pageviews',
+            'nb_hits_following_search' => [
+                'translationKey' => 'General_ColumnViewedAfterSearch',
+            ],
+            'nb_hits' => [
+                'translationKey' => 'General_ColumnPageviews',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_hits_following_search' => 'The number of times this Page was visited after a visitor did a search on your website, and clicked on this page in the search results.',
-            'nb_hits' => 'The number of times this page was visited.',
+            'nb_hits_following_search' => [
+                'translationKey' => 'General_ColumnViewedAfterSearchDocumentation',
+            ],
+            'nb_hits' => [
+                'translationKey' => 'General_ColumnPageviewsDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_hits_following_search' => 'number',
@@ -1791,31 +3227,55 @@ return [
         ],
         'relatedReports' => [
             0 => [
-                'name' => 'Pages Following a Site Search',
-                'module' => 'Actions',
+                'name' => [
+                    'translationKey' => 'Actions_WidgetPageUrlsFollowingSearch',
+                ],
+                'module' => [
+                    'translationKey' => 'General_Actions',
+                ],
                 'action' => 'getPageUrlsFollowingSiteSearch',
             ],
         ],
         'uniqueId' => 'Actions_getPageTitlesFollowingSiteSearch',
     ],
     37 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Site Search',
-        'name' => 'Search Categories',
-        'module' => 'Actions',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Actions_SubmenuSitesearch',
+        ],
+        'name' => [
+            'translationKey' => 'Actions_WidgetSearchCategories',
+        ],
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getSiteSearchCategories',
-        'dimension' => 'Search Category',
+        'dimension' => [
+            'translationKey' => 'Actions_ColumnSearchCategory',
+        ],
         'documentation' => 'This report lists the Categories that visitors selected when they made a Search on your website.<br/>For example, Ecommerce websites typically have a "Category" selector so that visitors can restrict their searches to all products in a specific Category.',
         'onlineGuideUrl' => 'https://matomo.org/docs/site-search/',
         'metrics' => [
-            'nb_visits' => 'Searches',
-            'nb_pages_per_search' => 'Search Results pages',
+            'nb_visits' => [
+                'translationKey' => 'Actions_ColumnSearches',
+            ],
+            'nb_pages_per_search' => [
+                'translationKey' => 'Actions_ColumnPagesPerSearch',
+            ],
             'exit_rate' => '% Search Exits',
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'The number of visits that searched for this keyword on your website\'s search engine.',
-            'nb_pages_per_search' => 'Visitors will search on your website, and sometimes click "next" to view more results. This is the average number of search results pages viewed for this keyword.',
-            'exit_rate' => 'The percentage of visits that left the website after searching for this Keyword on your Site Search engine.',
+            'nb_visits' => [
+                'translationKey' => 'Actions_ColumnSearchesDocumentation',
+            ],
+            'nb_pages_per_search' => [
+                'translationKey' => 'Actions_ColumnPagesPerSearchDocumentation',
+            ],
+            'exit_rate' => [
+                'translationKey' => 'Actions_ColumnSearchExitsDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -1825,20 +3285,38 @@ return [
         'uniqueId' => 'Actions_getSiteSearchCategories',
     ],
     38 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Outlinks',
-        'name' => 'Outlinks',
-        'module' => 'Actions',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'General_Outlinks',
+        ],
+        'name' => [
+            'translationKey' => 'General_Outlinks',
+        ],
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getOutlinks',
-        'dimension' => 'Clicked Outlink',
+        'dimension' => [
+            'translationKey' => 'Actions_ColumnClickedURL',
+        ],
         'documentation' => 'This report shows a hierarchical list of outlink URLs that were clicked by your visitors. An outlink is a link that leads the visitor away from your website (to another domain).<br />Use the plus and minus icons on the left to navigate.',
         'metrics' => [
-            'nb_visits' => 'Unique Clicks',
-            'nb_hits' => 'Clicks',
+            'nb_visits' => [
+                'translationKey' => 'Actions_ColumnUniqueClicks',
+            ],
+            'nb_hits' => [
+                'translationKey' => 'Actions_ColumnClicks',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'The number of visits that involved a click on this link. If a link was clicked multiple times during one visit, it is only counted once.',
-            'nb_hits' => 'The number of times this link was clicked.',
+            'nb_visits' => [
+                'translationKey' => 'Actions_ColumnUniqueClicksDocumentation',
+            ],
+            'nb_hits' => [
+                'translationKey' => 'Actions_ColumnClicksDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -1848,20 +3326,38 @@ return [
         'uniqueId' => 'Actions_getOutlinks',
     ],
     39 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Downloads',
-        'name' => 'Downloads',
-        'module' => 'Actions',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'General_Downloads',
+        ],
+        'name' => [
+            'translationKey' => 'General_Downloads',
+        ],
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getDownloads',
-        'dimension' => 'Download URL',
+        'dimension' => [
+            'translationKey' => 'Actions_ColumnDownloadURL',
+        ],
         'documentation' => 'In this report, you can see which files your visitors have downloaded. <br /> What Matomo counts as a download is the click on a download link. Whether the download was completed or not isn\'t known to Matomo.',
         'metrics' => [
-            'nb_visits' => 'Unique Downloads',
-            'nb_hits' => 'Downloads',
+            'nb_visits' => [
+                'translationKey' => 'Actions_ColumnUniqueDownloads',
+            ],
+            'nb_hits' => [
+                'translationKey' => 'General_Downloads',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'The number of visits that involved a click on this link. If a link was clicked multiple times during one visit, it is only counted once.',
-            'nb_hits' => 'The number of times this link was clicked.',
+            'nb_visits' => [
+                'translationKey' => 'Actions_ColumnUniqueClicksDocumentation',
+            ],
+            'nb_hits' => [
+                'translationKey' => 'Actions_ColumnClicksDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -1871,39 +3367,87 @@ return [
         'uniqueId' => 'Actions_getDownloads',
     ],
     40 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Events',
-        'name' => 'Event Categories',
-        'module' => 'Events',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Events_Events',
+        ],
+        'name' => [
+            'translationKey' => 'Events_EventCategories',
+        ],
+        'module' => [
+            'translationKey' => 'Events_Events',
+        ],
         'action' => 'getCategory',
-        'dimension' => 'Event Category',
-        'documentation' => 'This report shows the categories of each tracked event and how many times they occurred. You can view the event actions and names that were tracked along with each event category in each row\'s subtable. You can change which is shown by changing the secondary dimension with the link at the bottom of the report.',
+        'dimension' => [
+            'translationKey' => 'Events_EventCategory',
+        ],
+        'documentation' => [
+            'translationKey' => 'Events_EventCategoriesReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/event-tracking/',
         'dimensions' => [
-            'Events_EventCategory' => 'Event Category',
-            'Events_EventAction' => 'Event Action',
+            'Events_EventCategory' => [
+                'translationKey' => 'Events_EventCategory',
+            ],
+            'Events_EventAction' => [
+                'translationKey' => 'Events_EventAction',
+            ],
         ],
         'metrics' => [
-            'nb_events' => 'Events',
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'sum_event_value' => 'Event value',
-            'min_event_value' => 'Minimum Event value',
-            'max_event_value' => 'Maximum Event value',
-            'nb_events_with_value' => 'Events with a value',
+            'nb_events' => [
+                'translationKey' => 'Events_Events',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'sum_event_value' => [
+                'translationKey' => 'Events_EventValue',
+            ],
+            'min_event_value' => [
+                'translationKey' => 'Events_MinValue',
+            ],
+            'max_event_value' => [
+                'translationKey' => 'Events_MaxValue',
+            ],
+            'nb_events_with_value' => [
+                'translationKey' => 'Events_EventsWithValue',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_events' => 'Total number of events',
-            'nb_visits' => 'The total number of visits where at least one event was triggered.',
-            'nb_uniq_visitors' => 'The number of deduplicated visitors who triggered an event on your website. Every visitor is only counted once, even if they visit or trigger multiple events on the website.',
-            'sum_event_value' => 'The sum of event values',
-            'min_event_value' => 'The minimum value for this event',
-            'max_event_value' => 'The maximum value for this event',
-            'nb_events_with_value' => 'Number of events where an Event value was set',
-            'avg_event_value' => 'The average of all values for this event',
+            'nb_events' => [
+                'translationKey' => 'Events_TotalEventsDocumentation',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'Events_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'Events_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'sum_event_value' => [
+                'translationKey' => 'Events_TotalValueDocumentation',
+            ],
+            'min_event_value' => [
+                'translationKey' => 'Events_MinValueDocumentation',
+            ],
+            'max_event_value' => [
+                'translationKey' => 'Events_MaxValueDocumentation',
+            ],
+            'nb_events_with_value' => [
+                'translationKey' => 'Events_EventsWithValueDocumentation',
+            ],
+            'avg_event_value' => [
+                'translationKey' => 'Events_AvgValueDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'avg_event_value' => 'The average of all values for this event',
+            'avg_event_value' => [
+                'translationKey' => 'Events_AvgValueDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_events' => 'number',
@@ -1919,39 +3463,87 @@ return [
         'uniqueId' => 'Events_getCategory',
     ],
     41 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Events',
-        'name' => 'Event Actions',
-        'module' => 'Events',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Events_Events',
+        ],
+        'name' => [
+            'translationKey' => 'Events_EventActions',
+        ],
+        'module' => [
+            'translationKey' => 'Events_Events',
+        ],
         'action' => 'getAction',
-        'dimension' => 'Event Action',
-        'documentation' => 'This report shows you the number of times each event action occurred. You can view the event categories and names that were tracked along with each event action in the row\'s subtable. You can change which is shown by changing the secondary dimension with the link at the bottom of the report.',
+        'dimension' => [
+            'translationKey' => 'Events_EventAction',
+        ],
+        'documentation' => [
+            'translationKey' => 'Events_EventActionsReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/event-tracking/',
         'dimensions' => [
-            'Events_EventAction' => 'Event Action',
-            'Events_EventName' => 'Event Name',
+            'Events_EventAction' => [
+                'translationKey' => 'Events_EventAction',
+            ],
+            'Events_EventName' => [
+                'translationKey' => 'Events_EventName',
+            ],
         ],
         'metrics' => [
-            'nb_events' => 'Events',
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'sum_event_value' => 'Event value',
-            'min_event_value' => 'Minimum Event value',
-            'max_event_value' => 'Maximum Event value',
-            'nb_events_with_value' => 'Events with a value',
+            'nb_events' => [
+                'translationKey' => 'Events_Events',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'sum_event_value' => [
+                'translationKey' => 'Events_EventValue',
+            ],
+            'min_event_value' => [
+                'translationKey' => 'Events_MinValue',
+            ],
+            'max_event_value' => [
+                'translationKey' => 'Events_MaxValue',
+            ],
+            'nb_events_with_value' => [
+                'translationKey' => 'Events_EventsWithValue',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_events' => 'Total number of events',
-            'nb_visits' => 'The total number of visits where at least one event was triggered.',
-            'nb_uniq_visitors' => 'The number of deduplicated visitors who triggered an event on your website. Every visitor is only counted once, even if they visit or trigger multiple events on the website.',
-            'sum_event_value' => 'The sum of event values',
-            'min_event_value' => 'The minimum value for this event',
-            'max_event_value' => 'The maximum value for this event',
-            'nb_events_with_value' => 'Number of events where an Event value was set',
-            'avg_event_value' => 'The average of all values for this event',
+            'nb_events' => [
+                'translationKey' => 'Events_TotalEventsDocumentation',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'Events_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'Events_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'sum_event_value' => [
+                'translationKey' => 'Events_TotalValueDocumentation',
+            ],
+            'min_event_value' => [
+                'translationKey' => 'Events_MinValueDocumentation',
+            ],
+            'max_event_value' => [
+                'translationKey' => 'Events_MaxValueDocumentation',
+            ],
+            'nb_events_with_value' => [
+                'translationKey' => 'Events_EventsWithValueDocumentation',
+            ],
+            'avg_event_value' => [
+                'translationKey' => 'Events_AvgValueDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'avg_event_value' => 'The average of all values for this event',
+            'avg_event_value' => [
+                'translationKey' => 'Events_AvgValueDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_events' => 'number',
@@ -1967,39 +3559,87 @@ return [
         'uniqueId' => 'Events_getAction',
     ],
     42 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Events',
-        'name' => 'Event Names',
-        'module' => 'Events',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Events_Events',
+        ],
+        'name' => [
+            'translationKey' => 'Events_EventNames',
+        ],
+        'module' => [
+            'translationKey' => 'Events_Events',
+        ],
         'action' => 'getName',
-        'dimension' => 'Event Name',
-        'documentation' => 'This report shows you the names associated with each tracked event and how many times they occurred. You can view the event actions and categories that were tracked along with each event name in each row\'s subtable. You can change which is shown by changing the secondary dimension with the link at the bottom of the report.',
+        'dimension' => [
+            'translationKey' => 'Events_EventName',
+        ],
+        'documentation' => [
+            'translationKey' => 'Events_EventNamesReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/event-tracking/',
         'dimensions' => [
-            'Events_EventName' => 'Event Name',
-            'Events_EventAction' => 'Event Action',
+            'Events_EventName' => [
+                'translationKey' => 'Events_EventName',
+            ],
+            'Events_EventAction' => [
+                'translationKey' => 'Events_EventAction',
+            ],
         ],
         'metrics' => [
-            'nb_events' => 'Events',
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'sum_event_value' => 'Event value',
-            'min_event_value' => 'Minimum Event value',
-            'max_event_value' => 'Maximum Event value',
-            'nb_events_with_value' => 'Events with a value',
+            'nb_events' => [
+                'translationKey' => 'Events_Events',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'sum_event_value' => [
+                'translationKey' => 'Events_EventValue',
+            ],
+            'min_event_value' => [
+                'translationKey' => 'Events_MinValue',
+            ],
+            'max_event_value' => [
+                'translationKey' => 'Events_MaxValue',
+            ],
+            'nb_events_with_value' => [
+                'translationKey' => 'Events_EventsWithValue',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_events' => 'Total number of events',
-            'nb_visits' => 'The total number of visits where at least one event was triggered.',
-            'nb_uniq_visitors' => 'The number of deduplicated visitors who triggered an event on your website. Every visitor is only counted once, even if they visit or trigger multiple events on the website.',
-            'sum_event_value' => 'The sum of event values',
-            'min_event_value' => 'The minimum value for this event',
-            'max_event_value' => 'The maximum value for this event',
-            'nb_events_with_value' => 'Number of events where an Event value was set',
-            'avg_event_value' => 'The average of all values for this event',
+            'nb_events' => [
+                'translationKey' => 'Events_TotalEventsDocumentation',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'Events_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'Events_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'sum_event_value' => [
+                'translationKey' => 'Events_TotalValueDocumentation',
+            ],
+            'min_event_value' => [
+                'translationKey' => 'Events_MinValueDocumentation',
+            ],
+            'max_event_value' => [
+                'translationKey' => 'Events_MaxValueDocumentation',
+            ],
+            'nb_events_with_value' => [
+                'translationKey' => 'Events_EventsWithValueDocumentation',
+            ],
+            'avg_event_value' => [
+                'translationKey' => 'Events_AvgValueDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'avg_event_value' => 'The average of all values for this event',
+            'avg_event_value' => [
+                'translationKey' => 'Events_AvgValueDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_events' => 'number',
@@ -2015,25 +3655,49 @@ return [
         'uniqueId' => 'Events_getName',
     ],
     43 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Contents',
-        'name' => 'Content Name',
-        'module' => 'Contents',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Contents_Contents',
+        ],
+        'name' => [
+            'translationKey' => 'Contents_ContentName',
+        ],
+        'module' => [
+            'translationKey' => 'Contents_Contents',
+        ],
         'action' => 'getContentNames',
-        'dimension' => 'Content Name',
-        'documentation' => 'This report shows the names of the content your visitors viewed and interacted with.',
+        'dimension' => [
+            'translationKey' => 'Contents_ContentName',
+        ],
+        'documentation' => [
+            'translationKey' => 'Contents_ContentNameReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/content-tracking/',
         'metrics' => [
-            'nb_impressions' => 'Impressions',
-            'nb_interactions' => 'Content Interactions',
+            'nb_impressions' => [
+                'translationKey' => 'Contents_Impressions',
+            ],
+            'nb_interactions' => [
+                'translationKey' => 'Contents_ContentInteractions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_impressions' => 'The number of times a content block, such as a banner or an ad, was displayed on a page.',
-            'nb_interactions' => 'The number of times a content block was interacted with (eg, a \'click\' on a banner or ad).',
-            'interaction_rate' => 'The ratio of content impressions to interactions.',
+            'nb_impressions' => [
+                'translationKey' => 'Contents_ImpressionsMetricDocumentation',
+            ],
+            'nb_interactions' => [
+                'translationKey' => 'Contents_InteractionsMetricDocumentation',
+            ],
+            'interaction_rate' => [
+                'translationKey' => 'Contents_InteractionRateMetricDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'interaction_rate' => 'Interaction Rate',
+            'interaction_rate' => [
+                'translationKey' => 'Contents_InteractionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_impressions' => 'number',
@@ -2044,25 +3708,49 @@ return [
         'uniqueId' => 'Contents_getContentNames',
     ],
     44 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Contents',
-        'name' => 'Content Piece',
-        'module' => 'Contents',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Contents_Contents',
+        ],
+        'name' => [
+            'translationKey' => 'Contents_ContentPiece',
+        ],
+        'module' => [
+            'translationKey' => 'Contents_Contents',
+        ],
         'action' => 'getContentPieces',
-        'dimension' => 'Content Piece',
-        'documentation' => 'This report shows the pieces of content your visitors viewed and interacted with.',
+        'dimension' => [
+            'translationKey' => 'Contents_ContentPiece',
+        ],
+        'documentation' => [
+            'translationKey' => 'Contents_ContentPieceReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/content-tracking/',
         'metrics' => [
-            'nb_impressions' => 'Impressions',
-            'nb_interactions' => 'Content Interactions',
+            'nb_impressions' => [
+                'translationKey' => 'Contents_Impressions',
+            ],
+            'nb_interactions' => [
+                'translationKey' => 'Contents_ContentInteractions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_impressions' => 'The number of times a content block, such as a banner or an ad, was displayed on a page.',
-            'nb_interactions' => 'The number of times a content block was interacted with (eg, a \'click\' on a banner or ad).',
-            'interaction_rate' => 'The ratio of content impressions to interactions.',
+            'nb_impressions' => [
+                'translationKey' => 'Contents_ImpressionsMetricDocumentation',
+            ],
+            'nb_interactions' => [
+                'translationKey' => 'Contents_InteractionsMetricDocumentation',
+            ],
+            'interaction_rate' => [
+                'translationKey' => 'Contents_InteractionRateMetricDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'interaction_rate' => 'Interaction Rate',
+            'interaction_rate' => [
+                'translationKey' => 'Contents_InteractionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_impressions' => 'number',
@@ -2073,18 +3761,30 @@ return [
         'uniqueId' => 'Contents_getContentPieces',
     ],
     45 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Engagement',
-        'name' => 'Length of visits',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Tour_Engagement',
+        ],
+        'name' => [
+            'translationKey' => 'VisitorInterest_WidgetLengths',
+        ],
         'module' => 'VisitorInterest',
         'action' => 'getNumberOfVisitsPerVisitDuration',
-        'dimension' => 'Visit duration',
+        'dimension' => [
+            'translationKey' => 'VisitorInterest_ColumnVisitDuration',
+        ],
         'documentation' => 'How many visits had a certain total duration. Initially, the report is shown as a tag cloud, wherein more common durations have a larger font.<br />Please note, that you can view the report in other ways than as a tag cloud. Use the controls at the bottom of the report to do so.',
         'metrics' => [
-            'nb_visits' => 'Visits',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -2093,18 +3793,30 @@ return [
         'uniqueId' => 'VisitorInterest_getNumberOfVisitsPerVisitDuration',
     ],
     46 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Engagement',
-        'name' => 'Pages per visit',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Tour_Engagement',
+        ],
+        'name' => [
+            'translationKey' => 'VisitorInterest_ColumnPagesPerVisit',
+        ],
         'module' => 'VisitorInterest',
         'action' => 'getNumberOfVisitsPerPage',
-        'dimension' => 'Pages per visit',
+        'dimension' => [
+            'translationKey' => 'VisitorInterest_ColumnPagesPerVisit',
+        ],
         'documentation' => 'How many visits involved a certain number of pageviews. Initially, the report is shown as a tag cloud, wherein more common numbers of pages have a larger font.<br />Please note, that you can view the report in other ways than as a tag cloud. Use the controls at the bottom of the report to do so.',
         'metrics' => [
-            'nb_visits' => 'Visits',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -2113,19 +3825,33 @@ return [
         'uniqueId' => 'VisitorInterest_getNumberOfVisitsPerPage',
     ],
     47 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Engagement',
-        'name' => 'Visits by visit number',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Tour_Engagement',
+        ],
+        'name' => [
+            'translationKey' => 'VisitorInterest_visitsByVisitCount',
+        ],
         'module' => 'VisitorInterest',
         'action' => 'getNumberOfVisitsByVisitCount',
-        'dimension' => 'Visits by visit number',
+        'dimension' => [
+            'translationKey' => 'VisitorInterest_visitsByVisitCount',
+        ],
         'documentation' => 'The number of visitors reaching their Nth visit. I.e. the total amount of visitors visiting your website a given amount of times or more.<br />Please note, that you can view the report in other ways than as a tag cloud. Use the controls at the bottom of the report to do so.',
         'metrics' => [
-            'nb_visits' => 'Visits',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_visits_percentage' => 'The percentage of totals visits, where visitors had this amount of visits in total yet.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_visits_percentage' => [
+                'translationKey' => 'VisitorInterest_ColumnPercentageVisitsDocumentation',
+            ],
         ],
         'processedMetrics' => [
             'nb_visits_percentage' => '% Visits',
@@ -2138,18 +3864,32 @@ return [
         'uniqueId' => 'VisitorInterest_getNumberOfVisitsByVisitCount',
     ],
     48 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Engagement',
-        'name' => 'Visits by days since last visit',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Tour_Engagement',
+        ],
+        'name' => [
+            'translationKey' => 'VisitorInterest_VisitsByDaysSinceLast',
+        ],
         'module' => 'VisitorInterest',
         'action' => 'getNumberOfVisitsByDaysSinceLast',
-        'dimension' => 'Days since last visit',
-        'documentation' => 'How many visits were from returning visitors whose last visit was a certain number of days ago.',
+        'dimension' => [
+            'translationKey' => 'General_DaysSinceLastVisit',
+        ],
+        'documentation' => [
+            'translationKey' => 'VisitorInterest_WidgetVisitsByDaysSinceLastDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -2158,31 +3898,69 @@ return [
         'uniqueId' => 'VisitorInterest_getNumberOfVisitsByDaysSinceLast',
     ],
     49 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Engagement',
-        'name' => 'Returning Visits',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Tour_Engagement',
+        ],
+        'name' => [
+            'translationKey' => 'VisitFrequency_ColumnReturningVisits',
+        ],
         'module' => 'VisitFrequency',
         'action' => 'get',
-        'documentation' => 'This report shows general metrics like visits for returning visitors side by side with the same metrics for new visitors. Learn how returning visitors perform overall compared to new visitors.',
+        'documentation' => [
+            'translationKey' => 'VisitFrequency_VisitFrequencyReportDocumentation',
+        ],
         'metrics' => [
-            'nb_visits_returning' => 'Returning Visits',
-            'nb_actions_returning' => 'Actions by Returning Visits',
-            'nb_uniq_visitors_returning' => 'Unique returning visitors',
-            'nb_users_returning' => 'Returning Users',
-            'max_actions_returning' => 'Maximum actions in one returning visit',
-            'nb_visits_new' => 'New Visits',
-            'nb_actions_new' => 'Actions by New Visits',
-            'nb_uniq_visitors_new' => 'Unique new visitors',
-            'nb_users_new' => 'New Users',
+            'nb_visits_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnReturningVisits',
+            ],
+            'nb_actions_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnActionsByReturningVisits',
+            ],
+            'nb_uniq_visitors_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnUniqueReturningVisitors',
+            ],
+            'nb_users_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnReturningUsers',
+            ],
+            'max_actions_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnMaxActionsInReturningVisit',
+            ],
+            'nb_visits_new' => [
+                'translationKey' => 'VisitFrequency_ColumnNewVisits',
+            ],
+            'nb_actions_new' => [
+                'translationKey' => 'VisitFrequency_ColumnActionsByNewVisits',
+            ],
+            'nb_uniq_visitors_new' => [
+                'translationKey' => 'VisitFrequency_ColumnUniqueNewVisitors',
+            ],
+            'nb_users_new' => [
+                'translationKey' => 'VisitFrequency_ColumnNewUsers',
+            ],
             'max_actions_new' => 'max_actions_new',
         ],
         'processedMetrics' => [
-            'avg_time_on_site_returning' => 'Avg. Duration of a Returning Visit (in sec)',
-            'nb_actions_per_visit_returning' => 'Avg. Actions per Returning Visit',
-            'bounce_rate_returning' => 'Bounce Rate for Returning Visits',
-            'avg_time_on_site_new' => 'Avg. Duration of a New Visit (in sec)',
-            'nb_actions_per_visit_new' => 'Avg. Actions per New Visit',
-            'bounce_rate_new' => 'Bounce Rate for New Visits',
+            'avg_time_on_site_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnAverageVisitDurationForReturningVisitors',
+            ],
+            'nb_actions_per_visit_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnAvgActionsPerReturningVisit',
+            ],
+            'bounce_rate_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnBounceRateForReturningVisits',
+            ],
+            'avg_time_on_site_new' => [
+                'translationKey' => 'VisitFrequency_ColumnAverageVisitDurationForNewVisitors',
+            ],
+            'nb_actions_per_visit_new' => [
+                'translationKey' => 'VisitFrequency_ColumnAvgActionsPerNewVisit',
+            ],
+            'bounce_rate_new' => [
+                'translationKey' => 'VisitFrequency_ColumnBounceRateForNewVisits',
+            ],
         ],
         'metricTypes' => [
             'nb_visits_returning' => 'number',
@@ -2205,39 +3983,89 @@ return [
         'uniqueId' => 'VisitFrequency_get',
     ],
     50 => [
-        'category' => 'Behaviour',
-        'subcategory' => 'Performance',
-        'name' => 'Performance overview',
+        'category' => [
+            'translationKey' => 'Actions_Behaviour',
+        ],
+        'subcategory' => [
+            'translationKey' => 'PagePerformance_Performance',
+        ],
+        'name' => [
+            'translationKey' => 'PagePerformance_Overview',
+        ],
         'module' => 'PagePerformance',
         'action' => 'get',
-        'documentation' => 'This report provides an overview of how fast your webpages become visible to your visitors. This includes both how long it takes for browsers to download your webpages and how long it takes for browsers to display them.',
+        'documentation' => [
+            'translationKey' => 'PagePerformance_OverviewDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/faq/how-to/how-do-i-see-page-performance-reports/',
         'metrics' => [
-            'avg_time_network' => 'Avg. network time',
-            'avg_time_server' => 'Avg. server time',
-            'avg_time_transfer' => 'Avg. transfer time',
-            'avg_time_dom_processing' => 'Avg. DOM processing time',
-            'avg_time_dom_completion' => 'Avg. DOM completion time',
-            'avg_time_on_load' => 'Avg. on load time',
-            'avg_page_load_time' => 'Avg. page load time',
+            'avg_time_network' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeNetwork',
+            ],
+            'avg_time_server' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeServer',
+            ],
+            'avg_time_transfer' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeTransfer',
+            ],
+            'avg_time_dom_processing' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeDomProcessing',
+            ],
+            'avg_time_dom_completion' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeDomCompletion',
+            ],
+            'avg_time_on_load' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeOnLoad',
+            ],
+            'avg_page_load_time' => [
+                'translationKey' => 'PagePerformance_ColumnAveragePageLoadTime',
+            ],
         ],
         'metricsDocumentation' => [
-            'avg_time_network' => 'Average time (in seconds) it takes to connect to the server. This includes the time needed to lookup DNS and establish a TCP connection. This value might be 0 after the first request to a domain as the browser might cache the connection.',
-            'avg_time_server' => 'Average time (in seconds) it takes the server to generate the page. This is the time between the server receiving the request and starting to serve the response.',
-            'avg_time_transfer' => 'Average time (in seconds) it takes the browser to download the response from the server. This is the time from receiving the first byte till the response is complete.',
-            'avg_time_dom_processing' => 'Average time (in seconds) the browser spends loading the webpage after the response was fully received and before the user can start interacting with it.',
-            'avg_time_dom_completion' => 'Average time (in seconds) it takes for the browser to load media and execute any Javascript code listening for the DOMContentLoaded event after the webpage was loaded and the user can already interact with it.',
-            'avg_time_on_load' => 'Average time (in seconds) it takes the browser to execute Javascript code waiting for the window.load event. This event is triggered once the DOM has completely rendered.',
-            'avg_page_load_time' => 'Average time (in seconds) it takes from requesting a page until the page is fully rendered within the browser',
+            'avg_time_network' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeNetworkDocumentation',
+            ],
+            'avg_time_server' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeServerDocumentation',
+            ],
+            'avg_time_transfer' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeTransferDocumentation',
+            ],
+            'avg_time_dom_processing' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeDomProcessingDocumentation',
+            ],
+            'avg_time_dom_completion' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeDomCompletionDocumentation',
+            ],
+            'avg_time_on_load' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeOnLoadDocumentation',
+            ],
+            'avg_page_load_time' => [
+                'translationKey' => 'PagePerformance_ColumnAveragePageLoadTimeDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'avg_time_network' => 'Avg. network time',
-            'avg_time_server' => 'Avg. server time',
-            'avg_time_transfer' => 'Avg. transfer time',
-            'avg_time_dom_processing' => 'Avg. DOM processing time',
-            'avg_time_dom_completion' => 'Avg. DOM completion time',
-            'avg_time_on_load' => 'Avg. on load time',
-            'avg_page_load_time' => 'Avg. page load time',
+            'avg_time_network' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeNetwork',
+            ],
+            'avg_time_server' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeServer',
+            ],
+            'avg_time_transfer' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeTransfer',
+            ],
+            'avg_time_dom_processing' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeDomProcessing',
+            ],
+            'avg_time_dom_completion' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeDomCompletion',
+            ],
+            'avg_time_on_load' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeOnLoad',
+            ],
+            'avg_page_load_time' => [
+                'translationKey' => 'PagePerformance_ColumnAveragePageLoadTime',
+            ],
         ],
         'metricTypes' => [
             'avg_time_network' => 'duration_s',
@@ -2251,23 +4079,43 @@ return [
         'uniqueId' => 'PagePerformance_get',
     ],
     51 => [
-        'category' => 'Acquisition',
-        'name' => 'Referrers Overview',
-        'module' => 'Referrers',
+        'category' => [
+            'translationKey' => 'Referrers_Acquisition',
+        ],
+        'name' => [
+            'translationKey' => 'Referrers_ReferrersOverview',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'get',
-        'documentation' => 'This report shows what acquisition channels your visitors used to get to your website, and the number of visits each channel type is responsible for.',
+        'documentation' => [
+            'translationKey' => 'Referrers_ReferrersOverviewDocumentation',
+        ],
         'metrics' => [
-            'Referrers_visitorsFromSearchEngines' => 'Visitors from Search Engines',
+            'Referrers_visitorsFromSearchEngines' => [
+                'translationKey' => 'Referrers_VisitorsFromSearchEngines',
+            ],
             'Referrers_visitorsFromSearchEngines_percent' => 'Percent of Visitors from Search Engines',
-            'Referrers_visitorsFromSocialNetworks' => 'Visitors from Social Networks',
+            'Referrers_visitorsFromSocialNetworks' => [
+                'translationKey' => 'Referrers_VisitorsFromSocialNetworks',
+            ],
             'Referrers_visitorsFromSocialNetworks_percent' => 'Percent of Visitors from Social Networks',
-            'Referrers_visitorsFromAIAssistants' => 'Visitors from AI Assistants',
+            'Referrers_visitorsFromAIAssistants' => [
+                'translationKey' => 'Referrers_VisitorsFromAIAssistants',
+            ],
             'Referrers_visitorsFromAIAssistants_percent' => 'Percent of Visitors from AI Assistants',
-            'Referrers_visitorsFromDirectEntry' => 'Visitors from Direct Entry',
+            'Referrers_visitorsFromDirectEntry' => [
+                'translationKey' => 'Referrers_VisitorsFromDirectEntry',
+            ],
             'Referrers_visitorsFromDirectEntry_percent' => 'Percent of Visitors from Direct Entry',
-            'Referrers_visitorsFromWebsites' => 'Visitors from Websites',
+            'Referrers_visitorsFromWebsites' => [
+                'translationKey' => 'Referrers_VisitorsFromWebsites',
+            ],
             'Referrers_visitorsFromWebsites_percent' => 'Percent of Visitors from Websites',
-            'Referrers_visitorsFromCampaigns' => 'Visitors from Campaigns',
+            'Referrers_visitorsFromCampaigns' => [
+                'translationKey' => 'Referrers_VisitorsFromCampaigns',
+            ],
             'Referrers_visitorsFromCampaigns_percent' => 'Percent of Visitors from Campaigns',
             'Referrers_distinctSearchEngines' => 'Distinct search engines',
             'Referrers_distinctSocialNetworks' => 'Distinct social networks',
@@ -2299,33 +4147,73 @@ return [
         'uniqueId' => 'Referrers_get',
     ],
     52 => [
-        'category' => 'Acquisition',
-        'subcategory' => 'All Channels',
-        'name' => 'Channel Type',
-        'module' => 'Referrers',
+        'category' => [
+            'translationKey' => 'Referrers_Acquisition',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Referrers_WidgetGetAll',
+        ],
+        'name' => [
+            'translationKey' => 'Referrers_Type',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getReferrerType',
-        'dimension' => 'Channel Type',
+        'dimension' => [
+            'translationKey' => 'Referrers_Type',
+        ],
         'documentation' => 'This table contains information about the distribution of the channel types.<br /><b>Direct Entry:</b> A visitor has entered the URL in their browser and started browsing on your website - they entered the website directly.<br /><b>Search Engines:</b> A visitor was referred to your website by a search engine. <br /> See the "Search Engines & Keywords" report for more details.<br /><b>Websites:</b> The visitor followed a link on another website that led to your site. <br /> See the "Websites" report for more details.<br /><b>Campaigns:</b> Visitors that came to your website as the result of a campaign. <br /> See the "Campaigns" report for more details.',
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -2339,11 +4227,17 @@ return [
         ],
         'constantRowsCount' => '1',
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -2354,34 +4248,78 @@ return [
         'uniqueId' => 'Referrers_getReferrerType',
     ],
     53 => [
-        'category' => 'Acquisition',
-        'subcategory' => 'All Channels',
-        'name' => 'All Channels',
-        'module' => 'Referrers',
+        'category' => [
+            'translationKey' => 'Referrers_Acquisition',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Referrers_WidgetGetAll',
+        ],
+        'name' => [
+            'translationKey' => 'Referrers_WidgetGetAll',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getAll',
-        'dimension' => 'Referrer',
-        'documentation' => 'This report shows all your Referrers in one unified report, listing all Websites, Search keywords and Campaigns used by your visitors to find your website.',
+        'dimension' => [
+            'translationKey' => 'Referrers_Referrer',
+        ],
+        'documentation' => [
+            'translationKey' => 'Referrers_AllReferrersReportDocumentation',
+        ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -2396,37 +4334,79 @@ return [
         'uniqueId' => 'Referrers_getAll',
     ],
     54 => [
-        'category' => 'Acquisition',
+        'category' => [
+            'translationKey' => 'Referrers_Acquisition',
+        ],
         'subcategory' => 'Search Engines & Keywords',
-        'name' => 'Keywords',
-        'module' => 'Referrers',
+        'name' => [
+            'translationKey' => 'Marketplace_PluginKeywords',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getKeywords',
-        'dimension' => 'Keyword',
+        'dimension' => [
+            'translationKey' => 'General_ColumnKeyword',
+        ],
         'documentation' => 'This report shows which keywords users were searching for before they were referred to your website. <br /><br /> By clicking on a row in the table, you can see the distribution of search engines that were queried for the keyword.<br /><br />Note: This report lists most keywords as not defined, because most search engines do not send the exact keyword used on the search engine.',
         'dimensions' => [
-            'Referrers_Keyword' => 'Keyword',
-            'Referrers_SearchEngine' => 'Search Engine',
+            'Referrers_Keyword' => [
+                'translationKey' => 'General_ColumnKeyword',
+            ],
+            'Referrers_SearchEngine' => [
+                'translationKey' => 'Referrers_ColumnSearchEngine',
+            ],
         ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -2440,11 +4420,17 @@ return [
         ],
         'actionToLoadSubTables' => 'getSearchEnginesFromKeywordId',
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -2455,37 +4441,79 @@ return [
         'uniqueId' => 'Referrers_getKeywords',
     ],
     55 => [
-        'category' => 'Acquisition',
+        'category' => [
+            'translationKey' => 'Referrers_Acquisition',
+        ],
         'subcategory' => 'Search Engines & Keywords',
-        'name' => 'Search Engines',
-        'module' => 'Referrers',
+        'name' => [
+            'translationKey' => 'Referrers_SearchEngines',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getSearchEngines',
-        'dimension' => 'Search Engine',
+        'dimension' => [
+            'translationKey' => 'Referrers_ColumnSearchEngine',
+        ],
         'documentation' => 'This report shows which search engines referred users to your website. <br /> By clicking on a row in the table, you can see what users were searching for using a specific search engine.',
         'dimensions' => [
-            'Referrers_SearchEngine' => 'Search Engine',
-            'Referrers_Keyword' => 'Keyword',
+            'Referrers_SearchEngine' => [
+                'translationKey' => 'Referrers_ColumnSearchEngine',
+            ],
+            'Referrers_Keyword' => [
+                'translationKey' => 'General_ColumnKeyword',
+            ],
         ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -2499,11 +4527,17 @@ return [
         ],
         'actionToLoadSubTables' => 'getKeywordsFromSearchEngineId',
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -2514,37 +4548,81 @@ return [
         'uniqueId' => 'Referrers_getSearchEngines',
     ],
     56 => [
-        'category' => 'Acquisition',
-        'subcategory' => 'Websites',
-        'name' => 'Websites',
-        'module' => 'Referrers',
+        'category' => [
+            'translationKey' => 'Referrers_Acquisition',
+        ],
+        'subcategory' => [
+            'translationKey' => 'CorePluginsAdmin_Websites',
+        ],
+        'name' => [
+            'translationKey' => 'CorePluginsAdmin_Websites',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getWebsites',
-        'dimension' => 'Website',
+        'dimension' => [
+            'translationKey' => 'General_Website',
+        ],
         'documentation' => 'In this table, you can see which websites referred visitors to your site. <br /> By clicking on a row in the table, you can see which URLs the links to your website were on.',
         'dimensions' => [
-            'Referrers_Website' => 'Website',
-            'Referrers_WebsitePage' => 'Website Page',
+            'Referrers_Website' => [
+                'translationKey' => 'General_Website',
+            ],
+            'Referrers_WebsitePage' => [
+                'translationKey' => 'Referrers_ColumnWebsitePage',
+            ],
         ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -2558,11 +4636,17 @@ return [
         ],
         'actionToLoadSubTables' => 'getUrlsFromWebsiteId',
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -2573,37 +4657,81 @@ return [
         'uniqueId' => 'Referrers_getWebsites',
     ],
     57 => [
-        'category' => 'Acquisition',
-        'subcategory' => 'Social Networks',
-        'name' => 'Social Networks',
-        'module' => 'Referrers',
+        'category' => [
+            'translationKey' => 'Referrers_Acquisition',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Referrers_Socials',
+        ],
+        'name' => [
+            'translationKey' => 'Referrers_Socials',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getSocials',
-        'dimension' => 'Social network',
+        'dimension' => [
+            'translationKey' => 'Referrers_ColumnSocial',
+        ],
         'documentation' => 'This report shows which social networks led visitors to your website.<br />By clicking on a row in the table, you can see from which social network pages visitors came to your website.',
         'dimensions' => [
-            'Referrers_SocialNetwork' => 'Social network',
-            'Referrers_WebsitePage' => 'Website Page',
+            'Referrers_SocialNetwork' => [
+                'translationKey' => 'Referrers_ColumnSocial',
+            ],
+            'Referrers_WebsitePage' => [
+                'translationKey' => 'Referrers_ColumnWebsitePage',
+            ],
         ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -2617,11 +4745,17 @@ return [
         ],
         'actionToLoadSubTables' => 'getUrlsForSocial',
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -2632,37 +4766,81 @@ return [
         'uniqueId' => 'Referrers_getSocials',
     ],
     58 => [
-        'category' => 'Acquisition',
-        'subcategory' => 'AI Assistants',
-        'name' => 'AI Assistants',
-        'module' => 'Referrers',
+        'category' => [
+            'translationKey' => 'Referrers_Acquisition',
+        ],
+        'subcategory' => [
+            'translationKey' => 'General_AIAssistants',
+        ],
+        'name' => [
+            'translationKey' => 'General_AIAssistants',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getAIAssistants',
-        'dimension' => 'AI Assistant',
+        'dimension' => [
+            'translationKey' => 'Referrers_ColumnAIAssistant',
+        ],
         'documentation' => 'This report shows which AI assistants led visitors to your website.<br />By clicking on a row in the table, you can see from which AI assistant pages visitors came to your website.',
         'dimensions' => [
-            'Referrers_AIAssistant' => 'AI Assistant',
-            'Actions_EntryPageUrl' => 'Entry Page URL',
+            'Referrers_AIAssistant' => [
+                'translationKey' => 'Referrers_ColumnAIAssistant',
+            ],
+            'Actions_EntryPageUrl' => [
+                'translationKey' => 'Actions_ColumnEntryPageURL',
+            ],
         ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -2676,11 +4854,17 @@ return [
         ],
         'actionToLoadSubTables' => 'getEntryPageUrlsForAIAssistant',
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -2691,38 +4875,84 @@ return [
         'uniqueId' => 'Referrers_getAIAssistants',
     ],
     59 => [
-        'category' => 'Acquisition',
-        'subcategory' => 'Campaigns',
-        'name' => 'Campaigns',
-        'module' => 'Referrers',
+        'category' => [
+            'translationKey' => 'Referrers_Acquisition',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Referrers_Campaigns',
+        ],
+        'name' => [
+            'translationKey' => 'Referrers_Campaigns',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getCampaigns',
-        'dimension' => 'Campaign',
-        'documentation' => 'This report shows which campaigns led visitors to your website.',
+        'dimension' => [
+            'translationKey' => 'Referrers_ColumnCampaign',
+        ],
+        'documentation' => [
+            'translationKey' => 'Referrers_CampaignsReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-campaigns/',
         'dimensions' => [
-            'Referrers_Campaign' => 'Campaign',
-            'Referrers_Keyword' => 'Keyword',
+            'Referrers_Campaign' => [
+                'translationKey' => 'Referrers_ColumnCampaign',
+            ],
+            'Referrers_Keyword' => [
+                'translationKey' => 'General_ColumnKeyword',
+            ],
         ],
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -2736,11 +4966,17 @@ return [
         ],
         'actionToLoadSubTables' => 'getKeywordsFromCampaignId',
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -2751,31 +4987,61 @@ return [
         'uniqueId' => 'Referrers_getCampaigns',
     ],
     60 => [
-        'category' => 'Ecommerce',
-        'name' => 'Ecommerce Orders',
-        'module' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Ecommerce',
+        ],
+        'name' => [
+            'translationKey' => 'General_EcommerceOrders',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'get',
         'parameters' => [
             'idGoal' => 'ecommerceOrder',
         ],
         'onlineGuideUrl' => 'https://matomo.org/docs/ecommerce-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Ecommerce Orders',
-            'nb_visits_converted' => 'Visits with Conversions',
-            'conversion_rate' => 'Conversion Rate',
-            'revenue' => 'Revenue',
-            'revenue_subtotal' => 'Subtotal',
-            'revenue_tax' => 'Tax',
-            'revenue_shipping' => 'Shipping',
-            'revenue_discount' => 'Discount',
-            'items' => 'Purchased Products',
+            'nb_conversions' => [
+                'translationKey' => 'General_EcommerceOrders',
+            ],
+            'nb_visits_converted' => [
+                'translationKey' => 'General_ColumnVisitsWithConversions',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
+            'revenue_subtotal' => [
+                'translationKey' => 'General_Subtotal',
+            ],
+            'revenue_tax' => [
+                'translationKey' => 'General_Tax',
+            ],
+            'revenue_shipping' => [
+                'translationKey' => 'General_Shipping',
+            ],
+            'revenue_discount' => [
+                'translationKey' => 'General_Discount',
+            ],
+            'items' => [
+                'translationKey' => 'General_PurchasedProducts',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits_converted' => 'Number of visits where at least one goal was successfully converted.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits_converted' => [
+                'translationKey' => 'General_VisitConvertedGoalDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'avg_order_revenue' => 'Average Order Value',
+            'avg_order_revenue' => [
+                'translationKey' => 'General_AverageOrderValue',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -2791,17 +5057,25 @@ return [
         'uniqueId' => 'Goals_get_idGoal--ecommerceOrder',
     ],
     61 => [
-        'category' => 'Ecommerce',
+        'category' => [
+            'translationKey' => 'Goals_Ecommerce',
+        ],
         'name' => 'Ecommerce Orders - Visits to Conversion',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getVisitsUntilConversion',
         'parameters' => [
             'idGoal' => 'ecommerceOrder',
         ],
-        'dimension' => 'Visits to Conversion',
+        'dimension' => [
+            'translationKey' => 'Goals_VisitsUntilConv',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/ecommerce-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -2810,17 +5084,25 @@ return [
         'uniqueId' => 'Goals_getVisitsUntilConversion_idGoal--ecommerceOrder',
     ],
     62 => [
-        'category' => 'Ecommerce',
+        'category' => [
+            'translationKey' => 'Goals_Ecommerce',
+        ],
         'name' => 'Ecommerce Orders - Days to Conversion',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getDaysToConversion',
         'parameters' => [
             'idGoal' => 'ecommerceOrder',
         ],
-        'dimension' => 'Days to Conversion',
+        'dimension' => [
+            'translationKey' => 'Goals_DaysToConv',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/ecommerce-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -2829,25 +5111,39 @@ return [
         'uniqueId' => 'Goals_getDaysToConversion_idGoal--ecommerceOrder',
     ],
     63 => [
-        'category' => 'Ecommerce',
-        'name' => 'Abandoned Carts',
-        'module' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Ecommerce',
+        ],
+        'name' => [
+            'translationKey' => 'General_AbandonedCarts',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'get',
         'parameters' => [
             'idGoal' => 'ecommerceAbandonedCart',
         ],
         'onlineGuideUrl' => 'https://matomo.org/docs/ecommerce-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Abandoned Carts',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_conversions' => [
+                'translationKey' => 'General_AbandonedCarts',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
             'revenue' => 'Revenue left in cart',
             'items' => 'Products left in cart',
         ],
         'metricsDocumentation' => [
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'avg_order_revenue' => 'Average Order Value',
+            'avg_order_revenue' => [
+                'translationKey' => 'General_AverageOrderValue',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -2859,17 +5155,25 @@ return [
         'uniqueId' => 'Goals_get_idGoal--ecommerceAbandonedCart',
     ],
     64 => [
-        'category' => 'Ecommerce',
+        'category' => [
+            'translationKey' => 'Goals_Ecommerce',
+        ],
         'name' => 'Abandoned Carts - Visits to Conversion',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getVisitsUntilConversion',
         'parameters' => [
             'idGoal' => 'ecommerceAbandonedCart',
         ],
-        'dimension' => 'Visits to Conversion',
+        'dimension' => [
+            'translationKey' => 'Goals_VisitsUntilConv',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/ecommerce-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -2878,17 +5182,25 @@ return [
         'uniqueId' => 'Goals_getVisitsUntilConversion_idGoal--ecommerceAbandonedCart',
     ],
     65 => [
-        'category' => 'Ecommerce',
+        'category' => [
+            'translationKey' => 'Goals_Ecommerce',
+        ],
         'name' => 'Abandoned Carts - Days to Conversion',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getDaysToConversion',
         'parameters' => [
             'idGoal' => 'ecommerceAbandonedCart',
         ],
-        'dimension' => 'Days to Conversion',
+        'dimension' => [
+            'translationKey' => 'Goals_DaysToConv',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/ecommerce-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -2897,18 +5209,36 @@ return [
         'uniqueId' => 'Goals_getDaysToConversion_idGoal--ecommerceAbandonedCart',
     ],
     66 => [
-        'category' => 'Ecommerce',
-        'subcategory' => 'Products',
-        'name' => 'Product Name',
-        'module' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Ecommerce',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Goals_Products',
+        ],
+        'name' => [
+            'translationKey' => 'Goals_ProductName',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getItemsName',
-        'dimension' => 'Product Name',
+        'dimension' => [
+            'translationKey' => 'Goals_ProductName',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/ecommerce-analytics/',
         'metrics' => [
-            'revenue' => 'Product Revenue',
-            'quantity' => 'Quantity',
-            'orders' => 'Unique Purchases',
-            'nb_visits' => 'Visits',
+            'revenue' => [
+                'translationKey' => 'General_ProductRevenue',
+            ],
+            'quantity' => [
+                'translationKey' => 'General_Quantity',
+            ],
+            'orders' => [
+                'translationKey' => 'General_UniquePurchases',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
         ],
         'metricsDocumentation' => [
             'revenue' => 'The total revenue generated by Product sales. Excludes tax, shipping and discount.',
@@ -2920,9 +5250,15 @@ return [
             'conversion_rate' => 'The Product Name conversion rate is the number of orders containing this product divided by number of visits on the product page.',
         ],
         'processedMetrics' => [
-            'avg_price' => 'Average Price',
-            'avg_quantity' => 'Average Quantity',
-            'conversion_rate' => 'Product Conversion Rate',
+            'avg_price' => [
+                'translationKey' => 'General_AveragePrice',
+            ],
+            'avg_quantity' => [
+                'translationKey' => 'General_AverageQuantity',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ProductConversionRate',
+            ],
         ],
         'metricTypes' => [
             'revenue' => 'money',
@@ -2936,18 +5272,36 @@ return [
         'uniqueId' => 'Goals_getItemsName',
     ],
     67 => [
-        'category' => 'Ecommerce',
-        'subcategory' => 'Products',
-        'name' => 'Product SKU',
-        'module' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Ecommerce',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Goals_Products',
+        ],
+        'name' => [
+            'translationKey' => 'Goals_ProductSKU',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getItemsSku',
-        'dimension' => 'Product SKU',
+        'dimension' => [
+            'translationKey' => 'Goals_ProductSKU',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/ecommerce-analytics/',
         'metrics' => [
-            'revenue' => 'Product Revenue',
-            'quantity' => 'Quantity',
-            'orders' => 'Unique Purchases',
-            'nb_visits' => 'Visits',
+            'revenue' => [
+                'translationKey' => 'General_ProductRevenue',
+            ],
+            'quantity' => [
+                'translationKey' => 'General_Quantity',
+            ],
+            'orders' => [
+                'translationKey' => 'General_UniquePurchases',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
         ],
         'metricsDocumentation' => [
             'revenue' => 'The total revenue generated by Product sales. Excludes tax, shipping and discount.',
@@ -2959,9 +5313,15 @@ return [
             'conversion_rate' => 'The Product SKU conversion rate is the number of orders containing this product divided by number of visits on the product page.',
         ],
         'processedMetrics' => [
-            'avg_price' => 'Average Price',
-            'avg_quantity' => 'Average Quantity',
-            'conversion_rate' => 'Product Conversion Rate',
+            'avg_price' => [
+                'translationKey' => 'General_AveragePrice',
+            ],
+            'avg_quantity' => [
+                'translationKey' => 'General_AverageQuantity',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ProductConversionRate',
+            ],
         ],
         'metricTypes' => [
             'revenue' => 'money',
@@ -2975,18 +5335,36 @@ return [
         'uniqueId' => 'Goals_getItemsSku',
     ],
     68 => [
-        'category' => 'Ecommerce',
-        'subcategory' => 'Products',
-        'name' => 'Product Category',
-        'module' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Ecommerce',
+        ],
+        'subcategory' => [
+            'translationKey' => 'Goals_Products',
+        ],
+        'name' => [
+            'translationKey' => 'Goals_ProductCategory',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getItemsCategory',
-        'dimension' => 'Product Category',
+        'dimension' => [
+            'translationKey' => 'Goals_ProductCategory',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/ecommerce-analytics/',
         'metrics' => [
-            'revenue' => 'Product Revenue',
-            'quantity' => 'Quantity',
-            'orders' => 'Unique Purchases',
-            'nb_visits' => 'Visits',
+            'revenue' => [
+                'translationKey' => 'General_ProductRevenue',
+            ],
+            'quantity' => [
+                'translationKey' => 'General_Quantity',
+            ],
+            'orders' => [
+                'translationKey' => 'General_UniquePurchases',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
         ],
         'metricsDocumentation' => [
             'revenue' => 'The total revenue generated by Product sales. Excludes tax, shipping and discount.',
@@ -2998,9 +5376,15 @@ return [
             'conversion_rate' => 'The Product Category conversion rate is the number of orders containing this product divided by number of visits on the product page.',
         ],
         'processedMetrics' => [
-            'avg_price' => 'Average Price',
-            'avg_quantity' => 'Average Quantity',
-            'conversion_rate' => 'Product Conversion Rate',
+            'avg_price' => [
+                'translationKey' => 'General_AveragePrice',
+            ],
+            'avg_quantity' => [
+                'translationKey' => 'General_AverageQuantity',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ProductConversionRate',
+            ],
         ],
         'metricTypes' => [
             'revenue' => 'money',
@@ -3014,23 +5398,43 @@ return [
         'uniqueId' => 'Goals_getItemsCategory',
     ],
     69 => [
-        'category' => 'Goals',
-        'name' => 'Goals',
-        'module' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
+        'name' => [
+            'translationKey' => 'Goals_Goals',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'get',
-        'documentation' => 'This report gives an overview of how well your visitors convert a specific goal.',
+        'documentation' => [
+            'translationKey' => 'Goals_OverviewReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
-            'nb_visits_converted' => 'Visits with Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'nb_visits_converted' => [
+                'translationKey' => 'General_ColumnVisitsWithConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits_converted' => 'Number of visits where at least one goal was successfully converted.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits_converted' => [
+                'translationKey' => 'General_VisitConvertedGoalDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'conversion_rate' => 'Conversion Rate',
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -3041,29 +5445,49 @@ return [
         'uniqueId' => 'Goals_get',
     ],
     70 => [
-        'category' => 'Goals',
-        'name' => 'Visits to Conversion',
-        'module' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
+        'name' => [
+            'translationKey' => 'Goals_VisitsUntilConv',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getVisitsUntilConversion',
-        'dimension' => 'Visits to Conversion',
-        'documentation' => 'This report shows the number of visits made before a visitor converts a goal.',
+        'dimension' => [
+            'translationKey' => 'Goals_VisitsUntilConv',
+        ],
+        'documentation' => [
+            'translationKey' => 'Goals_VisitsUntilConvReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_conversions' => 'The total number of goal conversions that occurred within each visit. Represents how many visits took place before converting.',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_VisitsUntilConvColumnDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
         ],
         'constantRowsCount' => '1',
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -3074,29 +5498,49 @@ return [
         'uniqueId' => 'Goals_getVisitsUntilConversion',
     ],
     71 => [
-        'category' => 'Goals',
-        'name' => 'Days to Conversion',
-        'module' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
+        'name' => [
+            'translationKey' => 'Goals_DaysToConv',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getDaysToConversion',
-        'dimension' => 'Days to Conversion',
-        'documentation' => 'This report shows how many days pass before your visitors convert a goal.',
+        'dimension' => [
+            'translationKey' => 'Goals_DaysToConv',
+        ],
+        'documentation' => [
+            'translationKey' => 'Goals_DaysToConvReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_conversions' => 'The total number of goal conversions that occurred within each time range. Represents how many days passed between a visitor\'s first interaction and their conversion.',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_DaysToConvColumnDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
         ],
         'constantRowsCount' => '1',
         'metricsGoal' => [
-            'nb_conversions' => 'Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'processedMetricsGoal' => [
-            'revenue_per_visit' => 'Revenue per Visit',
+            'revenue_per_visit' => [
+                'translationKey' => 'General_ColumnValuePerVisit',
+            ],
         ],
         'metricTypesGoal' => [
             'revenue_per_visit' => 'money',
@@ -3107,26 +5551,46 @@ return [
         'uniqueId' => 'Goals_getDaysToConversion',
     ],
     72 => [
-        'category' => 'Goals',
-        'name' => 'Goals Overview',
-        'module' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
+        'name' => [
+            'translationKey' => 'Goals_GoalsOverview',
+        ],
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'get',
         'parameters' => [
             'idGoal' => '0',
         ],
-        'documentation' => 'This report gives an overview of how well your visitors convert a specific goal.',
+        'documentation' => [
+            'translationKey' => 'Goals_OverviewReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
-            'nb_visits_converted' => 'Visits with Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'nb_visits_converted' => [
+                'translationKey' => 'General_ColumnVisitsWithConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits_converted' => 'Number of visits where at least one goal was successfully converted.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits_converted' => [
+                'translationKey' => 'General_VisitConvertedGoalDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'conversion_rate' => 'Conversion Rate',
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -3137,21 +5601,33 @@ return [
         'uniqueId' => 'Goals_get_idGoal--0',
     ],
     73 => [
-        'category' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'name' => 'Goals Overview - Visits to Conversion',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getVisitsUntilConversion',
         'parameters' => [
             'idGoal' => '0',
         ],
-        'dimension' => 'Visits to Conversion',
-        'documentation' => 'This report shows the number of visits made before a visitor converts a goal.',
+        'dimension' => [
+            'translationKey' => 'Goals_VisitsUntilConv',
+        ],
+        'documentation' => [
+            'translationKey' => 'Goals_VisitsUntilConvReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_conversions' => 'The total number of goal conversions that occurred within each visit. Represents how many visits took place before converting.',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_VisitsUntilConvColumnDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -3160,21 +5636,33 @@ return [
         'uniqueId' => 'Goals_getVisitsUntilConversion_idGoal--0',
     ],
     74 => [
-        'category' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'name' => 'Goals Overview - Days to Conversion',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getDaysToConversion',
         'parameters' => [
             'idGoal' => '0',
         ],
-        'dimension' => 'Days to Conversion',
-        'documentation' => 'This report shows how many days pass before your visitors convert a goal.',
+        'dimension' => [
+            'translationKey' => 'Goals_DaysToConv',
+        ],
+        'documentation' => [
+            'translationKey' => 'Goals_DaysToConvReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_conversions' => 'The total number of goal conversions that occurred within each time range. Represents how many days passed between a visitor\'s first interaction and their conversion.',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_DaysToConvColumnDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -3183,26 +5671,44 @@ return [
         'uniqueId' => 'Goals_getDaysToConversion_idGoal--0',
     ],
     75 => [
-        'category' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'name' => 'Goal Goal 1 - Thank you',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'get',
         'parameters' => [
             'idGoal' => '1',
         ],
-        'documentation' => 'This report gives an overview of how well your visitors convert a specific goal.',
+        'documentation' => [
+            'translationKey' => 'Goals_OverviewReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
-            'nb_visits_converted' => 'Visits with Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'nb_visits_converted' => [
+                'translationKey' => 'General_ColumnVisitsWithConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits_converted' => 'Number of visits where at least one goal was successfully converted.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits_converted' => [
+                'translationKey' => 'General_VisitConvertedGoalDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'conversion_rate' => 'Conversion Rate',
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -3213,21 +5719,33 @@ return [
         'uniqueId' => 'Goals_get_idGoal--1',
     ],
     76 => [
-        'category' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'name' => 'Goal 1 - Thank you - Visits to Conversion',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getVisitsUntilConversion',
         'parameters' => [
             'idGoal' => '1',
         ],
-        'dimension' => 'Visits to Conversion',
-        'documentation' => 'This report shows the number of visits made before a visitor converts a goal.',
+        'dimension' => [
+            'translationKey' => 'Goals_VisitsUntilConv',
+        ],
+        'documentation' => [
+            'translationKey' => 'Goals_VisitsUntilConvReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_conversions' => 'The total number of goal conversions that occurred within each visit. Represents how many visits took place before converting.',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_VisitsUntilConvColumnDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -3236,21 +5754,33 @@ return [
         'uniqueId' => 'Goals_getVisitsUntilConversion_idGoal--1',
     ],
     77 => [
-        'category' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'name' => 'Goal 1 - Thank you - Days to Conversion',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getDaysToConversion',
         'parameters' => [
             'idGoal' => '1',
         ],
-        'dimension' => 'Days to Conversion',
-        'documentation' => 'This report shows how many days pass before your visitors convert a goal.',
+        'dimension' => [
+            'translationKey' => 'Goals_DaysToConv',
+        ],
+        'documentation' => [
+            'translationKey' => 'Goals_DaysToConvReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_conversions' => 'The total number of goal conversions that occurred within each time range. Represents how many days passed between a visitor\'s first interaction and their conversion.',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_DaysToConvColumnDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -3259,26 +5789,44 @@ return [
         'uniqueId' => 'Goals_getDaysToConversion_idGoal--1',
     ],
     78 => [
-        'category' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'name' => 'Goal Goal 2 - Hello',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'get',
         'parameters' => [
             'idGoal' => '2',
         ],
-        'documentation' => 'This report gives an overview of how well your visitors convert a specific goal.',
+        'documentation' => [
+            'translationKey' => 'Goals_OverviewReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
-            'nb_visits_converted' => 'Visits with Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'nb_visits_converted' => [
+                'translationKey' => 'General_ColumnVisitsWithConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits_converted' => 'Number of visits where at least one goal was successfully converted.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits_converted' => [
+                'translationKey' => 'General_VisitConvertedGoalDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'conversion_rate' => 'Conversion Rate',
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -3289,21 +5837,33 @@ return [
         'uniqueId' => 'Goals_get_idGoal--2',
     ],
     79 => [
-        'category' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'name' => 'Goal 2 - Hello - Visits to Conversion',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getVisitsUntilConversion',
         'parameters' => [
             'idGoal' => '2',
         ],
-        'dimension' => 'Visits to Conversion',
-        'documentation' => 'This report shows the number of visits made before a visitor converts a goal.',
+        'dimension' => [
+            'translationKey' => 'Goals_VisitsUntilConv',
+        ],
+        'documentation' => [
+            'translationKey' => 'Goals_VisitsUntilConvReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_conversions' => 'The total number of goal conversions that occurred within each visit. Represents how many visits took place before converting.',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_VisitsUntilConvColumnDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -3312,21 +5872,33 @@ return [
         'uniqueId' => 'Goals_getVisitsUntilConversion_idGoal--2',
     ],
     80 => [
-        'category' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'name' => 'Goal 2 - Hello - Days to Conversion',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getDaysToConversion',
         'parameters' => [
             'idGoal' => '2',
         ],
-        'dimension' => 'Days to Conversion',
-        'documentation' => 'This report shows how many days pass before your visitors convert a goal.',
+        'dimension' => [
+            'translationKey' => 'Goals_DaysToConv',
+        ],
+        'documentation' => [
+            'translationKey' => 'Goals_DaysToConvReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_conversions' => 'The total number of goal conversions that occurred within each time range. Represents how many days passed between a visitor\'s first interaction and their conversion.',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_DaysToConvColumnDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -3335,26 +5907,44 @@ return [
         'uniqueId' => 'Goals_getDaysToConversion_idGoal--2',
     ],
     81 => [
-        'category' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'name' => 'Goal triggered js',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'get',
         'parameters' => [
             'idGoal' => '3',
         ],
-        'documentation' => 'This report gives an overview of how well your visitors convert a specific goal.',
+        'documentation' => [
+            'translationKey' => 'Goals_OverviewReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
-            'nb_visits_converted' => 'Visits with Conversions',
-            'revenue' => 'Revenue',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'nb_visits_converted' => [
+                'translationKey' => 'General_ColumnVisitsWithConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits_converted' => 'Number of visits where at least one goal was successfully converted.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits_converted' => [
+                'translationKey' => 'General_VisitConvertedGoalDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'conversion_rate' => 'Conversion Rate',
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -3365,21 +5955,33 @@ return [
         'uniqueId' => 'Goals_get_idGoal--3',
     ],
     82 => [
-        'category' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'name' => 'triggered js - Visits to Conversion',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getVisitsUntilConversion',
         'parameters' => [
             'idGoal' => '3',
         ],
-        'dimension' => 'Visits to Conversion',
-        'documentation' => 'This report shows the number of visits made before a visitor converts a goal.',
+        'dimension' => [
+            'translationKey' => 'Goals_VisitsUntilConv',
+        ],
+        'documentation' => [
+            'translationKey' => 'Goals_VisitsUntilConvReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_conversions' => 'The total number of goal conversions that occurred within each visit. Represents how many visits took place before converting.',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_VisitsUntilConvColumnDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -3388,21 +5990,33 @@ return [
         'uniqueId' => 'Goals_getVisitsUntilConversion_idGoal--3',
     ],
     83 => [
-        'category' => 'Goals',
+        'category' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'name' => 'triggered js - Days to Conversion',
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getDaysToConversion',
         'parameters' => [
             'idGoal' => '3',
         ],
-        'dimension' => 'Days to Conversion',
-        'documentation' => 'This report shows how many days pass before your visitors convert a goal.',
+        'dimension' => [
+            'translationKey' => 'Goals_DaysToConv',
+        ],
+        'documentation' => [
+            'translationKey' => 'Goals_DaysToConvReportDocumentation',
+        ],
         'onlineGuideUrl' => 'https://matomo.org/docs/tracking-goals-web-analytics/',
         'metrics' => [
-            'nb_conversions' => 'Conversions',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_conversions' => 'The total number of goal conversions that occurred within each time range. Represents how many days passed between a visitor\'s first interaction and their conversion.',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_DaysToConvColumnDocumentation',
+            ],
         ],
         'metricTypes' => [
             'nb_conversions' => 'number',
@@ -3411,32 +6025,70 @@ return [
         'uniqueId' => 'Goals_getDaysToConversion_idGoal--3',
     ],
     84 => [
-        'category' => 'AI Assistants',
-        'subcategory' => 'AI Chatbots Overview',
-        'name' => 'AI Chatbots Overview',
+        'category' => [
+            'translationKey' => 'General_AIAssistants',
+        ],
+        'subcategory' => [
+            'translationKey' => 'BotTracking_AIChatbotsOverview',
+        ],
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsOverview',
+        ],
         'module' => 'BotTracking',
         'action' => 'get',
         'metrics' => [
-            'BotTracking_AIChatbotsRequests' => 'Requests',
-            'BotTracking_AIChatbotsAcquiredVisits' => 'Acquired visits',
-            'BotTracking_AIChatbotsUniquePageUrls' => 'Unique page URLs',
-            'BotTracking_AIChatbotsNotFoundRequests' => 'Not found requests',
-            'BotTracking_AIChatbotsUniqueChatbots' => 'Unique AI chatbots',
-            'BotTracking_AIChatbotsUniqueDocumentUrls' => 'Unique document URLs',
-            'BotTracking_AIChatbotsServerErrorRequests' => 'Server error (5xx) requests',
+            'BotTracking_AIChatbotsRequests' => [
+                'translationKey' => 'BotTracking_ColumnRequests',
+            ],
+            'BotTracking_AIChatbotsAcquiredVisits' => [
+                'translationKey' => 'BotTracking_ColumnAcquiredVisits',
+            ],
+            'BotTracking_AIChatbotsUniquePageUrls' => [
+                'translationKey' => 'BotTracking_ColumnUniquePageUrls',
+            ],
+            'BotTracking_AIChatbotsNotFoundRequests' => [
+                'translationKey' => 'BotTracking_ColumnNotFoundRequests',
+            ],
+            'BotTracking_AIChatbotsUniqueChatbots' => [
+                'translationKey' => 'BotTracking_ColumnUniqueAiChatbots',
+            ],
+            'BotTracking_AIChatbotsUniqueDocumentUrls' => [
+                'translationKey' => 'BotTracking_ColumnUniqueDocumentUrls',
+            ],
+            'BotTracking_AIChatbotsServerErrorRequests' => [
+                'translationKey' => 'BotTracking_ColumnServerErrorRequests',
+            ],
         ],
         'metricsDocumentation' => [
-            'BotTracking_AIChatbotsRequests' => 'Total number of bot requests recorded during the selected period. Includes both page and document URLs.',
-            'BotTracking_AIChatbotsAcquiredVisits' => 'Visits that started after someone clicked from an AI chatbot (Referrers → AI Assistants).',
-            'BotTracking_AIChatbotsUniquePageUrls' => 'Distinct page URLs requested by AI chatbots.',
-            'BotTracking_AIChatbotsNotFoundRequests' => 'Number of bot requests that returned an HTTP 404 or 410 response, including document URLs.',
-            'BotTracking_AIChatbotsUniqueChatbots' => 'AI chatbot user agents detected during the selected period.',
-            'BotTracking_AIChatbotsUniqueDocumentUrls' => 'Distinct download or document URLs requested by AI chatbots.',
-            'BotTracking_AIChatbotsServerErrorRequests' => 'Number of bot requests that returned an HTTP 5xx response, including document URLs.',
-            'BotTracking_AIChatbotsClickThroughRate' => 'Share of AI chatbot requests that resulted in acquired visits (acquired visits ÷ requests).',
+            'BotTracking_AIChatbotsRequests' => [
+                'translationKey' => 'BotTracking_ColumnRequestsDocumentation',
+            ],
+            'BotTracking_AIChatbotsAcquiredVisits' => [
+                'translationKey' => 'BotTracking_ColumnAcquiredVisitsDocumentation',
+            ],
+            'BotTracking_AIChatbotsUniquePageUrls' => [
+                'translationKey' => 'BotTracking_ColumnUniquePageUrlsDocumentation',
+            ],
+            'BotTracking_AIChatbotsNotFoundRequests' => [
+                'translationKey' => 'BotTracking_ColumnNotFoundRequestsDocumentation',
+            ],
+            'BotTracking_AIChatbotsUniqueChatbots' => [
+                'translationKey' => 'BotTracking_ColumnUniqueAiChatbotsDocumentation',
+            ],
+            'BotTracking_AIChatbotsUniqueDocumentUrls' => [
+                'translationKey' => 'BotTracking_ColumnUniqueDocumentUrlsDocumentation',
+            ],
+            'BotTracking_AIChatbotsServerErrorRequests' => [
+                'translationKey' => 'BotTracking_ColumnServerErrorRequestsDocumentation',
+            ],
+            'BotTracking_AIChatbotsClickThroughRate' => [
+                'translationKey' => 'BotTracking_ColumnClickThroughRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'BotTracking_AIChatbotsClickThroughRate' => 'Click-through rate',
+            'BotTracking_AIChatbotsClickThroughRate' => [
+                'translationKey' => 'BotTracking_ColumnClickThroughRate',
+            ],
         ],
         'metricTypes' => [
             'BotTracking_AIChatbotsRequests' => 'number',
@@ -3451,28 +6103,58 @@ return [
         'uniqueId' => 'BotTracking_get',
     ],
     85 => [
-        'category' => 'AI Assistants',
-        'subcategory' => 'AI Chatbots Overview',
-        'name' => 'AI Chatbots',
+        'category' => [
+            'translationKey' => 'General_AIAssistants',
+        ],
+        'subcategory' => [
+            'translationKey' => 'BotTracking_AIChatbotsOverview',
+        ],
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsReportTitle',
+        ],
         'module' => 'BotTracking',
         'action' => 'getAIChatbotRequests',
-        'dimension' => 'AI Chatbot Name',
-        'documentation' => 'Discover which AI chatbots are crawling your site and how many hits each one generates. Expand a chatbot to review the most frequently requested pages or documents.',
+        'dimension' => [
+            'translationKey' => 'BotTracking_ColumnAIChatbotName',
+        ],
+        'documentation' => [
+            'translationKey' => 'BotTracking_AIChatbotsReportDocumentation',
+        ],
         'dimensions' => [
-            'BotTracking_AIChatbotName' => 'AI Chatbot Name',
-            'BotTracking_PageUrl' => 'Page URL',
+            'BotTracking_AIChatbotName' => [
+                'translationKey' => 'BotTracking_ColumnAIChatbotName',
+            ],
+            'BotTracking_PageUrl' => [
+                'translationKey' => 'Actions_ColumnPageURL',
+            ],
         ],
         'metrics' => [
-            'requests' => 'Requests',
-            'page_requests' => 'Page Requests',
-            'document_requests' => 'Document Requests',
-            'visits_acquired' => 'Acquired visits',
+            'requests' => [
+                'translationKey' => 'BotTracking_ColumnRequests',
+            ],
+            'page_requests' => [
+                'translationKey' => 'BotTracking_ColumnPageRequests',
+            ],
+            'document_requests' => [
+                'translationKey' => 'BotTracking_ColumnDocumentRequests',
+            ],
+            'visits_acquired' => [
+                'translationKey' => 'BotTracking_ColumnAcquiredVisits',
+            ],
         ],
         'metricsDocumentation' => [
-            'requests' => 'Total number of bot requests recorded during the selected period. Includes both page and document URLs.',
-            'page_requests' => 'Total number of bot requests to page URLs recorded during the selected period.',
-            'document_requests' => 'Total number of bot requests to document URLs recorded during the selected period.',
-            'visits_acquired' => 'Visits that started after someone clicked from an AI chatbot (Referrers → AI Assistants).',
+            'requests' => [
+                'translationKey' => 'BotTracking_ColumnRequestsDocumentation',
+            ],
+            'page_requests' => [
+                'translationKey' => 'BotTracking_ColumnPageRequestsDocumentation',
+            ],
+            'document_requests' => [
+                'translationKey' => 'BotTracking_ColumnDocumentRequestsDocumentation',
+            ],
+            'visits_acquired' => [
+                'translationKey' => 'BotTracking_ColumnAcquiredVisitsDocumentation',
+            ],
         ],
         'metricTypes' => [
             'requests' => 'number',
@@ -3484,30 +6166,58 @@ return [
         'uniqueId' => 'BotTracking_getAIChatbotRequests',
     ],
     86 => [
-        'category' => 'AI Assistants',
-        'subcategory' => 'AI Chatbots Content Requests',
-        'name' => 'Pages',
+        'category' => [
+            'translationKey' => 'General_AIAssistants',
+        ],
+        'subcategory' => [
+            'translationKey' => 'BotTracking_AIChatbotsContentRequests',
+        ],
+        'name' => [
+            'translationKey' => 'General_Pages',
+        ],
         'module' => 'BotTracking',
         'action' => 'getAIChatbotContentPages',
-        'dimension' => 'Page URL',
-        'documentation' => 'This report shows which HTML page URLs were accessed by AI Assistants (like ChatGPT) to retrieve real-time information during user chats. It helps you identify which parts of your website are being referenced by AI systems, offering insights into your site’s visibility in AI-assisted interactions and potential content opportunities. It focuses only on visits to standard web pages, excluding file downloads such as PDFs, Word, or Excel documents — which are covered in a separate report dedicated to document access.
-It’s important to note that none of these pages were actually viewed by humans in the traditional way — all requests originate from AI assistants fetching content automatically.
-Currently, these reports exclusively include requests from AI bots that do not execute JavaScript. They do not include traffic from AI crawlers used for training AI models or from AI agents capable of executing JavaScript.',
+        'dimension' => [
+            'translationKey' => 'Actions_ColumnPageURL',
+        ],
+        'documentation' => [
+            'translationKey' => 'BotTracking_AIChatbotsContentPagesDocumentation',
+        ],
         'metrics' => [
-            'requests' => 'Requests',
-            'server_error_5xx_requests' => '5XX Requests',
-            'page_not_found_404_requests' => 'Page Not Found (404) Requests',
+            'requests' => [
+                'translationKey' => 'BotTracking_ColumnRequests',
+            ],
+            'server_error_5xx_requests' => [
+                'translationKey' => 'BotTracking_ColumnServerError5xxRequests',
+            ],
+            'page_not_found_404_requests' => [
+                'translationKey' => 'BotTracking_ColumnPageNotFound404Requests',
+            ],
         ],
         'metricsDocumentation' => [
-            'requests' => 'Total number of bot requests to page URLs recorded during the selected period.',
-            'server_error_5xx_requests' => 'Number of bot requests that returned an HTTP 5xx (server error) response.',
-            'page_not_found_404_requests' => 'Number of bot requests that returned an HTTP 404 (Not Found) or 410 (Gone) response.',
-            'avg_server_time' => 'Average time the server took to respond to these requests. This relies on server or CDN tracking and may be empty if it is not configured, or empty for a URL when none of its requests carried this data.',
-            'avg_response_size' => 'Average size of the responses returned for these requests. This relies on server or CDN tracking and may be empty if it is not configured, or empty for a URL when none of its requests carried this data.',
+            'requests' => [
+                'translationKey' => 'BotTracking_ColumnPageRequestsDocumentation',
+            ],
+            'server_error_5xx_requests' => [
+                'translationKey' => 'BotTracking_ColumnServerError5xxRequestsDocumentation',
+            ],
+            'page_not_found_404_requests' => [
+                'translationKey' => 'BotTracking_ColumnPageNotFound404RequestsDocumentation',
+            ],
+            'avg_server_time' => [
+                'translationKey' => 'BotTracking_ColumnAvgServerTimeDocumentation',
+            ],
+            'avg_response_size' => [
+                'translationKey' => 'BotTracking_ColumnAvgResponseSizeDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'avg_server_time' => 'Avg. Server Time',
-            'avg_response_size' => 'Avg. Response Size',
+            'avg_server_time' => [
+                'translationKey' => 'BotTracking_ColumnAvgServerTime',
+            ],
+            'avg_response_size' => [
+                'translationKey' => 'BotTracking_ColumnAvgResponseSize',
+            ],
         ],
         'metricTypes' => [
             'requests' => 'number',
@@ -3519,30 +6229,58 @@ Currently, these reports exclusively include requests from AI bots that do not e
         'uniqueId' => 'BotTracking_getAIChatbotContentPages',
     ],
     87 => [
-        'category' => 'AI Assistants',
-        'subcategory' => 'AI Chatbots Content Requests',
-        'name' => 'Documents',
+        'category' => [
+            'translationKey' => 'General_AIAssistants',
+        ],
+        'subcategory' => [
+            'translationKey' => 'BotTracking_AIChatbotsContentRequests',
+        ],
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsContentDocumentsTitle',
+        ],
         'module' => 'BotTracking',
         'action' => 'getAIChatbotContentDocuments',
-        'dimension' => 'Document URL',
-        'documentation' => 'This report shows which document URLs were accessed by AI Chatbots (like ChatGPT) to retrieve real-time information during user chats. It helps you identify which parts of your website are being referenced by AI systems, offering insights into your site’s visibility in AI-assisted interactions and potential content opportunities. It focuses only on visits to documents and media files like PDF, Word, Excel and MP4, excluding HTML page URLs — which are covered in a separate report dedicated to pages.
-It’s important to note that none of these documents were actually viewed by humans in the traditional way — all requests originate from AI assistants fetching content automatically.
-Currently, these reports exclusively include requests from AI chatbots that do not execute JavaScript. They do not include traffic from AI crawlers used for training AI models or from AI agents capable of executing JavaScript.',
+        'dimension' => [
+            'translationKey' => 'BotTracking_DocumentUrl',
+        ],
+        'documentation' => [
+            'translationKey' => 'BotTracking_AIChatbotsContentDocumentsDocumentation',
+        ],
         'metrics' => [
-            'requests' => 'Requests',
-            'server_error_5xx_requests' => '5XX Requests',
-            'page_not_found_404_requests' => 'Page Not Found (404) Requests',
+            'requests' => [
+                'translationKey' => 'BotTracking_ColumnRequests',
+            ],
+            'server_error_5xx_requests' => [
+                'translationKey' => 'BotTracking_ColumnServerError5xxRequests',
+            ],
+            'page_not_found_404_requests' => [
+                'translationKey' => 'BotTracking_ColumnPageNotFound404Requests',
+            ],
         ],
         'metricsDocumentation' => [
-            'requests' => 'Total number of bot requests to document URLs recorded during the selected period.',
-            'server_error_5xx_requests' => 'Number of bot requests that returned an HTTP 5xx (server error) response.',
-            'page_not_found_404_requests' => 'Number of bot requests that returned an HTTP 404 (Not Found) or 410 (Gone) response.',
-            'avg_server_time' => 'Average time the server took to respond to these requests. This relies on server or CDN tracking and may be empty if it is not configured, or empty for a URL when none of its requests carried this data.',
-            'avg_response_size' => 'Average size of the responses returned for these requests. This relies on server or CDN tracking and may be empty if it is not configured, or empty for a URL when none of its requests carried this data.',
+            'requests' => [
+                'translationKey' => 'BotTracking_ColumnDocumentRequestsDocumentation',
+            ],
+            'server_error_5xx_requests' => [
+                'translationKey' => 'BotTracking_ColumnServerError5xxRequestsDocumentation',
+            ],
+            'page_not_found_404_requests' => [
+                'translationKey' => 'BotTracking_ColumnPageNotFound404RequestsDocumentation',
+            ],
+            'avg_server_time' => [
+                'translationKey' => 'BotTracking_ColumnAvgServerTimeDocumentation',
+            ],
+            'avg_response_size' => [
+                'translationKey' => 'BotTracking_ColumnAvgResponseSizeDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'avg_server_time' => 'Avg. Server Time',
-            'avg_response_size' => 'Avg. Response Size',
+            'avg_server_time' => [
+                'translationKey' => 'BotTracking_ColumnAvgServerTime',
+            ],
+            'avg_response_size' => [
+                'translationKey' => 'BotTracking_ColumnAvgResponseSize',
+            ],
         ],
         'metricTypes' => [
             'requests' => 'number',
@@ -3554,22 +6292,44 @@ Currently, these reports exclusively include requests from AI chatbots that do n
         'uniqueId' => 'BotTracking_getAIChatbotContentDocuments',
     ],
     88 => [
-        'category' => 'AI Assistants',
-        'subcategory' => 'AI Chatbots Content Requests',
-        'name' => 'Broken Pages and Documents',
+        'category' => [
+            'translationKey' => 'General_AIAssistants',
+        ],
+        'subcategory' => [
+            'translationKey' => 'BotTracking_AIChatbotsContentRequests',
+        ],
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsBrokenContentTitle',
+        ],
         'module' => 'BotTracking',
         'action' => 'getAIChatbotBrokenContent',
-        'dimension' => 'URL',
-        'documentation' => 'This report lists broken page URLs and document URLs (such as PDFs, Word, or Excel files) that were accessed by AI Chatbots (like ChatGPT) but returned errors or were unavailable. It helps identify missing or inaccessible content that LLMs attempted to fetch, allowing you to fix broken links and improve your site’s reliability and discoverability.',
+        'dimension' => [
+            'translationKey' => 'BotTracking_ContentUrl',
+        ],
+        'documentation' => [
+            'translationKey' => 'BotTracking_AIChatbotsBrokenContentDocumentation',
+        ],
         'metrics' => [
-            'total_broken_requests' => 'Total Broken Requests',
-            'server_error_5xx_requests' => '5XX Requests',
-            'page_not_found_404_requests' => 'Page Not Found (404) Requests',
+            'total_broken_requests' => [
+                'translationKey' => 'BotTracking_ColumnTotalBrokenRequests',
+            ],
+            'server_error_5xx_requests' => [
+                'translationKey' => 'BotTracking_ColumnServerError5xxRequests',
+            ],
+            'page_not_found_404_requests' => [
+                'translationKey' => 'BotTracking_ColumnPageNotFound404Requests',
+            ],
         ],
         'metricsDocumentation' => [
-            'total_broken_requests' => 'Number of bot requests that returned an HTTP 404 (Not Found), 410 (Gone), or 5xx (server error) response.',
-            'server_error_5xx_requests' => 'Number of bot requests that returned an HTTP 5xx (server error) response.',
-            'page_not_found_404_requests' => 'Number of bot requests that returned an HTTP 404 (Not Found) or 410 (Gone) response.',
+            'total_broken_requests' => [
+                'translationKey' => 'BotTracking_ColumnTotalBrokenRequestsDocumentation',
+            ],
+            'server_error_5xx_requests' => [
+                'translationKey' => 'BotTracking_ColumnServerError5xxRequestsDocumentation',
+            ],
+            'page_not_found_404_requests' => [
+                'translationKey' => 'BotTracking_ColumnPageNotFound404RequestsDocumentation',
+            ],
         ],
         'metricTypes' => [
             'total_broken_requests' => 'number',
@@ -3579,22 +6339,44 @@ Currently, these reports exclusively include requests from AI chatbots that do n
         'uniqueId' => 'BotTracking_getAIChatbotBrokenContent',
     ],
     89 => [
-        'category' => 'AI Assistants',
-        'subcategory' => 'AI Chatbots Content Requests',
-        'name' => 'Human-Favoured Pages',
+        'category' => [
+            'translationKey' => 'General_AIAssistants',
+        ],
+        'subcategory' => [
+            'translationKey' => 'BotTracking_AIChatbotsContentRequests',
+        ],
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsHumanFavouredPagesTitle',
+        ],
         'module' => 'BotTracking',
         'action' => 'getAIChatbotHumanFavouredPages',
-        'dimension' => 'Page URL',
-        'documentation' => 'Shows pages that receive significantly more visits from humans than from AI chatbots. Useful for identifying content that resonates strongly with real users but is underrepresented in AI-driven traffic or recommendations.',
+        'dimension' => [
+            'translationKey' => 'Actions_ColumnPageURL',
+        ],
+        'documentation' => [
+            'translationKey' => 'BotTracking_AIChatbotsHumanFavouredPagesDocumentation',
+        ],
         'metrics' => [
-            'unique_human_pageviews' => 'Unique Human Pageviews',
-            'ai_chatbot_requests' => 'AI Chatbot Requests',
-            'discrepancy_score' => 'Discrepancy Score',
+            'unique_human_pageviews' => [
+                'translationKey' => 'BotTracking_ColumnUniqueHumanPageviews',
+            ],
+            'ai_chatbot_requests' => [
+                'translationKey' => 'BotTracking_ColumnAIChatbotRequests',
+            ],
+            'discrepancy_score' => [
+                'translationKey' => 'BotTracking_ColumnDiscrepancyScore',
+            ],
         ],
         'metricsDocumentation' => [
-            'unique_human_pageviews' => 'The number of visits during which real users viewed this URL at least once. Traffic from AI chatbots and other bots is excluded.',
-            'ai_chatbot_requests' => 'The total number of times this URL was requested by AI chatbots during the selected period.',
-            'discrepancy_score' => 'A score from 0 to 100 that combines how strongly this page leans towards humans (how much more it is visited by humans than requested by AI chatbots) with how much human traffic it has relative to the most-visited page. Higher means humans engage with it far more than AI chatbots do; pages that are balanced or AI-leaning score 0.',
+            'unique_human_pageviews' => [
+                'translationKey' => 'BotTracking_ColumnUniqueHumanPageviewsDocumentation',
+            ],
+            'ai_chatbot_requests' => [
+                'translationKey' => 'BotTracking_ColumnAIChatbotRequestsDocumentation',
+            ],
+            'discrepancy_score' => [
+                'translationKey' => 'BotTracking_ColumnDiscrepancyScoreHumanFavouredDocumentation',
+            ],
         ],
         'metricTypes' => [
             'unique_human_pageviews' => 'number',
@@ -3604,22 +6386,44 @@ Currently, these reports exclusively include requests from AI chatbots that do n
         'uniqueId' => 'BotTracking_getAIChatbotHumanFavouredPages',
     ],
     90 => [
-        'category' => 'AI Assistants',
-        'subcategory' => 'AI Chatbots Content Requests',
-        'name' => 'AI-Favoured Pages',
+        'category' => [
+            'translationKey' => 'General_AIAssistants',
+        ],
+        'subcategory' => [
+            'translationKey' => 'BotTracking_AIChatbotsContentRequests',
+        ],
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsAIFavouredPagesTitle',
+        ],
         'module' => 'BotTracking',
         'action' => 'getAIChatbotAIFavouredPages',
-        'dimension' => 'Page URL',
-        'documentation' => 'Shows pages that are frequently requested by AI chatbots but less often visited by humans. Useful for discovering content that AI systems surface or reference but that doesn\'t yet attract much direct human engagement.',
+        'dimension' => [
+            'translationKey' => 'Actions_ColumnPageURL',
+        ],
+        'documentation' => [
+            'translationKey' => 'BotTracking_AIChatbotsAIFavouredPagesDocumentation',
+        ],
         'metrics' => [
-            'ai_chatbot_requests' => 'AI Chatbot Requests',
-            'unique_human_pageviews' => 'Unique Human Pageviews',
-            'discrepancy_score' => 'Discrepancy Score',
+            'ai_chatbot_requests' => [
+                'translationKey' => 'BotTracking_ColumnAIChatbotRequests',
+            ],
+            'unique_human_pageviews' => [
+                'translationKey' => 'BotTracking_ColumnUniqueHumanPageviews',
+            ],
+            'discrepancy_score' => [
+                'translationKey' => 'BotTracking_ColumnDiscrepancyScore',
+            ],
         ],
         'metricsDocumentation' => [
-            'ai_chatbot_requests' => 'The total number of times this URL was requested by AI chatbots during the selected period.',
-            'unique_human_pageviews' => 'The number of visits during which real users viewed this URL at least once. Traffic from AI chatbots and other bots is excluded.',
-            'discrepancy_score' => 'A score from 0 to 100 that combines how strongly this page leans towards AI chatbots (how much more it is requested by chatbots than visited by humans) with how much chatbot traffic it has relative to the most-requested page. Higher means AI chatbots focus on it far more than humans do; pages that are balanced or human-leaning score 0.',
+            'ai_chatbot_requests' => [
+                'translationKey' => 'BotTracking_ColumnAIChatbotRequestsDocumentation',
+            ],
+            'unique_human_pageviews' => [
+                'translationKey' => 'BotTracking_ColumnUniqueHumanPageviewsDocumentation',
+            ],
+            'discrepancy_score' => [
+                'translationKey' => 'BotTracking_ColumnDiscrepancyScoreAIFavouredDocumentation',
+            ],
         ],
         'metricTypes' => [
             'ai_chatbot_requests' => 'number',
@@ -3629,30 +6433,68 @@ Currently, these reports exclusively include requests from AI chatbots that do n
         'uniqueId' => 'BotTracking_getAIChatbotAIFavouredPages',
     ],
     91 => [
-        'category' => 'AI Assistants',
-        'subcategory' => 'AI Agents Overview',
-        'name' => 'AI Agent Visits',
+        'category' => [
+            'translationKey' => 'General_AIAssistants',
+        ],
+        'subcategory' => [
+            'translationKey' => 'AIAgents_AIAgentsOverview',
+        ],
+        'name' => [
+            'translationKey' => 'AIAgents_AIAgentVisits',
+        ],
         'module' => 'AIAgents',
         'action' => 'get',
         'metrics' => [
-            'nb_visits_ai_agent' => 'AI Agent Visits',
-            'nb_actions_ai_agent' => 'Actions by AI Agent Visits',
-            'nb_uniq_visitors_ai_agent' => 'Unique AI Agent Visitors',
-            'nb_users_ai_agent' => 'AI Agent Users',
-            'max_actions_ai_agent' => 'Maximum Actions in AI Agent Visit',
-            'nb_visits_human' => 'Human Visits',
-            'nb_actions_human' => 'Actions by Human Visits',
-            'nb_uniq_visitors_human' => 'Unique Human Visitors',
-            'nb_users_human' => 'Human Users',
-            'max_actions_human' => 'Maximum Actions in one Human Visit',
+            'nb_visits_ai_agent' => [
+                'translationKey' => 'AIAgents_AIAgentVisits',
+            ],
+            'nb_actions_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentActions',
+            ],
+            'nb_uniq_visitors_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentUniqueVisitors',
+            ],
+            'nb_users_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentUsers',
+            ],
+            'max_actions_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentMaxActions',
+            ],
+            'nb_visits_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanVisits',
+            ],
+            'nb_actions_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanActions',
+            ],
+            'nb_uniq_visitors_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanUniqueVisitors',
+            ],
+            'nb_users_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanUsers',
+            ],
+            'max_actions_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanMaxActions',
+            ],
         ],
         'processedMetrics' => [
-            'avg_time_on_site_ai_agent' => 'Avg. Duration of an AI Agent Visit (in sec)',
-            'nb_actions_per_visit_ai_agent' => 'Avg. Actions per AI Agent Visit',
-            'bounce_rate_ai_agent' => 'Bounce Rate for AI Agent Visits',
-            'avg_time_on_site_human' => 'Avg. Duration of a Human Visit (in sec)',
-            'nb_actions_per_visit_human' => 'Avg. Actions per Human Visit',
-            'bounce_rate_human' => 'Bounce Rate for Human Visits',
+            'avg_time_on_site_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentAverageVisitDuration',
+            ],
+            'nb_actions_per_visit_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentAvgActionsPerVisit',
+            ],
+            'bounce_rate_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentBounceRate',
+            ],
+            'avg_time_on_site_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanAverageVisitDuration',
+            ],
+            'nb_actions_per_visit_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanAvgActionsPerVisit',
+            ],
+            'bounce_rate_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanBounceRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits_ai_agent' => 'number',
@@ -3675,33 +6517,71 @@ Currently, these reports exclusively include requests from AI chatbots that do n
         'uniqueId' => 'AIAgents_get',
     ],
     92 => [
-        'category' => 'UI Framework',
-        'subcategory' => 'Data tables',
-        'name' => 'Data tables',
+        'category' => [
+            'translationKey' => 'ExampleUI_UiFramework',
+        ],
+        'subcategory' => [
+            'translationKey' => 'ExampleUI_GetTemperaturesDataTable',
+        ],
+        'name' => [
+            'translationKey' => 'ExampleUI_GetTemperaturesDataTable',
+        ],
         'module' => 'ExampleUI',
         'action' => 'getTemperatures',
         'documentation' => 'This is an example documentation of a report.',
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -3716,32 +6596,68 @@ Currently, these reports exclusively include requests from AI chatbots that do n
         'uniqueId' => 'ExampleUI_getTemperatures',
     ],
     93 => [
-        'category' => 'UI Framework',
-        'name' => 'Temperatures evolution over time',
+        'category' => [
+            'translationKey' => 'ExampleUI_UiFramework',
+        ],
+        'name' => [
+            'translationKey' => 'ExampleUI_GetTemperaturesEvolution',
+        ],
         'module' => 'ExampleUI',
         'action' => 'getTemperaturesEvolution',
         'documentation' => 'This is an example evolution report',
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -3756,33 +6672,67 @@ Currently, these reports exclusively include requests from AI chatbots that do n
         'uniqueId' => 'ExampleUI_getTemperaturesEvolution',
     ],
     94 => [
-        'category' => 'UI Framework',
+        'category' => [
+            'translationKey' => 'ExampleUI_UiFramework',
+        ],
         'subcategory' => 'Pie graph',
         'name' => 'Pie graph',
         'module' => 'ExampleUI',
         'action' => 'getPlanetRatios',
         'documentation' => 'This report shows a sample Pie chart',
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -3797,33 +6747,67 @@ Currently, these reports exclusively include requests from AI chatbots that do n
         'uniqueId' => 'ExampleUI_getPlanetRatios',
     ],
     95 => [
-        'category' => 'UI Framework',
+        'category' => [
+            'translationKey' => 'ExampleUI_UiFramework',
+        ],
         'subcategory' => 'Tag clouds',
         'name' => 'Advanced tag cloud: with logos and links',
         'module' => 'ExampleUI',
         'action' => 'getPlanetRatiosWithLogos',
         'documentation' => 'This report shows a sample tab cloud.',
         'metrics' => [
-            'nb_visits' => 'Visits',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_actions' => 'Actions',
-            'nb_users' => 'Users',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
         ],
         'metricsDocumentation' => [
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Time on Website',
-            'bounce_rate' => 'Bounce Rate',
-            'conversion_rate' => 'Conversion Rate',
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSite',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
         ],
         'metricTypes' => [
             'nb_visits' => 'number',
@@ -3838,32 +6822,70 @@ Currently, these reports exclusively include requests from AI chatbots that do n
         'uniqueId' => 'ExampleUI_getPlanetRatiosWithLogos',
     ],
     96 => [
-        'category' => 'API',
-        'name' => 'Main metrics',
-        'module' => 'API',
+        'category' => [
+            'translationKey' => 'General_API',
+        ],
+        'name' => [
+            'translationKey' => 'General_MainMetrics',
+        ],
+        'module' => [
+            'translationKey' => 'General_API',
+        ],
         'action' => 'get',
-        'documentation' => 'This report gives an overview of the most important metrics across all categories and plugins.',
+        'documentation' => [
+            'translationKey' => 'API_MainMetricsReportDocumentation',
+        ],
         'metrics' => [
-            'nb_pageviews' => 'Pageviews',
-            'nb_uniq_pageviews' => 'Unique Pageviews',
-            'nb_downloads' => 'Downloads',
-            'nb_uniq_downloads' => 'Unique Downloads',
-            'nb_outlinks' => 'Outlinks',
-            'nb_uniq_outlinks' => 'Unique Outlinks',
-            'nb_searches' => 'Searches',
-            'nb_keywords' => 'Unique Keywords',
-            'hits' => 'Hits',
-            'Referrers_visitorsFromSearchEngines' => 'Visitors from Search Engines',
+            'nb_pageviews' => [
+                'translationKey' => 'General_ColumnPageviews',
+            ],
+            'nb_uniq_pageviews' => [
+                'translationKey' => 'General_ColumnUniquePageviews',
+            ],
+            'nb_downloads' => [
+                'translationKey' => 'General_Downloads',
+            ],
+            'nb_uniq_downloads' => [
+                'translationKey' => 'Actions_ColumnUniqueDownloads',
+            ],
+            'nb_outlinks' => [
+                'translationKey' => 'General_Outlinks',
+            ],
+            'nb_uniq_outlinks' => [
+                'translationKey' => 'Actions_ColumnUniqueOutlinks',
+            ],
+            'nb_searches' => [
+                'translationKey' => 'Actions_ColumnSearches',
+            ],
+            'nb_keywords' => [
+                'translationKey' => 'Actions_ColumnSiteSearchKeywords',
+            ],
+            'hits' => [
+                'translationKey' => 'General_ColumnHits',
+            ],
+            'Referrers_visitorsFromSearchEngines' => [
+                'translationKey' => 'Referrers_VisitorsFromSearchEngines',
+            ],
             'Referrers_visitorsFromSearchEngines_percent' => 'Percent of Visitors from Search Engines',
-            'Referrers_visitorsFromSocialNetworks' => 'Visitors from Social Networks',
+            'Referrers_visitorsFromSocialNetworks' => [
+                'translationKey' => 'Referrers_VisitorsFromSocialNetworks',
+            ],
             'Referrers_visitorsFromSocialNetworks_percent' => 'Percent of Visitors from Social Networks',
-            'Referrers_visitorsFromAIAssistants' => 'Visitors from AI Assistants',
+            'Referrers_visitorsFromAIAssistants' => [
+                'translationKey' => 'Referrers_VisitorsFromAIAssistants',
+            ],
             'Referrers_visitorsFromAIAssistants_percent' => 'Percent of Visitors from AI Assistants',
-            'Referrers_visitorsFromDirectEntry' => 'Visitors from Direct Entry',
+            'Referrers_visitorsFromDirectEntry' => [
+                'translationKey' => 'Referrers_VisitorsFromDirectEntry',
+            ],
             'Referrers_visitorsFromDirectEntry_percent' => 'Percent of Visitors from Direct Entry',
-            'Referrers_visitorsFromWebsites' => 'Visitors from Websites',
+            'Referrers_visitorsFromWebsites' => [
+                'translationKey' => 'Referrers_VisitorsFromWebsites',
+            ],
             'Referrers_visitorsFromWebsites_percent' => 'Percent of Visitors from Websites',
-            'Referrers_visitorsFromCampaigns' => 'Visitors from Campaigns',
+            'Referrers_visitorsFromCampaigns' => [
+                'translationKey' => 'Referrers_VisitorsFromCampaigns',
+            ],
             'Referrers_visitorsFromCampaigns_percent' => 'Percent of Visitors from Campaigns',
             'Referrers_distinctSearchEngines' => 'Distinct search engines',
             'Referrers_distinctSocialNetworks' => 'Distinct social networks',
@@ -3871,113 +6893,311 @@ Currently, these reports exclusively include requests from AI chatbots that do n
             'Referrers_distinctWebsites' => 'Distinct websites',
             'Referrers_distinctKeywords' => 'Distinct keywords',
             'Referrers_distinctCampaigns' => 'Distinct campaigns',
-            'nb_conversions' => 'Conversions',
-            'nb_visits_converted' => 'Visits with Conversions',
-            'revenue' => 'Revenue',
-            'nb_uniq_visitors' => 'Unique visitors',
-            'nb_visits' => 'Visits',
-            'nb_users' => 'Users',
-            'nb_actions' => 'Actions',
-            'max_actions' => 'Maximum actions in one visit',
-            'nb_visits_returning' => 'Returning Visits',
-            'nb_actions_returning' => 'Actions by Returning Visits',
-            'nb_uniq_visitors_returning' => 'Unique returning visitors',
-            'nb_users_returning' => 'Returning Users',
-            'max_actions_returning' => 'Maximum actions in one returning visit',
-            'nb_visits_new' => 'New Visits',
-            'nb_actions_new' => 'Actions by New Visits',
-            'nb_uniq_visitors_new' => 'Unique new visitors',
-            'nb_users_new' => 'New Users',
+            'nb_conversions' => [
+                'translationKey' => 'Goals_ColumnConversions',
+            ],
+            'nb_visits_converted' => [
+                'translationKey' => 'General_ColumnVisitsWithConversions',
+            ],
+            'revenue' => [
+                'translationKey' => 'General_ColumnRevenue',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitors',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisits',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsers',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_Actions',
+            ],
+            'max_actions' => [
+                'translationKey' => 'General_ColumnMaxActions',
+            ],
+            'nb_visits_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnReturningVisits',
+            ],
+            'nb_actions_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnActionsByReturningVisits',
+            ],
+            'nb_uniq_visitors_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnUniqueReturningVisitors',
+            ],
+            'nb_users_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnReturningUsers',
+            ],
+            'max_actions_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnMaxActionsInReturningVisit',
+            ],
+            'nb_visits_new' => [
+                'translationKey' => 'VisitFrequency_ColumnNewVisits',
+            ],
+            'nb_actions_new' => [
+                'translationKey' => 'VisitFrequency_ColumnActionsByNewVisits',
+            ],
+            'nb_uniq_visitors_new' => [
+                'translationKey' => 'VisitFrequency_ColumnUniqueNewVisitors',
+            ],
+            'nb_users_new' => [
+                'translationKey' => 'VisitFrequency_ColumnNewUsers',
+            ],
             'max_actions_new' => 'max_actions_new',
-            'avg_time_network' => 'Avg. network time',
-            'avg_time_server' => 'Avg. server time',
-            'avg_time_transfer' => 'Avg. transfer time',
-            'avg_time_dom_processing' => 'Avg. DOM processing time',
-            'avg_time_dom_completion' => 'Avg. DOM completion time',
-            'avg_time_on_load' => 'Avg. on load time',
-            'avg_page_load_time' => 'Avg. page load time',
-            'nb_visits_ai_agent' => 'AI Agent Visits',
-            'nb_actions_ai_agent' => 'Actions by AI Agent Visits',
-            'nb_uniq_visitors_ai_agent' => 'Unique AI Agent Visitors',
-            'nb_users_ai_agent' => 'AI Agent Users',
-            'max_actions_ai_agent' => 'Maximum Actions in AI Agent Visit',
-            'nb_visits_human' => 'Human Visits',
-            'nb_actions_human' => 'Actions by Human Visits',
-            'nb_uniq_visitors_human' => 'Unique Human Visitors',
-            'nb_users_human' => 'Human Users',
-            'max_actions_human' => 'Maximum Actions in one Human Visit',
-            'BotTracking_AIChatbotsRequests' => 'Requests',
-            'BotTracking_AIChatbotsAcquiredVisits' => 'Acquired visits',
-            'BotTracking_AIChatbotsUniquePageUrls' => 'Unique page URLs',
-            'BotTracking_AIChatbotsNotFoundRequests' => 'Not found requests',
-            'BotTracking_AIChatbotsUniqueChatbots' => 'Unique AI chatbots',
-            'BotTracking_AIChatbotsUniqueDocumentUrls' => 'Unique document URLs',
-            'BotTracking_AIChatbotsServerErrorRequests' => 'Server error (5xx) requests',
+            'avg_time_network' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeNetwork',
+            ],
+            'avg_time_server' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeServer',
+            ],
+            'avg_time_transfer' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeTransfer',
+            ],
+            'avg_time_dom_processing' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeDomProcessing',
+            ],
+            'avg_time_dom_completion' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeDomCompletion',
+            ],
+            'avg_time_on_load' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeOnLoad',
+            ],
+            'avg_page_load_time' => [
+                'translationKey' => 'PagePerformance_ColumnAveragePageLoadTime',
+            ],
+            'nb_visits_ai_agent' => [
+                'translationKey' => 'AIAgents_AIAgentVisits',
+            ],
+            'nb_actions_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentActions',
+            ],
+            'nb_uniq_visitors_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentUniqueVisitors',
+            ],
+            'nb_users_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentUsers',
+            ],
+            'max_actions_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentMaxActions',
+            ],
+            'nb_visits_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanVisits',
+            ],
+            'nb_actions_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanActions',
+            ],
+            'nb_uniq_visitors_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanUniqueVisitors',
+            ],
+            'nb_users_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanUsers',
+            ],
+            'max_actions_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanMaxActions',
+            ],
+            'BotTracking_AIChatbotsRequests' => [
+                'translationKey' => 'BotTracking_ColumnRequests',
+            ],
+            'BotTracking_AIChatbotsAcquiredVisits' => [
+                'translationKey' => 'BotTracking_ColumnAcquiredVisits',
+            ],
+            'BotTracking_AIChatbotsUniquePageUrls' => [
+                'translationKey' => 'BotTracking_ColumnUniquePageUrls',
+            ],
+            'BotTracking_AIChatbotsNotFoundRequests' => [
+                'translationKey' => 'BotTracking_ColumnNotFoundRequests',
+            ],
+            'BotTracking_AIChatbotsUniqueChatbots' => [
+                'translationKey' => 'BotTracking_ColumnUniqueAiChatbots',
+            ],
+            'BotTracking_AIChatbotsUniqueDocumentUrls' => [
+                'translationKey' => 'BotTracking_ColumnUniqueDocumentUrls',
+            ],
+            'BotTracking_AIChatbotsServerErrorRequests' => [
+                'translationKey' => 'BotTracking_ColumnServerErrorRequests',
+            ],
             'nb_total_overall_bandwidth' => 'Bytes transferred overall',
             'nb_total_pageview_bandwidth' => 'Bytes transferred pageviews',
             'nb_total_download_bandwidth' => 'Bytes transferred downloads',
         ],
         'metricsDocumentation' => [
-            'nb_pageviews' => 'The number of times this page was visited.',
-            'nb_uniq_pageviews' => 'The number of visits that included this page. If a page was viewed multiple times during one visit, it is only counted once.',
-            'nb_downloads' => 'The number of times this link was clicked.',
-            'nb_uniq_downloads' => 'The number of visits that involved a click on this link. If a link was clicked multiple times during one visit, it is only counted once.',
-            'nb_outlinks' => 'The number of times this link was clicked.',
-            'nb_uniq_outlinks' => 'The number of visits that involved a click on this link. If a link was clicked multiple times during one visit, it is only counted once.',
-            'nb_searches' => 'The number of visits that searched for this keyword on your website\'s search engine.',
-            'hits' => 'The total count of all interactions recorded on your website, including page views, link clicks, downloads, and events.',
-            'nb_visits_converted' => 'Number of visits where at least one goal was successfully converted.',
-            'nb_uniq_visitors' => 'The number of unduplicated visitors coming to your website. Every user is only counted once, even if they visit the website multiple times a day.',
-            'nb_visits' => 'If a visitor comes to your website for the first time or if they visit a page more than 30 minutes after their last page view, this will be recorded as a new visit.',
-            'nb_users' => 'The number of users logged in your website. It is the number of unique active users that have a User ID set (via the Tracking code function \'setUserId\').',
-            'nb_actions' => 'The number of actions performed by your visitors. Actions can be page views, internal site searches, downloads or outlinks.',
-            'avg_time_network' => 'Average time (in seconds) it takes to connect to the server. This includes the time needed to lookup DNS and establish a TCP connection. This value might be 0 after the first request to a domain as the browser might cache the connection.',
-            'avg_time_server' => 'Average time (in seconds) it takes the server to generate the page. This is the time between the server receiving the request and starting to serve the response.',
-            'avg_time_transfer' => 'Average time (in seconds) it takes the browser to download the response from the server. This is the time from receiving the first byte till the response is complete.',
-            'avg_time_dom_processing' => 'Average time (in seconds) the browser spends loading the webpage after the response was fully received and before the user can start interacting with it.',
-            'avg_time_dom_completion' => 'Average time (in seconds) it takes for the browser to load media and execute any Javascript code listening for the DOMContentLoaded event after the webpage was loaded and the user can already interact with it.',
-            'avg_time_on_load' => 'Average time (in seconds) it takes the browser to execute Javascript code waiting for the window.load event. This event is triggered once the DOM has completely rendered.',
-            'avg_page_load_time' => 'Average time (in seconds) it takes from requesting a page until the page is fully rendered within the browser',
-            'BotTracking_AIChatbotsRequests' => 'Total number of bot requests recorded during the selected period. Includes both page and document URLs.',
-            'BotTracking_AIChatbotsAcquiredVisits' => 'Visits that started after someone clicked from an AI chatbot (Referrers → AI Assistants).',
-            'BotTracking_AIChatbotsUniquePageUrls' => 'Distinct page URLs requested by AI chatbots.',
-            'BotTracking_AIChatbotsNotFoundRequests' => 'Number of bot requests that returned an HTTP 404 or 410 response, including document URLs.',
-            'BotTracking_AIChatbotsUniqueChatbots' => 'AI chatbot user agents detected during the selected period.',
-            'BotTracking_AIChatbotsUniqueDocumentUrls' => 'Distinct download or document URLs requested by AI chatbots.',
-            'BotTracking_AIChatbotsServerErrorRequests' => 'Number of bot requests that returned an HTTP 5xx response, including document URLs.',
-            'avg_time_generation' => 'The average time it took to generate the page. This metric includes the time it took the server to generate the web page, plus the time it took for the visitor to download the response from the server. A lower \'Avg. generation time\' means a faster website for your visitors!',
-            'conversion_rate' => 'The percentage of visits that triggered a conversion. The conversion rate is calculated using the number of visits that converted at least one goal. Visits converting multiple goals are only counted once in the conversion rate.',
-            'bounce_rate' => 'The percentage of visits that only had a single pageview. This means, that the visitor left the website directly from the entrance page.',
-            'nb_actions_per_visit' => 'The average number of actions (page views, site searches, downloads or outlinks) that were performed during the visits.',
-            'avg_time_on_site' => 'The average duration of a visit.',
-            'BotTracking_AIChatbotsClickThroughRate' => 'Share of AI chatbot requests that resulted in acquired visits (acquired visits ÷ requests).',
+            'nb_pageviews' => [
+                'translationKey' => 'General_ColumnPageviewsDocumentation',
+            ],
+            'nb_uniq_pageviews' => [
+                'translationKey' => 'General_ColumnUniquePageviewsDocumentation',
+            ],
+            'nb_downloads' => [
+                'translationKey' => 'Actions_ColumnClicksDocumentation',
+            ],
+            'nb_uniq_downloads' => [
+                'translationKey' => 'Actions_ColumnUniqueClicksDocumentation',
+            ],
+            'nb_outlinks' => [
+                'translationKey' => 'Actions_ColumnClicksDocumentation',
+            ],
+            'nb_uniq_outlinks' => [
+                'translationKey' => 'Actions_ColumnUniqueClicksDocumentation',
+            ],
+            'nb_searches' => [
+                'translationKey' => 'Actions_ColumnSearchesDocumentation',
+            ],
+            'hits' => [
+                'translationKey' => 'General_ColumnHitsDocumentation',
+            ],
+            'nb_visits_converted' => [
+                'translationKey' => 'General_VisitConvertedGoalDocumentation',
+            ],
+            'nb_uniq_visitors' => [
+                'translationKey' => 'General_ColumnNbUniqVisitorsDocumentation',
+            ],
+            'nb_visits' => [
+                'translationKey' => 'General_ColumnNbVisitsDocumentation',
+            ],
+            'nb_users' => [
+                'translationKey' => 'General_ColumnNbUsersDocumentation',
+            ],
+            'nb_actions' => [
+                'translationKey' => 'General_ColumnNbActionsDocumentation',
+            ],
+            'avg_time_network' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeNetworkDocumentation',
+            ],
+            'avg_time_server' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeServerDocumentation',
+            ],
+            'avg_time_transfer' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeTransferDocumentation',
+            ],
+            'avg_time_dom_processing' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeDomProcessingDocumentation',
+            ],
+            'avg_time_dom_completion' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeDomCompletionDocumentation',
+            ],
+            'avg_time_on_load' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeOnLoadDocumentation',
+            ],
+            'avg_page_load_time' => [
+                'translationKey' => 'PagePerformance_ColumnAveragePageLoadTimeDocumentation',
+            ],
+            'BotTracking_AIChatbotsRequests' => [
+                'translationKey' => 'BotTracking_ColumnRequestsDocumentation',
+            ],
+            'BotTracking_AIChatbotsAcquiredVisits' => [
+                'translationKey' => 'BotTracking_ColumnAcquiredVisitsDocumentation',
+            ],
+            'BotTracking_AIChatbotsUniquePageUrls' => [
+                'translationKey' => 'BotTracking_ColumnUniquePageUrlsDocumentation',
+            ],
+            'BotTracking_AIChatbotsNotFoundRequests' => [
+                'translationKey' => 'BotTracking_ColumnNotFoundRequestsDocumentation',
+            ],
+            'BotTracking_AIChatbotsUniqueChatbots' => [
+                'translationKey' => 'BotTracking_ColumnUniqueAiChatbotsDocumentation',
+            ],
+            'BotTracking_AIChatbotsUniqueDocumentUrls' => [
+                'translationKey' => 'BotTracking_ColumnUniqueDocumentUrlsDocumentation',
+            ],
+            'BotTracking_AIChatbotsServerErrorRequests' => [
+                'translationKey' => 'BotTracking_ColumnServerErrorRequestsDocumentation',
+            ],
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTimeDocumentation',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRateDocumentation',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRateDocumentation',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisitDocumentation',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_ColumnAvgTimeOnSiteDocumentation',
+            ],
+            'BotTracking_AIChatbotsClickThroughRate' => [
+                'translationKey' => 'BotTracking_ColumnClickThroughRateDocumentation',
+            ],
         ],
         'processedMetrics' => [
-            'avg_time_generation' => 'Avg. generation time',
-            'conversion_rate' => 'Conversion Rate',
-            'bounce_rate' => 'Bounce Rate',
-            'nb_actions_per_visit' => 'Actions per Visit',
-            'avg_time_on_site' => 'Avg. Visit Duration (in seconds)',
-            'avg_time_on_site_returning' => 'Avg. Duration of a Returning Visit (in sec)',
-            'nb_actions_per_visit_returning' => 'Avg. Actions per Returning Visit',
-            'bounce_rate_returning' => 'Bounce Rate for Returning Visits',
-            'avg_time_on_site_new' => 'Avg. Duration of a New Visit (in sec)',
-            'nb_actions_per_visit_new' => 'Avg. Actions per New Visit',
-            'bounce_rate_new' => 'Bounce Rate for New Visits',
-            'avg_time_network' => 'Avg. network time',
-            'avg_time_server' => 'Avg. server time',
-            'avg_time_transfer' => 'Avg. transfer time',
-            'avg_time_dom_processing' => 'Avg. DOM processing time',
-            'avg_time_dom_completion' => 'Avg. DOM completion time',
-            'avg_time_on_load' => 'Avg. on load time',
-            'avg_page_load_time' => 'Avg. page load time',
-            'avg_time_on_site_ai_agent' => 'Avg. Duration of an AI Agent Visit (in sec)',
-            'nb_actions_per_visit_ai_agent' => 'Avg. Actions per AI Agent Visit',
-            'bounce_rate_ai_agent' => 'Bounce Rate for AI Agent Visits',
-            'avg_time_on_site_human' => 'Avg. Duration of a Human Visit (in sec)',
-            'nb_actions_per_visit_human' => 'Avg. Actions per Human Visit',
-            'bounce_rate_human' => 'Bounce Rate for Human Visits',
-            'BotTracking_AIChatbotsClickThroughRate' => 'Click-through rate',
+            'avg_time_generation' => [
+                'translationKey' => 'General_ColumnAverageGenerationTime',
+            ],
+            'conversion_rate' => [
+                'translationKey' => 'General_ColumnConversionRate',
+            ],
+            'bounce_rate' => [
+                'translationKey' => 'General_ColumnBounceRate',
+            ],
+            'nb_actions_per_visit' => [
+                'translationKey' => 'General_ColumnActionsPerVisit',
+            ],
+            'avg_time_on_site' => [
+                'translationKey' => 'General_VisitDuration',
+            ],
+            'avg_time_on_site_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnAverageVisitDurationForReturningVisitors',
+            ],
+            'nb_actions_per_visit_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnAvgActionsPerReturningVisit',
+            ],
+            'bounce_rate_returning' => [
+                'translationKey' => 'VisitFrequency_ColumnBounceRateForReturningVisits',
+            ],
+            'avg_time_on_site_new' => [
+                'translationKey' => 'VisitFrequency_ColumnAverageVisitDurationForNewVisitors',
+            ],
+            'nb_actions_per_visit_new' => [
+                'translationKey' => 'VisitFrequency_ColumnAvgActionsPerNewVisit',
+            ],
+            'bounce_rate_new' => [
+                'translationKey' => 'VisitFrequency_ColumnBounceRateForNewVisits',
+            ],
+            'avg_time_network' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeNetwork',
+            ],
+            'avg_time_server' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeServer',
+            ],
+            'avg_time_transfer' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeTransfer',
+            ],
+            'avg_time_dom_processing' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeDomProcessing',
+            ],
+            'avg_time_dom_completion' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeDomCompletion',
+            ],
+            'avg_time_on_load' => [
+                'translationKey' => 'PagePerformance_ColumnAverageTimeOnLoad',
+            ],
+            'avg_page_load_time' => [
+                'translationKey' => 'PagePerformance_ColumnAveragePageLoadTime',
+            ],
+            'avg_time_on_site_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentAverageVisitDuration',
+            ],
+            'nb_actions_per_visit_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentAvgActionsPerVisit',
+            ],
+            'bounce_rate_ai_agent' => [
+                'translationKey' => 'AIAgents_ColumnAIAgentBounceRate',
+            ],
+            'avg_time_on_site_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanAverageVisitDuration',
+            ],
+            'nb_actions_per_visit_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanAvgActionsPerVisit',
+            ],
+            'bounce_rate_human' => [
+                'translationKey' => 'AIAgents_ColumnHumanBounceRate',
+            ],
+            'BotTracking_AIChatbotsClickThroughRate' => [
+                'translationKey' => 'BotTracking_ColumnClickThroughRate',
+            ],
             'nb_total_download_bandwidth' => 'Bytes transferred downloads',
             'nb_total_pageview_bandwidth' => 'Bytes transferred pageviews',
             'nb_total_overall_bandwidth' => 'Bytes transferred overall',

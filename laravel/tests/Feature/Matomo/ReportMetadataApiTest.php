@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Authentication\ApiAuthentication;
+use App\Matomo\Localization\LanguageResolver;
+use Illuminate\Http\Request;
 use Tests\TestCase;
 
 final class ReportMetadataApiTest extends TestCase
@@ -33,6 +36,22 @@ final class ReportMetadataApiTest extends TestCase
         $this->assertCount(1, $reports);
         $this->assertSame('VisitsSummary_get', $reports[0]['uniqueId'] ?? null);
         $this->assertArrayNotHasKey('metricsDocumentation', $reports[0]);
+    }
+
+    public function test_translates_generated_report_metadata(): void
+    {
+        $this->bindAccess(true);
+        $this->app->instance(LanguageResolver::class, new class implements LanguageResolver
+        {
+            public function resolve(Request $request, ApiAuthentication $authentication): string
+            {
+                return 'de';
+            }
+        });
+
+        $reports = $this->get($this->url('API.getReportMetadata').'&idSite=7')->assertOk()->json();
+        $this->assertIsArray($reports);
+        $this->assertSame('Besucherüberblick', $this->report($reports, 'VisitsSummary', 'get')['name'] ?? null);
     }
 
     public function test_rejects_site_without_view_access(): void
@@ -87,6 +106,17 @@ final class ReportMetadataApiTest extends TestCase
         $this->assertNotEmpty($widgets);
         $this->assertArrayHasKey('module', $widgets[0]);
         $this->assertArrayHasKey('uniqueId', $widgets[0]);
+    }
+
+    public function test_rejects_dynamic_metadata_options_until_native_discovery_supports_them(): void
+    {
+        $this->bindAccess(true);
+
+        foreach (['period=day', 'date=today', 'showSubtableReports=1', 'apiParameters[idGoal]=1'] as $query) {
+            $this->get($this->url('API.getReportMetadata')."&idSite=7&{$query}")
+                ->assertStatus(501)
+                ->assertJsonPath('message', 'Dynamic report metadata is not available in the Laravel runtime.');
+        }
     }
 
     private function bindAccess(bool $view): void
