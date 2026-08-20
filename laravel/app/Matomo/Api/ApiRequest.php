@@ -1104,6 +1104,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.renameGroup';
     }
 
+    public function isSiteSettingsRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.getSiteSettings';
+    }
+
     public function isSitesManagerTrackingCodeRequest(): bool
     {
         return $this->sitesManagerTrackingCode !== null;
@@ -2410,6 +2415,7 @@ final readonly class ApiRequest
             'SitesManager.setSiteAliasUrls',
             'SitesManager.getJavascriptTag',
             'SitesManager.getImageTrackingCode',
+            'SitesManager.getSiteSettings',
         ];
         $optionalMethods = [
             'SitesManager.getExcludedQueryParametersGlobal',
