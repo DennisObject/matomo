@@ -61,6 +61,33 @@ final class ReportMetadataApiTest extends TestCase
         $this->get($this->url('API.getReportMetadata').'&idSite=7')->assertUnauthorized();
     }
 
+    public function test_returns_sorted_report_glossary(): void
+    {
+        $this->bindAccess(true);
+
+        $glossary = $this->get($this->url('API.getGlossaryReports').'&idSite=7')->assertOk()->json();
+
+        $this->assertIsArray($glossary);
+        $this->assertNotEmpty($glossary);
+        $this->assertArrayHasKey('documentation', $glossary[0]);
+        $names = array_column($glossary, 'name');
+        $sorted = $names;
+        sort($sorted);
+        $this->assertSame($sorted, $names);
+    }
+
+    public function test_returns_metric_glossary_without_duplicate_hits_metric(): void
+    {
+        $this->bindAccess(true);
+
+        $glossary = $this->get($this->url('API.getGlossaryMetrics').'&idSite=7')->assertOk()->json();
+
+        $this->assertIsArray($glossary);
+        $ids = array_column($glossary, 'id');
+        $this->assertContains('nb_visits', $ids);
+        $this->assertNotContains('nb_hits', $ids);
+    }
+
     public function test_rejects_dynamic_metadata_options_until_native_discovery_supports_them(): void
     {
         $this->bindAccess(true);

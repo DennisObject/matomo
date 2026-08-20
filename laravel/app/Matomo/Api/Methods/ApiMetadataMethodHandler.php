@@ -93,6 +93,14 @@ final readonly class ApiMetadataMethodHandler implements ApiMethodHandler
         }
 
         $language = $this->languages->resolve($httpRequest, $request->authentication);
+        if ($parameters->method === 'API.getGlossaryReports') {
+            return $this->responses->structured($request, $this->reports->reportsGlossary($language));
+        }
+
+        if ($parameters->method === 'API.getGlossaryMetrics') {
+            return $this->responses->structured($request, $this->reports->metricsGlossary($language));
+        }
+
         if ($parameters->method === 'API.getMetadata') {
             if ($parameters->apiModule === null || $parameters->apiAction === null) {
                 return $this->responses->error($request, 'The apiModule and apiAction parameters are required.', 400);
