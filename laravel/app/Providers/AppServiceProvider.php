@@ -217,12 +217,14 @@ use App\Matomo\Privacy\AnonymizableColumnProvider;
 use App\Matomo\Privacy\CnilGranularComplianceSettingsProvider;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Privacy\ComplianceStatusProvider;
+use App\Matomo\Privacy\ConfiguredDeletionBatchLimits;
 use App\Matomo\Privacy\ConfiguredPrivacyFeatureFlags;
 use App\Matomo\Privacy\DatabaseAnonymisationSettingsRepository;
 use App\Matomo\Privacy\DatabaseAnonymizableColumnProvider;
 use App\Matomo\Privacy\DatabaseCompliancePolicyStateRepository;
 use App\Matomo\Privacy\DatabaseComplianceStatusProvider;
 use App\Matomo\Privacy\DatabaseRawAnonymisationScheduler;
+use App\Matomo\Privacy\DeletionBatchLimits;
 use App\Matomo\Privacy\GranularComplianceSettingsProvider;
 use App\Matomo\Privacy\PrivacyFeatureFlags;
 use App\Matomo\Privacy\RawAnonymisationScheduler;
@@ -306,6 +308,7 @@ use App\Matomo\UserChanges\UserChangeReadRepository;
 use App\Matomo\Users\AccessMetadataProvider;
 use App\Matomo\Users\AnonymousAccessNotifier;
 use App\Matomo\Users\ConfiguredAccessMetadataProvider;
+use App\Matomo\Users\ConfiguredUserPreferenceDefaults;
 use App\Matomo\Users\DatabaseMutableUserRepository;
 use App\Matomo\Users\DatabaseMutableUserSiteAccessRepository;
 use App\Matomo\Users\DatabaseUserDirectoryRepository;
@@ -324,6 +327,7 @@ use App\Matomo\Users\UserDirectoryRepository;
 use App\Matomo\Users\UserIdentityRepository;
 use App\Matomo\Users\UserInvitationLinkFactory;
 use App\Matomo\Users\UserInvitationNotifier;
+use App\Matomo\Users\UserPreferenceDefaults;
 use App\Matomo\Users\UserPreferenceRepository;
 use App\Matomo\Users\UserPresenter;
 use App\Matomo\Users\UserRoleDirectoryRepository;
@@ -573,6 +577,8 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(AccessMetadataProvider::class, ConfiguredAccessMetadataProvider::class);
+        $this->app->singleton(DeletionBatchLimits::class, ConfiguredDeletionBatchLimits::class);
+        $this->app->singleton(UserPreferenceDefaults::class, ConfiguredUserPreferenceDefaults::class);
         $this->app->singleton(
             UserPreferenceRepository::class,
             fn (Application $application): UserPreferenceRepository => new DatabaseUserPreferenceRepository(
@@ -1299,6 +1305,7 @@ class AppServiceProvider extends ServiceProvider
                 options: $application->make(OptionRepository::class),
                 policies: $application->make(CompliancePolicyStateRepository::class),
                 configuration: $application->make(InstallationConfig::class),
+                translator: $application->make(MatomoTranslator::class),
             ),
         );
         $this->app->singleton(
