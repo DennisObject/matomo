@@ -52,6 +52,7 @@ use App\Matomo\Api\Methods\ReferrersCampaignApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersDistinctApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersOverviewApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersSearchApiMethodHandler;
+use App\Matomo\Api\Methods\ReferrersSocialApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersWebsiteApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorMutationApiMethodHandler;
@@ -1307,6 +1308,8 @@ class AppServiceProvider extends ServiceProvider
             fn (): ReferrerDefinitionCatalog => new YamlReferrerDefinitionCatalog(
                 base_path('vendor/matomo/searchengine-and-social-list/Socials.yml'),
                 base_path('vendor/matomo/searchengine-and-social-list/AIAssistants.yml'),
+                base_path('../plugins/Morpheus/icons/dist/socials'),
+                base_path('../plugins/Morpheus/icons/dist/aiAssistants'),
             ),
         );
         $this->app->singleton(
@@ -1384,6 +1387,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ReferrersCampaignApiMethodHandler::class),
                 $application->make(ReferrersOverviewApiMethodHandler::class),
                 $application->make(ReferrersSearchApiMethodHandler::class),
+                $application->make(ReferrersSocialApiMethodHandler::class),
                 $application->make(ReferrersWebsiteApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),
