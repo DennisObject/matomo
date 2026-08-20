@@ -108,7 +108,54 @@ class CoreInsightSourceReportProviderTest extends TestCase
     {
         $this->assertTrue($this->provider->supports('Actions_getPageUrls'));
         $this->assertTrue($this->provider->supports('UserCountry_getCountry'));
-        $this->assertFalse($this->provider->supports('Referrers_getWebsites'));
+        $this->assertTrue($this->provider->supports('Referrers_getWebsites'));
+        $this->assertFalse($this->provider->supports('Unknown_getReport'));
+    }
+
+    #[DataProvider('referrerReports')]
+    public function test_loads_referrer_reports(
+        string $uniqueId,
+        string $record,
+        string $action,
+        string $name,
+    ): void {
+        $this->reports->expects($this->once())
+            ->method('referrers')
+            ->with($record, 7, $this->period(), 'segment-hash')
+            ->willReturn([['label' => 'example', 'nb_visits' => 6]]);
+
+        $report = $this->provider->report($uniqueId, 7, $this->period(), 'segment-hash', 'en');
+
+        $this->assertNotNull($report);
+        $this->assertSame(6, $report->metricTotal);
+        $this->assertSame($action, $report->metadata['action']);
+        $this->assertSame($name, $report->metadata['name']);
+    }
+
+    /** @return iterable<string, array{string, string, string, string}> */
+    public static function referrerReports(): iterable
+    {
+        yield 'websites' => [
+            'Referrers_getWebsites', 'Referrers_urlByWebsite', 'getWebsites', 'Referrers_Websites',
+        ];
+        yield 'campaigns' => [
+            'Referrers_getCampaigns', 'Referrers_keywordByCampaign', 'getCampaigns', 'Referrers_Campaigns',
+        ];
+        yield 'socials' => [
+            'Referrers_getSocials', 'Referrers_urlBySocialNetwork', 'getSocials', 'Referrers_Socials',
+        ];
+        yield 'search engines' => [
+            'Referrers_getSearchEngines',
+            'Referrers_keywordBySearchEngine',
+            'getSearchEngines',
+            'Referrers_SearchEngines',
+        ];
+        yield 'AI assistants' => [
+            'Referrers_getAIAssistants',
+            'Referrers_entryUrlByAIAssistant',
+            'getAIAssistants',
+            'Referrers_AIAssistants',
+        ];
     }
 
     public function test_limits_comparison_rows_but_keeps_the_full_metric_total(): void

@@ -28,6 +28,35 @@ final readonly class CoreInsightSourceReportProvider implements InsightSourceRep
         ],
     ];
 
+    /** @var array<string, array{record: string, action: string, name: string}> */
+    private const array REFERRER_REPORTS = [
+        'Referrers_getWebsites' => [
+            'record' => 'Referrers_urlByWebsite',
+            'action' => 'getWebsites',
+            'name' => 'Referrers_Websites',
+        ],
+        'Referrers_getCampaigns' => [
+            'record' => 'Referrers_keywordByCampaign',
+            'action' => 'getCampaigns',
+            'name' => 'Referrers_Campaigns',
+        ],
+        'Referrers_getSocials' => [
+            'record' => 'Referrers_urlBySocialNetwork',
+            'action' => 'getSocials',
+            'name' => 'Referrers_Socials',
+        ],
+        'Referrers_getSearchEngines' => [
+            'record' => 'Referrers_keywordBySearchEngine',
+            'action' => 'getSearchEngines',
+            'name' => 'Referrers_SearchEngines',
+        ],
+        'Referrers_getAIAssistants' => [
+            'record' => 'Referrers_entryUrlByAIAssistant',
+            'action' => 'getAIAssistants',
+            'name' => 'Referrers_AIAssistants',
+        ],
+    ];
+
     public function __construct(
         private CoreInsightReportReader $reports,
         private MatomoTranslator $translator,
@@ -36,7 +65,8 @@ final readonly class CoreInsightSourceReportProvider implements InsightSourceRep
     public function supports(string $reportUniqueId): bool
     {
         return $reportUniqueId === 'UserCountry_getCountry'
-            || isset(self::ACTION_REPORTS[$reportUniqueId]);
+            || isset(self::ACTION_REPORTS[$reportUniqueId])
+            || isset(self::REFERRER_REPORTS[$reportUniqueId]);
     }
 
     public function report(
@@ -60,6 +90,26 @@ final readonly class CoreInsightSourceReportProvider implements InsightSourceRep
         }
 
         $configuration = self::ACTION_REPORTS[$reportUniqueId] ?? null;
+
+        if ($configuration === null) {
+            $referrer = self::REFERRER_REPORTS[$reportUniqueId] ?? null;
+
+            if ($referrer !== null) {
+                return $this->source(
+                    $this->reports->referrers(
+                        $referrer['record'],
+                        $siteId,
+                        $period,
+                        $segmentHash,
+                    ),
+                    'Referrers',
+                    $referrer['action'],
+                    $this->translator->translate($referrer['name'], $language),
+                    $reportUniqueId,
+                    $language,
+                );
+            }
+        }
 
         if ($configuration === null) {
             return null;
