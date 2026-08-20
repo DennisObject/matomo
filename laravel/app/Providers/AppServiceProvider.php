@@ -16,6 +16,7 @@ use App\Matomo\Api\Methods\AiAgentsApiMethodHandler;
 use App\Matomo\Api\Methods\AiProvidersApiMethodHandler;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Api\Methods\ContentsApiMethodHandler;
+use App\Matomo\Api\Methods\CoreAdminHomeApiMethodHandler;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
 use App\Matomo\Api\Methods\CustomJsTrackerApiMethodHandler;
 use App\Matomo\Api\Methods\DashboardApiMethodHandler;
@@ -47,12 +48,22 @@ use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
 use App\Matomo\Api\Methods\VisitorInterestApiMethodHandler;
 use App\Matomo\Api\Methods\VisitsSummaryApiMethodHandler;
 use App\Matomo\Api\Methods\VisitTimeApiMethodHandler;
+use App\Matomo\Archiving\ArchiveInvalidationManager;
+use App\Matomo\Archiving\DatabaseArchiveInvalidationManager;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabasePasswordConfirmationVerifier;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Config\InstallationConfig;
+use App\Matomo\CoreAdmin\BrandingManager;
+use App\Matomo\CoreAdmin\ConfiguredCoreAdminSettings;
+use App\Matomo\CoreAdmin\CoreAdminSettings;
+use App\Matomo\CoreAdmin\FileBrandingManager;
+use App\Matomo\CoreAdmin\IniTrustedHostConfiguration;
+use App\Matomo\CoreAdmin\OptOutEmbedCodeGenerator;
+use App\Matomo\CoreAdmin\TranslatedOptOutEmbedCodeGenerator;
+use App\Matomo\CoreAdmin\TrustedHostConfiguration;
 use App\Matomo\Dashboard\ConfiguredDashboardLayoutProvider;
 use App\Matomo\Dashboard\DashboardLayoutProvider;
 use App\Matomo\Dashboard\DashboardRecipientPolicy;
@@ -128,6 +139,10 @@ use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\ScreenResolutionPolicy;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
+use App\Matomo\Scheduling\DatabaseScheduledTaskLock;
+use App\Matomo\Scheduling\DatabaseScheduledTaskRunner;
+use App\Matomo\Scheduling\ScheduledTaskLock;
+use App\Matomo\Scheduling\ScheduledTaskRunner;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\EgressHostResolver;
@@ -152,18 +167,23 @@ use App\Matomo\Tour\ConfiguredTourSettings;
 use App\Matomo\Tour\DatabaseTourDataRepository;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
+use App\Matomo\TrackingFailures\DatabaseTrackingFailureRepository;
+use App\Matomo\TrackingFailures\TrackingFailureRepository;
 use App\Matomo\Transitions\ConfiguredTransitionsPeriodPolicy;
 use App\Matomo\Transitions\ConfiguredTransitionsSettings;
 use App\Matomo\Transitions\TransitionsPeriodPolicy;
 use App\Matomo\Transitions\TransitionsSettings;
 use App\Matomo\TwoFactorAuth\DatabaseTwoFactorAuthenticationResetter;
 use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
+use App\Matomo\UserChanges\DatabaseUserChangeReadRepository;
+use App\Matomo\UserChanges\UserChangeReadRepository;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\ServiceProvider;
 use Psr\Log\LoggerInterface;
@@ -201,6 +221,69 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(AiProviderCatalog::class, BuiltInAiProviderCatalog::class);
+        $this->app->singleton(
+            TrustedHostConfiguration::class,
+            function (Application $application): TrustedHostConfiguration {
+                $path = $application->make(Repository::class)->get('matomo.config_path');
+
+                if (! is_string($path) || $path === '') {
+                    throw new RuntimeException('The Matomo configuration path is invalid.');
+                }
+
+                return new IniTrustedHostConfiguration(
+                    $path,
+                    $application->make(Dispatcher::class),
+                );
+            },
+        );
+        $this->app->singleton(CoreAdminSettings::class, ConfiguredCoreAdminSettings::class);
+        $this->app->singleton(
+            OptOutEmbedCodeGenerator::class,
+            fn (Application $application): OptOutEmbedCodeGenerator => new TranslatedOptOutEmbedCodeGenerator(
+                translator: $application->make(MatomoTranslator::class),
+                trustedHosts: $application->make(InstallationConfig::class)->trustedHosts(),
+                trustedHostCheckEnabled: $application->make(InstallationConfig::class)->trustedHostCheckEnabled(),
+            ),
+        );
+        $this->app->singleton(
+            BrandingManager::class,
+            function (Application $application): BrandingManager {
+                $installation = $application->make(InstallationConfig::class);
+                $path = $application->make(Repository::class)->get('matomo.config_path');
+
+                if (! is_string($path) || $path === '') {
+                    throw new RuntimeException('The Matomo configuration path is invalid.');
+                }
+
+                $instancePath = $installation->instanceId() === ''
+                    ? ''
+                    : '/'.$installation->instanceId();
+                $temporaryPath = trim($installation->temporaryPath(), '/');
+                $userRoot = dirname($path, 2);
+
+                return new FileBrandingManager(
+                    options: $application->make(MutableOptionRepository::class),
+                    files: $application->make(Filesystem::class),
+                    events: $application->make(Dispatcher::class),
+                    publicDirectory: base_path('../misc/user').$instancePath,
+                    publicRelativeDirectory: 'misc/user'.$instancePath,
+                    temporaryLogosDirectory: $userRoot.'/'.$temporaryPath.$instancePath.'/logos',
+                );
+            },
+        );
+        $this->app->singleton(
+            TrackingFailureRepository::class,
+            fn (Application $application): TrackingFailureRepository => new DatabaseTrackingFailureRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            UserChangeReadRepository::class,
+            fn (Application $application): UserChangeReadRepository => new DatabaseUserChangeReadRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+                $application->make(Dispatcher::class),
+            ),
+        );
         $this->app->singleton(TransitionsSettings::class, ConfiguredTransitionsSettings::class);
         $this->app->singleton(TransitionsPeriodPolicy::class, ConfiguredTransitionsPeriodPolicy::class);
         $this->app->singleton(
@@ -526,6 +609,40 @@ class AppServiceProvider extends ServiceProvider
                 DatabaseOptionRepository::class,
             ),
         );
+        $this->app->singleton(
+            ArchiveInvalidationManager::class,
+            function (Application $application): ArchiveInvalidationManager {
+                $configuration = $application->make(InstallationConfig::class);
+
+                return new DatabaseArchiveInvalidationManager(
+                    connection: $application->make(MatomoDatabase::class)->connection(),
+                    periods: $application->make(ReportingPeriodFactory::class),
+                    segments: $application->make(SegmentHashResolver::class),
+                    options: $application->make(MutableOptionRepository::class),
+                    events: $application->make(Dispatcher::class),
+                    enabledReportingPeriods: array_values(array_filter(
+                        ['day', 'week', 'month', 'year', 'range'],
+                        $configuration->reportingPeriodEnabled(...),
+                    )),
+                    configuredAutoArchiveSegments: $configuration->autoArchiveSegments(),
+                );
+            },
+        );
+        $this->app->singleton(
+            ScheduledTaskLock::class,
+            fn (Application $application): ScheduledTaskLock => new DatabaseScheduledTaskLock(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            ScheduledTaskRunner::class,
+            fn (Application $application): ScheduledTaskRunner => new DatabaseScheduledTaskRunner(
+                options: $application->make(MutableOptionRepository::class),
+                locks: $application->make(ScheduledTaskLock::class),
+                events: $application->make(Dispatcher::class),
+                logger: $application->make(LoggerInterface::class),
+            ),
+        );
 
         $this->app->singleton(
             PolicySettingRepository::class,
@@ -758,6 +875,7 @@ class AppServiceProvider extends ServiceProvider
             ApiMethodDispatcher::class,
             fn (Application $application): ApiMethodDispatcher => new ApiMethodDispatcher([
                 $application->make(CoreApiMethodHandler::class),
+                $application->make(CoreAdminHomeApiMethodHandler::class),
                 $application->make(SitesManagerApiMethodHandler::class),
                 $application->make(VisitsSummaryApiMethodHandler::class),
                 $application->make(VisitFrequencyApiMethodHandler::class),

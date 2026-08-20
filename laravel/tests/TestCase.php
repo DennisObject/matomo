@@ -11,8 +11,13 @@ use App\Matomo\AiProviders\AiProviderDefinition;
 use App\Matomo\AiProviders\AiProviderSettingsRepository;
 use App\Matomo\AiProviders\AiProviderStoredSettings;
 use App\Matomo\Api\GoalDefinition;
+use App\Matomo\Api\OptOutEmbedRequest;
+use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
+use App\Matomo\CoreAdmin\BrandingManager;
+use App\Matomo\CoreAdmin\CoreAdminSettings;
+use App\Matomo\CoreAdmin\OptOutEmbedCodeGenerator;
 use App\Matomo\Dashboard\DashboardLayoutProvider;
 use App\Matomo\Dashboard\DashboardRecipientPolicy;
 use App\Matomo\Dashboard\DashboardRepository;
@@ -45,6 +50,7 @@ use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\ScreenResolutionPolicy;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
+use App\Matomo\Scheduling\ScheduledTaskRunner;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Sites\ConsentManagerDetector;
@@ -56,8 +62,10 @@ use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
+use App\Matomo\TrackingFailures\TrackingFailureRepository;
 use App\Matomo\Transitions\TransitionsPeriodPolicy;
 use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
+use App\Matomo\UserChanges\UserChangeReadRepository;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Request;
 
@@ -133,6 +141,85 @@ abstract class TestCase extends BaseTestCase
         );
 
         $this->app->instance(AiProviderCentralConfiguration::class, new AiProviderCentralConfiguration);
+        $this->app->instance(CoreAdminSettings::class, new class implements CoreAdminSettings
+        {
+            public function generalSettingsAdminEnabled(): bool
+            {
+                return true;
+            }
+
+            public function configureArchiving(bool $browserTriggerEnabled, int $todayTimeToLive): void {}
+
+            public function replaceTrustedHosts(array $hosts): void {}
+        });
+        $this->app->instance(BrandingManager::class, new class implements BrandingManager
+        {
+            public function update(
+                string $login,
+                bool $useCustomLogo,
+                bool $hasCustomLogo,
+                bool $hasCustomFavicon,
+            ): array {
+                return ['useCustomLogo' => false];
+            }
+        });
+        $this->app->instance(OptOutEmbedCodeGenerator::class, new class implements OptOutEmbedCodeGenerator
+        {
+            public function javascript(OptOutEmbedRequest $options): string
+            {
+                return '<script src="opt-out.js"></script>';
+            }
+
+            public function selfContained(OptOutEmbedRequest $options, string $language): string
+            {
+                return '<script>optOut()</script>';
+            }
+        });
+        $this->app->instance(ArchiveInvalidationManager::class, new class implements ArchiveInvalidationManager
+        {
+            public function invalidate(
+                array $siteIds,
+                array $dates,
+                ?string $period,
+                ?string $segment,
+                bool $cascadeDown,
+                bool $forceInvalidateNonexistent,
+            ): array {
+                return [];
+            }
+        });
+        $this->app->instance(ScheduledTaskRunner::class, new class implements ScheduledTaskRunner
+        {
+            public function run(): array
+            {
+                return [];
+            }
+        });
+        $this->app->instance(TrackingFailureRepository::class, new class implements TrackingFailureRepository
+        {
+            public function all(): array
+            {
+                return [];
+            }
+
+            public function forSites(array $siteIds): array
+            {
+                return [];
+            }
+
+            public function deleteAll(): void {}
+
+            public function deleteForSites(array $siteIds): void {}
+
+            public function delete(int $siteId, int|string $failureId): void {}
+        });
+        $this->app->instance(UserChangeReadRepository::class, new class implements UserChangeReadRepository
+        {
+            public function markAllRead(string $login): bool
+            {
+                return false;
+            }
+        });
         $this->app->instance(LanguageCatalog::class, new class implements LanguageCatalog
         {
             public function available(bool $ignoreConfig = false): array

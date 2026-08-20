@@ -215,6 +215,21 @@ final readonly class ApiRequest
     ];
 
     /** @var list<string> */
+    private const array CORE_ADMIN_HOME_METHODS = [
+        'CoreAdminHome.deleteAllTrackingFailures',
+        'CoreAdminHome.deleteTrackingFailure',
+        'CoreAdminHome.getOptOutJSEmbedCode',
+        'CoreAdminHome.getOptOutSelfContainedEmbedCode',
+        'CoreAdminHome.getTrackingFailures',
+        'CoreAdminHome.invalidateArchivedReports',
+        'CoreAdminHome.runScheduledTasks',
+        'CoreAdminHome.setArchiveSettings',
+        'CoreAdminHome.setBrandingSettings',
+        'CoreAdminHome.setTrustedHosts',
+        'CoreAdminHome.whatIsNewMarkAllChangesReadForCurrentUser',
+    ];
+
+    /** @var list<string> */
     private const array AI_PROVIDERS_METHODS = [
         'AIProviders.getSettings',
         'AIProviders.saveSettings',
@@ -270,6 +285,7 @@ final readonly class ApiRequest
         public ?string $locationProviderId,
         public ?AiProviderRequest $aiProvider,
         public ?DashboardRequest $dashboard,
+        public ?CoreAdminHomeRequest $coreAdminHome,
         public ?ExampleApiRequest $exampleApi,
         public ?ExamplePluginRequest $examplePlugin,
         public ?ExampleUiRequest $exampleUi,
@@ -323,6 +339,7 @@ final readonly class ApiRequest
             locationProviderId: null,
             aiProvider: null,
             dashboard: null,
+            coreAdminHome: null,
             exampleApi: null,
             examplePlugin: null,
             exampleUi: null,
@@ -686,6 +703,12 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::DASHBOARD_METHODS, true);
     }
 
+    public function isCoreAdminHomeRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::CORE_ADMIN_HOME_METHODS, true);
+    }
+
     public function isTourRequest(): bool
     {
         return $this->module === 'API'
@@ -750,6 +773,7 @@ final readonly class ApiRequest
             locationProviderId: self::locationProviderId($request, $module, $method),
             aiProvider: self::aiProvider($request, $module, $method),
             dashboard: self::dashboard($request, $module, $method),
+            coreAdminHome: self::coreAdminHome($request, $module, $method),
             exampleApi: self::exampleApi($request, $module, $method),
             examplePlugin: self::examplePlugin($request, $module, $method),
             exampleUi: self::exampleUi($request, $module, $method),
@@ -760,6 +784,193 @@ final readonly class ApiRequest
             languagesManager: self::languagesManager($request, $module, $method),
             transitions: self::transitions($request, $module, $method),
             authentication: $authentication,
+        );
+    }
+
+    private static function coreAdminHome(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?CoreAdminHomeRequest {
+        if ($module !== 'API' || ! in_array($method, self::CORE_ADMIN_HOME_METHODS, true)) {
+            return null;
+        }
+
+        if ($method !== 'CoreAdminHome.deleteTrackingFailure') {
+            if ($method === 'CoreAdminHome.setArchiveSettings') {
+                $browserTrigger = self::requiredBoolean(
+                    $request,
+                    'enableBrowserTriggerArchiving',
+                );
+                $timeToLive = self::inputValue($request, 'todayArchiveTimeToLive');
+
+                if ($timeToLive === null) {
+                    throw new MissingApiParameter('todayArchiveTimeToLive');
+                }
+
+                if (! is_scalar($timeToLive)) {
+                    throw new InvalidApiParameter('todayArchiveTimeToLive');
+                }
+
+                return new CoreAdminHomeRequest(
+                    siteId: null,
+                    failureId: null,
+                    browserTriggerArchivingEnabled: $browserTrigger,
+                    todayArchiveTimeToLive: (int) $timeToLive,
+                );
+            }
+
+            if ($method === 'CoreAdminHome.setBrandingSettings') {
+                return new CoreAdminHomeRequest(
+                    siteId: null,
+                    failureId: null,
+                    useCustomLogo: self::requiredBoolean($request, 'useCustomLogo'),
+                    hasCustomLogo: self::requiredBoolean($request, 'hasCustomLogo'),
+                    hasCustomFavicon: self::requiredBoolean($request, 'hasCustomFavicon'),
+                );
+            }
+
+            if (in_array($method, [
+                'CoreAdminHome.getOptOutJSEmbedCode',
+                'CoreAdminHome.getOptOutSelfContainedEmbedCode',
+            ], true)) {
+                $backgroundColor = self::requiredString($request, 'backgroundColor');
+                $fontColor = self::requiredString($request, 'fontColor');
+                $fontSize = self::requiredString($request, 'fontSize');
+                $fontFamily = self::requiredString($request, 'fontFamily');
+                $javascript = $method === 'CoreAdminHome.getOptOutJSEmbedCode';
+
+                return new CoreAdminHomeRequest(
+                    siteId: null,
+                    failureId: null,
+                    optOutEmbed: new OptOutEmbedRequest(
+                        backgroundColor: $backgroundColor,
+                        fontColor: $fontColor,
+                        fontSize: $fontSize,
+                        fontFamily: $fontFamily,
+                        applyStyling: $javascript
+                            ? self::requiredBoolean($request, 'applyStyling')
+                            : self::booleanInput($request, 'applyStyling', false),
+                        showIntro: $javascript
+                            ? self::requiredBoolean($request, 'showIntro')
+                            : self::booleanInput($request, 'showIntro', true),
+                        matomoUrl: $javascript ? self::requiredString($request, 'matomoUrl') : null,
+                        language: $javascript ? self::requiredString($request, 'language') : null,
+                        cookiePath: $javascript ? '' : self::stringInput($request, 'cookiePath'),
+                        cookieDomain: $javascript ? '' : self::stringInput($request, 'cookieDomain'),
+                        cookieSameSite: $javascript
+                            ? 'Lax'
+                            : self::stringInput($request, 'cookieSameSite', 'Lax'),
+                    ),
+                );
+            }
+
+            if ($method === 'CoreAdminHome.invalidateArchivedReports') {
+                $siteIds = self::requiredStringList($request, 'idSites');
+                $dateInput = self::inputValue($request, 'dates');
+
+                if ($dateInput === null) {
+                    throw new MissingApiParameter('dates');
+                }
+
+                $allSites = count($siteIds) === 1 && strtolower($siteIds[0]) === 'all';
+                $parsedSiteIds = [];
+
+                if (! $allSites) {
+                    foreach ($siteIds as $siteId) {
+                        if ($siteId === '') {
+                            continue;
+                        }
+
+                        if (! is_numeric($siteId)
+                            || (string) (int) $siteId !== $siteId
+                            || (int) $siteId <= 0) {
+                            throw new InvalidApiParameter(
+                                'idSites',
+                                "The parameter 'idSite=' contains an invalid value.",
+                            );
+                        }
+
+                        $parsedSiteIds[] = (int) $siteId;
+                    }
+                }
+
+                $period = self::nullableStringInput($request, 'period');
+                $period = in_array(strtolower($period ?? ''), ['', '0', 'false'], true)
+                    ? null
+                    : strtolower($period ?? '');
+
+                if ($period !== null && ! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
+                    throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
+                }
+
+                $dates = self::stringList(
+                    $dateInput,
+                    'dates',
+                    splitCommaSeparated: $period !== 'range',
+                );
+
+                $segment = self::nullableStringInput($request, 'segment');
+                $segment = trim($segment ?? '');
+                $segment = in_array(strtolower($segment), ['', '0', 'false'], true)
+                    ? null
+                    : substr($segment, 0, 8192);
+
+                return new CoreAdminHomeRequest(
+                    siteId: null,
+                    failureId: null,
+                    archiveInvalidation: new ArchiveInvalidationRequest(
+                        siteIds: array_values(array_unique($parsedSiteIds)),
+                        allSites: $allSites,
+                        dates: $dates,
+                        period: $period,
+                        segment: $segment,
+                        cascadeDown: self::booleanInput($request, 'cascadeDown', false),
+                        forceInvalidateNonexistent: self::booleanInput(
+                            $request,
+                            '_forceInvalidateNonexistent',
+                            false,
+                        ),
+                    ),
+                );
+            }
+
+            if ($method === 'CoreAdminHome.setTrustedHosts') {
+                $trustedHosts = self::inputValue($request, 'trustedHosts');
+
+                if ($trustedHosts === null) {
+                    throw new MissingApiParameter('trustedHosts');
+                }
+
+                $values = is_array($trustedHosts)
+                    ? $trustedHosts
+                    : explode(',', (string) $trustedHosts);
+                $hosts = [];
+
+                foreach ($values as $host) {
+                    if (! is_scalar($host)) {
+                        throw new InvalidApiParameter('trustedHosts');
+                    }
+
+                    $hosts[] = str_replace("\0", '', (string) $host);
+                }
+
+                return new CoreAdminHomeRequest(null, null, trustedHosts: $hosts);
+            }
+
+            return new CoreAdminHomeRequest(null, null);
+        }
+
+        $siteId = self::requiredInteger($request, 'idSite');
+        $failureId = self::inputValue($request, 'idFailure');
+
+        if ($failureId === null || $failureId === '' || ! is_scalar($failureId)) {
+            throw new MissingApiParameter('idFailure');
+        }
+
+        return new CoreAdminHomeRequest(
+            siteId: $siteId,
+            failureId: is_int($failureId) ? $failureId : (string) $failureId,
         );
     }
 
@@ -1798,6 +2009,67 @@ final readonly class ApiRequest
         $post = $request->request->all();
 
         return $post[$key] ?? null;
+    }
+
+    private static function requiredBoolean(Request $request, string $key): bool
+    {
+        $value = self::inputValue($request, $key);
+
+        if ($value === null) {
+            throw new MissingApiParameter($key);
+        }
+
+        if (! is_scalar($value)) {
+            throw new InvalidApiParameter($key);
+        }
+
+        return self::booleanFromArray($request->query->all(), $key)
+            ?? self::booleanFromArray($request->request->all(), $key)
+            ?? false;
+    }
+
+    private static function requiredString(Request $request, string $key): string
+    {
+        return self::nullableStringInput($request, $key)
+            ?? throw new MissingApiParameter($key);
+    }
+
+    /** @return list<string> */
+    private static function requiredStringList(Request $request, string $key): array
+    {
+        $value = self::inputValue($request, $key);
+
+        if ($value === null) {
+            throw new MissingApiParameter($key);
+        }
+
+        return self::stringList($value, $key);
+    }
+
+    /** @return list<string> */
+    private static function stringList(
+        mixed $value,
+        string $key,
+        bool $splitCommaSeparated = true,
+    ): array {
+        if (! is_array($value) && ! is_scalar($value)) {
+            throw new InvalidApiParameter($key);
+        }
+
+        $values = is_array($value)
+            ? $value
+            : ($splitCommaSeparated ? explode(',', (string) $value) : [$value]);
+        $result = [];
+
+        foreach ($values as $item) {
+            if (! is_scalar($item)) {
+                throw new InvalidApiParameter($key);
+            }
+
+            $result[] = trim(str_replace("\0", '', (string) $item));
+        }
+
+        return array_values(array_unique($result));
     }
 
     private static function supportsSiteListFilters(string $module, string $method): bool

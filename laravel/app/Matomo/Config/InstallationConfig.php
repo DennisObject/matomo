@@ -53,6 +53,8 @@ final readonly class InstallationConfig
         private array $uniqueVisitorsByPeriod,
         /** @var list<string> */
         private array $enabledReportingPeriods,
+        /** @var list<string> */
+        private array $autoArchiveSegments,
         private bool $anonymousSegmentsEnabled,
         private ?int $configuredLoginMaxAllowedRetries,
         private ?int $configuredLoginAllowedRetriesTimeRange,
@@ -68,6 +70,11 @@ final readonly class InstallationConfig
         private bool $languageToCountryGuessEnabled,
         private bool $professionalServicesAdsEnabled,
         private bool $developmentModeEnabled,
+        private string $instanceId,
+        private string $temporaryPath,
+        /** @var list<string> */
+        private array $trustedHosts,
+        private bool $trustedHostCheckEnabled,
         /** @var array<int, string> */
         private array $transitionsMaxPeriodAllowed,
         /** @var array<string, mixed> */
@@ -97,6 +104,7 @@ final readonly class InstallationConfig
         $tracker = $configuration['Tracker'] ?? [];
         $development = $configuration['Development'] ?? [];
         $aiProviders = $configuration['AIProviders'] ?? [];
+        $segments = $configuration['Segments'] ?? [];
 
         if (! is_array($database)
             || ! is_array($general)
@@ -108,7 +116,8 @@ final readonly class InstallationConfig
             || ! is_array($proxy)
             || ! is_array($tracker)
             || ! is_array($development)
-            || ! is_array($aiProviders)) {
+            || ! is_array($aiProviders)
+            || ! is_array($segments)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
 
@@ -186,6 +195,7 @@ final readonly class InstallationConfig
                 'enabled_periods_API',
                 ['day', 'week', 'month', 'year', 'range'],
             ),
+            autoArchiveSegments: self::stringList($segments, 'Segments'),
             anonymousSegmentsEnabled: self::boolean(
                 $general,
                 'anonymous_user_enable_use_segments_API',
@@ -230,6 +240,14 @@ final readonly class InstallationConfig
                 true,
             ) || self::boolean($general, 'piwik_pro_ads_enabled'),
             developmentModeEnabled: self::boolean($development, 'enabled'),
+            instanceId: preg_replace(
+                '/[^\w.-]/',
+                '',
+                self::string($general, 'instance_id'),
+            ) ?? '',
+            temporaryPath: self::parsedTemporaryPath($general),
+            trustedHosts: self::stringList($general, 'trusted_hosts'),
+            trustedHostCheckEnabled: self::boolean($general, 'enable_trusted_host_check', true),
             transitionsMaxPeriodAllowed: self::parseTransitionsMaxPeriodAllowed($configuration),
             aiProviders: $aiProviders,
         );
@@ -410,6 +428,12 @@ final readonly class InstallationConfig
         return in_array($period, $this->enabledReportingPeriods, true);
     }
 
+    /** @return list<string> */
+    public function autoArchiveSegments(): array
+    {
+        return $this->autoArchiveSegments;
+    }
+
     public function anonymousSegmentsEnabled(): bool
     {
         return $this->anonymousSegmentsEnabled;
@@ -481,6 +505,27 @@ final readonly class InstallationConfig
         return $this->developmentModeEnabled;
     }
 
+    public function instanceId(): string
+    {
+        return $this->instanceId;
+    }
+
+    public function temporaryPath(): string
+    {
+        return $this->temporaryPath;
+    }
+
+    /** @return list<string> */
+    public function trustedHosts(): array
+    {
+        return $this->trustedHosts;
+    }
+
+    public function trustedHostCheckEnabled(): bool
+    {
+        return $this->trustedHostCheckEnabled;
+    }
+
     public function transitionsMaxPeriodAllowed(int $idSite): string
     {
         return $this->transitionsMaxPeriodAllowed[$idSite]
@@ -492,6 +537,14 @@ final readonly class InstallationConfig
     public function aiProviders(): array
     {
         return $this->aiProviders;
+    }
+
+    /** @param array<string, mixed> $general */
+    private static function parsedTemporaryPath(array $general): string
+    {
+        $path = self::string($general, 'tmp_path');
+
+        return $path === '' ? '/tmp' : $path;
     }
 
     /**
