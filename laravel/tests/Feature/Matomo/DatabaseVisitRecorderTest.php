@@ -284,6 +284,51 @@ final class DatabaseVisitRecorderTest extends TestCase
         }
     }
 
+    public function test_stores_content_impressions_and_interactions(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $recorder->record(new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/content',
+            actionName: '',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            actionType: 13,
+            contentName: 'Hero',
+            contentPiece: 'Summer sale',
+            contentTarget: 'https://shop.example/',
+            contentInteraction: 'click',
+        ));
+
+        $actions = $connection->table('log_action')->get()->keyBy('name');
+        $contentUrl = $actions->get('https://example.test/content');
+        $contentName = $actions->get('Hero');
+        $contentPiece = $actions->get('Summer sale');
+        $contentTarget = $actions->get('https://shop.example/');
+        $contentInteraction = $actions->get('click');
+        $this->assertInstanceOf(stdClass::class, $contentUrl);
+        $this->assertInstanceOf(stdClass::class, $contentName);
+        $this->assertInstanceOf(stdClass::class, $contentPiece);
+        $this->assertInstanceOf(stdClass::class, $contentTarget);
+        $this->assertInstanceOf(stdClass::class, $contentInteraction);
+        $this->assertSame(13, $contentUrl->type);
+        $this->assertSame(13, $contentName->type);
+        $this->assertSame(14, $contentPiece->type);
+        $this->assertSame(15, $contentTarget->type);
+        $this->assertSame(16, $contentInteraction->type);
+
+        $link = $connection->table('log_link_visit_action')->first();
+        $this->assertInstanceOf(stdClass::class, $link);
+        $this->assertSame($contentUrl->idaction, $link->idaction_url);
+        $this->assertNull($link->idaction_name);
+        $this->assertSame($contentName->idaction, $link->idaction_content_name);
+        $this->assertSame($contentPiece->idaction, $link->idaction_content_piece);
+        $this->assertSame($contentTarget->idaction, $link->idaction_content_target);
+        $this->assertSame($contentInteraction->idaction, $link->idaction_content_interaction);
+    }
+
     private function connection(): ConnectionInterface
     {
         config()->set('database.connections.tracker_test', ['driver' => 'sqlite', 'database' => ':memory:']);
@@ -354,6 +399,10 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedMediumInteger('time_on_load')->nullable();
             $table->string('search_cat', 200)->nullable();
             $table->unsignedInteger('search_count')->nullable();
+            $table->unsignedInteger('idaction_content_name')->nullable();
+            $table->unsignedInteger('idaction_content_piece')->nullable();
+            $table->unsignedInteger('idaction_content_target')->nullable();
+            $table->unsignedInteger('idaction_content_interaction')->nullable();
             $table->string('custom_var_k2', 200)->nullable();
             $table->string('custom_var_v2', 200)->nullable();
             $table->string('custom_dimension_2', 250)->nullable();

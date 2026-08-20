@@ -381,6 +381,44 @@ final class TrackerEndpointTest extends TestCase
         ]))->assertOk();
     }
 
+    public function test_records_content_impressions_and_interactions(): void
+    {
+        $this->bindSite(['excluded_parameters' => 'secret']);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->actionType === 13
+                && $request->url === 'https://example.test/content?keep=yes'
+                && $request->contentName === 'Hero'
+                && $request->contentPiece === 'Summer sale'
+                && $request->contentTarget === 'https://shop.example/'
+                && $request->contentInteraction === 'click'
+                && $request->searchCategory === null
+                && $request->searchCount === null,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'url' => 'https://example.test/content?secret=hidden&keep=yes',
+            'c_n' => 'Hero',
+            'c_p' => 'Summer sale',
+            'c_t' => 'https://shop.example/',
+            'c_i' => 'click',
+            'search' => 'ignored',
+            'search_cat' => 'ignored',
+            'search_count' => '12',
+        ]))->assertOk();
+    }
+
+    public function test_rejects_blank_content_names(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['c_n' => '   ']))->assertBadRequest();
+    }
+
     public function test_ignores_invalid_search_counts_and_disabled_site_search(): void
     {
         $this->bindSite();
@@ -511,7 +549,8 @@ final class TrackerEndpointTest extends TestCase
         $recorder->expects($this->once())->method('record')->with($this->callback(
             static fn (TrackingRequest $request): bool => $request->actionType === 3
                 && $request->url === 'https://cdn.example.test/file.zip?token=kept'
-                && $request->eventCategory === null,
+                && $request->eventCategory === null
+                && $request->contentName === null,
         ));
         $this->app->instance(VisitRecorder::class, $recorder);
 
@@ -520,6 +559,7 @@ final class TrackerEndpointTest extends TestCase
             'link' => 'https://other.test/',
             'e_c' => 'Video',
             'e_a' => 'Play',
+            'c_n' => 'Hero',
         ]))->assertOk();
     }
 

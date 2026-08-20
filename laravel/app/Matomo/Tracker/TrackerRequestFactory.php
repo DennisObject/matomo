@@ -86,12 +86,20 @@ final class TrackerRequestFactory
         $search = (int) ($site['sitesearch'] ?? 1) === 1
             ? $this->optional($request->input('search'), 255)
             : null;
+        $contentNameInput = $request->input('c_n');
+        $contentName = $this->optional($contentNameInput, 255);
+
         if (($eventCategory === null) !== ($eventAction === null)) {
             throw new InvalidArgumentException('e_c and e_a must be provided together.');
         }
 
+        if ($download === null && $outlink === null && $eventCategory === null
+            && $request->exists('c_n') && $contentName === null) {
+            throw new InvalidArgumentException('c_n must not be blank.');
+        }
+
         $pageUrl = $request->input('url', '');
-        $actionType = $download !== null ? 3 : ($outlink !== null ? 2 : ($eventCategory !== null ? 10 : ($search !== null ? 8 : 1)));
+        $actionType = $download !== null ? 3 : ($outlink !== null ? 2 : ($eventCategory !== null ? 10 : ($contentName !== null ? 13 : ($search !== null ? 8 : 1))));
         $url = $download ?? $outlink ?? $pageUrl;
         if (! is_string($url)
             || strlen($url) > $maximumUrlLength
@@ -116,7 +124,7 @@ final class TrackerRequestFactory
             $visitorId = bin2hex(random_bytes(8));
         }
 
-        $actionName = $search ?? $request->input('action_name', '');
+        $actionName = $actionType === 8 ? $search : $request->input('action_name', '');
 
         $eventValue = $actionType === 10 ? $request->input('e_v') : null;
         if (is_string($eventValue)) {
@@ -198,7 +206,7 @@ final class TrackerRequestFactory
 
         return new TrackingRequest(
             siteId: $siteId,
-            url: in_array($actionType, [1, 10], true)
+            url: in_array($actionType, [1, 10, 13], true)
                 ? $this->filteredUrl($url, $siteId, $site)
                 : $this->clean($url, $maximumUrlLength),
             actionName: is_string($actionName) ? $this->clean($actionName, 255) : '',
@@ -212,6 +220,10 @@ final class TrackerRequestFactory
             eventValue: $eventValue === null ? null : (float) $eventValue,
             searchCategory: $searchCategory,
             searchCount: $searchCount,
+            contentName: $actionType === 13 ? $contentName : null,
+            contentPiece: $actionType === 13 ? $this->optional($request->input('c_p'), 255) : null,
+            contentTarget: $actionType === 13 ? $this->optional($request->input('c_t'), $maximumUrlLength) : null,
+            contentInteraction: $actionType === 13 ? $this->optional($request->input('c_i'), 255) : null,
             userId: $userId,
             referrerUrl: $referrer,
             referrerType: $referrerType,

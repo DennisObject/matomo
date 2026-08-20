@@ -87,6 +87,19 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 $action['search_count'] = $request->searchCount;
             }
 
+            if ($request->actionType === 13 && $request->contentName !== null) {
+                $action['idaction_content_name'] = $this->action($request->contentName, 13, null);
+                $action['idaction_content_piece'] = $request->contentPiece === null
+                    ? null
+                    : $this->action($request->contentPiece, 14, null);
+                $action['idaction_content_target'] = $request->contentTarget === null
+                    ? null
+                    : $this->action($request->contentTarget, 15, null);
+                $action['idaction_content_interaction'] = $request->contentInteraction === null
+                    ? null
+                    : $this->action($request->contentInteraction, 16, null);
+            }
+
             $linkId = (int) $this->connection->table('log_link_visit_action')->insertGetId(
                 [...$action, ...$request->actionProperties, ...$request->performanceTimings],
                 'idlink_va',
