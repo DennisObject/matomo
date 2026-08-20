@@ -567,6 +567,13 @@ final readonly class ApiRequest
         return self::make($request, self::authentication($request));
     }
 
+    public static function fromRequestWithAuthentication(
+        Request $request,
+        ApiAuthentication $authentication,
+    ): self {
+        return self::make($request, $authentication);
+    }
+
     public static function withoutAuthentication(Request $request): self
     {
         return new self(
@@ -3142,7 +3149,11 @@ final readonly class ApiRequest
             siteId: $siteId,
             apiModule: self::nullableStringInput($request, 'apiModule'),
             apiAction: self::nullableStringInput($request, 'apiAction'),
+            apiParameters: self::mixedParameterMap($request, 'apiParameters'),
+            period: self::nullableStringInput($request, 'period'),
+            date: self::nullableStringInput($request, 'date'),
             hideMetricsDocumentation: self::booleanInput($request, 'hideMetricsDoc', false),
+            showSubtableReports: self::booleanInput($request, 'showSubtableReports', false),
         );
     }
 
@@ -3163,6 +3174,10 @@ final readonly class ApiRequest
 
         $urls = [];
         foreach ($input as $url) {
+            if ($url === null) {
+                $url = '';
+            }
+
             if (! is_string($url)) {
                 throw new InvalidApiParameter('urls', 'Every URL must be an API query string.');
             }
@@ -3192,6 +3207,13 @@ final readonly class ApiRequest
             throw new InvalidApiParameter('apiParameters', 'The value must be an array or query string.');
         }
 
+        if ($apiParameters !== [] && array_is_list($apiParameters)) {
+            throw new InvalidApiParameter('apiParameters', 'The value must be an object or query string.');
+        }
+
+        $subtableId = self::nullableIntegerOrFalse($request, 'idSubtable');
+        $dimensionId = self::nullableIntegerOrFalse($request, 'idDimension');
+
         return new ProcessedReportRequest(
             siteId: self::requiredInteger($request, 'idSite'),
             period: self::requiredString($request, 'period'),
@@ -3199,8 +3221,15 @@ final readonly class ApiRequest
             apiModule: self::requiredString($request, 'apiModule'),
             apiAction: self::requiredString($request, 'apiAction'),
             apiParameters: $apiParameters,
+            segment: self::nullableStringInput($request, 'segment') ?: null,
+            goalId: self::nullableStringInput($request, 'idGoal') ?: null,
+            language: self::nullableStringInput($request, 'language') ?: null,
+            showTimer: self::booleanInput($request, 'showTimer', true),
             hideMetricsDocumentation: self::booleanInput($request, 'hideMetricsDoc', false),
+            subtableId: $subtableId === false ? null : $subtableId,
             showRawMetrics: self::booleanInput($request, 'showRawMetrics', false),
+            formatMetrics: self::nullableStringInput($request, 'format_metrics'),
+            dimensionId: $dimensionId === false ? null : $dimensionId,
         );
     }
 
@@ -3210,14 +3239,36 @@ final readonly class ApiRequest
             return null;
         }
 
-        $columns = self::nullableStringInput($request, 'columns');
+        $siteId = self::requiredInteger($request, 'idSite');
+        if ($siteId < 1) {
+            throw new InvalidApiParameter('idSite', "The parameter 'idSite=' contains an invalid value.");
+        }
+
+        $period = self::requiredString($request, 'period');
+        if (! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
+            throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
+        }
+
+        $date = self::requiredString($request, 'date');
+        if (! self::validReportDate($date)) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not valid.");
+        }
+
+        if ($period === 'range'
+            && ! str_contains($date, ',')
+            && preg_match('/^(last|previous)[0-9]*$/D', $date) !== 1) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not a valid range.");
+        }
+
+        $segment = self::nullableStringInput($request, 'segment');
+        $columns = self::optionalCommaSeparatedStringList($request, 'columns') ?? [];
 
         return new ApiOverviewRequest(
-            siteId: self::requiredInteger($request, 'idSite'),
-            period: self::requiredString($request, 'period'),
-            date: self::requiredString($request, 'date'),
-            segment: self::nullableStringInput($request, 'segment'),
-            columns: $columns === null ? [] : array_values(array_filter(explode(',', $columns), static fn (string $column): bool => $column !== '')),
+            siteId: $siteId,
+            period: $period,
+            date: $date,
+            segment: $segment === null || trim($segment) === '' ? null : trim($segment),
+            columns: array_values(array_filter($columns, static fn (string $column): bool => $column !== '')),
         );
     }
 
@@ -3227,8 +3278,14 @@ final readonly class ApiRequest
             return null;
         }
 
+        $site = self::requiredString($request, 'idSite');
+        if ($site !== 'all' && ((string) (int) $site !== $site || (int) $site < 1)) {
+            throw new InvalidApiParameter('idSite', "The parameter 'idSite=' contains an invalid value.");
+        }
+
         return new SegmentSuggestionsRequest(
-            siteId: self::requiredInteger($request, 'idSite'),
+            siteId: $site === 'all' ? null : (int) $site,
+            allSites: $site === 'all',
             segmentName: self::requiredString($request, 'segmentName'),
         );
     }
@@ -4039,6 +4096,7 @@ final readonly class ApiRequest
             typeReferrer: self::reportTypeReferrer($request, $method),
             setReferrerTypeLabel: $method !== 'Referrers.getReferrerType'
                 || self::booleanInput($request, '_setReferrerTypeLabel', true),
+            formatMetrics: self::booleanInput($request, 'format_metrics', true),
         );
     }
 

@@ -16,6 +16,8 @@ final readonly class InstallationConfig
         #[\SensitiveParameter]
         private string $salt,
         private bool $onlyAllowSecureTokens,
+        private int $apiBulkRequestLimit,
+        private bool $segmentSuggestedValuesEnabled,
         private int $sessionLifetime,
         private int $sessionIdleTimeout,
         /** @var list<string> */
@@ -47,6 +49,7 @@ final readonly class InstallationConfig
         /** @var list<string>|null */
         private ?array $commonPiiParameters,
         private string $defaultLanguage,
+        private string $defaultReportDate,
         private string $languageCookieName,
         private string $feedbackEmailAddress,
         private bool $emailsEnabled,
@@ -105,6 +108,8 @@ final readonly class InstallationConfig
         private bool $realtimeSegmentsAllowed,
         private bool $browserArchivingAvailableForSegments,
         private string $processNewSegmentsFrom,
+        private int $deleteLogsMaxRowsPerQuery,
+        private int $deleteLogsUnusedActionsMaxRowsPerQuery,
     ) {}
 
     public static function fromFile(string $path): self
@@ -175,6 +180,12 @@ final readonly class InstallationConfig
             databaseConnection: self::buildDatabaseConnection($database, $prefix),
             salt: $salt,
             onlyAllowSecureTokens: self::boolean($general, 'only_allow_secure_auth_tokens'),
+            apiBulkRequestLimit: self::integer($general, 'API_bulk_request_limit', -1),
+            segmentSuggestedValuesEnabled: self::boolean(
+                $general,
+                'enable_segment_suggested_values',
+                true,
+            ),
             sessionLifetime: self::positiveInteger($general, 'login_cookie_expire', 1_209_600),
             sessionIdleTimeout: self::positiveInteger(
                 $general,
@@ -218,6 +229,7 @@ final readonly class InstallationConfig
             ) === 'enabled',
             commonPiiParameters: self::nullableStringList($sitesManager, 'CommonPIIParams'),
             defaultLanguage: strtolower(self::string($general, 'default_language', 'en')),
+            defaultReportDate: self::string($general, 'default_day', 'yesterday'),
             languageCookieName: self::string($general, 'language_cookie_name', 'matomo_lang'),
             feedbackEmailAddress: self::string(
                 $general,
@@ -393,6 +405,16 @@ final readonly class InstallationConfig
                 'process_new_segments_from',
                 'beginning_of_time',
             ),
+            deleteLogsMaxRowsPerQuery: self::positiveInteger(
+                $deleteLogs,
+                'delete_logs_max_rows_per_query',
+                100_000,
+            ),
+            deleteLogsUnusedActionsMaxRowsPerQuery: self::positiveInteger(
+                $deleteLogs,
+                'delete_logs_unused_actions_max_rows_per_query',
+                100_000,
+            ),
         );
     }
 
@@ -412,6 +434,16 @@ final readonly class InstallationConfig
     public function onlyAllowSecureTokens(): bool
     {
         return $this->onlyAllowSecureTokens;
+    }
+
+    public function apiBulkRequestLimit(): int
+    {
+        return $this->apiBulkRequestLimit;
+    }
+
+    public function segmentSuggestedValuesEnabled(): bool
+    {
+        return $this->segmentSuggestedValuesEnabled;
     }
 
     public function sessionLifetime(): int
@@ -545,6 +577,11 @@ final readonly class InstallationConfig
     public function defaultLanguage(): string
     {
         return $this->defaultLanguage;
+    }
+
+    public function defaultReportDate(): string
+    {
+        return $this->defaultReportDate;
     }
 
     public function languageCookieName(): string
@@ -782,6 +819,16 @@ final readonly class InstallationConfig
     public function processNewSegmentsFrom(): string
     {
         return $this->processNewSegmentsFrom;
+    }
+
+    public function deleteLogsMaxRowsPerQuery(): int
+    {
+        return $this->deleteLogsMaxRowsPerQuery;
+    }
+
+    public function deleteLogsUnusedActionsMaxRowsPerQuery(): int
+    {
+        return $this->deleteLogsUnusedActionsMaxRowsPerQuery;
     }
 
     /** @param array<string, mixed> $general */
@@ -1105,6 +1152,14 @@ final readonly class InstallationConfig
         $value = self::string($values, $key, (string) $default);
 
         return preg_match('/^[1-9]\d*$/D', $value) === 1 ? (int) $value : $default;
+    }
+
+    /** @param array<string, mixed> $values */
+    private static function integer(array $values, string $key, int $default): int
+    {
+        $value = self::string($values, $key, (string) $default);
+
+        return preg_match('/^-?\d+$/D', $value) === 1 ? (int) $value : $default;
     }
 
     /** @param array<string, mixed> $values */

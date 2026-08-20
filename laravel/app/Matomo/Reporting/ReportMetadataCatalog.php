@@ -9,6 +9,22 @@ use RuntimeException;
 
 final readonly class ReportMetadataCatalog
 {
+    /** @var array<string, array{name: string, documentation: string}> */
+    private const array DEFAULT_GLOSSARY_METRICS = [
+        'nb_visits' => ['name' => 'General_ColumnNbVisits', 'documentation' => 'General_ColumnNbVisitsDocumentation'],
+        'nb_uniq_visitors' => ['name' => 'General_ColumnNbUniqVisitors', 'documentation' => 'General_ColumnNbUniqVisitorsDocumentation'],
+        'nb_actions' => ['name' => 'General_ColumnNbActions', 'documentation' => 'General_ColumnNbActionsDocumentation'],
+        'nb_users' => ['name' => 'General_ColumnNbUsers', 'documentation' => 'General_ColumnNbUsersDocumentation'],
+        'nb_actions_per_visit' => ['name' => 'General_ColumnActionsPerVisit', 'documentation' => 'General_ColumnActionsPerVisitDocumentation'],
+        'avg_time_on_site' => ['name' => 'General_ColumnAvgTimeOnSite', 'documentation' => 'General_ColumnAvgTimeOnSiteDocumentation'],
+        'bounce_rate' => ['name' => 'General_ColumnBounceRate', 'documentation' => 'General_ColumnBounceRateDocumentation'],
+        'conversion_rate' => ['name' => 'General_ColumnConversionRate', 'documentation' => 'General_ColumnConversionRateDocumentation'],
+        'avg_time_on_page' => ['name' => 'General_ColumnAverageTimeOnPage', 'documentation' => 'General_ColumnAverageTimeOnPageDocumentation'],
+        'hits' => ['name' => 'General_ColumnHits', 'documentation' => 'General_ColumnHitsDocumentation'],
+        'exit_rate' => ['name' => 'General_ColumnExitRate', 'documentation' => 'General_ColumnExitRateDocumentation'],
+        'nb_visits_converted' => ['name' => 'General_ColumnVisitsWithConversions', 'documentation' => 'General_VisitConvertedGoalDocumentation'],
+    ];
+
     public function __construct(
         private MatomoTranslator $translator,
         private string $catalogPath,
@@ -80,6 +96,16 @@ final readonly class ReportMetadataCatalog
     public function metricsGlossary(string $language): array
     {
         $metrics = [];
+        foreach (self::DEFAULT_GLOSSARY_METRICS as $id => $definition) {
+            $metrics[$id] = [
+                'name' => $this->translator->translate($definition['name'], $language),
+                'id' => $id,
+                'documentation' => $this->translator->translate($definition['documentation'], $language),
+            ];
+        }
+
+        /** @var array<string, array{name: string, documentation: list<string>}> $candidates */
+        $candidates = [];
         foreach ($this->all($language) as $report) {
             $documentation = $report['metricsDocumentation'] ?? null;
             if (! is_array($documentation)) {
@@ -93,8 +119,23 @@ final readonly class ReportMetadataCatalog
 
                 $name = $report['metrics'][$id] ?? $report['processedMetrics'][$id] ?? null;
                 if (is_string($name)) {
-                    $metrics[$id] = ['name' => $name, 'id' => $id, 'documentation' => $text];
+                    $candidates[$id]['name'] ??= $name;
+                    $candidates[$id]['documentation'][] = $text;
                 }
+            }
+        }
+
+        foreach ($candidates as $id => $candidate) {
+            $counts = array_count_values($candidate['documentation']);
+            arsort($counts);
+            $documentation = array_key_first($counts);
+            $count = $documentation === null ? 0 : $counts[$documentation];
+            if ($documentation !== null && $count > count($candidate['documentation']) - $count) {
+                $metrics[$id] = [
+                    'name' => $candidate['name'],
+                    'id' => $id,
+                    'documentation' => $documentation,
+                ];
             }
         }
 

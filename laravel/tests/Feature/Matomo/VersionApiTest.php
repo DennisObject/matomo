@@ -33,7 +33,8 @@ class VersionApiTest extends TestCase
             ->assertOk()
             ->assertJsonCount(2)
             ->assertJsonPath('0.id', 'website')
-            ->assertJsonPath('0.settings', [])
+            ->assertJsonPath('0.settings.0.pluginName', 'WebsiteMeasurable')
+            ->assertJsonPath('0.settings.0.settings.0.name', 'urls')
             ->assertJsonPath('1.id', 'mobileapp');
     }
 
