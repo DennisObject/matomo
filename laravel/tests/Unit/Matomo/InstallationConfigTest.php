@@ -33,6 +33,8 @@ class InstallationConfigTest extends TestCase
         $this->assertSame('matomo_', $configuration->databaseConnection()['prefix']);
         $this->assertSame('secret-salt', $configuration->salt());
         $this->assertTrue($configuration->onlyAllowSecureTokens());
+        $this->assertSame(-1, $configuration->apiBulkRequestLimit());
+        $this->assertTrue($configuration->segmentSuggestedValuesEnabled());
         $this->assertSame(1_209_600, $configuration->sessionLifetime());
         $this->assertSame(3_600, $configuration->sessionIdleTimeout());
         $this->assertSame(['10.0.0.0/8'], $configuration->loginAllowlistIps());
@@ -134,6 +136,7 @@ class InstallationConfigTest extends TestCase
             live_ai_chatbots_top_page_urls_maximum_rows = 23
             live_query_max_execution_time = 1.5
             live_visitor_profile_max_visits_to_aggregate = 31
+            enable_segment_suggested_values = 0
             INI,
             extraTracker: <<<'INI'
             enable_default_location_provider = 0
@@ -167,6 +170,7 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(23, $configuration->liveAiChatbotsTopPageUrlsMaximumRows());
         $this->assertSame(1.5, $configuration->liveQueryMaximumExecutionTime());
         $this->assertSame(31, $configuration->liveVisitorProfileMaximumVisits());
+        $this->assertFalse($configuration->segmentSuggestedValuesEnabled());
         $this->assertSame(['session', 'secret'], $configuration->urlQueryParametersToExclude());
         $this->assertSame(['campaign'], $configuration->campaignNameParameters());
         $this->assertSame(['keyword'], $configuration->campaignKeywordParameters());

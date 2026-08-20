@@ -7,6 +7,7 @@ namespace App\Matomo\Api\Methods;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Privacy\ComplianceStatusProvider;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -18,6 +19,7 @@ final readonly class PrivacyManagerComplianceReadApiMethodHandler implements Api
         private ApiAccessAuthorizer $authorizer,
         private ApiResponseFactory $responses,
         private ComplianceStatusProvider $status,
+        private LanguageResolver $languages,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -46,7 +48,9 @@ final readonly class PrivacyManagerComplianceReadApiMethodHandler implements Api
             return $this->responses->error($request, 'The idSite must be a positive integer or all.', 400);
         }
 
-        return $this->responses->structured($request, $this->status->status($idSite));
+        $language = $this->languages->resolve($httpRequest, $request->authentication);
+
+        return $this->responses->structured($request, $this->status->status($idSite, $language));
     }
 
     private function siteId(string $site): int|null|false
