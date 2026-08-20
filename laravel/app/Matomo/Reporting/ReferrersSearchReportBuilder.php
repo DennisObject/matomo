@@ -40,6 +40,7 @@ final readonly class ReferrersSearchReportBuilder
         string $segmentHash,
         string $language,
         bool $showMetadata,
+        bool $formatMetrics,
         bool $forceSiteIndex,
         bool $forceDateIndex,
     ): ApiTableReport {
@@ -72,6 +73,7 @@ final readonly class ReferrersSearchReportBuilder
                     $showDimensions,
                     $language,
                     $showMetadata,
+                    $formatMetrics,
                 ), []);
             }
 
@@ -86,6 +88,7 @@ final readonly class ReferrersSearchReportBuilder
                 $showDimensions,
                 $language,
                 $showMetadata,
+                $formatMetrics,
             ), $dimensions);
         }
 
@@ -104,6 +107,7 @@ final readonly class ReferrersSearchReportBuilder
                     $showDimensions,
                     $language,
                     $showMetadata,
+                    $formatMetrics,
                 );
             } else {
                 $period = $periods[0] ?? null;
@@ -117,6 +121,7 @@ final readonly class ReferrersSearchReportBuilder
                     $showDimensions,
                     $language,
                     $showMetadata,
+                    $formatMetrics,
                 );
             }
         }
@@ -140,6 +145,7 @@ final readonly class ReferrersSearchReportBuilder
         bool $showDimensions,
         string $language,
         bool $showMetadata,
+        bool $formatMetrics,
     ): array {
         $rows = [];
 
@@ -154,6 +160,7 @@ final readonly class ReferrersSearchReportBuilder
                 $showDimensions,
                 $language,
                 $showMetadata,
+                $formatMetrics,
             );
         }
 
@@ -174,6 +181,7 @@ final readonly class ReferrersSearchReportBuilder
         bool $showDimensions,
         string $language,
         bool $showMetadata,
+        bool $formatMetrics,
     ): array {
         $roots = $records[$record] ?? [];
         $rootIsKeyword = $record === self::KEYWORDS_RECORD;
@@ -195,6 +203,7 @@ final readonly class ReferrersSearchReportBuilder
                 $language,
                 $showMetadata,
                 $this->totals($children),
+                $formatMetrics,
             );
         }
 
@@ -208,7 +217,15 @@ final readonly class ReferrersSearchReportBuilder
                 $subtableId = $root['subtableId'];
 
                 if ($subtableId === null) {
-                    $row = $this->row($root, $rootIsKeyword, '', $language, $showMetadata, $totals);
+                    $row = $this->row(
+                        $root,
+                        $rootIsKeyword,
+                        '',
+                        $language,
+                        $showMetadata,
+                        $totals,
+                        $formatMetrics,
+                    );
                     $row[$rootIsKeyword ? 'Referrers_Keyword' : 'Referrers_SearchEngine'] = $row['label'];
                     $rows[] = $row;
 
@@ -227,6 +244,7 @@ final readonly class ReferrersSearchReportBuilder
                     $language,
                     $showMetadata,
                     $totals,
+                    $formatMetrics,
                 )];
             }
 
@@ -245,6 +263,7 @@ final readonly class ReferrersSearchReportBuilder
             $language,
             $showMetadata,
             $totals,
+            $formatMetrics,
         );
     }
 
@@ -266,11 +285,20 @@ final readonly class ReferrersSearchReportBuilder
         string $language,
         bool $showMetadata,
         array $totals,
+        bool $formatMetrics,
     ): array {
         $rows = [];
 
         foreach ($archiveRows as $archiveRow) {
-            $row = $this->row($archiveRow, $keywordRows, $parent, $language, $showMetadata, $totals);
+            $row = $this->row(
+                $archiveRow,
+                $keywordRows,
+                $parent,
+                $language,
+                $showMetadata,
+                $totals,
+                $formatMetrics,
+            );
             $label = (string) $row['label'];
             $subtableId = $archiveRow['subtableId'];
 
@@ -301,6 +329,7 @@ final readonly class ReferrersSearchReportBuilder
                     $language,
                     $showMetadata,
                     $totals,
+                    $formatMetrics,
                 );
             }
 
@@ -322,6 +351,7 @@ final readonly class ReferrersSearchReportBuilder
         string $language,
         bool $showMetadata,
         array $totals,
+        bool $formatMetrics,
     ): array {
         $rawLabel = (string) ($archiveRow['columns']['label'] ?? '');
         $label = $keyword ? $this->keywordLabel($rawLabel, $language) : $rawLabel;
@@ -357,7 +387,11 @@ final readonly class ReferrersSearchReportBuilder
             $value = $row[$metric] ?? null;
 
             if (is_int($value) || is_float($value)) {
-                $row[$metric.'_percent_of_total'] = $this->percent($value, $totals[$metric] ?? 0.0);
+                $row[$metric.'_percent_of_total'] = $this->percent(
+                    $value,
+                    $totals[$metric] ?? 0.0,
+                    $formatMetrics,
+                );
             }
         }
 
@@ -412,9 +446,15 @@ final readonly class ReferrersSearchReportBuilder
         ], true) ? self::KEYWORDS_RECORD : self::ENGINES_RECORD;
     }
 
-    private function percent(float|int $value, float $total): string
+    private function percent(float|int $value, float $total, bool $format): int|float|string
     {
-        $percent = $total === 0.0 ? 0 : round((float) $value / $total * 100, 1);
+        $quotient = $total === 0.0 ? 0 : round((float) $value / $total, 4);
+
+        if (! $format) {
+            return $quotient;
+        }
+
+        $percent = $quotient * 100;
 
         return rtrim(rtrim(number_format($percent, 1, '.', ''), '0'), '.').'%';
     }

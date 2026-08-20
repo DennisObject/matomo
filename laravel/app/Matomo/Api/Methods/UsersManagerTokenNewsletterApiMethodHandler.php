@@ -54,7 +54,7 @@ final readonly class UsersManagerTokenNewsletterApiMethodHandler implements ApiM
         $login = is_string($user['login'] ?? null) ? $user['login'] : null;
         $current = $this->authorizer->authenticatedLogin($request->authentication);
         if ($current !== null && strcasecmp($current, 'anonymous') !== 0
-            && ($login === null || strcasecmp($current, $login) !== 0)) {
+            && ($login === null || $current !== $login)) {
             return $this->responses->error($request, 'You can only create a token for your own account.', 401);
         }
 

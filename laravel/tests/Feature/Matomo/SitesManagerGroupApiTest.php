@@ -52,6 +52,20 @@ class SitesManagerGroupApiTest extends TestCase
             ->assertExactJson(['value' => true]);
     }
 
+    public function test_numeric_equivalent_group_names_preserve_legacy_noop_behavior(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasSuperUserAccess')->willReturn(true);
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('renameGroup');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $this->get($this->url('0', '0.0'))
+            ->assertOk()
+            ->assertExactJson(['value' => true]);
+    }
+
     public function test_group_rename_requires_superuser_before_storage(): void
     {
         $authorizer = $this->createStub(ApiAccessAuthorizer::class);
