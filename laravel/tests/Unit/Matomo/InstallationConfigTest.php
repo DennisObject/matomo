@@ -76,6 +76,8 @@ class InstallationConfigTest extends TestCase
         $this->assertTrue($configuration->defaultLocationProviderEnabled());
         $this->assertTrue($configuration->languageToCountryGuessEnabled());
         $this->assertTrue($configuration->professionalServicesAdsEnabled());
+        $this->assertSame('month', $configuration->transitionsMaxPeriodAllowed(2));
+        $this->assertSame('week', $configuration->transitionsMaxPeriodAllowed(7));
         $this->assertSame([
             'defaultProvider' => 'openai',
             'openaiApiKey' => 'managed-key',
@@ -213,6 +215,12 @@ class InstallationConfigTest extends TestCase
             [AIProviders]
             defaultProvider = "openai"
             openaiApiKey = "managed-key"
+
+            [Transitions]
+            max_period_allowed = "month"
+
+            [Transitions_7]
+            max_period_allowed = "week"
             INI;
 
         $this->assertNotFalse(file_put_contents($path, $content));

@@ -53,6 +53,7 @@ use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\TimezoneProvider;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
+use App\Matomo\Transitions\TransitionsPeriodPolicy;
 use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Request;
@@ -129,6 +130,13 @@ abstract class TestCase extends BaseTestCase
         );
 
         $this->app->instance(AiProviderCentralConfiguration::class, new AiProviderCentralConfiguration);
+        $this->app->instance(TransitionsPeriodPolicy::class, new class implements TransitionsPeriodPolicy
+        {
+            public function isAllowed(int $siteId, string $period, string $date): bool
+            {
+                return true;
+            }
+        });
         $this->app->instance(
             AiProviderSettingsRepository::class,
             new class implements AiProviderSettingsRepository

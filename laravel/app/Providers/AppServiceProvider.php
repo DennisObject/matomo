@@ -148,6 +148,10 @@ use App\Matomo\Tour\ConfiguredTourSettings;
 use App\Matomo\Tour\DatabaseTourDataRepository;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
+use App\Matomo\Transitions\ConfiguredTransitionsPeriodPolicy;
+use App\Matomo\Transitions\ConfiguredTransitionsSettings;
+use App\Matomo\Transitions\TransitionsPeriodPolicy;
+use App\Matomo\Transitions\TransitionsSettings;
 use App\Matomo\TwoFactorAuth\DatabaseTwoFactorAuthenticationResetter;
 use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
@@ -193,6 +197,8 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(AiProviderCatalog::class, BuiltInAiProviderCatalog::class);
+        $this->app->singleton(TransitionsSettings::class, ConfiguredTransitionsSettings::class);
+        $this->app->singleton(TransitionsPeriodPolicy::class, ConfiguredTransitionsPeriodPolicy::class);
         $this->app->singleton(
             AiProviderCentralConfiguration::class,
             function (Application $application): AiProviderCentralConfiguration {
