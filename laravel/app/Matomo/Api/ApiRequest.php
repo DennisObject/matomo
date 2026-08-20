@@ -27,6 +27,13 @@ final readonly class ApiRequest
         'VisitsSummary.getSumVisitsLengthPretty',
     ];
 
+    /** @var list<string> */
+    private const array VISIT_TIME_METHODS = [
+        'VisitTime.getByDayOfWeek',
+        'VisitTime.getVisitInformationPerLocalTime',
+        'VisitTime.getVisitInformationPerServerTime',
+    ];
+
     private function __construct(
         public string $module,
         public string $method,
@@ -302,6 +309,12 @@ final readonly class ApiRequest
     public function isVisitFrequencyRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'VisitFrequency.get';
+    }
+
+    public function isVisitTimeRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::VISIT_TIME_METHODS, true);
     }
 
     public function hasSupportedFormat(): bool
@@ -663,7 +676,8 @@ final readonly class ApiRequest
     ): ?VisitsSummaryRequest {
         if ($module !== 'API'
             || (! in_array($method, self::VISITS_SUMMARY_METHODS, true)
-                && $method !== 'VisitFrequency.get')) {
+                && $method !== 'VisitFrequency.get'
+                && ! in_array($method, self::VISIT_TIME_METHODS, true))) {
             return null;
         }
 

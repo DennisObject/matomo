@@ -8,6 +8,7 @@ use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
+use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
@@ -136,6 +137,17 @@ abstract class TestCase extends BaseTestCase
                 array $periods,
                 string $segmentHash,
                 array $metrics,
+            ): array {
+                return [];
+            }
+        });
+        $this->app->instance(BlobArchiveRepository::class, new class implements BlobArchiveRepository
+        {
+            public function rows(
+                array $siteIds,
+                array $periods,
+                string $segmentHash,
+                string $recordName,
             ): array {
                 return [];
             }

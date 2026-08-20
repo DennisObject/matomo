@@ -6,6 +6,7 @@ namespace App\Matomo\Reporting;
 
 use App\Matomo\Api\ApiMetricReport;
 use App\Matomo\Api\ApiReport;
+use App\Matomo\Api\ApiTableReport;
 use Carbon\CarbonImmutable;
 
 final class RssReportRenderer
@@ -29,7 +30,7 @@ final class RssReportRenderer
             $period,
             $siteName,
             $timezone,
-            false,
+            'report',
         );
     }
 
@@ -52,7 +53,28 @@ final class RssReportRenderer
             $period,
             $siteName,
             $timezone,
-            true,
+            'metric',
+        );
+    }
+
+    /** @param list<ReportingPeriod> $periods */
+    public function table(
+        ApiTableReport $report,
+        array $periods,
+        int $idSite,
+        string $period,
+        string $siteName,
+        string $timezone,
+    ): string {
+        return $this->render(
+            $report->data,
+            $report->dimensions,
+            $periods,
+            $idSite,
+            $period,
+            $siteName,
+            $timezone,
+            'table',
         );
     }
 
@@ -69,7 +91,7 @@ final class RssReportRenderer
         string $period,
         string $siteName,
         string $timezone,
-        bool $scalar,
+        string $mode,
     ): string {
         if ($dimensions !== ['date'] || ! is_array($data)) {
             throw new \InvalidArgumentException(
@@ -106,7 +128,7 @@ final class RssReportRenderer
                 'date' => $reportingPeriod->startDate,
             ], '', '&', PHP_QUERY_RFC3986);
             $title = $siteName.' on '.$date;
-            $description = $this->table($row, $scalar);
+            $description = $this->tableContent($row, $mode);
             $items .= "\t<item>\n".
                 "\t\t<pubDate>{$this->escape($published)}</pubDate>\n".
                 "\t\t<guid>{$this->escape($url)}</guid>\n".
@@ -134,14 +156,18 @@ final class RssReportRenderer
             '</rss>';
     }
 
-    private function table(mixed $row, bool $scalar): string
+    private function tableContent(mixed $row, string $mode): string
     {
-        if ($scalar) {
+        if ($mode === 'metric') {
             return $this->htmlTable(['0' => $this->scalar($row)]);
         }
 
         if (! is_array($row) || $row === []) {
             return "<strong><em>Empty table</em></strong><br />\n";
+        }
+
+        if ($mode === 'table') {
+            return $this->htmlRows($row);
         }
 
         $values = [];
@@ -153,6 +179,58 @@ final class RssReportRenderer
         }
 
         return $this->htmlTable($values);
+    }
+
+    /** @param array<array-key, mixed> $rows */
+    private function htmlRows(array $rows): string
+    {
+        $values = [];
+        $columns = [];
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $valuesRow = [];
+
+            foreach ($row as $name => $value) {
+                if (is_string($name)
+                    && (is_float($value) || is_int($value) || is_string($value) || $value === null)) {
+                    $valuesRow[$name] = $value;
+
+                    if (! in_array($name, $columns, true)) {
+                        $columns[] = $name;
+                    }
+                }
+            }
+
+            $values[] = $valuesRow;
+        }
+
+        if ($values === []) {
+            return "<strong><em>Empty table</em></strong><br />\n";
+        }
+
+        $html = "\n<table border=1 width=70%>\n<tr>";
+
+        foreach ($columns as $column) {
+            $html .= "\n\t<td><strong>{$this->escape($column)}</strong></td>";
+        }
+
+        $html .= "\n</tr>";
+
+        foreach ($values as $row) {
+            $html .= "\n\n<tr>";
+
+            foreach ($columns as $column) {
+                $html .= "\n\t<td>{$this->escape(array_key_exists($column, $row) ? $this->scalar($row[$column]) : '-')}</td>";
+            }
+
+            $html .= '</tr>';
+        }
+
+        return $html."\n\n</table>";
     }
 
     /** @param array<array-key, float|int|string|null> $values */
