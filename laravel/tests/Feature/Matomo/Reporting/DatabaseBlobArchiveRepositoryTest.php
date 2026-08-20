@@ -59,6 +59,49 @@ class DatabaseBlobArchiveRepositoryTest extends TestCase
         $this->assertSame([], $repository->rows([3], [$this->day()], '', 'VisitTime_localTime'));
     }
 
+    public function test_flattens_legacy_nested_goal_metrics_for_report_consumers(): void
+    {
+        $connection = $this->archiveConnection();
+        $this->createTables($connection->getSchemaBuilder());
+        $connection->table('archive_numeric_2026_08')->insert(
+            $this->numericRow(21, 'done.DevicesDetection', 1, '2026-08-15 00:00:00'),
+        );
+        $payload = [[
+            0 => [
+                'label' => 'FF',
+                8 => 2,
+                9 => 125,
+                10 => [
+                    -1 => [1 => 1, 2 => 45, 3 => 1, 8 => 2],
+                    0 => [1 => 1, 2 => 125, 3 => 1, 4 => 100, 5 => 10, 6 => 15, 7 => 0, 8 => 3],
+                ],
+            ],
+            1 => [],
+        ]];
+        $connection->table('archive_blob_2026_08')->insert(
+            $this->blobRow(
+                21,
+                'DevicesDetection_browsers',
+                $this->compress(serialize($payload)),
+                '2026-08-15 00:00:00',
+            ),
+        );
+
+        $rows = (new DatabaseBlobArchiveRepository($connection))->rows(
+            [3],
+            [$this->day()],
+            '',
+            'DevicesDetection_browsers',
+        )[3][$this->day()->rangeKey()];
+
+        $this->assertSame(2, $rows[0]['columns']['nb_conversions']);
+        $this->assertSame(125, $rows[0]['columns']['revenue']);
+        $this->assertSame(1, $rows[0]['columns']['goal_-1_nb_conversions']);
+        $this->assertSame(2, $rows[0]['columns']['goal_-1_items']);
+        $this->assertSame(100, $rows[0]['columns']['goal_0_revenue_subtotal']);
+        $this->assertSame(3, $rows[0]['columns']['goal_0_items']);
+    }
+
     public function test_reads_hierarchical_records_and_keeps_subtable_ids(): void
     {
         $connection = $this->archiveConnection();

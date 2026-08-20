@@ -9,7 +9,7 @@ use Illuminate\Database\Query\Grammars\SQLiteGrammar;
 use Illuminate\Database\Query\JoinClause;
 use InvalidArgumentException;
 
-final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplicator
+final readonly class BuiltInVisitSegmentApplicator implements ConversionSegmentApplicator, VisitSegmentApplicator
 {
     /** @var array<string, array{literal-string, literal-string}> */
     private const array DIRECT_SEGMENTS = [
@@ -145,6 +145,23 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
 
     public function apply(Builder $query, ?string $segment, ?int $siteId = null): bool
     {
+        return $this->applyToRoot($query, $segment, $siteId, false);
+    }
+
+    public function applyToConversions(
+        Builder $query,
+        ?string $segment,
+        ?int $siteId = null,
+    ): bool {
+        return $this->applyToRoot($query, $segment, $siteId, true);
+    }
+
+    private function applyToRoot(
+        Builder $query,
+        ?string $segment,
+        ?int $siteId,
+        bool $conversionRoot,
+    ): bool {
         $groups = $this->parser->parse($segment);
 
         if ($groups === []) {
@@ -154,12 +171,13 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         /** @var list<list<ResolvedSegmentCondition>> $resolved */
         $resolved = [];
         $hasRelated = false;
+        $goalJoined = false;
 
         foreach ($groups as $group) {
             $resolvedGroup = [];
 
             foreach ($group as $condition) {
-                $definition = $this->definition($query, $condition->name);
+                $definition = $this->definition($query, $condition->name, $conversionRoot);
 
                 if ($definition !== null) {
                     [$expression, $type] = $definition;
@@ -197,12 +215,28 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
                         );
                     }
 
-                    $hasRelated = true;
+                    $isDirectConversion = $conversionRoot && $conversion->scope === 'conversion';
+                    $hasRelated = $hasRelated || ! $isDirectConversion;
+
+                    if ($isDirectConversion && $conversion->source === 'goal-name' && ! $goalJoined) {
+                        $query->leftJoin(
+                            'goal as segment_goal',
+                            static function (JoinClause $join): void {
+                                $join->on('segment_goal.idgoal', '=', 'log_conversion.idgoal')
+                                    ->on('segment_goal.idsite', '=', 'log_conversion.idsite');
+                            },
+                        );
+                        $goalJoined = true;
+                    }
+
                     $resolvedGroup[] = new ResolvedSegmentCondition(
                         condition: $condition,
-                        expression: $conversion->expression,
+                        expression: $isDirectConversion
+                            ? str_replace('segment_conversion.', 'log_conversion.', $conversion->expression)
+                            : $conversion->expression,
                         type: $conversion->type,
                         conversion: $conversion,
+                        conversionRoot: $conversionRoot,
                     );
 
                     continue;
@@ -227,9 +261,8 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
                     continue;
                 }
 
-                $hasRelated = true;
-
                 if ($dynamic->scope === 'action') {
+                    $hasRelated = true;
                     $action = new ActionSegmentDefinition(
                         source: count($dynamic->expressions) === 1 ? 'direct' : 'direct-union',
                         expression: $expression,
@@ -255,11 +288,16 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
                     type: 'text',
                     includeMissingOnEmpty: true,
                 );
+                $isDirectConversion = $conversionRoot;
+                $hasRelated = $hasRelated || ! $isDirectConversion;
                 $resolvedGroup[] = new ResolvedSegmentCondition(
                     condition: $condition,
-                    expression: $expression,
+                    expression: $isDirectConversion
+                        ? str_replace('segment_conversion.', 'log_conversion.', $expression)
+                        : $expression,
                     type: 'text',
                     conversion: $conversion,
+                    conversionRoot: $conversionRoot,
                 );
             }
 
@@ -276,7 +314,7 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
             $query->where(function (Builder $and) use ($group): void {
                 foreach ($group as $index => $resolvedCondition) {
                     $callback = function (Builder $operand) use ($resolvedCondition): void {
-                        $this->applyDirectCondition($operand, $resolvedCondition);
+                        $this->applyResolvedOperand($operand, $resolvedCondition);
                     };
 
                     if ($index === 0) {
@@ -356,19 +394,7 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         $query->where(function (Builder $and) use ($group): void {
             foreach ($group as $index => $resolved) {
                 $callback = function (Builder $operand) use ($resolved): void {
-                    if ($resolved->action !== null) {
-                        $this->applyActionExistence($operand, $resolved);
-
-                        return;
-                    }
-
-                    if ($resolved->conversion !== null) {
-                        $this->applyConversionExistence($operand, $resolved);
-
-                        return;
-                    }
-
-                    $this->applyDirectCondition($operand, $resolved);
+                    $this->applyResolvedOperand($operand, $resolved);
                 };
 
                 if ($index === 0) {
@@ -378,6 +404,58 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
                 }
             }
         });
+    }
+
+    private function applyResolvedOperand(Builder $query, ResolvedSegmentCondition $resolved): void
+    {
+        if ($resolved->action !== null) {
+            $this->applyActionExistence($query, $resolved);
+
+            return;
+        }
+
+        if ($resolved->isDirectConversion()) {
+            $this->applyRootConversionCondition($query, $resolved);
+
+            return;
+        }
+
+        if ($resolved->conversion !== null) {
+            $this->applyConversionExistence($query, $resolved);
+
+            return;
+        }
+
+        $this->applyDirectCondition($query, $resolved);
+    }
+
+    private function applyRootConversionCondition(
+        Builder $query,
+        ResolvedSegmentCondition $resolved,
+    ): void {
+        $definition = $resolved->conversion;
+
+        if ($definition === null) {
+            throw new InvalidArgumentException('A conversion segment definition is required.');
+        }
+
+        if ($definition->discriminatorColumn !== null) {
+            $query->where(
+                str_replace(
+                    'segment_conversion.',
+                    'log_conversion.',
+                    $definition->discriminatorColumn,
+                ),
+                $definition->discriminatorValue,
+            );
+        }
+
+        $this->conditions->apply(
+            $query,
+            $resolved->condition,
+            $resolved->expression,
+            $resolved->type,
+        );
     }
 
     /** @param list<list<ResolvedSegmentCondition>> $groups */
@@ -445,6 +523,7 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
                     expression: $resolved->expression,
                     type: $resolved->type,
                     conversion: $resolved->conversion,
+                    conversionRoot: $resolved->conversionRoot,
                 );
                 $this->applyPositiveConversionCondition($related, $inverted);
 
@@ -484,9 +563,15 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
             ? 'log_conversion as segment_conversion'
             : 'log_conversion_item as segment_item';
         $alias = $first->scope === 'conversion' ? 'segment_conversion' : 'segment_item';
-        $query->selectRaw('1')
-            ->from($table)
-            ->whereColumn("{$alias}.idvisit", 'log_visit.idvisit');
+        $query->selectRaw('1')->from($table);
+
+        if ($first->scope === 'item' && $conditions[0]->conversionRoot) {
+            $query->whereColumn("{$alias}.idvisit", 'log_conversion.idvisit')
+                ->whereColumn("{$alias}.idorder", 'log_conversion.idorder');
+        } else {
+            $query->whereColumn("{$alias}.idvisit", 'log_visit.idvisit');
+        }
+
         $joined = [];
 
         foreach ($conditions as $resolved) {
@@ -1099,11 +1184,16 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         };
     }
 
-    /** @return array{literal-string, literal-string}|null */
-    private function definition(Builder $query, string $name): ?array
+    /** @return array{non-empty-string, literal-string}|null */
+    private function definition(Builder $query, string $name, bool $conversionRoot): ?array
     {
         if (isset(self::DIRECT_SEGMENTS[$name])) {
-            return self::DIRECT_SEGMENTS[$name];
+            [$expression, $type] = self::DIRECT_SEGMENTS[$name];
+
+            return [
+                $conversionRoot ? 'log_visit.'.$expression : $expression,
+                $type,
+            ];
         }
 
         if (! isset(self::EXPRESSION_SEGMENTS[$name])) {
@@ -1111,6 +1201,10 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
         }
 
         [$function, $column] = self::EXPRESSION_SEGMENTS[$name];
+
+        if ($conversionRoot) {
+            $column = $query->getGrammar()->wrap('log_visit.'.$column);
+        }
 
         return [
             $this->expression($query, $function, $column),
@@ -1120,11 +1214,15 @@ final readonly class BuiltInVisitSegmentApplicator implements VisitSegmentApplic
 
     /**
      * @param  literal-string  $function
-     * @param  literal-string  $column
-     * @return literal-string
+     * @param  string  $column  Fixed registry column, optionally wrapped by Laravel's grammar.
+     * @return non-empty-string
      */
     private function expression(Builder $query, string $function, string $column): string
     {
+        if ($column === '') {
+            throw new InvalidArgumentException('A segment expression column is required.');
+        }
+
         if ($function === 'direct') {
             return $column;
         }
