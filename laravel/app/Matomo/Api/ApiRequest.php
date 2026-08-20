@@ -555,6 +555,7 @@ final readonly class ApiRequest
         public ?ProcessedReportRequest $processedReport,
         public ?ApiOverviewRequest $apiOverview,
         public ?SegmentSuggestionsRequest $segmentSuggestions,
+        public ?RowEvolutionRequest $rowEvolution,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -664,6 +665,7 @@ final readonly class ApiRequest
             processedReport: null,
             apiOverview: null,
             segmentSuggestions: null,
+            rowEvolution: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1295,6 +1297,7 @@ final readonly class ApiRequest
             processedReport: self::processedReport($request, $module, $method),
             apiOverview: self::apiOverview($request, $module, $method),
             segmentSuggestions: self::segmentSuggestions($request, $module, $method),
+            rowEvolution: self::rowEvolution($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -3284,6 +3287,61 @@ final readonly class ApiRequest
             siteId: $site === 'all' ? null : (int) $site,
             allSites: $site === 'all',
             segmentName: self::requiredString($request, 'segmentName'),
+        );
+    }
+
+    private static function rowEvolution(Request $request, string $module, string $method): ?RowEvolutionRequest
+    {
+        if ($module !== 'API' || $method !== 'API.getRowEvolution') {
+            return null;
+        }
+
+        [$siteIds, $allSites] = self::reportSiteIds($request);
+        if ($allSites || count($siteIds) !== 1) {
+            throw new InvalidApiParameter('idSite', 'Row evolution requires one website ID.');
+        }
+
+        $period = self::requiredString($request, 'period');
+        if (! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
+            throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
+        }
+
+        $date = self::requiredString($request, 'date');
+        if ($date === '' || ! self::validReportDate($date)) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not valid.");
+        }
+
+        $apiModule = trim(self::requiredString($request, 'apiModule'));
+        $apiAction = trim(self::requiredString($request, 'apiAction'));
+        if ($apiModule === '' || $apiAction === '') {
+            throw new InvalidApiParameter($apiModule === '' ? 'apiModule' : 'apiAction');
+        }
+
+        $optionalString = static function (Request $request, string $name): ?string {
+            $value = self::nullableStringInput($request, $name);
+
+            return in_array($value, [null, '', 'false'], true) ? null : $value;
+        };
+        $hasUnsupportedVariants = false;
+        foreach (['idGoal', 'idDimension', 'labelSeries', 'showGoalMetricsForGoal'] as $name) {
+            if (! in_array(self::inputValue($request, $name), [null, '', false, 'false', 0, '0'], true)) {
+                $hasUnsupportedVariants = true;
+                break;
+            }
+        }
+
+        return new RowEvolutionRequest(
+            siteId: $siteIds[0],
+            period: $period,
+            date: $date,
+            apiModule: $apiModule,
+            apiAction: $apiAction,
+            label: $optionalString($request, 'label'),
+            segment: $optionalString($request, 'segment'),
+            column: $optionalString($request, 'column'),
+            language: $optionalString($request, 'language'),
+            labelUseAbsoluteUrl: self::booleanInput($request, 'labelUseAbsoluteUrl', true),
+            hasUnsupportedVariants: $hasUnsupportedVariants,
         );
     }
 
