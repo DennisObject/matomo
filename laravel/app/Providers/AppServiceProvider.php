@@ -357,7 +357,9 @@ use App\Matomo\Tour\ConfiguredTourSettings;
 use App\Matomo\Tour\DatabaseTourDataRepository;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
+use App\Matomo\Tracker\ConfiguredTrackingRequestPolicy;
 use App\Matomo\Tracker\DatabaseVisitRecorder;
+use App\Matomo\Tracker\TrackingRequestPolicy;
 use App\Matomo\Tracker\VisitRecorder;
 use App\Matomo\TrackingFailures\DatabaseTrackingFailureRepository;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
@@ -1561,7 +1563,14 @@ class AppServiceProvider extends ServiceProvider
                 base_path('../matomo.js'),
             ),
         );
-        $this->app->singleton(VisitRecorder::class, DatabaseVisitRecorder::class);
+        $this->app->singleton(TrackingRequestPolicy::class, ConfiguredTrackingRequestPolicy::class);
+        $this->app->singleton(
+            VisitRecorder::class,
+            fn (Application $application): VisitRecorder => new DatabaseVisitRecorder(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                visitStandardLength: $application->make(InstallationConfig::class)->visitStandardLength(),
+            ),
+        );
 
         $this->app->singleton(
             PromoWidgetDismissalRepository::class,
