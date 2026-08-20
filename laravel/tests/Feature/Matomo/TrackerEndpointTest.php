@@ -7,6 +7,7 @@ namespace Tests\Feature\Matomo;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Config\InstallationConfig;
 use App\Matomo\CustomDimensions\CustomDimensionRepository;
+use App\Matomo\Geolocation\GeolocationProviderRegistry;
 use App\Matomo\Goals\GoalRepository;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
@@ -904,6 +905,52 @@ final class TrackerEndpointTest extends TestCase
             ->assertOk()
             ->assertHeaderMissing('Set-Cookie')
             ->assertHeaderMissing('P3P');
+    }
+
+    public function test_stores_geolocation_from_the_raw_ip_by_default(): void
+    {
+        $this->bindSite();
+        $locations = $this->createMock(GeolocationProviderRegistry::class);
+        $locations->expects($this->once())->method('locate')->with(
+            '127.0.0.1',
+            'en-us',
+            '127.0.0.1',
+        )->willReturn([
+            'country_code' => 'FR',
+            'region_code' => 'IDF',
+            'city_name' => 'Paris',
+            'lat' => 48.8566,
+            'long' => 2.3522,
+        ]);
+        $this->app->instance(GeolocationProviderRegistry::class, $locations);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->location?->country === 'fr'
+                && $request->location->region === 'IDF'
+                && $request->location->city === 'Paris'
+                && $request->ipAddress === '127.0.0.0',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url())->assertOk();
+    }
+
+    public function test_looks_up_location_with_the_anonymized_ip_when_configured(): void
+    {
+        $this->bindSite();
+        $this->mutableOptions()->set('PrivacyManager.useAnonymizedIpForVisitEnrichment', '1');
+        $locations = $this->createMock(GeolocationProviderRegistry::class);
+        $locations->expects($this->once())->method('locate')->with(
+            '127.0.0.0',
+            'en-us',
+            '127.0.0.1',
+        )->willReturn(['country_code' => 'xx']);
+        $this->app->instance(GeolocationProviderRegistry::class, $locations);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url())->assertOk();
     }
 
     public function test_parses_user_agent_overrides_and_device_plugins(): void

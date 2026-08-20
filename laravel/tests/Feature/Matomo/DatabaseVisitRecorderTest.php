@@ -649,6 +649,11 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->boolean('config_pdf')->nullable();
             $table->boolean('config_windowsmedia')->nullable();
             $table->boolean('config_silverlight')->nullable();
+            $table->string('location_country', 3)->nullable();
+            $table->string('location_region', 100)->nullable();
+            $table->string('location_city', 255)->nullable();
+            $table->decimal('location_latitude', 9, 6)->nullable();
+            $table->decimal('location_longitude', 9, 6)->nullable();
             $table->string('custom_var_k1', 200)->nullable();
             $table->string('custom_var_v1', 200)->nullable();
             $table->string('custom_dimension_1', 250)->nullable();

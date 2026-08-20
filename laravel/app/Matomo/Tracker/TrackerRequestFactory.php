@@ -6,6 +6,7 @@ namespace App\Matomo\Tracker;
 
 use App\Matomo\Config\InstallationConfig;
 use App\Matomo\CustomDimensions\CustomDimensionRepository;
+use App\Matomo\Geolocation\GeolocationProviderRegistry;
 use App\Matomo\Goals\GoalRepository;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
@@ -73,6 +74,7 @@ final class TrackerRequestFactory
         private readonly CustomDimensionRepository $dimensions,
         private readonly GoalRepository $goals,
         private readonly TrackerDeviceDetector $devices,
+        private readonly GeolocationProviderRegistry $locations,
     ) {}
 
     public function make(Request $request): ?TrackingRequest
@@ -321,6 +323,7 @@ final class TrackerRequestFactory
                 $this->browserLanguage($request),
                 $this->configuration->salt(),
             ),
+            location: $this->location($request, $siteId, $ipAddress),
         );
     }
 
@@ -600,6 +603,20 @@ final class TrackerRequestFactory
         }
 
         return CarbonImmutable::createFromTimestampUTC($seconds);
+    }
+
+    private function location(Request $request, int $siteId, string $rawIpAddress): TrackerLocation
+    {
+        $storedIpAddress = $this->storedIpAddress($siteId, $rawIpAddress);
+        $lookupIpAddress = $this->policy->usesAnonymizedIpForEnrichment($siteId)
+            ? $storedIpAddress
+            : $rawIpAddress;
+
+        return TrackerLocation::fromProviderResult($this->locations->locate(
+            $lookupIpAddress,
+            $this->browserLanguage($request),
+            $rawIpAddress,
+        ));
     }
 
     private function userAgent(Request $request): string

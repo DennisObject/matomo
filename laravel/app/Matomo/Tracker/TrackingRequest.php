@@ -58,5 +58,6 @@ final readonly class TrackingRequest
         public ?IssuedTrackerCookie $visitorCookie = null,
         public ?CarbonImmutable $recordedAt = null,
         public ?TrackerDeviceProfile $device = null,
+        public ?TrackerLocation $location = null,
     ) {}
 }

@@ -374,6 +374,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'config_resolution' => $request->resolution,
             'config_cookie' => $request->cookiesEnabled ? 1 : 0,
             ...($request->device?->visitColumns() ?? []),
+            ...($request->location?->visitColumns() ?? []),
             ...$request->visitProperties,
         ], 'idvisit');
     }
