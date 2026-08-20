@@ -548,6 +548,7 @@ final readonly class ApiRequest
         public ?ImageGraphRequest $imageGraph,
         public ?MobileMessagingRequest $mobileMessaging,
         public ?ScheduledReportsRequest $scheduledReports,
+        public ?CorePluginsAdminRequest $corePluginsAdmin,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -643,6 +644,7 @@ final readonly class ApiRequest
             imageGraph: null,
             mobileMessaging: null,
             scheduledReports: null,
+            corePluginsAdmin: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1267,6 +1269,7 @@ final readonly class ApiRequest
             imageGraph: self::imageGraph($request, $module, $method),
             mobileMessaging: self::mobileMessaging($request, $module, $method),
             scheduledReports: self::scheduledReports($request, $module, $method),
+            corePluginsAdmin: self::corePluginsAdmin($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -3040,6 +3043,27 @@ final readonly class ApiRequest
                 ? self::requiredString($request, 'verificationCode') : null,
             delegatedManagement: $method === 'MobileMessaging.setDelegatedManagement'
                 ? self::requiredBoolean($request, 'delegatedManagement') : null,
+        );
+    }
+
+    private static function corePluginsAdmin(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?CorePluginsAdminRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'CorePluginsAdmin.setSystemSettings',
+            'CorePluginsAdmin.setUserSettings',
+            'CorePluginsAdmin.getSystemSettings',
+            'CorePluginsAdmin.getUserSettings',
+            'CorePluginsAdmin.getNumberOfPluginUpdates',
+        ], true)) {
+            return null;
+        }
+
+        return new CorePluginsAdminRequest(
+            settingValues: self::mixedParameterMap($request, 'settingValues'),
+            passwordConfirmation: self::stringInput($request, 'passwordConfirmation'),
         );
     }
 

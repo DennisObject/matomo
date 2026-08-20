@@ -23,6 +23,7 @@ use App\Matomo\Api\Methods\BotTrackingApiMethodHandler;
 use App\Matomo\Api\Methods\ContentsApiMethodHandler;
 use App\Matomo\Api\Methods\CoreAdminHomeApiMethodHandler;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
+use App\Matomo\Api\Methods\CorePluginsAdminApiMethodHandler;
 use App\Matomo\Api\Methods\CustomDimensionsApiMethodHandler;
 use App\Matomo\Api\Methods\CustomDimensionsMutationApiMethodHandler;
 use App\Matomo\Api\Methods\CustomDimensionsReportApiMethodHandler;
@@ -223,7 +224,9 @@ use App\Matomo\Login\DatabaseBruteForceUnblocker;
 use App\Matomo\Login\DatabaseLoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Marketplace\HttpMarketplaceService;
+use App\Matomo\Marketplace\HttpPluginUpdateCounter;
 use App\Matomo\Marketplace\MarketplaceService;
+use App\Matomo\Marketplace\PluginUpdateCounter;
 use App\Matomo\MobileMessaging\DatabaseMobileMessagingSettingsRepository;
 use App\Matomo\MobileMessaging\HttpSmsProviderGateway;
 use App\Matomo\MobileMessaging\MobileMessagingSettingsRepository;
@@ -233,8 +236,12 @@ use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Overlay\ConfiguredOverlaySettings;
 use App\Matomo\Overlay\OverlaySettings;
+use App\Matomo\Plugins\ConfiguredPluginSettingsRegistry;
 use App\Matomo\Plugins\ConfiguredPluginState;
+use App\Matomo\Plugins\DatabasePluginSettingsStore;
 use App\Matomo\Plugins\LocalTrackerFileAvailability;
+use App\Matomo\Plugins\PluginSettingsRegistry;
+use App\Matomo\Plugins\PluginSettingsStore;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\Plugins\TrackerFileAvailability;
 use App\Matomo\Privacy\AnonymisationSettingsRepository;
@@ -1705,11 +1712,38 @@ class AppServiceProvider extends ServiceProvider
                 );
             },
         );
+        $this->app->singleton(
+            PluginSettingsRegistry::class,
+            fn (): PluginSettingsRegistry => new ConfiguredPluginSettingsRegistry(
+                system: is_array(config('matomo.plugin_system_settings'))
+                    ? config('matomo.plugin_system_settings') : [],
+                user: is_array(config('matomo.plugin_user_settings'))
+                    ? config('matomo.plugin_user_settings') : [],
+            ),
+        );
+        $this->app->singleton(PluginSettingsStore::class, DatabasePluginSettingsStore::class);
+        $this->app->singleton(
+            PluginUpdateCounter::class,
+            function (Application $application): PluginUpdateCounter {
+                $endpoint = config('matomo.marketplace_endpoint');
+
+                return new HttpPluginUpdateCounter(
+                    http: $application->make(Factory::class),
+                    cache: $application->make(CacheRepository::class),
+                    installation: $application->make(InstallationConfig::class),
+                    hosts: $application->make(EgressHostResolver::class),
+                    endpoint: is_string($endpoint) ? $endpoint : '',
+                    pluginsPath: dirname(base_path()).'/plugins',
+                    enabled: $application->make(InstallationConfig::class)->internetFeaturesEnabled(),
+                );
+            },
+        );
 
         $this->app->singleton(
             ApiMethodDispatcher::class,
             fn (Application $application): ApiMethodDispatcher => new ApiMethodDispatcher([
                 $application->make(CoreApiMethodHandler::class),
+                $application->make(CorePluginsAdminApiMethodHandler::class),
                 $application->make(CoreAdminHomeApiMethodHandler::class),
                 $application->make(SitesManagerApiMethodHandler::class),
                 $application->make(VisitsSummaryApiMethodHandler::class),

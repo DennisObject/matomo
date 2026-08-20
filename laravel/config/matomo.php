@@ -9,6 +9,8 @@ if (! is_string($configPath)) {
 }
 
 return [
+    'plugin_system_settings' => [],
+    'plugin_user_settings' => [],
     'config_path' => $configPath,
     'ai_providers' => [],
     'user_preference_names' => [],
