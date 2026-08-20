@@ -8,8 +8,12 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Api\ApiTableReport;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Reporting\ReportingPeriodFactory;
+use App\Matomo\Reporting\RssReportRenderer;
+use App\Matomo\Sites\SiteRepository;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use InvalidArgumentException;
 use LogicException;
 
 final readonly class ExampleReportApiMethodHandler implements ApiMethodHandler
@@ -17,6 +21,9 @@ final readonly class ExampleReportApiMethodHandler implements ApiMethodHandler
     public function __construct(
         private ApiAccessAuthorizer $authorizer,
         private ApiResponseFactory $responses,
+        private SiteRepository $sites,
+        private ReportingPeriodFactory $periods,
+        private RssReportRenderer $rss,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -59,7 +66,7 @@ final readonly class ExampleReportApiMethodHandler implements ApiMethodHandler
             }
         }
 
-        if ($request->format === 'rss') {
+        if ($request->format === 'rss' && count($siteIds) !== 1) {
             return $this->responses->error(
                 $request,
                 "RSS feeds can be generated for one specific website &idSite=X.\n".
@@ -68,9 +75,37 @@ final readonly class ExampleReportApiMethodHandler implements ApiMethodHandler
             );
         }
 
-        return $this->responses->tableReport(
-            $request,
-            new ApiTableReport([['nb_visits' => 5]], []),
-        );
+        $rows = [['nb_visits' => 5]];
+        $report = new ApiTableReport($rows, []);
+
+        if ($request->format !== 'rss') {
+            return $this->responses->tableReport($request, $report);
+        }
+
+        $timezone = $this->sites->timezone($siteIds[0]) ?? 'UTC';
+
+        try {
+            [$periods] = $this->periods->make($query->period, $query->date, $timezone);
+            $dateRows = [];
+
+            foreach ($periods as $period) {
+                $dateRows[$period->resultKey] = $rows;
+            }
+
+            $details = $this->sites->details($siteIds[0]);
+            $siteName = is_string($details['name'] ?? null) ? $details['name'] : '';
+            $content = $this->rss->table(
+                new ApiTableReport($dateRows, ['date']),
+                $periods,
+                $siteIds[0],
+                $query->period,
+                $siteName,
+                $timezone,
+            );
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            return $this->responses->error($request, $invalidArgumentException->getMessage(), 200);
+        }
+
+        return $this->responses->rss($content);
     }
 }

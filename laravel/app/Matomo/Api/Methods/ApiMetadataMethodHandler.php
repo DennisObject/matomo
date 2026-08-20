@@ -37,6 +37,14 @@ final readonly class ApiMetadataMethodHandler implements ApiMethodHandler
 
         $parameters = $request->segmentsMetadata
             ?? throw new LogicException('The API metadata parameters are missing.');
+        if (! $parameters->hideImplementationData || $parameters->showAllSegments) {
+            return $this->responses->error(
+                $request,
+                'Internal segment metadata is not available in the Laravel runtime.',
+                501,
+            );
+        }
+
         if ($parameters->siteIds === []) {
             if (! $this->authorizer->hasSomeViewAccess($request->authentication)) {
                 return $this->responses->error(

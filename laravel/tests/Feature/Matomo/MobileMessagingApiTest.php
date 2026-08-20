@@ -34,7 +34,7 @@ final class MobileMessagingApiTest extends TestCase
         ])->assertOk();
         $this->get($this->url('areSMSAPICredentialProvided'))->assertOk()->assertJsonPath('value', true);
         $this->get($this->url('getSMSProvider'))->assertOk()->assertJsonPath('value', 'ASPSMS');
-        $this->get($this->url('getCreditLeft'))->assertOk()->assertJsonPath('value', 17);
+        $this->get($this->url('getCreditLeft'))->assertOk()->assertJsonPath('value', 'Available credits: 17');
 
         $this->post($this->url('setDelegatedManagement'), ['delegatedManagement' => '1'])->assertOk();
         $this->get($this->url('getDelegatedManagement'))->assertOk()->assertJsonPath('value', true);
