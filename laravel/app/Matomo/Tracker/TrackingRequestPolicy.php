@@ -16,4 +16,10 @@ interface TrackingRequestPolicy
     public function excludesVisit(array $site, string $ipAddress, string $userAgent): bool;
 
     public function storedIpAddress(int $siteId, string $ipAddress): string;
+
+    public function collectsUserId(int $siteId): bool;
+
+    public function referrerAnonymisation(int $siteId): string;
+
+    public function collectsScreenResolution(int $siteId): bool;
 }

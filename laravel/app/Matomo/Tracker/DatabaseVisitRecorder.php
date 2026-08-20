@@ -79,7 +79,17 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 'idlink_va',
             );
 
-            $this->updateVisit($visitId, $visit, $now, $urlId, $nameId, $position, $totalEvents, $linkId);
+            $this->updateVisit(
+                $visitId,
+                $visit,
+                $now,
+                $urlId,
+                $nameId,
+                $position,
+                $totalEvents,
+                $linkId,
+                $request->userId,
+            );
         });
     }
 
@@ -135,6 +145,12 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'visit_total_events' => $request->actionType === 10 ? 1 : 0,
             'visit_total_interactions' => 1,
             'visit_total_time' => 0,
+            'user_id' => $request->userId,
+            'referer_url' => $request->referrerUrl,
+            'location_browser_lang' => $request->browserLanguage,
+            'visitor_localtime' => $request->localTime,
+            'config_resolution' => $request->resolution,
+            'config_cookie' => $request->cookiesEnabled ? 1 : 0,
         ], 'idvisit');
     }
 
@@ -147,12 +163,13 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         int $position,
         int $totalEvents,
         int $linkId,
+        ?string $userId,
     ): void {
         $firstAction = $visit === null
             ? $now
             : CarbonImmutable::parse($visit->visit_first_action_time, 'UTC');
 
-        $this->connection->table('log_visit')->where('idvisit', $visitId)->update([
+        $updates = [
             'visit_last_action_time' => $now->format('Y-m-d H:i:s'),
             'visit_exit_idaction_url' => $urlId,
             'visit_exit_idaction_name' => $nameId,
@@ -161,7 +178,12 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'visit_total_interactions' => $position,
             'visit_total_time' => max(0, $now->diffInSeconds($firstAction, true)),
             'last_idlink_va' => $linkId,
-        ]);
+        ];
+        if ($userId !== null) {
+            $updates['user_id'] = $userId;
+        }
+
+        $this->connection->table('log_visit')->where('idvisit', $visitId)->update($updates);
     }
 
     /** @return array{string, int|null} */

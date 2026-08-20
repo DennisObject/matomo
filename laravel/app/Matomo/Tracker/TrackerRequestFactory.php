@@ -8,6 +8,7 @@ use App\Matomo\Config\InstallationConfig;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 
@@ -30,6 +31,15 @@ final class TrackerRequestFactory
 
     /** @var array<string, string> */
     private array $storedIpsByContext = [];
+
+    /** @var array<int, bool> */
+    private array $collectsUserIdBySite = [];
+
+    /** @var array<int, string> */
+    private array $referrerAnonymisationBySite = [];
+
+    /** @var array<int, bool> */
+    private array $collectsScreenResolutionBySite = [];
 
     public function __construct(
         private readonly ClientIpResolver $ips,
@@ -99,20 +109,67 @@ final class TrackerRequestFactory
             throw new InvalidArgumentException('e_v must be numeric.');
         }
 
+        $referrer = $request->input('urlref', '');
+        if (! is_string($referrer) || strlen($referrer) > 1_500
+            || ($referrer !== '' && (filter_var($referrer, FILTER_VALIDATE_URL) === false
+            || ! in_array(strtolower((string) parse_url($referrer, PHP_URL_SCHEME)), ['http', 'https'], true)))) {
+            throw new InvalidArgumentException('urlref must be a valid HTTP or HTTPS URL.');
+        }
+
+        $now = CarbonImmutable::now('UTC');
+        $hour = $this->boundedInteger($request->input('h'), 0, 23, (int) $now->format('H'));
+        $minute = $this->boundedInteger($request->input('m'), 0, 59, (int) $now->format('i'));
+        $second = $this->boundedInteger($request->input('s'), 0, 59, (int) $now->format('s'));
+        $resolution = $request->input('res');
+        if ($resolution === null || $resolution === '') {
+            $resolution = 'unknown';
+        } elseif (! is_string($resolution)
+            || strlen($resolution) > 9
+            || preg_match('/^[0-9]{1,4}x[0-9]{1,4}$/D', $resolution) !== 1) {
+            throw new InvalidArgumentException('res must be a screen resolution such as 1920x1080.');
+        }
+
+        $siteId = (int) $siteId;
+        $userId = $this->optional($request->input('uid'), 200);
+        if ($userId !== null
+            && ! ($this->collectsUserIdBySite[$siteId] ??= $this->policy->collectsUserId($siteId))) {
+            $userId = null;
+        }
+
+        if ($referrer !== '') {
+            $referrer = $this->anonymisedReferrer(
+                $this->clean($referrer, 1_500),
+                $this->referrerAnonymisationBySite[$siteId]
+                    ??= $this->policy->referrerAnonymisation($siteId),
+            );
+        }
+
+        if ($resolution !== 'unknown'
+            && ! ($this->collectsScreenResolutionBySite[$siteId]
+            ??= $this->policy->collectsScreenResolution($siteId))) {
+            $resolution = 'unknown';
+        }
+
         return new TrackingRequest(
-            siteId: (int) $siteId,
+            siteId: $siteId,
             url: in_array($actionType, [1, 10], true)
-                ? $this->filteredUrl($url, (int) $siteId, $site)
+                ? $this->filteredUrl($url, $siteId, $site)
                 : $this->clean($url, $maximumUrlLength),
             actionName: is_string($actionName) ? $this->clean($actionName, 255) : '',
             visitorId: strtolower($visitorId),
-            ipAddress: $this->storedIpAddress((int) $siteId, $ipAddress),
+            ipAddress: $this->storedIpAddress($siteId, $ipAddress),
             userAgent: $userAgent,
             actionType: $actionType,
             eventCategory: $actionType === 10 ? $eventCategory : null,
             eventAction: $actionType === 10 ? $eventAction : null,
             eventName: $actionType === 10 ? $this->optional($request->input('e_n'), 255) : null,
             eventValue: $eventValue === null ? null : (float) $eventValue,
+            userId: $userId,
+            referrerUrl: $referrer,
+            browserLanguage: $this->browserLanguage($request),
+            localTime: sprintf('%02d:%02d:%02d', $hour, $minute, $second),
+            resolution: $resolution,
+            cookiesEnabled: $request->boolean('cookie', false),
         );
     }
 
@@ -313,5 +370,55 @@ final class TrackerRequestFactory
         return is_string($value)
             ? array_values(array_filter(array_map(trim(...), explode(',', $value))))
             : [];
+    }
+
+    private function boundedInteger(mixed $value, int $minimum, int $maximum, int $default): int
+    {
+        if ($value === null || $value === '') {
+            return $default;
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_INT) === false || (int) $value < $minimum || (int) $value > $maximum) {
+            throw new InvalidArgumentException('Tracker time components are invalid.');
+        }
+
+        return (int) $value;
+    }
+
+    private function browserLanguage(Request $request): string
+    {
+        $language = $request->input('lang');
+        if (! is_string($language) || $language === '') {
+            $language = (string) $request->header('Accept-Language');
+        }
+
+        $language = strtolower(str_replace('_', '-', $this->clean($language, 512)));
+        if (preg_match('/(?:^|,)([a-z]{2,3})(?:-[a-z]{4})?(-[a-z]{2})?/', $language, $matches) !== 1) {
+            return $language === '' ? '' : 'xx';
+        }
+
+        return $matches[1].($matches[2] ?? '');
+    }
+
+    private function anonymisedReferrer(string $url, string $mode): string
+    {
+        if ($url === '' || $mode === '') {
+            return $url;
+        }
+
+        if ($mode === 'exclude_all') {
+            return '';
+        }
+
+        if ($mode === 'exclude_query') {
+            return strtok($url, '?');
+        }
+
+        $parts = parse_url($url);
+        if ($mode !== 'exclude_path' || ! is_array($parts) || empty($parts['host']) || empty($parts['path'])) {
+            return $url;
+        }
+
+        return (isset($parts['scheme']) ? $parts['scheme'].'://' : '').$parts['host'].'/';
     }
 }

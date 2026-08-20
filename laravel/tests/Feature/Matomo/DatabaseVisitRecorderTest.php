@@ -139,6 +139,44 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame(2, $connection->table('log_visit')->value('visit_total_events'));
     }
 
+    public function test_stores_new_visit_context_without_clearing_the_user_id(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $request = new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/page',
+            actionName: '',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            userId: 'alice',
+            referrerUrl: 'https://search.example/',
+            browserLanguage: 'en-us',
+            localTime: '14:05:09',
+            resolution: '1920x1080',
+            cookiesEnabled: true,
+        );
+
+        $recorder->record($request);
+        $recorder->record(new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/next',
+            actionName: '',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+        ));
+
+        $visit = (array) $connection->table('log_visit')->first();
+        $this->assertSame('alice', $visit['user_id']);
+        $this->assertSame('https://search.example/', $visit['referer_url']);
+        $this->assertSame('en-us', $visit['location_browser_lang']);
+        $this->assertSame('14:05:09', $visit['visitor_localtime']);
+        $this->assertSame('1920x1080', $visit['config_resolution']);
+        $this->assertSame(1, $visit['config_cookie']);
+    }
+
     private function connection(): ConnectionInterface
     {
         config()->set('database.connections.tracker_test', ['driver' => 'sqlite', 'database' => ':memory:']);
@@ -164,6 +202,12 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedInteger('visit_total_interactions');
             $table->unsignedInteger('visit_total_time');
             $table->unsignedBigInteger('last_idlink_va')->nullable();
+            $table->string('user_id', 200)->nullable();
+            $table->string('referer_url', 1_500)->nullable();
+            $table->string('location_browser_lang', 20)->nullable();
+            $table->time('visitor_localtime')->nullable();
+            $table->string('config_resolution', 18)->nullable();
+            $table->boolean('config_cookie')->nullable();
         });
         $schema->create('log_action', static function (Blueprint $table): void {
             $table->id('idaction');

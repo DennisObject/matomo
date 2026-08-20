@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\Options\MutableOptionRepository;
+use App\Matomo\Privacy\CompliancePolicyStateRepository;
+use App\Matomo\Settings\PolicySettingRepository;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Tracker\TrackingRequest;
 use App\Matomo\Tracker\VisitRecorder;
@@ -36,6 +38,7 @@ final class TrackerEndpointTest extends TestCase
             [Tracker]
             INI));
         $this->app->make('config')->set('matomo.config_path', $path);
+        $this->app->instance(PolicySettingRepository::class, $this->createStub(PolicySettingRepository::class));
     }
 
     protected function tearDown(): void
@@ -108,6 +111,75 @@ final class TrackerEndpointTest extends TestCase
             'e_a' => 'Play',
             'e_n' => 'Trailer',
             'e_v' => '2.5',
+        ]))->assertOk();
+    }
+
+    public function test_validates_and_records_visitor_context(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->userId === 'alice'
+                && $request->referrerUrl === 'https://search.example/'
+                && $request->browserLanguage === 'en-us'
+                && $request->localTime === '14:05:09'
+                && $request->resolution === '1920x1080'
+                && $request->cookiesEnabled,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+        $this->get($this->url([
+            'uid' => 'alice',
+            'urlref' => 'https://search.example/',
+            'lang' => 'en-US',
+            'h' => '14',
+            'm' => '5',
+            's' => '9',
+            'res' => '1920x1080',
+            'cookie' => '1',
+        ]))->assertOk();
+    }
+
+    public function test_rejects_invalid_visitor_context(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['urlref' => 'javascript:alert(1)']))->assertBadRequest();
+        $this->get($this->url(['h' => '24']))->assertBadRequest();
+        $this->get($this->url(['res' => '1920 by 1080']))->assertBadRequest();
+        $this->get($this->url(['res' => '1920x1080garbage']))->assertBadRequest();
+    }
+
+    public function test_applies_privacy_settings_to_visitor_context(): void
+    {
+        $this->bindSite();
+        $this->mutableOptions()->set('PrivacyManager.anonymizeReferrer', 'exclude_query');
+        $settings = $this->createStub(PolicySettingRepository::class);
+        $settings->method('siteBoolean')->willReturn(true);
+        $this->app->instance(PolicySettingRepository::class, $settings);
+        $compliance = $this->createStub(CompliancePolicyStateRepository::class);
+        $compliance->method('settingEnforced')->willReturnCallback(
+            static fn (string $plugin, string $setting, ?int $siteId): bool => $siteId === 1
+                && in_array($plugin.'.'.$setting, [
+                    'PrivacyManager.ReferrerAnonymisation',
+                    'Resolution.ScreenResolutionDetectionDisabled',
+                ], true),
+        );
+        $this->app->instance(CompliancePolicyStateRepository::class, $compliance);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->userId === null
+                && $request->referrerUrl === 'https://search.example/'
+                && $request->resolution === 'unknown',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'uid' => 'alice',
+            'urlref' => 'https://search.example/private?q=secret',
+            'res' => '1920x1080',
         ]))->assertOk();
     }
 

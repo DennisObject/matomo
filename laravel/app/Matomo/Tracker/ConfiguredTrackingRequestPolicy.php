@@ -6,6 +6,8 @@ namespace App\Matomo\Tracker;
 
 use App\Matomo\Config\InstallationConfig;
 use App\Matomo\Options\OptionRepository;
+use App\Matomo\Privacy\CompliancePolicyStateRepository;
+use App\Matomo\Settings\PolicySettingRepository;
 use Illuminate\Http\Request;
 use Matomo\Network\IP;
 
@@ -17,9 +19,13 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
 
     private const string IP_MASK_OPTION = 'PrivacyManager.ipAddressMaskLength';
 
+    private const string REFERRER_OPTION = 'PrivacyManager.anonymizeReferrer';
+
     public function __construct(
         private InstallationConfig $configuration,
         private OptionRepository $options,
+        private CompliancePolicyStateRepository $compliance,
+        private PolicySettingRepository $settings,
     ) {}
 
     public function records(Request $request): bool
@@ -70,6 +76,37 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
         $maskLength = $this->integerOption(self::IP_MASK_OPTION, $siteId, 2);
 
         return IP::fromStringIP($ipAddress)->anonymize(max(0, min(4, $maskLength)))->toString();
+    }
+
+    public function collectsUserId(int $siteId): bool
+    {
+        return $this->settings->siteBoolean($siteId, 'UserId', 'user_id_disabled') !== true
+            && ! $this->compliance->settingEnforced('UserId', 'UserIdDisabled', $siteId);
+    }
+
+    public function referrerAnonymisation(int $siteId): string
+    {
+        $mode = $this->option(self::REFERRER_OPTION, $siteId) ?? '';
+        $modes = ['', 'exclude_query', 'exclude_path', 'exclude_all'];
+        if (! in_array($mode, $modes, true)) {
+            $mode = '';
+        }
+
+        if ($this->compliance->settingEnforced('PrivacyManager', 'ReferrerAnonymisation', $siteId)
+            && in_array($mode, ['', 'exclude_query'], true)) {
+            return 'exclude_path';
+        }
+
+        return $mode;
+    }
+
+    public function collectsScreenResolution(int $siteId): bool
+    {
+        return ! $this->compliance->settingEnforced(
+            'Resolution',
+            'ScreenResolutionDetectionDisabled',
+            $siteId,
+        );
     }
 
     private function siteId(Request $request): ?int

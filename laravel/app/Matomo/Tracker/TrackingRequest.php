@@ -18,5 +18,11 @@ final readonly class TrackingRequest
         public ?string $eventAction = null,
         public ?string $eventName = null,
         public ?float $eventValue = null,
+        public ?string $userId = null,
+        public string $referrerUrl = '',
+        public string $browserLanguage = '',
+        public string $localTime = '00:00:00',
+        public string $resolution = 'unknown',
+        public bool $cookiesEnabled = false,
     ) {}
 }
