@@ -117,9 +117,7 @@ final readonly class DatabaseMutableUserRepository implements MutableUserReposit
             $requesterIsSuperuser,
         ): array {
             $user = $this->connection->table('user')
-                ->where(static function ($query) use ($login): void {
-                    $query->where('login', $login)->orWhere('email', $login);
-                })
+                ->where('login', $login)
                 ->whereNotNull('invite_token')
                 ->lockForUpdate()
                 ->first();
