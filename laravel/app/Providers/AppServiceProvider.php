@@ -51,6 +51,7 @@ use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersCampaignApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersDistinctApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersOverviewApiMethodHandler;
+use App\Matomo\Api\Methods\ReferrersSearchApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersWebsiteApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorMutationApiMethodHandler;
@@ -191,7 +192,9 @@ use App\Matomo\Plugins\TrackerFileAvailability;
 use App\Matomo\ProfessionalServices\DatabasePromoWidgetDismissalRepository;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Referrers\ReferrerDefinitionCatalog;
+use App\Matomo\Referrers\SearchEngineDefinitionCatalog;
 use App\Matomo\Referrers\YamlReferrerDefinitionCatalog;
+use App\Matomo\Referrers\YamlSearchEngineDefinitionCatalog;
 use App\Matomo\Reporting\BatchBlobArchiveRepository;
 use App\Matomo\Reporting\BlobArchiveMetadataRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
@@ -1307,6 +1310,13 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(
+            SearchEngineDefinitionCatalog::class,
+            fn (): SearchEngineDefinitionCatalog => new YamlSearchEngineDefinitionCatalog(
+                base_path('vendor/matomo/searchengine-and-social-list/SearchEngines.yml'),
+                base_path('../plugins/Morpheus/icons/dist/searchEngines'),
+            ),
+        );
+        $this->app->singleton(
             TwoFactorAuthenticationResetter::class,
             fn (Application $application): TwoFactorAuthenticationResetter => new DatabaseTwoFactorAuthenticationResetter(
                 connection: $application->make(MatomoDatabase::class)->connection(),
@@ -1373,6 +1383,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ReferrersDistinctApiMethodHandler::class),
                 $application->make(ReferrersCampaignApiMethodHandler::class),
                 $application->make(ReferrersOverviewApiMethodHandler::class),
+                $application->make(ReferrersSearchApiMethodHandler::class),
                 $application->make(ReferrersWebsiteApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),
