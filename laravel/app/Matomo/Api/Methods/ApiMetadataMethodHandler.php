@@ -83,6 +83,15 @@ final readonly class ApiMetadataMethodHandler implements ApiMethodHandler
             return $this->responses->error($request, "You do not have view access to website {$parameters->siteId}.", 401);
         }
 
+        if ($parameters->apiParameters !== [] || $parameters->period !== null || $parameters->date !== null
+            || $parameters->showSubtableReports) {
+            return $this->responses->error(
+                $request,
+                'Dynamic report metadata is not available in the Laravel runtime.',
+                501,
+            );
+        }
+
         $language = $this->languages->resolve($httpRequest, $request->authentication);
         if ($parameters->method === 'API.getMetadata') {
             if ($parameters->apiModule === null || $parameters->apiAction === null) {
