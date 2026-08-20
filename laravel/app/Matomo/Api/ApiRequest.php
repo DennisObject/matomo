@@ -58,6 +58,8 @@ final readonly class ApiRequest
 
     private const string PAGE_PERFORMANCE_METHOD = 'PagePerformance.get';
 
+    private const string USER_ID_METHOD = 'UserId.getUsers';
+
     private function __construct(
         public string $module,
         public string $method,
@@ -367,6 +369,11 @@ final readonly class ApiRequest
     public function isPagePerformanceRequest(): bool
     {
         return $this->module === 'API' && $this->method === self::PAGE_PERFORMANCE_METHOD;
+    }
+
+    public function isUserIdRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === self::USER_ID_METHOD;
     }
 
     public function hasSupportedFormat(): bool
@@ -734,7 +741,8 @@ final readonly class ApiRequest
                 && ! in_array($method, self::USER_LANGUAGE_METHODS, true)
                 && ! in_array($method, self::RESOLUTION_METHODS, true)
                 && $method !== self::DEVICE_PLUGINS_METHOD
-                && $method !== self::PAGE_PERFORMANCE_METHOD)) {
+                && $method !== self::PAGE_PERFORMANCE_METHOD
+                && $method !== self::USER_ID_METHOD)) {
             return null;
         }
 

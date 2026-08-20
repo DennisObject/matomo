@@ -10,6 +10,7 @@ use App\Matomo\Api\Methods\DevicePluginsApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
+use App\Matomo\Api\Methods\UserIdApiMethodHandler;
 use App\Matomo\Api\Methods\UserLanguageApiMethodHandler;
 use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
 use App\Matomo\Api\Methods\VisitorInterestApiMethodHandler;
@@ -345,6 +346,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ResolutionApiMethodHandler::class),
                 $application->make(DevicePluginsApiMethodHandler::class),
                 $application->make(PagePerformanceApiMethodHandler::class),
+                $application->make(UserIdApiMethodHandler::class),
             ]),
         );
     }
