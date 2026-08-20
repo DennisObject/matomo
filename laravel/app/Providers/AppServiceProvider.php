@@ -195,9 +195,12 @@ use App\Matomo\Insights\InsightSourceReportProvider;
 use App\Matomo\Live\DatabaseLiveAccessPolicy;
 use App\Matomo\Live\DatabaseLiveCounterRepository;
 use App\Matomo\Live\DatabaseLiveVisitorIdentityRepository;
+use App\Matomo\Live\DatabaseLiveVisitRepository;
 use App\Matomo\Live\LiveAccessPolicy;
 use App\Matomo\Live\LiveCounterRepository;
 use App\Matomo\Live\LiveVisitorIdentityRepository;
+use App\Matomo\Live\LiveVisitorProfileBuilder;
+use App\Matomo\Live\LiveVisitRepository;
 use App\Matomo\Localization\ApiLanguageResolver;
 use App\Matomo\Localization\DatabaseLanguagePreferenceRepository;
 use App\Matomo\Localization\FilesystemLanguageCatalog;
@@ -262,6 +265,7 @@ use App\Matomo\Reporting\DatabaseSegmentHashResolver;
 use App\Matomo\Reporting\DatabaseVisitsSummaryArchiveRepository;
 use App\Matomo\Reporting\DeviceDetectionMetadata;
 use App\Matomo\Reporting\DeviceModelPolicy;
+use App\Matomo\Reporting\DurationFormatter;
 use App\Matomo\Reporting\HierarchicalBlobArchiveRepository;
 use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Reporting\ReportingPeriodFactory;
@@ -732,6 +736,26 @@ class AppServiceProvider extends ServiceProvider
             fn (Application $application): LiveVisitorIdentityRepository => new DatabaseLiveVisitorIdentityRepository(
                 $application->make(MatomoDatabase::class)->connection(),
                 $application->make(VisitSegmentApplicator::class),
+            ),
+        );
+        $this->app->singleton(
+            LiveVisitRepository::class,
+            fn (Application $application): LiveVisitRepository => new DatabaseLiveVisitRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+                $application->make(VisitSegmentApplicator::class),
+                $application->make(SiteRepository::class),
+                $application->make(DurationFormatter::class),
+                $application->make(DeviceDetectionMetadata::class),
+                $application->make(CountryMetadataProvider::class),
+                $application->make(CurrencyProvider::class),
+                $application->make(MatomoTranslator::class),
+            ),
+        );
+        $this->app->singleton(
+            LiveVisitorProfileBuilder::class,
+            fn (Application $application): LiveVisitorProfileBuilder => new LiveVisitorProfileBuilder(
+                $application->make(DurationFormatter::class),
+                $application->make(InstallationConfig::class)->liveVisitorProfileMaximumVisits(),
             ),
         );
         $this->app->singleton(

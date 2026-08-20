@@ -40,6 +40,8 @@ use App\Matomo\Goals\SiteTrackerCacheInvalidator;
 use App\Matomo\Live\LiveAccessPolicy;
 use App\Matomo\Live\LiveCounterRepository;
 use App\Matomo\Live\LiveVisitorIdentityRepository;
+use App\Matomo\Live\LiveVisitorProfileBuilder;
+use App\Matomo\Live\LiveVisitRepository;
 use App\Matomo\Localization\LanguageCatalog;
 use App\Matomo\Localization\LanguagePreferenceRepository;
 use App\Matomo\Localization\LanguageResolver;
@@ -65,6 +67,7 @@ use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Reporting\BlobArchiveMetadataRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\DeviceModelPolicy;
+use App\Matomo\Reporting\DurationFormatter;
 use App\Matomo\Reporting\HierarchicalBlobArchiveRepository;
 use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Reporting\ReportingSettings;
@@ -476,6 +479,8 @@ abstract class TestCase extends BaseTestCase
         $this->app->instance(DataPurger::class, $this->createStub(DataPurger::class));
         $this->app->instance(LiveAccessPolicy::class, $this->createStub(LiveAccessPolicy::class));
         $this->app->instance(LiveCounterRepository::class, $this->createStub(LiveCounterRepository::class));
+        $this->app->instance(LiveVisitRepository::class, $this->createStub(LiveVisitRepository::class));
+        $this->app->instance(LiveVisitorProfileBuilder::class, new LiveVisitorProfileBuilder(new DurationFormatter));
         $this->app->instance(
             LiveVisitorIdentityRepository::class,
             $this->createStub(LiveVisitorIdentityRepository::class),

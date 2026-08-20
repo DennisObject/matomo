@@ -20,5 +20,13 @@ final readonly class LiveRequest
         public array $hideColumns,
         public ?string $period = null,
         public ?string $date = null,
+        public ?int $minimumTimestamp = null,
+        public int $filterOffset = 0,
+        public int $filterLimit = 10,
+        public ?string $visitorId = null,
+        public bool $fetchActions = true,
+        public bool $flat = false,
+        public int $profileVisitLimit = 10,
+        public ?string $intersectSegment = null,
     ) {}
 }
