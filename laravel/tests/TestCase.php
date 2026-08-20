@@ -51,6 +51,8 @@ use App\Matomo\Privacy\AnonymizableColumnProvider;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Privacy\ComplianceStatusProvider;
 use App\Matomo\Privacy\DeletionBatchLimits;
+use App\Matomo\Privacy\GranularComplianceSettingsProvider;
+use App\Matomo\Privacy\PrivacyFeatureFlags;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Reporting\BlobArchiveMetadataRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
@@ -456,6 +458,11 @@ abstract class TestCase extends BaseTestCase
             $this->createStub(CompliancePolicyStateRepository::class),
         );
         $this->app->instance(ComplianceStatusProvider::class, $this->createStub(ComplianceStatusProvider::class));
+        $this->app->instance(
+            GranularComplianceSettingsProvider::class,
+            $this->createStub(GranularComplianceSettingsProvider::class),
+        );
+        $this->app->instance(PrivacyFeatureFlags::class, $this->createStub(PrivacyFeatureFlags::class));
         $this->app->instance(NewsletterSubscriber::class, $this->createStub(NewsletterSubscriber::class));
         $this->app->instance(
             UserInvitationNotifier::class,

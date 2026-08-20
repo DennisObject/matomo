@@ -54,6 +54,7 @@ class InstallationConfigTest extends TestCase
         $this->assertFalse($configuration->configuredFilterPiiEnforcement());
         $this->assertFalse($configuration->thirdPartyCookiesEnabled());
         $this->assertSame(180, $configuration->deleteLogsOlderThan());
+        $this->assertTrue($configuration->granularPrivacyComplianceEnabled());
         $this->assertSame(['email', 'password'], $configuration->commonPiiParameters());
         $this->assertSame('fr', $configuration->defaultLanguage());
         $this->assertSame('language_cookie', $configuration->languageCookieName());
@@ -283,6 +284,9 @@ class InstallationConfigTest extends TestCase
             FilterPIIParameters_policy_enforced = 0
             CommonPIIParams[] = "email"
             CommonPIIParams[] = "password"
+
+            [FeatureFlags]
+            GranularPrivacyCompliance_feature = "enabled"
 
             [Languages]
             Languages[] = "en"

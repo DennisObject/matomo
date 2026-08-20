@@ -51,6 +51,7 @@ use App\Matomo\Api\Methods\PrivacyManagerColumnApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceReadApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceStatusApiMethodHandler;
+use App\Matomo\Api\Methods\PrivacyManagerGranularComplianceApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerSettingsApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersAiApiMethodHandler;
@@ -210,13 +211,17 @@ use App\Matomo\Plugins\LocalTrackerFileAvailability;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\Plugins\TrackerFileAvailability;
 use App\Matomo\Privacy\AnonymizableColumnProvider;
+use App\Matomo\Privacy\CnilGranularComplianceSettingsProvider;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Privacy\ComplianceStatusProvider;
 use App\Matomo\Privacy\ConfiguredDeletionBatchLimits;
+use App\Matomo\Privacy\ConfiguredPrivacyFeatureFlags;
 use App\Matomo\Privacy\DatabaseAnonymizableColumnProvider;
 use App\Matomo\Privacy\DatabaseCompliancePolicyStateRepository;
 use App\Matomo\Privacy\DatabaseComplianceStatusProvider;
 use App\Matomo\Privacy\DeletionBatchLimits;
+use App\Matomo\Privacy\GranularComplianceSettingsProvider;
+use App\Matomo\Privacy\PrivacyFeatureFlags;
 use App\Matomo\ProfessionalServices\DatabasePromoWidgetDismissalRepository;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Referrers\ReferrerDefinitionCatalog;
@@ -1291,6 +1296,11 @@ class AppServiceProvider extends ServiceProvider
                 translator: $application->make(MatomoTranslator::class),
             ),
         );
+        $this->app->singleton(
+            GranularComplianceSettingsProvider::class,
+            CnilGranularComplianceSettingsProvider::class,
+        );
+        $this->app->singleton(PrivacyFeatureFlags::class, ConfiguredPrivacyFeatureFlags::class);
 
         $this->app->singleton(
             QueryParameterExclusionPolicy::class,
@@ -1600,6 +1610,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(PrivacyManagerComplianceApiMethodHandler::class),
                 $application->make(PrivacyManagerComplianceReadApiMethodHandler::class),
                 $application->make(PrivacyManagerComplianceStatusApiMethodHandler::class),
+                $application->make(PrivacyManagerGranularComplianceApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),
                 $application->make(AiProvidersApiMethodHandler::class),
