@@ -759,9 +759,9 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             $referrers = $this->commaSeparated($settings->excludedReferrers ?? '');
 
             foreach ($referrers === '' ? [] : explode(',', $referrers) as $referrer) {
-                $host = parse_url('https://'.ltrim(preg_replace('#^https?://#', '', $referrer) ?? '', '.'), PHP_URL_HOST);
+                $prefixedUrl = 'https://'.ltrim(preg_replace('#^https?://#', '', $referrer) ?? '', '.');
 
-                if (! is_string($host) || $host === '' || str_contains($host, ' ')) {
+                if (parse_url($prefixedUrl) === false || ! $this->looksLikeUrl($prefixedUrl)) {
                     return $this->responses->error(
                         $request,
                         "The url '{$referrer}' is not a valid URL.",
@@ -822,12 +822,18 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
     private function commaSeparated(string $value): string
     {
-        $values = array_values(array_unique(array_filter(
+        $values = array_values(array_filter(
             array_map(trim(...), explode(',', trim($value))),
             static fn (string $item): bool => $item !== '',
-        )));
+        ));
 
         return implode(',', $values);
+    }
+
+    private function looksLikeUrl(string $url): bool
+    {
+        return preg_match('~^(([[:alpha:]][[:alnum:]+.-]*)?:)?//(.+)$~D', $url, $matches) === 1
+            && ! preg_match('/^(javascript:|vbscript:|data:)/i', $matches[1]);
     }
 
     private function optionOrDefault(string $name, string $default): string
