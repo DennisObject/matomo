@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Localization\LanguageResolver;
 use Tests\TestCase;
 
 final class PrivacyManagerComplianceApiTest extends TestCase
@@ -14,13 +15,19 @@ final class PrivacyManagerComplianceApiTest extends TestCase
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
         $authorizer->expects($this->never())->method('hasSuperUserAccess');
         $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $languages = $this->createStub(LanguageResolver::class);
+        $languages->method('resolve')->willReturn('fr');
+        $this->app->instance(LanguageResolver::class, $languages);
 
-        $this->get('/index.php?module=API&method=PrivacyManager.getCompliancePolicies&format=json')
+        $response = $this->get('/index.php?module=API'.
+            '&method=PrivacyManager.getCompliancePolicies&language=fr&format=json')
             ->assertOk()
-            ->assertExactJson([[
-                'id' => 'cnil_v1',
-                'title' => 'CNIL Website Analytics Compliance',
-                'description' => 'Shows how the analytics configuration aligns with CNIL guidance for consent-exempt audience measurement. This information is not legal advice and does not guarantee compliance.',
-            ]]);
+            ->assertJsonPath('0.id', 'cnil_v1')
+            ->assertJsonPath('0.title', 'Conformité des statistiques du site web à la CNIL');
+
+        $description = $response->json('0.description');
+        $this->assertIsString($description);
+        $this->assertStringContainsString('mtm_medium=App.PrivacyManager.compliance', $description);
+        $this->assertStringContainsString('plugins tiers', $description);
     }
 }

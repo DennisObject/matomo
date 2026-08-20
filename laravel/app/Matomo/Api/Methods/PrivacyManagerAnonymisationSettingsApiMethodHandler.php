@@ -11,6 +11,8 @@ use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Geolocation\TrackerCacheInvalidator;
 use App\Matomo\Goals\SiteTrackerCacheInvalidator;
+use App\Matomo\Localization\LanguageResolver;
+use App\Matomo\Localization\MatomoTranslator;
 use App\Matomo\Plugins\TrackerFileAvailability;
 use App\Matomo\Privacy\AnonymisationSettingsRepository;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
@@ -40,6 +42,8 @@ final readonly class PrivacyManagerAnonymisationSettingsApiMethodHandler impleme
         private TrackerCacheInvalidator $trackerCache,
         private SiteTrackerCacheInvalidator $siteCache,
         private Dispatcher $events,
+        private LanguageResolver $languages,
+        private MatomoTranslator $translator,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -60,7 +64,7 @@ final readonly class PrivacyManagerAnonymisationSettingsApiMethodHandler impleme
         }
 
         if (! $parameters->mutation) {
-            return $this->responses->structured($request, $this->read($request, $parameters->idSite));
+            return $this->responses->structured($request, $this->read($request, $httpRequest, $parameters->idSite));
         }
 
         $idSite = $parameters->idSite;
@@ -124,25 +128,26 @@ final readonly class PrivacyManagerAnonymisationSettingsApiMethodHandler impleme
     }
 
     /** @return array<string, mixed> */
-    private function read(ApiRequest $request, ?int $idSite): array
+    private function read(ApiRequest $request, Request $httpRequest, ?int $idSite): array
     {
+        $language = $this->languages->resolve($httpRequest, $request->authentication);
         $values = $this->settings->values($idSite);
         $values['useSiteSpecificSettings'] = $idSite !== null && $this->settings->usesSiteSettings($idSite);
         $values['maskLengthOptions'] = [
-            ['key' => '1', 'value' => '1 byte(s) - e.g. 192.168.100.xxx', 'description' => ''],
-            ['key' => '2', 'value' => '2 byte(s) - e.g. 192.168.xxx.xxx', 'description' => 'Recommended'],
-            ['key' => '3', 'value' => '3 byte(s) - e.g. 192.xxx.xxx.xxx', 'description' => ''],
-            ['key' => '4', 'value' => 'Fully mask IP address', 'description' => ''],
+            ['key' => '1', 'value' => $this->translate('PrivacyManager_AnonymizeIpMaskLength', $language, [1, '192.168.100.xxx']), 'description' => ''],
+            ['key' => '2', 'value' => $this->translate('PrivacyManager_AnonymizeIpMaskLength', $language, [2, '192.168.xxx.xxx']), 'description' => $this->translate('General_Recommended', $language)],
+            ['key' => '3', 'value' => $this->translate('PrivacyManager_AnonymizeIpMaskLength', $language, [3, '192.xxx.xxx.xxx']), 'description' => ''],
+            ['key' => '4', 'value' => $this->translate('PrivacyManager_AnonymizeIpMaskFully', $language), 'description' => ''],
         ];
         $values['useAnonymizedIpForVisitEnrichmentOptions'] = [
-            ['key' => '1', 'value' => 'Yes', 'description' => 'higher privacy, lower geolocation accuracy'],
-            ['key' => '0', 'value' => 'No', 'description' => 'lower privacy, higher geolocation accuracy'],
+            ['key' => '1', 'value' => $this->translate('General_Yes', $language), 'description' => $this->translate('PrivacyManager_UseAnonymizedIpForVisitEnrichmentYesDesc', $language)],
+            ['key' => '0', 'value' => $this->translate('General_No', $language), 'description' => $this->translate('PrivacyManager_UseAnonymizedIpForVisitEnrichmentNoDesc', $language)],
         ];
         $values['referrerAnonymizationOptions'] = [
-            '' => "Don't anonymize the referrer",
-            'exclude_query' => 'Remove query parameters from referrer URL',
-            'exclude_path' => 'Keep only the domain of a referrer URL',
-            'exclude_all' => "Don't record the referrer URL but still detect the type of referrer",
+            '' => $this->translate('PrivacyManager_AnonymizeReferrerExcludeNone', $language),
+            'exclude_query' => $this->translate('PrivacyManager_AnonymizeReferrerExcludeQuery', $language),
+            'exclude_path' => $this->translate('PrivacyManager_AnonymizeReferrerExcludePath', $language),
+            'exclude_all' => $this->translate('PrivacyManager_AnonymizeReferrerExcludeAll', $language),
         ];
         $superuser = $this->authorizer->hasSuperUserAccess($request->authentication);
         $values['trackerFileName'] = $superuser ? 'matomo.js' : '';
@@ -167,6 +172,12 @@ final readonly class PrivacyManagerAnonymisationSettingsApiMethodHandler impleme
         }
 
         return $values;
+    }
+
+    /** @param list<bool|int|string> $arguments */
+    private function translate(string $key, string $language, array $arguments = []): string
+    {
+        return $this->translator->translate($key, $language, $arguments);
     }
 
     private function clearCaches(?int $idSite): void
