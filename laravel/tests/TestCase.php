@@ -10,6 +10,7 @@ use App\Matomo\AiProviders\AiProviderConnectionTester;
 use App\Matomo\AiProviders\AiProviderDefinition;
 use App\Matomo\AiProviders\AiProviderSettingsRepository;
 use App\Matomo\AiProviders\AiProviderStoredSettings;
+use App\Matomo\Api\GoalDefinition;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Dashboard\DashboardLayoutProvider;
@@ -22,6 +23,8 @@ use App\Matomo\Feedback\FeedbackStore;
 use App\Matomo\Geolocation\CountryMetadataProvider;
 use App\Matomo\Geolocation\GeolocationProviderRegistry;
 use App\Matomo\Geolocation\GeolocationSettings;
+use App\Matomo\Goals\GoalRepository;
+use App\Matomo\Goals\SiteTrackerCacheInvalidator;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Login\BruteForceUnblocker;
 use App\Matomo\Login\LoginAttemptGuard;
@@ -95,6 +98,34 @@ abstract class TestCase extends BaseTestCase
                 return 'feedback@matomo.org';
             }
         });
+        $this->app->instance(GoalRepository::class, new class implements GoalRepository
+        {
+            public function findActive(int $siteId, int $goalId): ?array
+            {
+                return null;
+            }
+
+            public function activeForSites(array $siteIds): array
+            {
+                return [];
+            }
+
+            public function create(int $siteId, GoalDefinition $goal): int
+            {
+                return 1;
+            }
+
+            public function update(int $siteId, int $goalId, GoalDefinition $goal): void {}
+
+            public function delete(int $siteId, int $goalId): void {}
+        });
+        $this->app->instance(
+            SiteTrackerCacheInvalidator::class,
+            new class implements SiteTrackerCacheInvalidator
+            {
+                public function clear(int $siteId): void {}
+            },
+        );
 
         $this->app->instance(AiProviderCentralConfiguration::class, new AiProviderCentralConfiguration);
         $this->app->instance(

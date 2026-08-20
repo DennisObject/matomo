@@ -24,7 +24,7 @@ class DatabaseBlobArchiveRepositoryTest extends TestCase
         ]);
         $connection->table('archive_blob_2026_08')->insert([
             $this->blobRow(10, 'VisitTime_localTime', $this->blob([['label' => 1, 'nb_visits' => 2]]), '2026-08-15 00:00:00'),
-            $this->blobRow(11, 'VisitTime_localTime', $this->blob([['label' => 2, 'nb_visits' => 3]]), '2026-08-15 01:00:00'),
+            $this->blobRow(11, 'VisitTime_localTime', $this->blob([['label' => 2, 2 => 3]]), '2026-08-15 01:00:00'),
         ]);
 
         $repository = new DatabaseBlobArchiveRepository($connection);
@@ -184,7 +184,7 @@ class DatabaseBlobArchiveRepositoryTest extends TestCase
         ];
     }
 
-    /** @param list<array<string, int|string>> $rows */
+    /** @param list<array<array-key, int|string>> $rows */
     private function blob(array $rows): string
     {
         $payload = array_map(static fn (array $columns): array => [

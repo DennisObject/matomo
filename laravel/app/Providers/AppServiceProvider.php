@@ -27,6 +27,8 @@ use App\Matomo\Api\Methods\ExamplePluginApiMethodHandler;
 use App\Matomo\Api\Methods\ExampleReportApiMethodHandler;
 use App\Matomo\Api\Methods\ExampleUiApiMethodHandler;
 use App\Matomo\Api\Methods\FeedbackApiMethodHandler;
+use App\Matomo\Api\Methods\GoalsApiMethodHandler;
+use App\Matomo\Api\Methods\GoalsReportApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
@@ -76,6 +78,10 @@ use App\Matomo\Geolocation\MaxMindDatabaseGeolocationProvider;
 use App\Matomo\Geolocation\ServerModuleGeolocationProvider;
 use App\Matomo\Geolocation\ServerVariableMapping;
 use App\Matomo\Geolocation\TrackerCacheInvalidator;
+use App\Matomo\Goals\DatabaseGoalRepository;
+use App\Matomo\Goals\FileSiteTrackerCacheInvalidator;
+use App\Matomo\Goals\GoalRepository;
+use App\Matomo\Goals\SiteTrackerCacheInvalidator;
 use App\Matomo\Localization\ApiLanguageResolver;
 use App\Matomo\Localization\DatabaseLanguagePreferenceRepository;
 use App\Matomo\Localization\JsonMatomoTranslator;
@@ -631,6 +637,18 @@ class AppServiceProvider extends ServiceProvider
                 );
             },
         );
+        $this->app->singleton(
+            GoalRepository::class,
+            fn (Application $application): GoalRepository => new DatabaseGoalRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            SiteTrackerCacheInvalidator::class,
+            fn (): SiteTrackerCacheInvalidator => new FileSiteTrackerCacheInvalidator(
+                base_path('../tmp/cache/tracker'),
+            ),
+        );
 
         $this->app->singleton(
             BruteForceSettings::class,
@@ -721,6 +739,8 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ExampleReportApiMethodHandler::class),
                 $application->make(ExampleUiApiMethodHandler::class),
                 $application->make(FeedbackApiMethodHandler::class),
+                $application->make(GoalsApiMethodHandler::class),
+                $application->make(GoalsReportApiMethodHandler::class),
                 $application->make(PagePerformanceApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),

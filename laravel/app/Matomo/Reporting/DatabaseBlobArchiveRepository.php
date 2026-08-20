@@ -15,6 +15,53 @@ final readonly class DatabaseBlobArchiveRepository implements BlobArchiveMetadat
     /** @var list<int> */
     private const array SELECTABLE_DONE_VALUES = [1, 3, 4, self::DONE_PARTIAL];
 
+    /** @var array<int, string> */
+    private const array COLUMN_NAMES = [
+        1 => 'nb_uniq_visitors',
+        2 => 'nb_visits',
+        3 => 'nb_actions',
+        4 => 'max_actions',
+        5 => 'sum_visit_length',
+        6 => 'bounce_count',
+        7 => 'nb_visits_converted',
+        8 => 'nb_conversions',
+        9 => 'revenue',
+        10 => 'goals',
+        11 => 'sum_daily_nb_uniq_visitors',
+        12 => 'nb_hits',
+        13 => 'sum_time_spent',
+        14 => 'exit_nb_uniq_visitors',
+        15 => 'exit_nb_visits',
+        16 => 'sum_daily_exit_nb_uniq_visitors',
+        17 => 'entry_nb_uniq_visitors',
+        18 => 'sum_daily_entry_nb_uniq_visitors',
+        19 => 'entry_nb_visits',
+        20 => 'entry_nb_actions',
+        21 => 'entry_sum_visit_length',
+        22 => 'entry_bounce_count',
+        23 => 'revenue',
+        24 => 'quantity',
+        25 => 'price',
+        26 => 'orders',
+        27 => 'price_viewed',
+        29 => 'nb_hits_following_search',
+        30 => 'sum_time_generation',
+        31 => 'nb_hits_with_time_generation',
+        32 => 'min_time_generation',
+        33 => 'max_time_generation',
+        34 => 'nb_events',
+        35 => 'sum_event_value',
+        36 => 'min_event_value',
+        37 => 'max_event_value',
+        38 => 'nb_events_with_value',
+        39 => 'nb_users',
+        40 => 'sum_daily_nb_users',
+        41 => 'nb_impressions',
+        42 => 'nb_interactions',
+        43 => 'nb_uniq_fingerprints',
+        44 => 'hits',
+    ];
+
     public function __construct(private Connection $connection) {}
 
     public function rows(array $siteIds, array $periods, string $segmentHash, string $recordName): array
@@ -379,12 +426,17 @@ final readonly class DatabaseBlobArchiveRepository implements BlobArchiveMetadat
         $result = [];
 
         foreach ($values as $name => $value) {
-            if (! is_string($name)
-                || (! is_float($value) && ! is_int($value) && ! is_string($value) && $value !== null)) {
+            if (! is_float($value) && ! is_int($value) && ! is_string($value) && $value !== null) {
                 return null;
             }
 
-            $result[$name] = $value;
+            $columnName = is_int($name) ? (self::COLUMN_NAMES[$name] ?? (string) $name) : $name;
+
+            if (isset($result[$columnName]) && is_numeric($result[$columnName]) && is_numeric($value)) {
+                $value = (float) $result[$columnName] + (float) $value;
+            }
+
+            $result[$columnName] = $value;
         }
 
         return $result;

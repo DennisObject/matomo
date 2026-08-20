@@ -151,6 +151,26 @@ final readonly class ApiRequest
     ];
 
     /** @var list<string> */
+    private const array GOALS_MANAGEMENT_METHODS = [
+        'Goals.getGoal',
+        'Goals.getGoals',
+        'Goals.addGoal',
+        'Goals.updateGoal',
+        'Goals.deleteGoal',
+    ];
+
+    /** @var list<string> */
+    private const array GOALS_REPORT_METHODS = [
+        'Goals.getItemsSku',
+        'Goals.getItemsName',
+        'Goals.getItemsCategory',
+        'Goals.get',
+        'Goals.getMetrics',
+        'Goals.getDaysToConversion',
+        'Goals.getVisitsUntilConversion',
+    ];
+
+    /** @var list<string> */
     private const array EXAMPLE_UI_METHODS = [
         'ExampleUI.getTemperaturesEvolution',
         'ExampleUI.getTemperatures',
@@ -227,6 +247,8 @@ final readonly class ApiRequest
         public ?ExamplePluginRequest $examplePlugin,
         public ?ExampleUiRequest $exampleUi,
         public ?FeedbackRequest $feedback,
+        public ?GoalsRequest $goals,
+        public ?GoalsReportRequest $goalsReport,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -275,6 +297,8 @@ final readonly class ApiRequest
             examplePlugin: null,
             exampleUi: null,
             feedback: null,
+            goals: null,
+            goalsReport: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -585,6 +609,18 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::FEEDBACK_METHODS, true);
     }
 
+    public function isGoalsManagementRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::GOALS_MANAGEMENT_METHODS, true);
+    }
+
+    public function isGoalsReportRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::GOALS_REPORT_METHODS, true);
+    }
+
     public function isAiProvidersRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::AI_PROVIDERS_METHODS, true);
@@ -663,7 +699,112 @@ final readonly class ApiRequest
             examplePlugin: self::examplePlugin($request, $module, $method),
             exampleUi: self::exampleUi($request, $module, $method),
             feedback: self::feedback($request, $module, $method),
+            goals: self::goals($request, $module, $method),
+            goalsReport: self::goalsReport($request, $module, $method),
             authentication: $authentication,
+        );
+    }
+
+    private static function goalsReport(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?GoalsReportRequest {
+        if ($module !== 'API' || ! in_array($method, self::GOALS_REPORT_METHODS, true)) {
+            return null;
+        }
+
+        $idGoal = self::inputValue($request, 'idGoal');
+
+        if (in_array($idGoal, [null, '', false, 'false'], true)) {
+            $idGoal = null;
+        } elseif (! is_scalar($idGoal)) {
+            throw new InvalidApiParameter('idGoal');
+        } elseif (preg_match('/^-?[0-9]+$/D', (string) $idGoal) === 1) {
+            $idGoal = (int) $idGoal;
+        } else {
+            $idGoal = str_replace("\0", '', (string) $idGoal);
+        }
+
+        return new GoalsReportRequest(
+            abandonedCarts: self::booleanInput($request, 'abandonedCarts', false),
+            idGoal: $idGoal,
+            showAllGoalSpecificMetrics: self::booleanInput(
+                $request,
+                'showAllGoalSpecificMetrics',
+                false,
+            ),
+            formatMetrics: self::stringInput($request, 'format_metrics', 'bc') !== '0',
+        );
+    }
+
+    private static function goals(Request $request, string $module, string $method): ?GoalsRequest
+    {
+        if ($module !== 'API' || ! in_array($method, self::GOALS_MANAGEMENT_METHODS, true)) {
+            return null;
+        }
+
+        if ($method === 'Goals.getGoals') {
+            [$siteIds, $allSites] = self::reportSiteIds($request);
+
+            return new GoalsRequest(
+                siteIds: $siteIds,
+                allSites: $allSites,
+                idGoal: null,
+                orderByName: self::booleanInput($request, 'orderByName', false),
+                definition: null,
+            );
+        }
+
+        $siteId = self::requiredInteger($request, 'idSite');
+        $requiresGoalId = in_array($method, [
+            'Goals.getGoal',
+            'Goals.updateGoal',
+            'Goals.deleteGoal',
+        ], true);
+        $definition = in_array($method, ['Goals.addGoal', 'Goals.updateGoal'], true)
+            ? self::goalDefinition($request)
+            : null;
+
+        return new GoalsRequest(
+            siteIds: [$siteId],
+            allSites: false,
+            idGoal: $requiresGoalId ? self::requiredInteger($request, 'idGoal') : null,
+            orderByName: false,
+            definition: $definition,
+        );
+    }
+
+    private static function goalDefinition(Request $request): GoalDefinition
+    {
+        $values = [];
+
+        foreach (['name', 'matchAttribute', 'pattern', 'patternType'] as $parameter) {
+            $value = self::nullableStringInput($request, $parameter);
+
+            if ($value === null) {
+                throw new MissingApiParameter($parameter);
+            }
+
+            $values[$parameter] = $value;
+        }
+
+        $revenue = self::nullableStringInput($request, 'revenue');
+
+        return new GoalDefinition(
+            name: $values['name'],
+            matchAttribute: $values['matchAttribute'],
+            pattern: $values['pattern'],
+            patternType: $values['patternType'],
+            caseSensitive: self::booleanInput($request, 'caseSensitive', false),
+            revenue: (float) ($revenue ?? '0'),
+            allowMultipleConversionsPerVisit: self::booleanInput(
+                $request,
+                'allowMultipleConversionsPerVisit',
+                false,
+            ),
+            description: self::stringInput($request, 'description'),
+            useEventValueAsRevenue: self::booleanInput($request, 'useEventValueAsRevenue', false),
         );
     }
 
@@ -1257,6 +1398,7 @@ final readonly class ApiRequest
                 && $method !== self::EXAMPLE_REPORT_METHOD
                 && ! in_array($method, self::EVENTS_METHODS, true)
                 && ! in_array($method, self::CONTENTS_METHODS, true)
+                && ! in_array($method, self::GOALS_REPORT_METHODS, true)
                 && $method !== self::AI_AGENTS_METHOD
                 && ! in_array($method, [
                     'UserCountry.getCountry',
