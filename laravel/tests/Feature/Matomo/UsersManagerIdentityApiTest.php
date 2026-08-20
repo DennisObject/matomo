@@ -37,7 +37,7 @@ final class UsersManagerIdentityApiTest extends TestCase
         $this->app->instance(UserIdentityRepository::class, $users);
 
         $this->get('/index.php?module=API&method=UsersManager.userExists'.
-            '&userLogin=alice&format=json&token_auth=alice-token')
+            '&userLogin=Alice&format=json&token_auth=alice-token')
             ->assertOk()
             ->assertExactJson(['value' => true]);
     }

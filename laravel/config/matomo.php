@@ -12,5 +12,8 @@ return [
     'config_path' => $configPath,
     'ai_providers' => [],
     'user_preference_names' => [],
-    'newsletter_endpoint' => env('MATOMO_NEWSLETTER_ENDPOINT', ''),
+    'newsletter_endpoint' => env(
+        'MATOMO_NEWSLETTER_ENDPOINT',
+        'https://api.matomo.org/1.0/subscribeNewsletter/',
+    ),
 ];
