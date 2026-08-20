@@ -186,11 +186,11 @@ class GeolocationProvidersTest extends TestCase
         try {
             $_SERVER['TEST_ONLY_LATITUDE'] = '47.24';
 
-            $this->assertFalse(new ServerModuleGeolocationProvider(
+            $this->assertFalse((new ServerModuleGeolocationProvider(
                 $mapping,
                 $fallback,
                 $this->options(),
-            )->available());
+            ))->available());
         } finally {
             $this->restoreServerVariable('TEST_ONLY_LATITUDE', $oldLatitude);
         }
