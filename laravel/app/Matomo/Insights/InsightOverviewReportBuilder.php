@@ -40,6 +40,8 @@ final readonly class InsightOverviewReportBuilder
                 continue;
             }
 
+            $hasReportParameters = $uniqueId === 'Actions_getDownloads';
+
             $reportRequest = new InsightsRequest(
                 period: $request->period,
                 date: $request->date,
@@ -47,10 +49,10 @@ final readonly class InsightOverviewReportBuilder
                 reportUniqueId: $uniqueId,
                 segment: $request->segment,
                 comparedToXPeriods: $request->comparedToXPeriods,
-                limitIncreaser: $moversAndShakers ? 4 : 3,
-                limitDecreaser: $moversAndShakers ? 4 : 3,
-                minImpactPercent: $moversAndShakers ? 2 : 1,
-                minGrowthPercent: $moversAndShakers ? 20 : 25,
+                limitIncreaser: $moversAndShakers ? 4 : ($hasReportParameters ? 3 : 5),
+                limitDecreaser: $moversAndShakers ? 4 : ($hasReportParameters ? 3 : 5),
+                minImpactPercent: ! $moversAndShakers && $hasReportParameters ? 1 : 2,
+                minGrowthPercent: ! $moversAndShakers && $hasReportParameters ? 25 : 20,
             );
 
             $report = $this->reports->build(
