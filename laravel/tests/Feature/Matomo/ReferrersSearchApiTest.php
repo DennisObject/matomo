@@ -44,6 +44,22 @@ class ReferrersSearchApiTest extends TestCase
             ->assertJsonPath('0.subtable.0.url', 'http://google.test/search?q=web+analytics');
     }
 
+    public function test_returns_unformatted_percentage_quotients(): void
+    {
+        $this->bindDependencies();
+        $this->bindRecords('Referrers_keywordBySearchEngine', [
+            'Referrers_keywordBySearchEngine' => [
+                $this->row('Google', 1, 2),
+                $this->row('Bing', 2, 4),
+            ],
+        ]);
+
+        $this->get($this->url('getSearchEngines').'&expanded=1&format_metrics=0')
+            ->assertOk()
+            ->assertJsonPath('0.nb_visits_percent_of_total', 0.3333)
+            ->assertJsonPath('1.nb_visits_percent_of_total', 0.6667);
+    }
+
     public function test_returns_both_direct_subtable_orientations(): void
     {
         $this->bindDependencies();
