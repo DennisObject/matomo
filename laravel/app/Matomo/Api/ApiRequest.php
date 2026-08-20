@@ -218,7 +218,14 @@ final readonly class ApiRequest
         'SegmentEditor.getSegmentData',
     ];
 
-    private const string INSIGHTS_CAPABILITY_METHOD = 'Insights.canGenerateInsights';
+    /** @var list<string> */
+    private const array INSIGHTS_METHODS = [
+        'Insights.canGenerateInsights',
+        'Insights.getInsightsOverview',
+        'Insights.getMoversAndShakersOverview',
+        'Insights.getMoversAndShakers',
+        'Insights.getInsights',
+    ];
 
     /** @var list<string> */
     private const array DB_STATS_METHODS = [
@@ -826,7 +833,7 @@ final readonly class ApiRequest
 
     public function isInsightsRequest(): bool
     {
-        return $this->module === 'API' && $this->method === self::INSIGHTS_CAPABILITY_METHOD;
+        return $this->module === 'API' && in_array($this->method, self::INSIGHTS_METHODS, true);
     }
 
     public function isExampleApiRequest(): bool
@@ -1006,13 +1013,47 @@ final readonly class ApiRequest
         string $module,
         string $method,
     ): ?InsightsRequest {
-        if ($module !== 'API' || $method !== self::INSIGHTS_CAPABILITY_METHOD) {
+        if ($module !== 'API' || ! in_array($method, self::INSIGHTS_METHODS, true)) {
             return null;
         }
 
+        if ($method === 'Insights.canGenerateInsights') {
+            return new InsightsRequest(
+                self::requiredString($request, 'period'),
+                self::requiredString($request, 'date'),
+            );
+        }
+
+        [$siteId, $period, $date] = self::reportContext($request);
+        $direct = in_array($method, [
+            'Insights.getMoversAndShakers',
+            'Insights.getInsights',
+        ], true);
+        $segment = trim(self::nullableStringInput($request, 'segment') ?? '');
+
         return new InsightsRequest(
-            self::requiredString($request, 'period'),
-            self::requiredString($request, 'date'),
+            period: $period,
+            date: $date,
+            siteId: $siteId,
+            reportUniqueId: $direct ? self::requiredString($request, 'reportUniqueId') : null,
+            segment: $segment === '' ? null : substr($segment, 0, 8192),
+            comparedToXPeriods: self::integerInput($request, 'comparedToXPeriods', 1, 1),
+            limitIncreaser: self::integerInput(
+                $request,
+                'limitIncreaser',
+                $method === 'Insights.getMoversAndShakers' ? 4 : 5,
+                -1,
+            ),
+            limitDecreaser: self::integerInput(
+                $request,
+                'limitDecreaser',
+                $method === 'Insights.getMoversAndShakers' ? 4 : 5,
+                -1,
+            ),
+            filterBy: self::stringInput($request, 'filterBy'),
+            minImpactPercent: self::integerInput($request, 'minImpactPercent', 2, -1),
+            minGrowthPercent: self::integerInput($request, 'minGrowthPercent', 20, -PHP_INT_MAX),
+            orderBy: self::stringInput($request, 'orderBy', 'absolute'),
         );
     }
 

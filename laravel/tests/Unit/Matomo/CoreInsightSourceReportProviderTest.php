@@ -104,6 +104,28 @@ class CoreInsightSourceReportProviderTest extends TestCase
         ));
     }
 
+    public function test_limits_comparison_rows_but_keeps_the_full_metric_total(): void
+    {
+        $rows = [];
+
+        for ($index = 0; $index < 1001; $index++) {
+            $rows[] = ['label' => 'row-'.$index, 'nb_visits' => 1];
+        }
+
+        $this->reports->method('actions')->willReturn($rows);
+        $report = $this->provider->report(
+            'Actions_getPageUrls',
+            7,
+            $this->period(),
+            'segment-hash',
+            'en',
+        );
+
+        $this->assertNotNull($report);
+        $this->assertCount(1000, $report->rows);
+        $this->assertSame(1001, $report->metricTotal);
+    }
+
     private function period(): ReportingPeriod
     {
         return new ReportingPeriod('day', 1, '2026-08-14', '2026-08-14', '2026-08-14');
