@@ -256,6 +256,8 @@ class BotTrackingOverviewArchiveCollectorTest extends TestCase
         $this->assertSame(50_000, $configuration->rankingLimit);
         $this->assertSame(50_000, $configuration->contentLimit);
         $this->assertSame(50_000, $configuration->contentRankingLimit);
+        $this->assertSame(50_000, $configuration->favouredPagesLimit);
+        $this->assertSame(50_000, $configuration->favouredPagesRankingLimit);
     }
 
     private function collect(

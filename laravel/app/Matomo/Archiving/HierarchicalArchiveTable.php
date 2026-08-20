@@ -18,17 +18,20 @@ final class HierarchicalArchiveTable
     /** @var TableRows */
     private array $rows = [];
 
-    /** @param array<string, 'max'|'min'> $aggregationOperations */
+    /** @param array<string, 'max'|'min'|'skip'> $aggregationOperations */
     public function __construct(private readonly array $aggregationOperations = []) {}
 
     /** @param Columns $columns */
     public function mergeRoot(float|int|string $label, array $columns): void
     {
         $key = $this->rowKey($label);
-        $this->rows[$key] ??= [
-            'columns' => ['label' => $label],
-            'children' => [],
-        ];
+        $new = ! isset($this->rows[$key]);
+        $this->rows[$key] ??= ['columns' => ['label' => $label], 'children' => []];
+
+        if ($new && ! $this->isSummary($label)) {
+            $this->copySkippedMetrics($this->rows[$key]['columns'], $columns);
+        }
+
         $this->mergeMetrics($this->rows[$key]['columns'], $columns);
     }
 
@@ -50,7 +53,16 @@ final class HierarchicalArchiveTable
         }
 
         $key = $this->rowKey($label);
+        $new = ! isset($this->rows[$rootKey]['children'][$key]);
         $this->rows[$rootKey]['children'][$key] ??= ['label' => $label];
+
+        if ($new && ! $this->isSummary($label)) {
+            $this->copySkippedMetrics(
+                $this->rows[$rootKey]['children'][$key],
+                $columns,
+            );
+        }
+
         $this->mergeMetrics($this->rows[$rootKey]['children'][$key], $columns);
 
         return true;
@@ -202,6 +214,10 @@ final class HierarchicalArchiveTable
 
             $operation = $this->aggregationOperations[$metric] ?? 'sum';
 
+            if ($operation === 'skip') {
+                continue;
+            }
+
             if ($operation === 'min') {
                 $target[$metric] = $this->minimum($target[$metric] ?? null, $value);
 
@@ -218,6 +234,20 @@ final class HierarchicalArchiveTable
                 $target[$metric] = $this->numeric(
                     (float) ($target[$metric] ?? 0) + $value,
                 );
+            }
+        }
+    }
+
+    /** @param Columns $target
+     * @param  Columns  $columns
+     */
+    private function copySkippedMetrics(array &$target, array $columns): void
+    {
+        foreach ($this->aggregationOperations as $metric => $operation) {
+            $value = $columns[$metric] ?? null;
+
+            if ($operation === 'skip' && (is_float($value) || is_int($value))) {
+                $target[$metric] = $value;
             }
         }
     }
