@@ -563,6 +563,13 @@ final readonly class ApiRequest
         return self::make($request, self::authentication($request));
     }
 
+    public static function fromRequestWithAuthentication(
+        Request $request,
+        ApiAuthentication $authentication,
+    ): self {
+        return self::make($request, $authentication);
+    }
+
     public static function withoutAuthentication(Request $request): self
     {
         return new self(
@@ -3155,6 +3162,10 @@ final readonly class ApiRequest
 
         $urls = [];
         foreach ($input as $url) {
+            if ($url === null) {
+                $url = '';
+            }
+
             if (! is_string($url)) {
                 throw new InvalidApiParameter('urls', 'Every URL must be an API query string.');
             }

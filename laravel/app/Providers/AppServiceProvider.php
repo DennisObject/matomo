@@ -14,6 +14,8 @@ use App\Matomo\AiProviders\DatabaseAiProviderSettingsRepository;
 use App\Matomo\AiProviders\HttpAiProviderConnectionTester;
 use App\Matomo\Annotations\AnnotationRepository;
 use App\Matomo\Annotations\DatabaseAnnotationRepository;
+use App\Matomo\Api\BulkRequestLimit;
+use App\Matomo\Api\ConfiguredBulkRequestLimit;
 use App\Matomo\Api\Methods\ActionsApiMethodHandler;
 use App\Matomo\Api\Methods\AiAgentsApiMethodHandler;
 use App\Matomo\Api\Methods\AiProvidersApiMethodHandler;
@@ -406,6 +408,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(
+            BulkRequestLimit::class,
+            fn (Application $application): BulkRequestLimit => new ConfiguredBulkRequestLimit(
+                static fn (): InstallationConfig => $application->make(InstallationConfig::class),
+                $application->make(ApiAccessAuthorizer::class),
+            ),
+        );
         $this->app->singleton(InstallationConfig::class, function (Application $application): InstallationConfig {
             $path = $application->make(Repository::class)->get('matomo.config_path');
 
