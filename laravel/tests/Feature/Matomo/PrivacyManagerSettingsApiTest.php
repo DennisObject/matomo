@@ -78,6 +78,7 @@ final class PrivacyManagerSettingsApiTest extends TestCase
         $this->app->instance(PasswordConfirmationVerifier::class, $passwords);
         $this->app->instance(MutableOptionRepository::class, $options);
         $this->app->instance(TrackerCacheInvalidator::class, $this->createStub(TrackerCacheInvalidator::class));
+
         $limits = $this->createStub(DeletionBatchLimits::class);
         $limits->method('logs')->willReturn(100_000);
         $limits->method('unusedActions')->willReturn(100_000);
