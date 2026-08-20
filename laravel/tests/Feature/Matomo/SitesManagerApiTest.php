@@ -8,6 +8,7 @@ use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Localization\LanguageResolver;
+use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Sites\ConsentManagerDetector;
 use App\Matomo\Sites\CurrencyProvider;
@@ -1580,6 +1581,102 @@ class SitesManagerApiTest extends TestCase
         )->assertOk()
             ->assertHeader('Content-Type', $contentType)
             ->assertContent($content);
+    }
+
+    public function test_superuser_sets_valid_default_currency(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasSuperUserAccess')->willReturn(true);
+        $currencies = $this->createStub(CurrencyProvider::class);
+        $currencies->method('symbols')->willReturn(['USD' => '$', 'EUR' => '€']);
+        $options = $this->createMock(MutableOptionRepository::class);
+        $options->expects($this->once())->method('set')->with('SitesManager_DefaultCurrency', 'EUR');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(CurrencyProvider::class, $currencies);
+        $this->app->instance(MutableOptionRepository::class, $options);
+
+        $this->get('/index.php?module=API&method=SitesManager.setDefaultCurrency'.
+            '&defaultCurrency=EUR&format=json&token_auth=super-token')
+            ->assertOk()
+            ->assertExactJson(['value' => true]);
+    }
+
+    public function test_superuser_sets_valid_default_timezone(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasSuperUserAccess')->willReturn(true);
+        $timezones = $this->createStub(TimezoneProvider::class);
+        $timezones->method('all')->willReturn([
+            'Europe' => ['Europe/Copenhagen' => 'Denmark'],
+            'UTC' => ['UTC+7' => 'UTC+7'],
+        ]);
+        $options = $this->createMock(MutableOptionRepository::class);
+        $options->expects($this->once())->method('set')->with('SitesManager_DefaultTimezone', 'UTC+7');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(TimezoneProvider::class, $timezones);
+        $this->app->instance(MutableOptionRepository::class, $options);
+
+        $this->get('/index.php?module=API&method=SitesManager.setDefaultTimezone'.
+            '&defaultTimezone=UTC%2B7&format=json&token_auth=super-token')
+            ->assertOk()
+            ->assertExactJson(['value' => true]);
+    }
+
+    public function test_superuser_sets_backward_compatible_timezone_alias(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasSuperUserAccess')->willReturn(true);
+        $timezones = $this->createStub(TimezoneProvider::class);
+        $timezones->method('all')->willReturn(['UTC' => ['UTC' => 'UTC']]);
+        $options = $this->createMock(MutableOptionRepository::class);
+        $options->expects($this->once())->method('set')->with('SitesManager_DefaultTimezone', 'America/Montreal');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(TimezoneProvider::class, $timezones);
+        $this->app->instance(MutableOptionRepository::class, $options);
+
+        $this->get('/index.php?module=API&method=SitesManager.setDefaultTimezone'.
+            '&defaultTimezone=America%2FMontreal&format=json&token_auth=super-token')
+            ->assertOk()
+            ->assertExactJson(['value' => true]);
+    }
+
+    public function test_default_setting_writes_require_superuser_before_mutation(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasSuperUserAccess')->willReturn(false);
+        $options = $this->createMock(MutableOptionRepository::class);
+        $options->expects($this->never())->method('set');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(MutableOptionRepository::class, $options);
+
+        $this->get('/index.php?module=API&method=SitesManager.setDefaultCurrency'.
+            '&defaultCurrency=EUR&format=json&token_auth=view-token')
+            ->assertUnauthorized();
+    }
+
+    public function test_default_setting_writes_reject_invalid_values_without_mutation(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasSuperUserAccess')->willReturn(true);
+        $currencies = $this->createStub(CurrencyProvider::class);
+        $currencies->method('symbols')->willReturn(['USD' => '$']);
+        $timezones = $this->createStub(TimezoneProvider::class);
+        $timezones->method('all')->willReturn(['UTC' => ['UTC' => 'UTC']]);
+        $options = $this->createMock(MutableOptionRepository::class);
+        $options->expects($this->never())->method('set');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(CurrencyProvider::class, $currencies);
+        $this->app->instance(TimezoneProvider::class, $timezones);
+        $this->app->instance(MutableOptionRepository::class, $options);
+
+        $this->get('/index.php?module=API&method=SitesManager.setDefaultCurrency'.
+            '&defaultCurrency=INVALID&format=json&token_auth=super-token')
+            ->assertBadRequest()
+            ->assertJsonPath('message', 'The currency "INVALID" is not valid. Please enter a valid currency symbol (eg. USD, EUR, etc.)');
+        $this->get('/index.php?module=API&method=SitesManager.setDefaultTimezone'.
+            '&defaultTimezone=Invalid%2FZone&format=json&token_auth=super-token')
+            ->assertBadRequest()
+            ->assertJsonPath('message', 'The timezone "Invalid/Zone" is not valid. Please enter a valid timezone.');
     }
 
     /**

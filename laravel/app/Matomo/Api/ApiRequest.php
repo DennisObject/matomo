@@ -469,6 +469,7 @@ final readonly class ApiRequest
         public ?string $pluginName,
         public ?string $siteUrl,
         public ?string $timezone,
+        public ?string $defaultCurrency,
         public ?string $widgetName,
         public ?string $tourChallengeId,
         public ?string $countryCode,
@@ -534,6 +535,7 @@ final readonly class ApiRequest
             pluginName: null,
             siteUrl: null,
             timezone: null,
+            defaultCurrency: null,
             widgetName: null,
             tourChallengeId: null,
             countryCode: null,
@@ -677,6 +679,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === 'SitesManager.getDefaultCurrency';
     }
 
+    public function isDefaultCurrencyUpdateRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.setDefaultCurrency';
+    }
+
     public function isCurrencySymbolsRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getCurrencySymbols';
@@ -690,6 +697,11 @@ final readonly class ApiRequest
     public function isDefaultTimezoneRequest(): bool
     {
         return $this->module === 'API' && $this->method === 'SitesManager.getDefaultTimezone';
+    }
+
+    public function isDefaultTimezoneUpdateRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.setDefaultTimezone';
     }
 
     public function isTimezoneNameRequest(): bool
@@ -1081,6 +1093,7 @@ final readonly class ApiRequest
             pluginName: self::pluginName($request, $module, $method),
             siteUrl: self::siteUrl($request, $module, $method),
             timezone: self::timezone($request, $module, $method),
+            defaultCurrency: self::defaultCurrency($request, $module, $method),
             widgetName: self::widgetName($request, $module, $method),
             tourChallengeId: self::tourChallengeId($request, $module, $method),
             countryCode: self::timezoneCountryCode($request, $module, $method),
@@ -2339,14 +2352,31 @@ final readonly class ApiRequest
 
     private static function timezone(Request $request, string $module, string $method): ?string
     {
-        if ($module !== 'API' || $method !== 'SitesManager.getTimezoneName') {
+        if ($module !== 'API'
+            || ! in_array($method, ['SitesManager.getTimezoneName', 'SitesManager.setDefaultTimezone'], true)) {
             return null;
         }
 
-        $value = self::nullableStringInput($request, 'timezone');
+        $parameter = $method === 'SitesManager.setDefaultTimezone' ? 'defaultTimezone' : 'timezone';
+        $value = self::nullableStringInput($request, $parameter);
 
         if ($value === null) {
-            throw new MissingApiParameter('timezone');
+            throw new MissingApiParameter($parameter);
+        }
+
+        return $value;
+    }
+
+    private static function defaultCurrency(Request $request, string $module, string $method): ?string
+    {
+        if ($module !== 'API' || $method !== 'SitesManager.setDefaultCurrency') {
+            return null;
+        }
+
+        $value = self::nullableStringInput($request, 'defaultCurrency');
+
+        if ($value === null || $value === '') {
+            throw new MissingApiParameter('defaultCurrency');
         }
 
         return $value;
