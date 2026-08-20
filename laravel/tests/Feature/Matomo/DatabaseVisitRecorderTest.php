@@ -385,6 +385,75 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame(1, $connection->table('log_link_visit_action')->count());
     }
 
+    public function test_manual_goals_convert_visits_without_recording_actions(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $startedAt = CarbonImmutable::parse('2026-08-20 12:00:00', 'UTC');
+        CarbonImmutable::setTestNow($startedAt);
+        $recorder->record(new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/page',
+            actionName: '',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+        ));
+
+        CarbonImmutable::setTestNow($startedAt->addSeconds(60));
+        $goal = new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/goal',
+            actionName: 'Ignored',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            goalId: 4,
+            goalRevenue: 12.75,
+        );
+        $recorder->record($goal);
+        $recorder->record($goal);
+
+        $visit = $connection->table('log_visit')->first();
+        $conversion = $connection->table('log_conversion')->first();
+        $this->assertInstanceOf(stdClass::class, $visit);
+        $this->assertInstanceOf(stdClass::class, $conversion);
+        $this->assertSame(1, $visit->visit_total_actions);
+        $this->assertSame(60, $visit->visit_total_time);
+        $this->assertSame(1, $visit->visit_goal_converted);
+        $this->assertSame('2026-08-20 12:01:00', $visit->visit_last_action_time);
+        $this->assertSame(1, $connection->table('log_action')->count());
+        $this->assertSame(1, $connection->table('log_link_visit_action')->count());
+        $this->assertSame(1, $connection->table('log_conversion')->count());
+        $this->assertNull($conversion->idaction_url);
+        $this->assertNull($conversion->idlink_va);
+        $this->assertSame('https://example.test/goal', $conversion->url);
+        $this->assertSame(12.75, $conversion->revenue);
+    }
+
+    public function test_manual_goals_create_conversion_only_visits_when_needed(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $recorder->record(new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/goal',
+            actionName: 'Ignored',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            goalId: 4,
+            goalRevenue: 9.5,
+        ));
+
+        $this->assertSame(1, $connection->table('log_visit')->count());
+        $this->assertSame(0, $connection->table('log_visit')->value('visit_total_actions'));
+        $this->assertSame(1, $connection->table('log_visit')->value('visit_goal_converted'));
+        $this->assertSame(0, $connection->table('log_action')->count());
+        $this->assertSame(0, $connection->table('log_link_visit_action')->count());
+        $this->assertSame(1, $connection->table('log_conversion')->count());
+    }
+
     private function connection(): ConnectionInterface
     {
         config()->set('database.connections.tracker_test', ['driver' => 'sqlite', 'database' => ':memory:']);
@@ -423,6 +492,7 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->string('custom_var_k1', 200)->nullable();
             $table->string('custom_var_v1', 200)->nullable();
             $table->string('custom_dimension_1', 250)->nullable();
+            $table->boolean('visit_goal_converted')->default(false);
         });
         $schema->create('log_action', static function (Blueprint $table): void {
             $table->id('idaction');
@@ -462,6 +532,19 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->string('custom_var_k2', 200)->nullable();
             $table->string('custom_var_v2', 200)->nullable();
             $table->string('custom_dimension_2', 250)->nullable();
+        });
+        $schema->create('log_conversion', static function (Blueprint $table): void {
+            $table->unsignedBigInteger('idvisit');
+            $table->unsignedInteger('idsite');
+            $table->binary('idvisitor');
+            $table->dateTime('server_time');
+            $table->unsignedInteger('idaction_url')->nullable();
+            $table->unsignedBigInteger('idlink_va')->nullable();
+            $table->integer('idgoal');
+            $table->unsignedInteger('buster');
+            $table->text('url');
+            $table->double('revenue')->nullable();
+            $table->primary(['idvisit', 'idgoal', 'buster']);
         });
 
         return $connection;

@@ -39,6 +39,12 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 return;
             }
 
+            if ($request->goalId !== null) {
+                $this->recordManualGoal($request, $visitor, $ip, $now);
+
+                return;
+            }
+
             if ($request->actionType === 8) {
                 $urlId = null;
                 $nameId = $this->action($request->actionName, 8, null);
@@ -174,6 +180,47 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             ->update(['visit_total_time' => $totalTime]);
     }
 
+    private function recordManualGoal(
+        TrackingRequest $request,
+        string $visitor,
+        string $ip,
+        CarbonImmutable $now,
+    ): void {
+        $visit = $this->recentVisit($request->siteId, $visitor, $now);
+        $visitId = $visit === null
+            ? $this->createVisit($request, $visitor, $ip, $now, null, null, false)
+            : (int) $visit->idvisit;
+        $firstAction = $visit === null
+            ? $now
+            : CarbonImmutable::parse($visit->visit_first_action_time, 'UTC');
+        $totalTime = max(
+            $visit === null ? 0 : (int) $visit->visit_total_time,
+            (int) $now->diffInSeconds($firstAction, true),
+        );
+        $visitUpdates = [
+            'visit_last_action_time' => $now->format('Y-m-d H:i:s'),
+            'visit_total_time' => $totalTime,
+            'visit_goal_converted' => 1,
+            ...$request->visitProperties,
+        ];
+        if ($request->userId !== null) {
+            $visitUpdates['user_id'] = $request->userId;
+        }
+
+        $this->connection->table('log_visit')->where('idvisit', $visitId)->update($visitUpdates);
+        $this->connection->table('log_conversion')->insertOrIgnore([
+            'idvisit' => $visitId,
+            'idsite' => $request->siteId,
+            'idvisitor' => $visitor,
+            'server_time' => $now->format('Y-m-d H:i:s'),
+            'idgoal' => $request->goalId,
+            'buster' => $request->goalAllowsMultiple ? random_int(1, 4_294_967_295) : 0,
+            'url' => $request->url,
+            'revenue' => $request->goalRevenue,
+            ...$request->visitProperties,
+        ]);
+    }
+
     private function createVisit(
         TrackingRequest $request,
         string $visitor,
@@ -181,6 +228,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         CarbonImmutable $now,
         ?int $urlId,
         ?int $nameId,
+        bool $recordsAction = true,
     ): int {
         $timestamp = $now->format('Y-m-d H:i:s');
 
@@ -195,10 +243,10 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'visit_entry_idaction_name' => $nameId,
             'visit_exit_idaction_url' => $urlId,
             'visit_exit_idaction_name' => $nameId,
-            'visit_total_actions' => 1,
-            'visit_total_events' => $request->actionType === 10 ? 1 : 0,
-            'visit_total_searches' => $request->actionType === 8 ? 1 : 0,
-            'visit_total_interactions' => 1,
+            'visit_total_actions' => $recordsAction ? 1 : 0,
+            'visit_total_events' => $recordsAction && $request->actionType === 10 ? 1 : 0,
+            'visit_total_searches' => $recordsAction && $request->actionType === 8 ? 1 : 0,
+            'visit_total_interactions' => $recordsAction ? 1 : 0,
             'visit_total_time' => 0,
             'user_id' => $request->userId,
             'referer_url' => $request->referrerUrl,

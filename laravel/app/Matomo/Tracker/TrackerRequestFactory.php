@@ -6,6 +6,7 @@ namespace App\Matomo\Tracker;
 
 use App\Matomo\Config\InstallationConfig;
 use App\Matomo\CustomDimensions\CustomDimensionRepository;
+use App\Matomo\Goals\GoalRepository;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
@@ -57,6 +58,9 @@ final class TrackerRequestFactory
     /** @var array<int, bool> */
     private array $campaignParametersMaskedBySite = [];
 
+    /** @var array<string, array<string, float|int|string>|null> */
+    private array $goalsBySiteAndId = [];
+
     public function __construct(
         private readonly ClientIpResolver $ips,
         private readonly SiteRepository $sites,
@@ -64,6 +68,7 @@ final class TrackerRequestFactory
         private readonly TrackingRequestPolicy $policy,
         private readonly InstallationConfig $configuration,
         private readonly CustomDimensionRepository $dimensions,
+        private readonly GoalRepository $goals,
     ) {}
 
     public function make(Request $request): ?TrackingRequest
@@ -139,6 +144,25 @@ final class TrackerRequestFactory
 
         $searchCategory = $actionType === 8 ? $this->optional($request->input('search_cat'), 200) : null;
         $searchCount = $actionType === 8 ? $this->searchCount($request->input('search_count')) : null;
+
+        $goalIdInput = $request->input('idgoal');
+        $goal = null;
+        $goalRevenue = null;
+        if ($goalIdInput !== null) {
+            if (filter_var($goalIdInput, FILTER_VALIDATE_INT) === false || (int) $goalIdInput < 1) {
+                throw new InvalidArgumentException('idgoal must be a positive integer.');
+            }
+
+            $goal = $this->goal($siteId, (int) $goalIdInput);
+            if ($goal === null) {
+                throw new InvalidArgumentException('The requested goal does not exist.');
+            }
+
+            $goalRevenue = $this->goalRevenue(
+                $request->input('revenue'),
+                (float) ($goal['revenue'] ?? 0),
+            );
+        }
 
         $referrer = $request->input('urlref', '');
         if (! is_string($referrer) || strlen($referrer) > 1_500
@@ -224,6 +248,9 @@ final class TrackerRequestFactory
             contentPiece: $actionType === 13 ? $this->optional($request->input('c_p'), 255) : null,
             contentTarget: $actionType === 13 ? $this->optional($request->input('c_t'), $maximumUrlLength) : null,
             contentInteraction: $actionType === 13 ? $this->optional($request->input('c_i'), 255) : null,
+            goalId: $goal === null ? null : (int) $goalIdInput,
+            goalRevenue: $goalRevenue,
+            goalAllowsMultiple: (int) ($goal['allow_multiple'] ?? 0) === 1,
             userId: $userId,
             referrerUrl: $referrer,
             referrerType: $referrerType,
@@ -317,6 +344,32 @@ final class TrackerRequestFactory
     private function site(int $siteId): array
     {
         return $this->sitesById[$siteId] ??= $this->sites->details($siteId);
+    }
+
+    /** @return array<string, float|int|string>|null */
+    private function goal(int $siteId, int $goalId): ?array
+    {
+        $key = $siteId.':'.$goalId;
+        if (! array_key_exists($key, $this->goalsBySiteAndId)) {
+            $this->goalsBySiteAndId[$key] = $this->goals->findActive($siteId, $goalId);
+        }
+
+        return $this->goalsBySiteAndId[$key];
+    }
+
+    private function goalRevenue(mixed $value, float $default): float
+    {
+        if ($value === null) {
+            $value = $default;
+        }
+
+        if (! is_scalar($value) || ! is_numeric($value) || ! is_finite((float) $value)) {
+            throw new InvalidArgumentException('revenue must be numeric.');
+        }
+
+        $revenue = (float) $value;
+
+        return abs($revenue) > 1_000_000_000_000 ? 0.0 : round($revenue, 2);
     }
 
     private function honorsDoNotTrack(Request $request): bool

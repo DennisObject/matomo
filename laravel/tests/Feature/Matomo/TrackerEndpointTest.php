@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\CustomDimensions\CustomDimensionRepository;
+use App\Matomo\Goals\GoalRepository;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Settings\PolicySettingRepository;
@@ -419,6 +420,49 @@ final class TrackerEndpointTest extends TestCase
         $this->app->instance(VisitRecorder::class, $recorder);
 
         $this->get($this->url(['ping' => '1']))->assertOk();
+    }
+
+    public function test_validates_and_records_manual_goals(): void
+    {
+        $this->bindSite();
+        $goals = $this->createStub(GoalRepository::class);
+        $goals->method('findActive')->willReturn(['idgoal' => 4, 'revenue' => 9.5, 'allow_multiple' => 0]);
+        $this->app->instance(GoalRepository::class, $goals);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorded = [];
+        $recorder->expects($this->exactly(2))->method('record')->willReturnCallback(
+            static function (TrackingRequest $request) use (&$recorded): void {
+                $recorded[] = $request;
+            },
+        );
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['idgoal' => '4', 'revenue' => '12.755']))->assertOk();
+        $this->get($this->url(['idgoal' => '4']))->assertOk();
+
+        $this->assertSame(12.76, $recorded[0]->goalRevenue);
+        $this->assertSame(9.5, $recorded[1]->goalRevenue);
+        $this->assertSame(4, $recorded[1]->goalId);
+        $this->assertFalse($recorded[1]->goalAllowsMultiple);
+    }
+
+    public function test_rejects_invalid_manual_goals(): void
+    {
+        $this->bindSite();
+        $goals = $this->createStub(GoalRepository::class);
+        $goals->method('findActive')->willReturnCallback(
+            static fn (int $siteId, int $goalId): ?array => $goalId === 4
+                ? ['idgoal' => 4, 'revenue' => 9.5, 'allow_multiple' => 0]
+                : null,
+        );
+        $this->app->instance(GoalRepository::class, $goals);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['idgoal' => '0']))->assertBadRequest();
+        $this->get($this->url(['idgoal' => '5']))->assertBadRequest();
+        $this->get($this->url(['idgoal' => '4', 'revenue' => 'not-a-number']))->assertBadRequest();
     }
 
     public function test_rejects_blank_content_names(): void
