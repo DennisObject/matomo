@@ -527,6 +527,7 @@ final readonly class ApiRequest
         public ?SitesManagerLifecycleRequest $sitesManagerLifecycle,
         public ?UsersManagerPreferenceRequest $usersManagerPreference,
         public ?UsersManagerIdentityRequest $usersManagerIdentity,
+        public ?UsersManagerReadRequest $usersManagerRead,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -599,6 +600,7 @@ final readonly class ApiRequest
             sitesManagerLifecycle: null,
             usersManagerPreference: null,
             usersManagerIdentity: null,
+            usersManagerRead: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1200,6 +1202,7 @@ final readonly class ApiRequest
             sitesManagerLifecycle: self::sitesManagerLifecycle($request, $module, $method),
             usersManagerPreference: self::usersManagerPreference($request, $module, $method),
             usersManagerIdentity: self::usersManagerIdentity($request, $module, $method),
+            usersManagerRead: self::usersManagerRead($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2440,6 +2443,36 @@ final readonly class ApiRequest
                 'UsersManager.userEmailExists',
                 'UsersManager.getUserLoginFromUserEmail',
             ], true) ? self::requiredString($request, 'userEmail') : null,
+        );
+    }
+
+    private static function usersManagerRead(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?UsersManagerReadRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'UsersManager.getUsers',
+            'UsersManager.getUsersLogin',
+            'UsersManager.getUser',
+            'UsersManager.getUserByEmail',
+            'UsersManager.getUsersHavingSuperUserAccess',
+        ], true)) {
+            return null;
+        }
+
+        $loginFilter = self::nullableStringInput($request, 'userLogins');
+
+        return new UsersManagerReadRequest(
+            userLogins: $method === 'UsersManager.getUsers' && $loginFilter !== null && $loginFilter !== ''
+                ? self::stringList($loginFilter, 'userLogins')
+                : [],
+            userLogin: $method === 'UsersManager.getUser'
+                ? self::requiredString($request, 'userLogin')
+                : null,
+            userEmail: $method === 'UsersManager.getUserByEmail'
+                ? self::requiredString($request, 'userEmail')
+                : null,
         );
     }
 
