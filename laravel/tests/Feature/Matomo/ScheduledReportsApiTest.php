@@ -81,6 +81,22 @@ final class ScheduledReportsApiTest extends TestCase
         $this->assertSame(['alice@example.test', 'extra@example.test'], $this->sender->recipients);
         $this->assertSame('Weekly overview', $this->sender->subject);
         $this->assertNotNull($this->reports->values[1]['ts_last_sent']);
+
+        $this->post($this->url('sendReport'), ['idReport' => 1, 'date' => '2026-08-14'])
+            ->assertOk();
+        $this->assertSame(1, $this->sender->sendCount);
+
+        $this->post($this->url('sendReport'), ['idReport' => 1, 'date' => '2026-08-14', 'force' => 1])
+            ->assertOk();
+        $this->assertSame(2, $this->sender->sendCount);
+    }
+
+    public function test_generate_rejects_a_format_for_another_transport(): void
+    {
+        $this->reports->values[1] = $this->storedReport();
+
+        $this->get($this->url('generateReport').'&idReport=1&date=2026-08-14&reportFormat=sms')
+            ->assertBadRequest()->assertJsonPath('message', 'The report type or format is invalid.');
     }
 
     public function test_real_generator_dispatches_selected_laravel_reports(): void
@@ -209,12 +225,15 @@ final class RecordingScheduledReportSender implements ScheduledReportSender
 
     public string $subject = '';
 
+    public int $sendCount = 0;
+
     public function send(
         array $recipients,
         string $subject,
         string $html,
         ?RenderedScheduledReport $attachment = null,
     ): void {
+        $this->sendCount++;
         $this->recipients = $recipients;
         $this->subject = $subject;
     }

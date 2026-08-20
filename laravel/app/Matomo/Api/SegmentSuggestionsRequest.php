@@ -6,5 +6,9 @@ namespace App\Matomo\Api;
 
 final readonly class SegmentSuggestionsRequest
 {
-    public function __construct(public int $siteId, public string $segmentName) {}
+    public function __construct(
+        public ?int $siteId,
+        public bool $allSites,
+        public string $segmentName,
+    ) {}
 }

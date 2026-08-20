@@ -4,56 +4,124 @@ declare(strict_types=1);
 
 namespace App\Matomo\Tracker;
 
+use App\Matomo\Config\InstallationConfig;
 use App\Matomo\CustomDimensions\CustomDimensionRepository;
 use App\Matomo\Goals\GoalRepository;
 use App\Matomo\Security\ClientIpResolver;
+use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
+use JsonException;
 
-final readonly class TrackerRequestFactory
+final class TrackerRequestFactory
 {
+    private const int REFERRER_TYPE_DIRECT = 1;
+
+    private const int REFERRER_TYPE_WEBSITE = 3;
+
+    private const int REFERRER_TYPE_CAMPAIGN = 6;
+
+    private const string MASKED_CAMPAIGN_VALUE = '__discarded_by_policy__';
+
+    /** @var array<int, array<string, int|string|null>> */
+    private array $sitesById = [];
+
+    /** @var array<int, list<array<string, bool|int|string|list<array<string, mixed>>>>> */
+    private array $dimensionsBySite = [];
+
+    /** @var array<int, list<string>> */
+    private array $siteUrlsById = [];
+
+    /** @var array<int, list<string>> */
+    private array $excludedParametersBySite = [];
+
+    /** @var array<string, bool> */
+    private array $doNotTrackByContext = [];
+
+    /** @var array<string, bool> */
+    private array $excludedVisitsByContext = [];
+
+    /** @var array<string, string> */
+    private array $storedIpsByContext = [];
+
+    /** @var array<int, bool> */
+    private array $collectsUserIdBySite = [];
+
+    /** @var array<int, string> */
+    private array $referrerAnonymisationBySite = [];
+
+    /** @var array<int, bool> */
+    private array $collectsScreenResolutionBySite = [];
+
+    /** @var array<int, bool> */
+    private array $campaignParametersMaskedBySite = [];
+
+    /** @var array<string, array<string, float|int|string>|null> */
+    private array $goalsBySiteAndId = [];
+
     public function __construct(
-        private ClientIpResolver $ips,
-        private SiteRepository $sites,
-        private CustomDimensionRepository $dimensions,
-        private TrackerSettings $settings,
-        private GoalRepository $goals,
+        private readonly ClientIpResolver $ips,
+        private readonly SiteRepository $sites,
+        private readonly QueryParameterExclusionPolicy $excludedParameters,
+        private readonly TrackingRequestPolicy $policy,
+        private readonly InstallationConfig $configuration,
+        private readonly CustomDimensionRepository $dimensions,
+        private readonly GoalRepository $goals,
     ) {}
 
-    public function make(Request $request): TrackingRequest
+    public function make(Request $request): ?TrackingRequest
     {
         $siteId = filter_var($request->input('idsite'), FILTER_VALIDATE_INT);
         if ($siteId === false || $siteId < 1) {
             throw new InvalidArgumentException('idsite must be a positive integer.');
         }
 
-        if ($this->sites->details((int) $siteId) === []) {
+        $site = $this->site((int) $siteId);
+        if ($site === []) {
             throw new InvalidArgumentException('The requested website does not exist.');
         }
 
         $eventCategory = $this->optional($request->input('e_c'), 255);
         $eventAction = $this->optional($request->input('e_a'), 255);
-        $download = $this->optional($request->input('download'), 4096);
-        $outlink = $this->optional($request->input('link'), 4096);
-        $search = $this->optional($request->input('search'), 255);
-        $contentName = $this->optionalTrimmed($request->input('c_n'), 255);
-        if (is_string($request->input('c_n')) && $request->input('c_n') !== '' && $contentName === null) {
-            throw new InvalidArgumentException('c_n must not contain only whitespace.');
-        }
+        $maximumUrlLength = $this->configuration->pageMaximumLength();
+        $download = $this->optional($request->input('download'), $maximumUrlLength + 1);
+        $outlink = $this->optional($request->input('link'), $maximumUrlLength + 1);
+        $search = (int) ($site['sitesearch'] ?? 1) === 1
+            ? $this->optional($request->input('search'), 255)
+            : null;
+        $contentNameInput = $request->input('c_n');
+        $contentName = $this->optional($contentNameInput, 255);
 
         if (($eventCategory === null) !== ($eventAction === null)) {
             throw new InvalidArgumentException('e_c and e_a must be provided together.');
         }
 
-        if (count(array_filter([$eventCategory, $download, $outlink, $search, $contentName], static fn (?string $value): bool => $value !== null)) > 1) {
-            throw new InvalidArgumentException('Only one tracker action type may be provided.');
+        if ($download === null && $outlink === null && $eventCategory === null
+            && $request->exists('c_n') && $contentName === null) {
+            throw new InvalidArgumentException('c_n must not be blank.');
         }
 
-        $actionType = $eventCategory !== null ? 10 : ($download !== null ? 3 : ($outlink !== null ? 2 : ($search !== null ? 8 : ($contentName !== null ? 13 : 1))));
-        $url = $download ?? $outlink ?? $request->input('url', '');
-        if (! is_string($url) || strlen($url) > 4096 || filter_var($url, FILTER_VALIDATE_URL) === false || ! in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)) {
+        $pageUrl = $request->input('url', '');
+        $actionType = $download !== null ? 3 : ($outlink !== null ? 2 : ($eventCategory !== null ? 10 : ($contentName !== null ? 13 : ($search !== null ? 8 : 1))));
+        $url = $download ?? $outlink ?? $pageUrl;
+        if (! is_string($url)
+            || strlen($url) > $maximumUrlLength
+            || filter_var($url, FILTER_VALIDATE_URL) === false
+            || ! in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)) {
             throw new InvalidArgumentException('url must be a valid HTTP or HTTPS URL.');
+        }
+
+        if ((int) ($site['exclude_unknown_urls'] ?? 0) === 1
+            && (! is_string($pageUrl) || ! $this->belongsToSite($pageUrl, (int) $siteId))) {
+            throw new InvalidArgumentException('url does not belong to the requested website.');
+        }
+
+        $ipAddress = $this->ips->resolve($request);
+        $userAgent = mb_substr((string) $request->userAgent(), 0, 512);
+        if ($this->excludesVisit($site, $ipAddress, $userAgent)) {
+            return null;
         }
 
         $visitorId = $request->input('_id', '');
@@ -61,128 +129,171 @@ final readonly class TrackerRequestFactory
             $visitorId = bin2hex(random_bytes(8));
         }
 
-        $actionName = $search ?? $request->input('action_name', '');
+        $actionName = $actionType === 8 ? $search : $request->input('action_name', '');
 
-        $eventValue = $request->input('e_v');
-        if ($eventValue !== null && ! is_numeric($eventValue)) {
+        $eventValue = $actionType === 10 ? $request->input('e_v') : null;
+        if (is_string($eventValue)) {
+            $eventValue = trim($eventValue);
+            $eventValue = $eventValue === '' ? null : $eventValue;
+        }
+
+        if ($eventValue !== null
+            && (! is_numeric($eventValue) || ! is_finite((float) $eventValue))) {
             throw new InvalidArgumentException('e_v must be numeric.');
         }
 
-        $searchCount = $request->input('search_count');
-        if ($searchCount !== null && (filter_var($searchCount, FILTER_VALIDATE_INT) === false || (int) $searchCount < 0)) {
-            throw new InvalidArgumentException('search_count must be a non-negative integer.');
-        }
+        $searchCategory = $actionType === 8 ? $this->optional($request->input('search_cat'), 200) : null;
+        $searchCount = $actionType === 8 ? $this->searchCount($request->input('search_count')) : null;
 
-        $goalId = $request->input('idgoal');
+        $orderId = $this->ecommerceOrderId($request->input('ec_id'));
+        $goalIdInput = $request->input('idgoal');
         $goal = null;
-        if ($goalId !== null) {
-            if (filter_var($goalId, FILTER_VALIDATE_INT) === false || (int) $goalId < 1) {
+        $goalRevenue = null;
+        if ($orderId !== null) {
+            if ($goalIdInput !== null
+                && (filter_var($goalIdInput, FILTER_VALIDATE_INT) === false || (int) $goalIdInput !== 0)) {
+                throw new InvalidArgumentException('idgoal must be 0 for ecommerce orders.');
+            }
+
+            $goalRevenue = $this->goalRevenue($request->input('revenue'), 0.0);
+            $orderId = $this->clean($this->policy->storedOrderId($siteId, $orderId), 100);
+        } elseif ($goalIdInput !== null) {
+            if (filter_var($goalIdInput, FILTER_VALIDATE_INT) === false || (int) $goalIdInput < 1) {
                 throw new InvalidArgumentException('idgoal must be a positive integer.');
             }
 
-            $goal = $this->goals->findActive((int) $siteId, (int) $goalId);
+            $goal = $this->goal($siteId, (int) $goalIdInput);
             if ($goal === null) {
                 throw new InvalidArgumentException('The requested goal does not exist.');
             }
-        }
 
-        $goalRevenue = $request->input('revenue');
-        if ($goalRevenue !== null && (! is_numeric($goalRevenue) || abs((float) $goalRevenue) > 1_000_000_000_000)) {
-            throw new InvalidArgumentException('revenue must be numeric.');
-        }
-
-        $orderId = $this->optionalTrimmed($request->input('ec_id'), 100);
-        if ($orderId !== null && $goal !== null) {
-            throw new InvalidArgumentException('A request cannot record a goal and an ecommerce order together.');
-        }
-
-        if ($orderId !== null && $goalRevenue === null) {
-            throw new InvalidArgumentException('revenue is required for ecommerce orders.');
+            $goalRevenue = $this->goalRevenue(
+                $request->input('revenue'),
+                (float) ($goal['revenue'] ?? 0),
+            );
         }
 
         $ecommerceValues = [];
         foreach (['ec_st', 'ec_tx', 'ec_sh', 'ec_dt'] as $parameter) {
-            $value = $request->input($parameter);
-            if ($value !== null && (! is_numeric($value) || abs((float) $value) > 1_000_000_000_000)) {
-                throw new InvalidArgumentException('Ecommerce revenue values must be valid numbers.');
-            }
-
-            $ecommerceValues[$parameter] = $value === null ? null : (float) $value;
+            $ecommerceValues[$parameter] = $orderId === null
+                ? null
+                : $this->ecommerceRevenue($request->input($parameter));
         }
 
-        $referrer = $this->optional($request->input('urlref'), 4096);
-        if ($referrer !== null && (filter_var($referrer, FILTER_VALIDATE_URL) === false
-            || ! in_array(strtolower((string) parse_url($referrer, PHP_URL_SCHEME)), ['http', 'https'], true))) {
+        $referrer = $request->input('urlref', '');
+        if (! is_string($referrer) || strlen($referrer) > 1_500
+            || ($referrer !== '' && (filter_var($referrer, FILTER_VALIDATE_URL) === false
+            || ! in_array(strtolower((string) parse_url($referrer, PHP_URL_SCHEME)), ['http', 'https'], true)))) {
             throw new InvalidArgumentException('urlref must be a valid HTTP or HTTPS URL.');
         }
 
-        [$referrerType, $referrerName, $referrerKeyword] = $this->referrerAttribution(
-            $request,
-            $url,
-            $referrer ?? '',
-        );
-
-        $hour = $this->boundedInteger($request->input('h'), 0, 23);
-        $minute = $this->boundedInteger($request->input('m'), 0, 59);
-        $second = $this->boundedInteger($request->input('s'), 0, 59);
-        $resolution = $this->optional($request->input('res'), 9) ?? '';
-        if ($resolution !== '' && preg_match('/^[0-9]{1,5}x[0-9]{1,5}$/D', $resolution) !== 1) {
+        $now = CarbonImmutable::now('UTC');
+        $hour = $this->boundedInteger($request->input('h'), 0, 23, (int) $now->format('H'));
+        $minute = $this->boundedInteger($request->input('m'), 0, 59, (int) $now->format('i'));
+        $second = $this->boundedInteger($request->input('s'), 0, 59, (int) $now->format('s'));
+        $resolution = $request->input('res');
+        if ($resolution === null || $resolution === '') {
+            $resolution = 'unknown';
+        } elseif (! is_string($resolution)
+            || strlen($resolution) > 9
+            || preg_match('/^[0-9]{1,4}x[0-9]{1,4}$/D', $resolution) !== 1) {
             throw new InvalidArgumentException('res must be a screen resolution such as 1920x1080.');
         }
 
-        [$visitProperties, $actionProperties] = $this->customProperties($request, (int) $siteId);
+        $siteId = (int) $siteId;
+        [$referrerType, $referrerName, $referrerKeyword, $ignoreReferrer] = $this->referrerAttribution(
+            $request,
+            $url,
+            $referrer,
+            $siteId,
+        );
+        if ($ignoreReferrer) {
+            $referrer = '';
+        }
+
+        $userId = $this->optional($request->input('uid'), 200);
+        if ($userId !== null
+            && ! ($this->collectsUserIdBySite[$siteId] ??= $this->policy->collectsUserId($siteId))) {
+            $userId = null;
+        }
+
+        if ($referrer !== '') {
+            $referrerMode = $this->referrerAnonymisationBySite[$siteId]
+                ??= $this->policy->referrerAnonymisation($siteId);
+            $referrer = $this->anonymisedReferrer(
+                $this->clean($referrer, 1_500),
+                $referrerMode,
+            );
+            if ($referrerType === self::REFERRER_TYPE_WEBSITE && $referrerMode === 'exclude_all') {
+                $referrerName = '';
+            }
+        }
+
+        if ($referrerType === self::REFERRER_TYPE_CAMPAIGN
+            && ($this->campaignParametersMaskedBySite[$siteId]
+            ??= $this->policy->masksCampaignParameters($siteId))) {
+            $referrerName = self::MASKED_CAMPAIGN_VALUE;
+            $referrerKeyword = self::MASKED_CAMPAIGN_VALUE;
+        }
+
+        if ($resolution !== 'unknown'
+            && ! ($this->collectsScreenResolutionBySite[$siteId]
+            ??= $this->policy->collectsScreenResolution($siteId))) {
+            $resolution = 'unknown';
+        }
+
+        [$visitProperties, $actionProperties] = $this->customProperties($request, $siteId);
 
         return new TrackingRequest(
-            (int) $siteId,
-            $url,
-            is_string($actionName) ? mb_substr($actionName, 0, 255) : '',
-            strtolower($visitorId),
-            $this->ips->resolve($request),
-            mb_substr((string) $request->userAgent(), 0, 512),
-            $actionType,
-            $eventCategory,
-            $eventAction,
-            $this->optional($request->input('e_n'), 255),
-            $eventValue === null ? null : (float) $eventValue,
-            $this->optional($request->input('search_cat'), 255),
-            $searchCount === null ? null : (int) $searchCount,
-            $contentName,
-            $this->optionalTrimmed($request->input('c_p'), 255),
-            $this->optionalTrimmed($request->input('c_t'), 4096),
-            $this->optionalTrimmed($request->input('c_i'), 255),
-            $goal === null ? null : (int) $goalId,
-            $orderId !== null
-                ? (float) $goalRevenue
-                : ($goal === null ? null : ($goalRevenue === null ? (float) ($goal['revenue'] ?? 0) : (float) $goalRevenue)),
-            (int) ($goal['allow_multiple'] ?? 0) === 1,
-            $orderId,
-            $ecommerceValues['ec_st'],
-            $ecommerceValues['ec_tx'],
-            $ecommerceValues['ec_sh'],
-            $ecommerceValues['ec_dt'],
-            $this->ecommerceItems($request, $orderId),
-            $this->optional($request->input('uid'), 200),
-            $referrer ?? '',
-            $referrerType,
-            $referrerName,
-            $referrerKeyword,
-            $this->optional($request->input('lang'), 20) ?? '',
-            sprintf('%02d:%02d:%02d', $hour, $minute, $second),
-            $resolution,
-            $request->boolean('cookie', false),
-            $request->boolean('ping', false),
-            $visitProperties,
-            $actionProperties,
-            $this->performanceTimings($request),
+            siteId: $siteId,
+            url: in_array($actionType, [1, 10, 13], true)
+                ? $this->filteredUrl($url, $siteId, $site)
+                : $this->clean($url, $maximumUrlLength),
+            actionName: is_string($actionName) ? $this->clean($actionName, 255) : '',
+            visitorId: strtolower($visitorId),
+            ipAddress: $this->storedIpAddress($siteId, $ipAddress),
+            userAgent: $userAgent,
+            actionType: $actionType,
+            eventCategory: $actionType === 10 ? $eventCategory : null,
+            eventAction: $actionType === 10 ? $eventAction : null,
+            eventName: $actionType === 10 ? $this->optional($request->input('e_n'), 255) : null,
+            eventValue: $eventValue === null ? null : (float) $eventValue,
+            searchCategory: $searchCategory,
+            searchCount: $searchCount,
+            contentName: $actionType === 13 ? $contentName : null,
+            contentPiece: $actionType === 13 ? $this->optional($request->input('c_p'), 255) : null,
+            contentTarget: $actionType === 13 ? $this->optional($request->input('c_t'), $maximumUrlLength) : null,
+            contentInteraction: $actionType === 13 ? $this->optional($request->input('c_i'), 255) : null,
+            goalId: $goal === null ? null : (int) $goalIdInput,
+            goalRevenue: $goalRevenue,
+            goalAllowsMultiple: (int) ($goal['allow_multiple'] ?? 0) === 1,
+            ecommerceOrderId: $orderId,
+            ecommerceSubtotal: $ecommerceValues['ec_st'],
+            ecommerceTax: $ecommerceValues['ec_tx'],
+            ecommerceShipping: $ecommerceValues['ec_sh'],
+            ecommerceDiscount: $ecommerceValues['ec_dt'],
+            ecommerceItems: $this->ecommerceItems($request, $orderId),
+            userId: $userId,
+            referrerUrl: $referrer,
+            referrerType: $referrerType,
+            referrerName: $referrerName,
+            referrerKeyword: $referrerKeyword,
+            browserLanguage: $this->browserLanguage($request),
+            localTime: sprintf('%02d:%02d:%02d', $hour, $minute, $second),
+            resolution: $resolution,
+            cookiesEnabled: $request->boolean('cookie', false),
+            heartbeat: in_array($request->input('ping'), [1, '1', true], true),
+            visitProperties: $visitProperties,
+            actionProperties: $actionProperties,
+            performanceTimings: $this->performanceTimings($request, $actionType),
         );
     }
 
-    /** @return list<TrackingRequest> */
-    public function many(Request $request): array
+    public function many(Request $request): TrackingRequestBatch
     {
         $payload = $request->input('requests');
         if ($payload === null) {
-            return [$this->make($request)];
+            return $this->batch([$request]);
         }
 
         if (is_string($payload)) {
@@ -197,34 +308,246 @@ final readonly class TrackerRequestFactory
             throw new InvalidArgumentException('requests must contain at most 50 tracking query strings.');
         }
 
-        $tracking = [];
+        $requests = [];
+        $server = $request->server->all();
+        unset(
+            $server['CONTENT_LENGTH'],
+            $server['CONTENT_TYPE'],
+            $server['HTTP_CONTENT_LENGTH'],
+            $server['HTTP_CONTENT_TYPE'],
+        );
+
         foreach ($payload as $query) {
             if (! is_string($query)) {
                 throw new InvalidArgumentException('Every bulk tracking request must be a query string.');
             }
 
             parse_str(ltrim($query, '?'), $parameters);
-            $nested = Request::create('/matomo.php', 'POST', $parameters, $request->cookies->all(), [], $request->server->all());
-            $tracking[] = $this->make($nested);
+            $requests[] = Request::create(
+                '/matomo.php',
+                'POST',
+                $parameters,
+                $request->cookies->all(),
+                [],
+                $server,
+            );
         }
 
-        return $tracking;
+        return $this->batch($requests);
+    }
+
+    /** @param list<Request> $requests */
+    private function batch(array $requests): TrackingRequestBatch
+    {
+        $tracking = [];
+        $doNotTrackHonored = false;
+
+        foreach ($requests as $request) {
+            if ($this->honorsDoNotTrack($request)) {
+                $doNotTrackHonored = true;
+
+                continue;
+            }
+
+            if (! $this->policy->records($request)) {
+                continue;
+            }
+
+            $trackingRequest = $this->make($request);
+            if ($trackingRequest !== null) {
+                $tracking[] = $trackingRequest;
+            }
+        }
+
+        return new TrackingRequestBatch($tracking, $doNotTrackHonored);
+    }
+
+    /** @return array<string, int|string|null> */
+    private function site(int $siteId): array
+    {
+        return $this->sitesById[$siteId] ??= $this->sites->details($siteId);
+    }
+
+    /** @return array<string, float|int|string>|null */
+    private function goal(int $siteId, int $goalId): ?array
+    {
+        $key = $siteId.':'.$goalId;
+        if (! array_key_exists($key, $this->goalsBySiteAndId)) {
+            $this->goalsBySiteAndId[$key] = $this->goals->findActive($siteId, $goalId);
+        }
+
+        return $this->goalsBySiteAndId[$key];
+    }
+
+    private function goalRevenue(mixed $value, float $default): float
+    {
+        if ($value === null) {
+            $value = $default;
+        }
+
+        if (! is_scalar($value) || ! is_numeric($value) || ! is_finite((float) $value)) {
+            throw new InvalidArgumentException('revenue must be numeric.');
+        }
+
+        $revenue = (float) $value;
+
+        return abs($revenue) > 1_000_000_000_000 ? 0.0 : round($revenue, 2);
+    }
+
+    private function ecommerceOrderId(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (! is_string($value) && ! is_int($value)) {
+            throw new InvalidArgumentException('ec_id must be a string or integer.');
+        }
+
+        $orderId = $this->clean((string) $value, $this->configuration->pageMaximumLength());
+
+        return $orderId === '' ? null : $orderId;
+    }
+
+    private function ecommerceRevenue(mixed $value): ?float
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (! is_scalar($value) || ! is_numeric($value) || ! is_finite((float) $value)) {
+            throw new InvalidArgumentException('Ecommerce revenue values must be numeric.');
+        }
+
+        $revenue = (float) $value;
+
+        return abs($revenue) > 1_000_000_000_000 ? null : round($revenue, 2);
+    }
+
+    private function honorsDoNotTrack(Request $request): bool
+    {
+        $siteId = $request->input('idsite');
+        $key = implode("\0", [
+            is_scalar($siteId) ? (string) $siteId : '',
+            (string) $request->header('DNT'),
+            (string) $request->header('X-Do-Not-Track'),
+        ]);
+
+        return $this->doNotTrackByContext[$key] ??= $this->policy->honorsDoNotTrack($request);
+    }
+
+    /** @param array<string, int|string|null> $site */
+    private function excludesVisit(array $site, string $ipAddress, string $userAgent): bool
+    {
+        $key = implode("\0", [(string) ($site['idsite'] ?? ''), $ipAddress, $userAgent]);
+
+        return $this->excludedVisitsByContext[$key] ??= $this->policy->excludesVisit(
+            $site,
+            $ipAddress,
+            $userAgent,
+        );
+    }
+
+    private function storedIpAddress(int $siteId, string $ipAddress): string
+    {
+        $key = $siteId."\0".$ipAddress;
+
+        return $this->storedIpsByContext[$key] ??= $this->policy->storedIpAddress($siteId, $ipAddress);
     }
 
     private function optional(mixed $value, int $length): ?string
     {
-        return is_string($value) && $value !== '' ? mb_substr($value, 0, $length) : null;
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = $this->clean($value, $length);
+
+        return $value === '' ? null : $value;
     }
 
-    private function optionalTrimmed(mixed $value, int $length): ?string
+    private function belongsToSite(string $url, int $siteId): bool
     {
-        return is_string($value) && trim($value) !== '' ? mb_substr(trim($value), 0, $length) : null;
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        if ($host === '') {
+            return false;
+        }
+
+        foreach ($this->siteUrlsById[$siteId] ??= $this->sites->urls($siteId) as $siteUrl) {
+            if (strtolower((string) parse_url($siteUrl, PHP_URL_HOST)) === $host) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    private function boundedInteger(mixed $value, int $minimum, int $maximum): int
+    /** @param array<string, int|string|null> $site */
+    private function filteredUrl(string $url, int $siteId, array $site): string
+    {
+        $parts = parse_url($url);
+        if (! is_array($parts)) {
+            return $url;
+        }
+
+        $excluded = $this->excludedParametersBySite[$siteId] ??= array_map(strtolower(...), [
+            ...$this->configuration->urlQueryParametersToExclude(),
+            ...$this->configuration->campaignNameParameters(),
+            ...$this->configuration->campaignKeywordParameters(),
+            ...$this->list($this->excludedParameters->parameters($siteId)),
+            ...$this->list($site['excluded_parameters'] ?? null),
+            'ignore_referrer',
+            'ignore_referer',
+        ]);
+
+        $query = [];
+        parse_str((string) ($parts['query'] ?? ''), $query);
+        $query = array_filter(
+            $query,
+            static fn (int|string $name): bool => ! in_array(strtolower((string) $name), $excluded, true),
+            ARRAY_FILTER_USE_KEY,
+        );
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        if (str_contains($host, ':') && ! str_starts_with($host, '[')) {
+            $host = "[{$host}]";
+        }
+
+        $filtered = $scheme.'://'.$host;
+        if (isset($parts['port'])) {
+            $filtered .= ':'.(int) $parts['port'];
+        }
+
+        $filtered .= (string) ($parts['path'] ?? '');
+        if ($query !== []) {
+            $filtered .= '?'.http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        }
+
+        if ((int) ($site['keep_url_fragment'] ?? 0) === 1 && isset($parts['fragment'])) {
+            $filtered .= '#'.$parts['fragment'];
+        }
+
+        return $this->clean($filtered, $this->configuration->pageMaximumLength());
+    }
+
+    private function clean(string $value, int $limit): string
+    {
+        return mb_substr(str_replace(["\n", "\r", "\0"], '', trim($value)), 0, $limit);
+    }
+
+    /** @return list<string> */
+    private function list(int|string|null $value): array
+    {
+        return is_string($value)
+            ? array_values(array_filter(array_map(trim(...), explode(',', $value))))
+            : [];
+    }
+
+    private function boundedInteger(mixed $value, int $minimum, int $maximum, int $default): int
     {
         if ($value === null || $value === '') {
-            return 0;
+            return $default;
         }
 
         if (filter_var($value, FILTER_VALIDATE_INT) === false || (int) $value < $minimum || (int) $value > $maximum) {
@@ -239,25 +562,39 @@ final readonly class TrackerRequestFactory
     {
         $visit = $this->customVariables($request->input('_cvar'));
         $action = $this->customVariables($request->input('cvar'));
-        foreach ($this->dimensions->configuredForSite($siteId) as $dimension) {
+        if (! $this->hasCustomDimension($request)) {
+            return [$visit, $action];
+        }
+
+        foreach ($this->dimensionsBySite[$siteId] ??= $this->dimensions->configuredForSite($siteId) as $dimension) {
             if (! ($dimension['active'] ?? false)) {
                 continue;
             }
 
             $index = $dimension['index'] ?? null;
+            $id = $dimension['idcustomdimension'] ?? null;
             $scope = $dimension['scope'] ?? null;
-            if (! is_numeric($index) || ! in_array($scope, ['visit', 'action'], true)) {
+            if (! is_numeric($index) || (int) $index < 1
+                || ! is_numeric($id) || (int) $id < 1
+                || ! in_array($scope, ['visit', 'action'], true)) {
                 continue;
             }
 
-            $value = $this->optional($request->input('dimension'.(int) $index), 255);
-            if ($value !== null) {
-                $column = 'custom_dimension_'.(int) $index;
-                if ($scope === 'visit') {
-                    $visit[$column] = $value;
-                } else {
-                    $action[$column] = $value;
-                }
+            $parameter = 'dimension'.(int) $id;
+            if (! $request->exists($parameter)) {
+                continue;
+            }
+
+            $value = $request->input($parameter);
+            if (! is_scalar($value)) {
+                throw new InvalidArgumentException("{$parameter} must be a string.");
+            }
+
+            $column = 'custom_dimension_'.(int) $index;
+            if ($scope === 'visit') {
+                $visit[$column] = $this->clean((string) $value, 250);
+            } else {
+                $action[$column] = $this->clean((string) $value, 250);
             }
         }
 
@@ -267,15 +604,23 @@ final readonly class TrackerRequestFactory
     /** @return array<string, string> */
     private function customVariables(mixed $input): array
     {
-        if (is_string($input) && $input !== '') {
-            $input = json_decode($input, true);
-        }
-
         if ($input === null || $input === '') {
             return [];
         }
 
-        if (! is_array($input)) {
+        if (is_string($input)) {
+            if (strlen($input) > 4_096) {
+                throw new InvalidArgumentException('Custom variables are too large.');
+            }
+
+            try {
+                $input = json_decode($input, true, flags: JSON_THROW_ON_ERROR);
+            } catch (JsonException) {
+                throw new InvalidArgumentException('Custom variables must be valid JSON.');
+            }
+        }
+
+        if (! is_array($input) || count($input) > 5) {
             throw new InvalidArgumentException('Custom variables must be a JSON object.');
         }
 
@@ -286,48 +631,68 @@ final readonly class TrackerRequestFactory
                 throw new InvalidArgumentException('Custom variable entries are invalid.');
             }
 
-            $properties['custom_var_k'.(int) $index] = mb_substr($pair[0], 0, 200);
-            $properties['custom_var_v'.(int) $index] = mb_substr((string) $pair[1], 0, 200);
+            $properties['custom_var_k'.(int) $index] = $this->clean($pair[0], 200);
+            $properties['custom_var_v'.(int) $index] = $this->clean((string) $pair[1], 200);
         }
 
         return $properties;
     }
 
-    /** @return array{int, string, string} */
-    private function referrerAttribution(Request $request, string $url, string $referrer): array
+    /** @return array{int, string, string, bool} */
+    private function referrerAttribution(Request $request, string $url, string $referrer, int $siteId): array
     {
-        $campaign = $this->optional($request->input('_rcn'), 70)
-            ?? $this->queryValue($url, $this->settings->campaignNameParameters(), 70);
-        $keyword = $this->optional($request->input('_rck'), 255)
-            ?? $this->queryValue($url, $this->settings->campaignKeywordParameters(), 255)
-            ?? '';
+        if ($this->ignoresReferrer($url)) {
+            return [self::REFERRER_TYPE_DIRECT, '', '', true];
+        }
+
+        $campaignNames = $this->configuration->campaignNameParameters();
+        $campaignKeywords = $this->configuration->campaignKeywordParameters();
+        $campaign = $this->queryValue($url, $campaignNames, 70);
+        $keyword = $this->queryValue($url, $campaignKeywords, 255);
+        $requestCampaign = $this->requestValue($request, $campaignNames, 70);
+        if ($requestCampaign !== null) {
+            $campaign = $requestCampaign;
+            $keyword = $this->requestValue($request, $campaignKeywords, 255);
+        }
+
         if ($campaign !== null) {
-            return [6, $campaign, $keyword];
+            $referrerHost = parse_url($referrer, PHP_URL_HOST);
+            $keyword ??= is_string($referrerHost) ? $referrerHost : '';
+
+            return [
+                self::REFERRER_TYPE_CAMPAIGN,
+                mb_strtolower($campaign),
+                mb_strtolower($this->clean($keyword, 255)),
+                false,
+            ];
         }
 
         $referrerHost = parse_url($referrer, PHP_URL_HOST);
-        $currentHost = parse_url($url, PHP_URL_HOST);
-        if (! is_string($referrerHost) || $referrerHost === ''
-            || (is_string($currentHost) && strcasecmp($referrerHost, $currentHost) === 0)) {
-            return [1, '', ''];
+        if (! is_string($referrerHost) || $referrerHost === '' || $this->belongsToSite($referrer, $siteId)) {
+            return [self::REFERRER_TYPE_DIRECT, '', '', false];
         }
 
-        return [3, mb_substr(strtolower($referrerHost), 0, 70), ''];
+        return [self::REFERRER_TYPE_WEBSITE, $this->clean(mb_strtolower($referrerHost), 70), '', false];
+    }
+
+    private function ignoresReferrer(string $url): bool
+    {
+        $query = parse_url($url, PHP_URL_QUERY);
+
+        return is_string($query)
+            && $this->parameterValue($query, ['ignore_referrer', 'ignore_referer'], 1) === '1';
     }
 
     /** @param list<string> $parameters */
     private function queryValue(string $url, array $parameters, int $length): ?string
     {
-        $query = parse_url($url, PHP_URL_QUERY);
-        if (! is_string($query) || $query === '') {
-            return null;
-        }
-
-        parse_str($query, $values);
-        foreach ($parameters as $parameter) {
-            $value = $values[$parameter] ?? null;
-            if (is_string($value) && $value !== '') {
-                return mb_substr($value, 0, $length);
+        foreach ([PHP_URL_QUERY, PHP_URL_FRAGMENT] as $component) {
+            $value = parse_url($url, $component);
+            if (is_string($value)) {
+                $result = $this->parameterValue($value, $parameters, $length);
+                if ($result !== null) {
+                    return $result;
+                }
             }
         }
 
@@ -335,8 +700,12 @@ final readonly class TrackerRequestFactory
     }
 
     /** @return array<string, int> */
-    private function performanceTimings(Request $request): array
+    private function performanceTimings(Request $request, int $actionType): array
     {
+        if ($actionType !== 1) {
+            return [];
+        }
+
         $parameters = [
             'pf_net' => 'time_network',
             'pf_srv' => 'time_server',
@@ -352,11 +721,23 @@ final readonly class TrackerRequestFactory
                 continue;
             }
 
-            if (filter_var($value, FILTER_VALIDATE_INT) === false || (int) $value < 0 || (int) $value > 3_600_000) {
+            if (! is_scalar($value)
+                || ! is_numeric($value)
+                || ! is_finite((float) $value)
+                || (float) (int) $value !== (float) $value) {
+                continue;
+            }
+
+            $timing = (int) $value;
+            if ($timing === -1 || $timing > 16_777_215) {
+                continue;
+            }
+
+            if ($timing < 0) {
                 throw new InvalidArgumentException('Page performance timings must be non-negative milliseconds.');
             }
 
-            $timings[$column] = (int) $value;
+            $timings[$column] = $timing;
         }
 
         return $timings;
@@ -366,23 +747,34 @@ final readonly class TrackerRequestFactory
     private function ecommerceItems(Request $request, ?string $orderId): array
     {
         $items = $request->input('ec_items');
-        if (is_string($items) && $items !== '') {
-            $items = json_decode($items, true);
-        }
-
         if ($items === null || $items === '') {
             return [];
         }
 
-        if ($orderId === null || ! is_array($items) || count($items) > 1_000) {
+        if (is_string($items)) {
+            $items = json_decode($items, true);
+        }
+
+        if ($orderId === null || ! is_array($items) || ! array_is_list($items) || count($items) > 1_000) {
             throw new InvalidArgumentException('ec_items must be an array attached to an ecommerce order.');
         }
 
         $clean = [];
+        $skus = [];
+        $totalQuantity = 0;
         foreach ($items as $item) {
-            if (! is_array($item) || ! isset($item[0]) || ! is_scalar($item[0]) || trim((string) $item[0]) === '') {
+            if (! is_array($item) || ! array_is_list($item)
+                || ! isset($item[0]) || (! is_string($item[0]) && ! is_int($item[0]))
+                || trim((string) $item[0]) === '') {
                 throw new InvalidArgumentException('Every ecommerce item must contain a SKU.');
             }
+
+            $sku = $this->clean((string) $item[0], 255);
+            if (isset($skus[$sku])) {
+                throw new InvalidArgumentException('Every ecommerce item SKU must be unique.');
+            }
+
+            $skus[$sku] = true;
 
             $name = isset($item[1]) && is_scalar($item[1]) ? trim((string) $item[1]) : '';
             $categories = $item[2] ?? [];
@@ -393,20 +785,115 @@ final readonly class TrackerRequestFactory
             )), 0, 5));
             $price = $item[3] ?? 0;
             $quantity = $item[4] ?? 1;
-            if (! is_numeric($price) || abs((float) $price) > 1_000_000_000_000
+            if (! is_scalar($price) || ! is_numeric($price) || ! is_finite((float) $price)
                 || filter_var($quantity, FILTER_VALIDATE_INT) === false || (int) $quantity < 1) {
                 throw new InvalidArgumentException('Ecommerce item price or quantity is invalid.');
             }
 
+            $totalQuantity += (int) $quantity;
+            if ($totalQuantity > 65_535) {
+                throw new InvalidArgumentException('The ecommerce item quantity total is too large.');
+            }
+
+            $price = (float) $price;
             $clean[] = [
-                'sku' => mb_substr(trim((string) $item[0]), 0, 255),
-                'name' => mb_substr($name, 0, 255),
-                'categories' => array_map(static fn (string $category): string => mb_substr($category, 0, 255), $categories),
-                'price' => (float) $price,
+                'sku' => $sku,
+                'name' => $this->clean($name, 255),
+                'categories' => array_map(fn (string $category): string => $this->clean($category, 255), $categories),
+                'price' => abs($price) > 1_000_000_000_000 ? 0.0 : round($price, 2),
                 'quantity' => (int) $quantity,
             ];
         }
 
         return $clean;
+    }
+
+    private function searchCount(mixed $value): ?int
+    {
+        if (! is_scalar($value)
+            || ! is_numeric($value)
+            || ! is_finite((float) $value)
+            || (float) (int) $value !== (float) $value) {
+            return null;
+        }
+
+        $count = (int) $value;
+
+        return $count >= 0 && $count <= 4_294_967_295 ? $count : null;
+    }
+
+    /** @param list<string> $parameters */
+    private function requestValue(Request $request, array $parameters, int $length): ?string
+    {
+        foreach ($parameters as $parameter) {
+            $value = $this->optional($request->input($parameter), $length);
+            if ($value !== null) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    /** @param list<string> $parameters */
+    private function parameterValue(string $input, array $parameters, int $length): ?string
+    {
+        parse_str($input, $values);
+        foreach ($parameters as $parameter) {
+            $value = $this->optional($values[$parameter] ?? null, $length);
+            if ($value !== null) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    private function hasCustomDimension(Request $request): bool
+    {
+        foreach (array_keys($request->all()) as $name) {
+            if (is_string($name) && preg_match('/^dimension[1-9][0-9]*$/D', $name) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function browserLanguage(Request $request): string
+    {
+        $language = $request->input('lang');
+        if (! is_string($language) || $language === '') {
+            $language = (string) $request->header('Accept-Language');
+        }
+
+        $language = strtolower(str_replace('_', '-', $this->clean($language, 512)));
+        if (preg_match('/(?:^|,)([a-z]{2,3})(?:-[a-z]{4})?(-[a-z]{2})?/', $language, $matches) !== 1) {
+            return $language === '' ? '' : 'xx';
+        }
+
+        return $matches[1].($matches[2] ?? '');
+    }
+
+    private function anonymisedReferrer(string $url, string $mode): string
+    {
+        if ($url === '' || $mode === '') {
+            return $url;
+        }
+
+        if ($mode === 'exclude_all') {
+            return '';
+        }
+
+        if ($mode === 'exclude_query') {
+            return strtok($url, '?');
+        }
+
+        $parts = parse_url($url);
+        if ($mode !== 'exclude_path' || ! is_array($parts) || empty($parts['host']) || empty($parts['path'])) {
+            return $url;
+        }
+
+        return (isset($parts['scheme']) ? $parts['scheme'].'://' : '').$parts['host'].'/';
     }
 }

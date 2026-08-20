@@ -22,13 +22,15 @@ foreach ($languageFiles as $file) {
         continue;
     }
 
-    $plugin = basename(dirname(dirname($file)));
-    if ($plugin === 'lang') {
-        $plugin = 'General';
-    }
-    foreach ($decoded as $key => $value) {
-        if (is_string($key) && is_string($value) && $value !== '') {
-            $translations[$value] ??= $plugin.'_'.$key;
+    foreach ($decoded as $namespace => $messages) {
+        if (! is_string($namespace) || ! is_array($messages)) {
+            continue;
+        }
+
+        foreach ($messages as $key => $value) {
+            if (is_string($key) && is_string($value) && $value !== '') {
+                $translations[$value] ??= $namespace.'_'.$key;
+            }
         }
     }
 }
@@ -68,4 +70,14 @@ if (! is_dir(dirname($target)) && ! mkdir(dirname($target), 0755, true) && ! is_
 }
 if (file_put_contents($target, $output) === false) {
     throw new RuntimeException('The segment metadata catalog could not be written.');
+}
+
+$pint = __DIR__.'/../vendor/bin/pint';
+if (! is_file($pint)) {
+    throw new RuntimeException('Install Laravel dependencies before generating the catalog.');
+}
+
+passthru(escapeshellarg($pint).' '.escapeshellarg($target).' --quiet', $status);
+if ($status !== 0) {
+    throw new RuntimeException('The generated segment metadata catalog could not be formatted.');
 }
