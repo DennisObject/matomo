@@ -144,6 +144,13 @@ final readonly class ApiRequest
     private const string EXAMPLE_REPORT_METHOD = 'ExampleReport.getExampleReport';
 
     /** @var list<string> */
+    private const array FEEDBACK_METHODS = [
+        'Feedback.sendFeedbackForFeature',
+        'Feedback.sendFeedbackForSurvey',
+        'Feedback.updateFeedbackReminderDate',
+    ];
+
+    /** @var list<string> */
     private const array EXAMPLE_UI_METHODS = [
         'ExampleUI.getTemperaturesEvolution',
         'ExampleUI.getTemperatures',
@@ -219,6 +226,7 @@ final readonly class ApiRequest
         public ?ExampleApiRequest $exampleApi,
         public ?ExamplePluginRequest $examplePlugin,
         public ?ExampleUiRequest $exampleUi,
+        public ?FeedbackRequest $feedback,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -266,6 +274,7 @@ final readonly class ApiRequest
             exampleApi: null,
             examplePlugin: null,
             exampleUi: null,
+            feedback: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -571,6 +580,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::EXAMPLE_UI_METHODS, true);
     }
 
+    public function isFeedbackRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::FEEDBACK_METHODS, true);
+    }
+
     public function isAiProvidersRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::AI_PROVIDERS_METHODS, true);
@@ -648,7 +662,35 @@ final readonly class ApiRequest
             exampleApi: self::exampleApi($request, $module, $method),
             examplePlugin: self::examplePlugin($request, $module, $method),
             exampleUi: self::exampleUi($request, $module, $method),
+            feedback: self::feedback($request, $module, $method),
             authentication: $authentication,
+        );
+    }
+
+    private static function feedback(Request $request, string $module, string $method): ?FeedbackRequest
+    {
+        if ($module !== 'API' || ! in_array($method, self::FEEDBACK_METHODS, true)) {
+            return null;
+        }
+
+        $featureName = self::nullableStringInput($request, 'featureName');
+        $question = self::nullableStringInput($request, 'question');
+
+        if ($method === 'Feedback.sendFeedbackForFeature' && $featureName === null) {
+            throw new MissingApiParameter('featureName');
+        }
+
+        if ($method === 'Feedback.sendFeedbackForSurvey' && $question === null) {
+            throw new MissingApiParameter('question');
+        }
+
+        return new FeedbackRequest(
+            featureName: $featureName,
+            like: self::booleanFromArray($request->query->all(), 'like')
+                ?? self::booleanFromArray($request->request->all(), 'like'),
+            choice: self::nullableStringInput($request, 'choice'),
+            message: self::nullableStringInput($request, 'message'),
+            question: $question,
         );
     }
 

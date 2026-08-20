@@ -26,6 +26,7 @@ use App\Matomo\Api\Methods\ExampleApiMethodHandler;
 use App\Matomo\Api\Methods\ExamplePluginApiMethodHandler;
 use App\Matomo\Api\Methods\ExampleReportApiMethodHandler;
 use App\Matomo\Api\Methods\ExampleUiApiMethodHandler;
+use App\Matomo\Api\Methods\FeedbackApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
@@ -53,6 +54,14 @@ use App\Matomo\Dashboard\DashboardRepository;
 use App\Matomo\Dashboard\DatabaseDashboardRecipientPolicy;
 use App\Matomo\Dashboard\DatabaseDashboardRepository;
 use App\Matomo\Database\MatomoDatabase;
+use App\Matomo\Feedback\ConfiguredFeedbackSettings;
+use App\Matomo\Feedback\DatabaseFeedbackStore;
+use App\Matomo\Feedback\FeedbackFeatureNameResolver;
+use App\Matomo\Feedback\FeedbackMailer;
+use App\Matomo\Feedback\FeedbackSettings;
+use App\Matomo\Feedback\FeedbackStore;
+use App\Matomo\Feedback\JsonFeedbackFeatureNameResolver;
+use App\Matomo\Feedback\LaravelFeedbackMailer;
 use App\Matomo\Geolocation\ConfiguredGeolocationProviderRegistry;
 use App\Matomo\Geolocation\ConfiguredGeolocationSettings;
 use App\Matomo\Geolocation\CountryMetadataProvider;
@@ -136,6 +145,7 @@ use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\ServiceProvider;
@@ -595,6 +605,34 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            FeedbackStore::class,
+            fn (Application $application): FeedbackStore => new DatabaseFeedbackStore(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(FeedbackSettings::class, ConfiguredFeedbackSettings::class);
+        $this->app->singleton(
+            FeedbackFeatureNameResolver::class,
+            fn (Application $application): FeedbackFeatureNameResolver => new JsonFeedbackFeatureNameResolver(
+                translationDirectories: $this->translationDirectories(),
+                translator: $application->make(MatomoTranslator::class),
+            ),
+        );
+        $this->app->singleton(
+            FeedbackMailer::class,
+            function (Application $application): FeedbackMailer {
+                $installation = $application->make(InstallationConfig::class);
+
+                return new LaravelFeedbackMailer(
+                    mailer: $application->make(Mailer::class),
+                    enabled: $installation->emailsEnabled(),
+                    fromAddress: $installation->noReplyEmailAddress(),
+                    fromName: $installation->noReplyEmailName(),
+                );
+            },
+        );
+
+        $this->app->singleton(
             BruteForceSettings::class,
             function (Application $application): BruteForceSettings {
                 $installation = $application->make(InstallationConfig::class);
@@ -682,6 +720,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ExamplePluginApiMethodHandler::class),
                 $application->make(ExampleReportApiMethodHandler::class),
                 $application->make(ExampleUiApiMethodHandler::class),
+                $application->make(FeedbackApiMethodHandler::class),
                 $application->make(PagePerformanceApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),

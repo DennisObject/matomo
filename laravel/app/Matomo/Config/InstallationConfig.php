@@ -43,6 +43,10 @@ final readonly class InstallationConfig
         private ?array $commonPiiParameters,
         private string $defaultLanguage,
         private string $languageCookieName,
+        private string $feedbackEmailAddress,
+        private bool $emailsEnabled,
+        private string $noReplyEmailAddress,
+        private string $noReplyEmailName,
         /** @var list<string>|null */
         private ?array $availableLanguages,
         /** @var array<string, bool> */
@@ -158,6 +162,18 @@ final readonly class InstallationConfig
             commonPiiParameters: self::nullableStringList($sitesManager, 'CommonPIIParams'),
             defaultLanguage: strtolower(self::string($general, 'default_language', 'en')),
             languageCookieName: self::string($general, 'language_cookie_name', 'matomo_lang'),
+            feedbackEmailAddress: self::string(
+                $general,
+                'feedback_email_address',
+                'feedback@matomo.org',
+            ),
+            emailsEnabled: self::boolean($general, 'emails_enabled', true),
+            noReplyEmailAddress: self::string(
+                $general,
+                'noreply_email_address',
+                'noreply@{DOMAIN}',
+            ),
+            noReplyEmailName: self::string($general, 'noreply_email_name'),
             availableLanguages: self::nullableStringList($languages, 'Languages'),
             uniqueVisitorsByPeriod: self::uniqueVisitorsByPeriod($general),
             enabledReportingPeriods: self::commaSeparatedList(
@@ -347,6 +363,26 @@ final readonly class InstallationConfig
     public function languageCookieName(): string
     {
         return $this->languageCookieName;
+    }
+
+    public function feedbackEmailAddress(): string
+    {
+        return $this->feedbackEmailAddress;
+    }
+
+    public function emailsEnabled(): bool
+    {
+        return $this->emailsEnabled;
+    }
+
+    public function noReplyEmailAddress(): string
+    {
+        return $this->noReplyEmailAddress;
+    }
+
+    public function noReplyEmailName(): string
+    {
+        return $this->noReplyEmailName;
     }
 
     /**
