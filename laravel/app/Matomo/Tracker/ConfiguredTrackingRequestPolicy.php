@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Matomo\Tracker;
 
+use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Authentication\ApiAuthentication;
+use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Config\InstallationConfig;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
@@ -30,6 +33,7 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
         private OptionRepository $options,
         private CompliancePolicyStateRepository $compliance,
         private PolicySettingRepository $settings,
+        private ApiAccessAuthorizer $authorizer,
     ) {}
 
     public function records(Request $request): bool
@@ -141,6 +145,59 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
     public function forcesCookielessTracking(int $siteId): bool
     {
         return $this->booleanOption(self::COOKIELESS_OPTION, $siteId, false);
+    }
+
+    public function allowsPrivilegedOverrides(Request $request, int $siteId): bool
+    {
+        if (! $this->configuration->trackingRequestsRequireAuthentication()) {
+            return true;
+        }
+
+        $token = $this->trackingToken($request);
+        if ($token === null) {
+            return false;
+        }
+
+        $authentication = new ApiAuthentication(
+            $token,
+            $this->tokenIsSecure($request, $token),
+            false,
+            null,
+        );
+
+        return $this->authorizer->hasSuperUserAccess($authentication)
+            || in_array(
+                $siteId,
+                $this->authorizer->siteIdsWithMinimumRole($authentication, SiteAccessRole::Write),
+                true,
+            );
+    }
+
+    private function trackingToken(Request $request): ?string
+    {
+        $authorization = $request->headers->get('Authorization');
+        if (is_string($authorization) && str_starts_with($authorization, 'Bearer ')) {
+            $bearer = substr($authorization, 7);
+
+            return $bearer === '' ? null : $bearer;
+        }
+
+        $token = $request->input('token_auth');
+
+        return is_string($token) && $token !== '' ? $token : null;
+    }
+
+    private function tokenIsSecure(Request $request, string $token): bool
+    {
+        $authorization = $request->headers->get('Authorization');
+        if (is_string($authorization) && str_starts_with($authorization, 'Bearer ')
+            && substr($authorization, 7) === $token) {
+            return true;
+        }
+
+        $postToken = $request->request->get('token_auth');
+
+        return is_string($postToken) && $postToken === $token;
     }
 
     private function siteId(Request $request): ?int

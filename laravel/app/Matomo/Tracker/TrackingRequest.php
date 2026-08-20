@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Matomo\Tracker;
 
+use Carbon\CarbonImmutable;
+
 final readonly class TrackingRequest
 {
     public function __construct(
@@ -54,5 +56,6 @@ final readonly class TrackingRequest
         /** @var array<string, int> */
         public array $performanceTimings = [],
         public ?IssuedTrackerCookie $visitorCookie = null,
+        public ?CarbonImmutable $recordedAt = null,
     ) {}
 }

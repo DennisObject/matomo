@@ -28,4 +28,6 @@ interface TrackingRequestPolicy
     public function collectsScreenResolution(int $siteId): bool;
 
     public function forcesCookielessTracking(int $siteId): bool;
+
+    public function allowsPrivilegedOverrides(Request $request, int $siteId): bool;
 }

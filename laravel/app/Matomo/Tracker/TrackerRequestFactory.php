@@ -121,7 +121,7 @@ final class TrackerRequestFactory
             throw new InvalidArgumentException('url does not belong to the requested website.');
         }
 
-        $ipAddress = $this->ips->resolve($request);
+        $ipAddress = $this->customIpAddress($request, $siteId) ?? $this->ips->resolve($request);
         $userAgent = mb_substr((string) $request->userAgent(), 0, 512);
         if ($this->excludesVisit($site, $ipAddress, $userAgent)) {
             return null;
@@ -310,6 +310,7 @@ final class TrackerRequestFactory
             actionProperties: $actionProperties,
             performanceTimings: $this->performanceTimings($request, $actionType),
             visitorCookie: $this->visitorCookie($request, $siteId, $visitorId),
+            recordedAt: $this->recordedAt($request, $siteId),
         );
     }
 
@@ -481,6 +482,24 @@ final class TrackerRequestFactory
 
     private function visitorId(Request $request, int $siteId): string
     {
+        if ($this->configuration->userIdOverwritesVisitorId()) {
+            $userId = $this->optional($request->input('uid'), 200);
+            if ($userId !== null && $this->policy->collectsUserId($siteId)) {
+                return substr(sha1($userId), 0, 16);
+            }
+        }
+
+        $forcedVisitorId = $request->input('cid');
+        if (is_string($forcedVisitorId) && $forcedVisitorId !== '') {
+            if (preg_match('/^[a-f0-9]{16}$/iD', $forcedVisitorId) !== 1) {
+                throw new InvalidArgumentException(
+                    'Visitor ID (cid) '.$forcedVisitorId.' must be 16 characters long',
+                );
+            }
+
+            return strtolower($forcedVisitorId);
+        }
+
         if (! $this->policy->forcesCookielessTracking($siteId)) {
             if ($this->configuration->thirdPartyCookiesEnabled($siteId)) {
                 $cookieVisitorId = $this->thirdPartyVisitorId($request, $siteId);
@@ -504,6 +523,73 @@ final class TrackerRequestFactory
             $request,
             $this->configuration->trackerCookies()->name($siteId),
         )->visitorId();
+    }
+
+    private function customIpAddress(Request $request, int $siteId): ?string
+    {
+        $ipAddress = $request->input('cip');
+        if ($ipAddress === null || $ipAddress === '') {
+            return null;
+        }
+
+        if (! is_string($ipAddress) || filter_var($ipAddress, FILTER_VALIDATE_IP) === false) {
+            throw new InvalidArgumentException('cip must be a valid IP address.');
+        }
+
+        if (! $this->policy->allowsPrivilegedOverrides($request, $siteId)) {
+            throw new InvalidArgumentException("Tracker API 'cip' was used, requires valid token_auth");
+        }
+
+        return $ipAddress;
+    }
+
+    private function recordedAt(Request $request, int $siteId): CarbonImmutable
+    {
+        $now = CarbonImmutable::now('UTC');
+        if (! $request->exists('cdt') && ! $request->exists('cdo')) {
+            return $now;
+        }
+
+        $timestamp = $request->input('cdt');
+        $offset = $request->input('cdo');
+        if (($timestamp === null || $timestamp === '') && $offset !== null && $offset !== '') {
+            $timestamp = $now->getTimestamp();
+        }
+
+        if ($timestamp === null || $timestamp === '') {
+            return $now;
+        }
+
+        if (is_numeric($timestamp)) {
+            $seconds = (int) $timestamp;
+        } elseif (is_string($timestamp)) {
+            $parsed = strtotime($timestamp, $now->getTimestamp());
+            if ($parsed === false) {
+                throw new InvalidArgumentException('cdt must be a unix timestamp or datetime.');
+            }
+
+            $seconds = $parsed;
+        } else {
+            throw new InvalidArgumentException('cdt must be a unix timestamp or datetime.');
+        }
+
+        if (is_numeric($offset) && (int) $offset !== 0) {
+            $seconds -= abs((int) $offset);
+        }
+
+        if ($seconds > $now->getTimestamp() || $seconds <= $now->getTimestamp() - (20 * 365 * 86_400)) {
+            return $now;
+        }
+
+        $age = $now->getTimestamp() - $seconds;
+        if ($age >= $this->configuration->customTimestampAuthGraceSeconds()
+            && ! $this->policy->allowsPrivilegedOverrides($request, $siteId)) {
+            throw new InvalidArgumentException(
+                sprintf('Custom timestamp is %s seconds old, requires &token_auth...', $age),
+            );
+        }
+
+        return CarbonImmutable::createFromTimestampUTC($seconds);
     }
 
     private function visitorCookie(Request $request, int $siteId, string $visitorId): ?IssuedTrackerCookie
