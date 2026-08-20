@@ -335,6 +335,75 @@ final class TrackerEndpointTest extends TestCase
         $this->get($this->url(['urlref' => 'https://news.example/private']))->assertOk();
     }
 
+    public function test_records_page_performance_timings(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->performanceTimings === [
+                'time_network' => 12,
+                'time_server' => 34,
+                'time_transfer' => 56,
+                'time_dom_processing' => 78,
+                'time_dom_completion' => 90,
+                'time_on_load' => 16_777_215,
+            ],
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'pf_net' => '12',
+            'pf_srv' => '34',
+            'pf_tfr' => '56',
+            'pf_dm1' => '78',
+            'pf_dm2' => '90',
+            'pf_onl' => '16777215',
+        ]))->assertOk();
+    }
+
+    public function test_rejects_negative_page_performance_timings(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['pf_net' => '-2']))->assertBadRequest();
+    }
+
+    public function test_ignores_unsupported_page_performance_timings(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->performanceTimings === [],
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'pf_net' => 'not-an-integer',
+            'pf_srv' => '-1',
+            'pf_tfr' => '16777216',
+        ]))->assertOk();
+    }
+
+    public function test_ignores_page_performance_timings_for_non_pageviews(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->actionType === 10
+                && $request->performanceTimings === [],
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'e_c' => 'Video',
+            'e_a' => 'Play',
+            'pf_net' => 'invalid-but-ignored',
+        ]))->assertOk();
+    }
+
     public function test_rejects_oversized_bulk_request(): void
     {
         $this->bindSite();

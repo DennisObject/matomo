@@ -31,5 +31,7 @@ final readonly class TrackingRequest
         public array $visitProperties = [],
         /** @var array<string, string> */
         public array $actionProperties = [],
+        /** @var array<string, int> */
+        public array $performanceTimings = [],
     ) {}
 }

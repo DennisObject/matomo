@@ -218,6 +218,36 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame('Article', $action['custom_dimension_2']);
     }
 
+    public function test_stores_page_performance_timings(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $recorder->record(new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/page',
+            actionName: '',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            performanceTimings: [
+                'time_network' => 12,
+                'time_server' => 34,
+                'time_transfer' => 56,
+                'time_dom_processing' => 78,
+                'time_dom_completion' => 90,
+                'time_on_load' => 16_777_215,
+            ],
+        ));
+
+        $action = (array) $connection->table('log_link_visit_action')->first();
+        $this->assertSame(12, $action['time_network']);
+        $this->assertSame(34, $action['time_server']);
+        $this->assertSame(56, $action['time_transfer']);
+        $this->assertSame(78, $action['time_dom_processing']);
+        $this->assertSame(90, $action['time_dom_completion']);
+        $this->assertSame(16_777_215, $action['time_on_load']);
+    }
+
     private function connection(): ConnectionInterface
     {
         config()->set('database.connections.tracker_test', ['driver' => 'sqlite', 'database' => ':memory:']);
@@ -279,6 +309,12 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->dateTime('server_time');
             $table->unsignedInteger('pageview_position')->nullable();
             $table->unsignedInteger('time_spent_ref_action')->nullable();
+            $table->unsignedMediumInteger('time_network')->nullable();
+            $table->unsignedMediumInteger('time_server')->nullable();
+            $table->unsignedMediumInteger('time_transfer')->nullable();
+            $table->unsignedMediumInteger('time_dom_processing')->nullable();
+            $table->unsignedMediumInteger('time_dom_completion')->nullable();
+            $table->unsignedMediumInteger('time_on_load')->nullable();
             $table->string('custom_var_k2', 200)->nullable();
             $table->string('custom_var_v2', 200)->nullable();
             $table->string('custom_dimension_2', 250)->nullable();

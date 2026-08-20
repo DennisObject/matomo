@@ -215,6 +215,7 @@ final class TrackerRequestFactory
             cookiesEnabled: $request->boolean('cookie', false),
             visitProperties: $visitProperties,
             actionProperties: $actionProperties,
+            performanceTimings: $this->performanceTimings($request, $actionType),
         );
     }
 
@@ -570,6 +571,50 @@ final class TrackerRequestFactory
         }
 
         return null;
+    }
+
+    /** @return array<string, int> */
+    private function performanceTimings(Request $request, int $actionType): array
+    {
+        if ($actionType !== 1) {
+            return [];
+        }
+
+        $parameters = [
+            'pf_net' => 'time_network',
+            'pf_srv' => 'time_server',
+            'pf_tfr' => 'time_transfer',
+            'pf_dm1' => 'time_dom_processing',
+            'pf_dm2' => 'time_dom_completion',
+            'pf_onl' => 'time_on_load',
+        ];
+        $timings = [];
+        foreach ($parameters as $parameter => $column) {
+            $value = $request->input($parameter);
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            if (! is_scalar($value)
+                || ! is_numeric($value)
+                || ! is_finite((float) $value)
+                || (float) (int) $value !== (float) $value) {
+                continue;
+            }
+
+            $timing = (int) $value;
+            if ($timing === -1 || $timing > 16_777_215) {
+                continue;
+            }
+
+            if ($timing < 0) {
+                throw new InvalidArgumentException('Page performance timings must be non-negative milliseconds.');
+            }
+
+            $timings[$column] = $timing;
+        }
+
+        return $timings;
     }
 
     /** @param list<string> $parameters */

@@ -75,7 +75,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             }
 
             $linkId = (int) $this->connection->table('log_link_visit_action')->insertGetId(
-                [...$action, ...$request->actionProperties],
+                [...$action, ...$request->actionProperties, ...$request->performanceTimings],
                 'idlink_va',
             );
 
