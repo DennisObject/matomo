@@ -33,9 +33,13 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
 
         $now = CarbonImmutable::now('UTC');
         $this->connection->transaction(function () use ($request, $visitor, $ip, $now): void {
-            [$urlName, $urlPrefix] = $this->normalizedUrl($request->url);
-            $urlId = $this->action($urlName, 1, $urlPrefix);
-            $nameId = $request->actionName === '' ? null : $this->action($request->actionName, 4, null);
+            [$urlName, $urlPrefix] = in_array($request->actionType, [1, 10], true)
+                ? $this->normalizedUrl($request->url)
+                : [$request->url, null];
+            $urlId = $this->action($urlName, $request->actionType, $urlPrefix);
+            $nameId = $request->actionType === 1 && $request->actionName !== ''
+                ? $this->action($request->actionName, 4, null)
+                : null;
             $visit = $this->recentVisit($request->siteId, $visitor, $now);
             $visitId = $visit === null
                 ? $this->createVisit($request, $visitor, $ip, $now, $urlId, $nameId)
@@ -47,7 +51,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 ? 0
                 : max(0, $now->diffInSeconds(CarbonImmutable::parse($visit->visit_last_action_time, 'UTC'), true));
 
-            $linkId = (int) $this->connection->table('log_link_visit_action')->insertGetId([
+            $action = [
                 'idsite' => $request->siteId,
                 'idvisitor' => $visitor,
                 'idvisit' => $visitId,
@@ -58,7 +62,20 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 'server_time' => $now->format('Y-m-d H:i:s'),
                 'pageview_position' => $position,
                 'time_spent_ref_action' => $secondsSincePreviousAction,
-            ], 'idlink_va');
+            ];
+            if ($request->eventCategory !== null && $request->eventAction !== null) {
+                $action['idaction_event_category'] = $this->action($request->eventCategory, 10, null);
+                $action['idaction_event_action'] = $this->action($request->eventAction, 11, null);
+                $action['idaction_event_name'] = $request->eventName === null
+                    ? null
+                    : $this->action($request->eventName, 12, null);
+                $action['custom_float'] = $request->eventValue;
+            }
+
+            $linkId = (int) $this->connection->table('log_link_visit_action')->insertGetId(
+                $action,
+                'idlink_va',
+            );
 
             $this->updateVisit($visitId, $visit, $now, $urlId, $nameId, $position, $linkId);
         });

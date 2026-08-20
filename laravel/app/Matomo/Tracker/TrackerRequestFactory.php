@@ -33,15 +33,27 @@ final readonly class TrackerRequestFactory
             throw new InvalidArgumentException('The requested website does not exist.');
         }
 
-        $url = $request->input('url', '');
+        $eventCategory = $this->optional($request->input('e_c'), 255);
+        $eventAction = $this->optional($request->input('e_a'), 255);
+        $maximumUrlLength = $this->configuration->pageMaximumLength();
+        $download = $this->optional($request->input('download'), $maximumUrlLength + 1);
+        $outlink = $this->optional($request->input('link'), $maximumUrlLength + 1);
+        if (($eventCategory === null) !== ($eventAction === null)) {
+            throw new InvalidArgumentException('e_c and e_a must be provided together.');
+        }
+
+        $pageUrl = $request->input('url', '');
+        $actionType = $download !== null ? 3 : ($outlink !== null ? 2 : ($eventCategory !== null ? 10 : 1));
+        $url = $download ?? $outlink ?? $pageUrl;
         if (! is_string($url)
-            || strlen($url) > $this->configuration->pageMaximumLength()
+            || strlen($url) > $maximumUrlLength
             || filter_var($url, FILTER_VALIDATE_URL) === false
             || ! in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)) {
             throw new InvalidArgumentException('url must be a valid HTTP or HTTPS URL.');
         }
 
-        if ((int) ($site['exclude_unknown_urls'] ?? 0) === 1 && ! $this->belongsToSite($url, (int) $siteId)) {
+        if ((int) ($site['exclude_unknown_urls'] ?? 0) === 1
+            && (! is_string($pageUrl) || ! $this->belongsToSite($pageUrl, (int) $siteId))) {
             throw new InvalidArgumentException('url does not belong to the requested website.');
         }
 
@@ -58,14 +70,43 @@ final readonly class TrackerRequestFactory
 
         $actionName = $request->input('action_name', '');
 
+        $eventValue = $actionType === 10 ? $request->input('e_v') : null;
+        if (is_string($eventValue)) {
+            $eventValue = trim($eventValue);
+            $eventValue = $eventValue === '' ? null : $eventValue;
+        }
+
+        if ($eventValue !== null
+            && (! is_numeric($eventValue) || ! is_finite((float) $eventValue))) {
+            throw new InvalidArgumentException('e_v must be numeric.');
+        }
+
         return new TrackingRequest(
             siteId: (int) $siteId,
-            url: $this->filteredUrl($url, (int) $siteId, $site),
+            url: in_array($actionType, [1, 10], true)
+                ? $this->filteredUrl($url, (int) $siteId, $site)
+                : $this->clean($url, $maximumUrlLength),
             actionName: is_string($actionName) ? $this->clean($actionName, 255) : '',
             visitorId: strtolower($visitorId),
             ipAddress: $this->policy->storedIpAddress((int) $siteId, $ipAddress),
             userAgent: $userAgent,
+            actionType: $actionType,
+            eventCategory: $actionType === 10 ? $eventCategory : null,
+            eventAction: $actionType === 10 ? $eventAction : null,
+            eventName: $actionType === 10 ? $this->optional($request->input('e_n'), 255) : null,
+            eventValue: $eventValue === null ? null : (float) $eventValue,
         );
+    }
+
+    private function optional(mixed $value, int $length): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = $this->clean($value, $length);
+
+        return $value === '' ? null : $value;
     }
 
     private function belongsToSite(string $url, int $siteId): bool

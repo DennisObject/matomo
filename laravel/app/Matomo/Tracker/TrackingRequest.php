@@ -6,5 +6,17 @@ namespace App\Matomo\Tracker;
 
 final readonly class TrackingRequest
 {
-    public function __construct(public int $siteId, public string $url, public string $actionName, public string $visitorId, public string $ipAddress, public string $userAgent) {}
+    public function __construct(
+        public int $siteId,
+        public string $url,
+        public string $actionName,
+        public string $visitorId,
+        public string $ipAddress,
+        public string $userAgent,
+        public int $actionType = 1,
+        public ?string $eventCategory = null,
+        public ?string $eventAction = null,
+        public ?string $eventName = null,
+        public ?float $eventValue = null,
+    ) {}
 }

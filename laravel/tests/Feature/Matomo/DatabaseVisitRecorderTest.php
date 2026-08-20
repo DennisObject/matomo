@@ -91,6 +91,51 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame([1, 1], $connection->table('log_visit')->orderBy('idvisit')->pluck('visit_total_actions')->all());
     }
 
+    public function test_records_event_dimensions_and_value(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $request = new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/page',
+            actionName: 'Ignored for events',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            actionType: 10,
+            eventCategory: 'Video',
+            eventAction: 'Play',
+            eventName: 'Trailer',
+            eventValue: 2.5,
+        );
+
+        $recorder->record($request);
+
+        $actions = $connection->table('log_action')->get()->keyBy('name');
+        $eventUrl = $actions->get('example.test/page');
+        $category = $actions->get('Video');
+        $action = $actions->get('Play');
+        $name = $actions->get('Trailer');
+        $this->assertInstanceOf(stdClass::class, $eventUrl);
+        $this->assertInstanceOf(stdClass::class, $category);
+        $this->assertInstanceOf(stdClass::class, $action);
+        $this->assertInstanceOf(stdClass::class, $name);
+        $this->assertSame(10, $eventUrl->type);
+        $this->assertSame(2, $eventUrl->url_prefix);
+        $this->assertSame(10, $category->type);
+        $this->assertSame(11, $action->type);
+        $this->assertSame(12, $name->type);
+
+        $link = $connection->table('log_link_visit_action')->first();
+        $this->assertInstanceOf(stdClass::class, $link);
+        $this->assertSame($eventUrl->idaction, $link->idaction_url);
+        $this->assertNull($link->idaction_name);
+        $this->assertSame($category->idaction, $link->idaction_event_category);
+        $this->assertSame($action->idaction, $link->idaction_event_action);
+        $this->assertSame($name->idaction, $link->idaction_event_name);
+        $this->assertSame(2.5, $link->custom_float);
+    }
+
     private function connection(): ConnectionInterface
     {
         config()->set('database.connections.tracker_test', ['driver' => 'sqlite', 'database' => ':memory:']);
@@ -132,6 +177,10 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedInteger('idaction_name')->nullable();
             $table->unsignedInteger('idaction_url_ref')->default(0);
             $table->unsignedInteger('idaction_name_ref')->nullable();
+            $table->unsignedInteger('idaction_event_category')->nullable();
+            $table->unsignedInteger('idaction_event_action')->nullable();
+            $table->unsignedInteger('idaction_event_name')->nullable();
+            $table->float('custom_float')->nullable();
             $table->dateTime('server_time');
             $table->unsignedInteger('pageview_position')->nullable();
             $table->unsignedInteger('time_spent_ref_action')->nullable();

@@ -90,6 +90,68 @@ final class TrackerEndpointTest extends TestCase
         $this->get('/matomo.php?rec=1&idsite=0&url=javascript%3Aalert%281%29')->assertBadRequest();
     }
 
+    public function test_records_event_parameters(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->actionType === 10
+                && $request->eventCategory === 'Video'
+                && $request->eventAction === 'Play'
+                && $request->eventName === 'Trailer'
+                && $request->eventValue === 2.5,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'e_c' => 'Video',
+            'e_a' => 'Play',
+            'e_n' => 'Trailer',
+            'e_v' => '2.5',
+        ]))->assertOk();
+    }
+
+    public function test_rejects_incomplete_or_non_numeric_events(): void
+    {
+        $this->bindSite();
+
+        $this->get($this->url(['e_c' => 'Video']))->assertBadRequest();
+        $this->get($this->url(['e_c' => 'Video', 'e_a' => 'Play', 'e_v' => '1e9999']))
+            ->assertBadRequest();
+    }
+
+    public function test_records_downloads_before_other_action_types(): void
+    {
+        $this->bindSite(['exclude_unknown_urls' => 1]);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->actionType === 3
+                && $request->url === 'https://cdn.example.test/file.zip?token=kept'
+                && $request->eventCategory === null,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'download' => 'https://cdn.example.test/file.zip?token=kept',
+            'link' => 'https://other.test/',
+            'e_c' => 'Video',
+            'e_a' => 'Play',
+        ]))->assertOk();
+    }
+
+    public function test_records_outlinks(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->actionType === 2
+                && $request->url === 'https://other.test/destination',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['link' => 'https://other.test/destination']))->assertOk();
+    }
+
     public function test_rejects_unknown_website_ids(): void
     {
         $this->bindSite([]);
