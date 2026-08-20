@@ -545,6 +545,7 @@ final readonly class ApiRequest
         public ?PrivacyDataSubjectsRequest $privacyDataSubjects,
         public ?PrivacyDataSubjectSearchRequest $privacyDataSubjectSearch,
         public ?PrivacyPurgeExecutionRequest $privacyPurgeExecution,
+        public ?LiveRequest $live,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -635,6 +636,7 @@ final readonly class ApiRequest
             privacyDataSubjects: null,
             privacyDataSubjectSearch: null,
             privacyPurgeExecution: null,
+            live: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1254,6 +1256,7 @@ final readonly class ApiRequest
             privacyDataSubjects: self::privacyDataSubjects($request, $module, $method),
             privacyDataSubjectSearch: self::privacyDataSubjectSearch($request, $module, $method),
             privacyPurgeExecution: self::privacyPurgeExecution($request, $module, $method),
+            live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2954,6 +2957,32 @@ final readonly class ApiRequest
 
         return new PrivacyPurgeExecutionRequest(
             passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    private static function live(Request $request, string $module, string $method): ?LiveRequest
+    {
+        if ($module !== 'API' || ! in_array($method, [
+            'Live.getCounters',
+            'Live.isVisitorProfileEnabled',
+        ], true)) {
+            return null;
+        }
+
+        [$siteIds, $allSites] = self::reportSiteIds($request);
+        $counter = $method === 'Live.getCounters';
+        $lastMinutes = $counter ? self::requiredInteger($request, 'lastMinutes') : null;
+        if ($lastMinutes !== null && ($lastMinutes < 1 || $lastMinutes > 2880)) {
+            throw new InvalidApiParameter('lastMinutes', 'lastMinutes only accepts values between 1 and 2880');
+        }
+
+        return new LiveRequest(
+            siteIds: $siteIds,
+            allSites: $allSites,
+            lastMinutes: $lastMinutes,
+            segment: $counter ? self::nullableStringInput($request, 'segment') : null,
+            showColumns: $counter ? self::optionalCommaSeparatedStringList($request, 'showColumns') ?? [] : [],
+            hideColumns: $counter ? self::optionalCommaSeparatedStringList($request, 'hideColumns') ?? [] : [],
         );
     }
 

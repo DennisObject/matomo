@@ -43,6 +43,7 @@ use App\Matomo\Api\Methods\InsightsCapabilityApiMethodHandler;
 use App\Matomo\Api\Methods\InsightsReportApiMethodHandler;
 use App\Matomo\Api\Methods\JsTrackerInstallCheckApiMethodHandler;
 use App\Matomo\Api\Methods\LanguagesManagerApiMethodHandler;
+use App\Matomo\Api\Methods\LiveApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\MultiSitesApiMethodHandler;
 use App\Matomo\Api\Methods\OverlayApiMethodHandler;
@@ -191,6 +192,10 @@ use App\Matomo\Insights\BuilderCoreInsightReportReader;
 use App\Matomo\Insights\CoreInsightReportReader;
 use App\Matomo\Insights\CoreInsightSourceReportProvider;
 use App\Matomo\Insights\InsightSourceReportProvider;
+use App\Matomo\Live\DatabaseLiveAccessPolicy;
+use App\Matomo\Live\DatabaseLiveCounterRepository;
+use App\Matomo\Live\LiveAccessPolicy;
+use App\Matomo\Live\LiveCounterRepository;
 use App\Matomo\Localization\ApiLanguageResolver;
 use App\Matomo\Localization\DatabaseLanguagePreferenceRepository;
 use App\Matomo\Localization\FilesystemLanguageCatalog;
@@ -705,6 +710,19 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(MatomoDatabase::class)->connection(),
                 $application->make(OptionRepository::class),
                 $application->make(Dispatcher::class),
+            ),
+        );
+        $this->app->singleton(
+            LiveAccessPolicy::class,
+            fn (Application $application): LiveAccessPolicy => new DatabaseLiveAccessPolicy(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            LiveCounterRepository::class,
+            fn (Application $application): LiveCounterRepository => new DatabaseLiveCounterRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+                $application->make(VisitSegmentApplicator::class),
             ),
         );
         $this->app->singleton(
@@ -1671,6 +1689,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(PrivacyManagerGranularComplianceApiMethodHandler::class),
                 $application->make(PrivacyManagerRawAnonymisationApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
+                $application->make(LiveApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),
                 $application->make(AiProvidersApiMethodHandler::class),
                 $application->make(TourApiMethodHandler::class),

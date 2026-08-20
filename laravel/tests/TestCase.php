@@ -37,6 +37,8 @@ use App\Matomo\Geolocation\GeolocationProviderRegistry;
 use App\Matomo\Geolocation\GeolocationSettings;
 use App\Matomo\Goals\GoalRepository;
 use App\Matomo\Goals\SiteTrackerCacheInvalidator;
+use App\Matomo\Live\LiveAccessPolicy;
+use App\Matomo\Live\LiveCounterRepository;
 use App\Matomo\Localization\LanguageCatalog;
 use App\Matomo\Localization\LanguagePreferenceRepository;
 use App\Matomo\Localization\LanguageResolver;
@@ -471,6 +473,8 @@ abstract class TestCase extends BaseTestCase
             $this->createStub(DataSubjectFinder::class),
         );
         $this->app->instance(DataPurger::class, $this->createStub(DataPurger::class));
+        $this->app->instance(LiveAccessPolicy::class, $this->createStub(LiveAccessPolicy::class));
+        $this->app->instance(LiveCounterRepository::class, $this->createStub(LiveCounterRepository::class));
         $this->app->instance(
             CompliancePolicyStateRepository::class,
             $this->createStub(CompliancePolicyStateRepository::class),
