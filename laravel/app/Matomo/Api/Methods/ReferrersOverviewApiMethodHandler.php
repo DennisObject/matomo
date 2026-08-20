@@ -109,6 +109,7 @@ final readonly class ReferrersOverviewApiMethodHandler implements ApiMethodHandl
             periods: $periods,
             segmentHash: $this->segments->resolve($query->segment),
             columns: $query->columns,
+            formatMetrics: $query->formatMetrics,
             forceSiteIndex: $query->allSites || count($siteIds) > 1,
             forceDateIndex: $forceDateIndex,
         );
