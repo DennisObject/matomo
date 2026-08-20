@@ -117,14 +117,22 @@ class InsightsReportApiTest extends TestCase
             }
 
             $current = $period->startDate === '2026-08-14';
+            $rows = [];
+
+            foreach (range(1, 6) as $index) {
+                $rows[] = [
+                    'label' => $uniqueId.'-'.$index,
+                    'nb_visits' => $current ? 50 : 10,
+                ];
+            }
 
             return new InsightSourceReport(
-                [['label' => $uniqueId, 'nb_visits' => $current ? 50 : 20]],
+                $rows,
                 [
                     'name' => $uniqueId,
                     'metrics' => ['nb_visits' => 'Visits'],
                 ],
-                $current ? 50 : 20,
+                array_sum(array_column($rows, 'nb_visits')),
             );
         });
         $this->app->instance(InsightSourceReportProvider::class, $sources);
@@ -139,6 +147,8 @@ class InsightsReportApiTest extends TestCase
             'Actions_getDownloads',
             'UserCountry_getCountry',
         ], array_keys($response));
+        $this->assertCount(5, $response['Actions_getPageUrls']);
+        $this->assertCount(3, $response['Actions_getDownloads']);
     }
 
     private function bindAccess(bool $allowed): void
