@@ -84,6 +84,7 @@ use App\Matomo\Api\Methods\SegmentEditorMutationApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorReadApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorReportApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorStateApiMethodHandler;
+use App\Matomo\Api\Methods\SegmentSuggestionsApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\TourApiMethodHandler;
 use App\Matomo\Api\Methods\TransitionsApiMethodHandler;
@@ -317,6 +318,8 @@ use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\EgressHostResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Segments\ConfiguredSegmentEditorSettings;
+use App\Matomo\Segments\ConfiguredSegmentSuggestionPolicy;
+use App\Matomo\Segments\DatabaseSegmentValueRepository;
 use App\Matomo\Segments\DatabaseStoredSegmentRepository;
 use App\Matomo\Segments\LaravelSegmentCacheInvalidator;
 use App\Matomo\Segments\MutableStoredSegmentRepository;
@@ -327,6 +330,8 @@ use App\Matomo\Segments\SegmentCreationPolicy;
 use App\Matomo\Segments\SegmentEditorSettings;
 use App\Matomo\Segments\SegmentMetadataCatalog;
 use App\Matomo\Segments\SegmentRearchiveScheduler;
+use App\Matomo\Segments\SegmentSuggestionPolicy;
+use App\Matomo\Segments\SegmentValueRepository;
 use App\Matomo\Segments\StoredSegmentRepository;
 use App\Matomo\Settings\DatabasePolicySettingRepository;
 use App\Matomo\Settings\PolicySettingRepository;
@@ -1747,6 +1752,13 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(
+            SegmentSuggestionPolicy::class,
+            fn (Application $application): SegmentSuggestionPolicy => new ConfiguredSegmentSuggestionPolicy(
+                static fn (): InstallationConfig => $application->make(InstallationConfig::class),
+            ),
+        );
+        $this->app->singleton(SegmentValueRepository::class, DatabaseSegmentValueRepository::class);
+        $this->app->singleton(
             ReportMetadataCatalog::class,
             fn (Application $application): ReportMetadataCatalog => new ReportMetadataCatalog(
                 translator: $application->make(MatomoTranslator::class),
@@ -1785,6 +1797,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(BulkApiMethodHandler::class),
                 $application->make(ProcessedReportApiMethodHandler::class),
                 $application->make(ApiOverviewMethodHandler::class),
+                $application->make(SegmentSuggestionsApiMethodHandler::class),
                 $application->make(CorePluginsAdminApiMethodHandler::class),
                 $application->make(CoreAdminHomeApiMethodHandler::class),
                 $application->make(SitesManagerApiMethodHandler::class),

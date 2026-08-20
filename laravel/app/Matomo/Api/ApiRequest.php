@@ -554,6 +554,7 @@ final readonly class ApiRequest
         public ?BulkApiRequest $bulk,
         public ?ProcessedReportRequest $processedReport,
         public ?ApiOverviewRequest $apiOverview,
+        public ?SegmentSuggestionsRequest $segmentSuggestions,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -662,6 +663,7 @@ final readonly class ApiRequest
             bulk: null,
             processedReport: null,
             apiOverview: null,
+            segmentSuggestions: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1292,6 +1294,7 @@ final readonly class ApiRequest
             bulk: self::bulk($request, $module, $method),
             processedReport: self::processedReport($request, $module, $method),
             apiOverview: self::apiOverview($request, $module, $method),
+            segmentSuggestions: self::segmentSuggestions($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -3263,6 +3266,24 @@ final readonly class ApiRequest
             date: $date,
             segment: $segment === null || trim($segment) === '' ? null : trim($segment),
             columns: array_values(array_filter($columns, static fn (string $column): bool => $column !== '')),
+        );
+    }
+
+    private static function segmentSuggestions(Request $request, string $module, string $method): ?SegmentSuggestionsRequest
+    {
+        if ($module !== 'API' || $method !== 'API.getSuggestedValuesForSegment') {
+            return null;
+        }
+
+        $site = self::requiredString($request, 'idSite');
+        if ($site !== 'all' && ((string) (int) $site !== $site || (int) $site < 1)) {
+            throw new InvalidApiParameter('idSite', "The parameter 'idSite=' contains an invalid value.");
+        }
+
+        return new SegmentSuggestionsRequest(
+            siteId: $site === 'all' ? null : (int) $site,
+            allSites: $site === 'all',
+            segmentName: self::requiredString($request, 'segmentName'),
         );
     }
 

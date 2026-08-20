@@ -17,6 +17,7 @@ final readonly class InstallationConfig
         private string $salt,
         private bool $onlyAllowSecureTokens,
         private int $apiBulkRequestLimit,
+        private bool $segmentSuggestedValuesEnabled,
         private int $sessionLifetime,
         private int $sessionIdleTimeout,
         /** @var list<string> */
@@ -180,6 +181,11 @@ final readonly class InstallationConfig
             salt: $salt,
             onlyAllowSecureTokens: self::boolean($general, 'only_allow_secure_auth_tokens'),
             apiBulkRequestLimit: self::integer($general, 'API_bulk_request_limit', -1),
+            segmentSuggestedValuesEnabled: self::boolean(
+                $general,
+                'enable_segment_suggested_values',
+                true,
+            ),
             sessionLifetime: self::positiveInteger($general, 'login_cookie_expire', 1_209_600),
             sessionIdleTimeout: self::positiveInteger(
                 $general,
@@ -433,6 +439,11 @@ final readonly class InstallationConfig
     public function apiBulkRequestLimit(): int
     {
         return $this->apiBulkRequestLimit;
+    }
+
+    public function segmentSuggestedValuesEnabled(): bool
+    {
+        return $this->segmentSuggestedValuesEnabled;
     }
 
     public function sessionLifetime(): int
