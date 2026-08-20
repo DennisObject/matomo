@@ -61,6 +61,9 @@ final class TrackerRequestFactory
     /** @var array<string, array<string, float|int|string>|null> */
     private array $goalsBySiteAndId = [];
 
+    /** @var array<int, list<array<string, float|int|string>>> */
+    private array $activeGoalsBySite = [];
+
     public function __construct(
         private readonly ClientIpResolver $ips,
         private readonly SiteRepository $sites,
@@ -250,13 +253,16 @@ final class TrackerRequestFactory
         }
 
         [$visitProperties, $actionProperties] = $this->customProperties($request, $siteId);
+        $storedUrl = in_array($actionType, [1, 10, 13], true)
+            ? $this->filteredUrl($url, $siteId, $site)
+            : $this->clean($url, $maximumUrlLength);
+        $storedActionName = is_string($actionName) ? $this->clean($actionName, 255) : '';
+        $heartbeat = in_array($request->input('ping'), [1, '1', true], true);
 
         return new TrackingRequest(
             siteId: $siteId,
-            url: in_array($actionType, [1, 10, 13], true)
-                ? $this->filteredUrl($url, $siteId, $site)
-                : $this->clean($url, $maximumUrlLength),
-            actionName: is_string($actionName) ? $this->clean($actionName, 255) : '',
+            url: $storedUrl,
+            actionName: $storedActionName,
             visitorId: strtolower($visitorId),
             ipAddress: $this->storedIpAddress($siteId, $ipAddress),
             userAgent: $userAgent,
@@ -274,6 +280,18 @@ final class TrackerRequestFactory
             goalId: $goal === null ? null : (int) $goalIdInput,
             goalRevenue: $goalRevenue,
             goalAllowsMultiple: (int) ($goal['allow_multiple'] ?? 0) === 1,
+            automaticGoals: $goal === null && ! $ecommerce && ! $heartbeat
+                ? $this->automaticGoals(
+                    $siteId,
+                    $actionType,
+                    $storedUrl,
+                    $storedActionName,
+                    $eventCategory,
+                    $eventAction,
+                    $this->optional($request->input('e_n'), 255),
+                    $eventValue === null ? null : (float) $eventValue,
+                )
+                : [],
             ecommerceOrderId: $orderId,
             ecommerceSubtotal: $ecommerceValues['ec_st'],
             ecommerceTax: $ecommerceValues['ec_tx'],
@@ -290,7 +308,7 @@ final class TrackerRequestFactory
             localTime: sprintf('%02d:%02d:%02d', $hour, $minute, $second),
             resolution: $resolution,
             cookiesEnabled: $request->boolean('cookie', false),
-            heartbeat: in_array($request->input('ping'), [1, '1', true], true),
+            heartbeat: $heartbeat,
             visitProperties: $visitProperties,
             actionProperties: $actionProperties,
             performanceTimings: $this->performanceTimings($request, $actionType),
@@ -814,6 +832,60 @@ final class TrackerRequestFactory
         }
 
         return $clean;
+    }
+
+    /** @return list<array{id: int, revenue: float, allowMultiple: bool}> */
+    private function automaticGoals(
+        int $siteId,
+        int $actionType,
+        string $url,
+        string $title,
+        ?string $eventCategory,
+        ?string $eventAction,
+        ?string $eventName,
+        ?float $eventValue,
+    ): array {
+        $values = match ($actionType) {
+            1 => ['url' => $url, 'title' => $title],
+            2 => ['external_website' => $url],
+            3 => ['file' => $url],
+            10 => ['event_category' => $eventCategory, 'event_action' => $eventAction, 'event_name' => $eventName],
+            default => [],
+        };
+        $matches = [];
+        foreach ($this->activeGoalsBySite[$siteId] ??= $this->goals->activeForSites([$siteId]) as $goal) {
+            $attribute = $goal['match_attribute'] ?? null;
+            $value = is_string($attribute) ? ($values[$attribute] ?? null) : null;
+            if (! is_string($value) || ! $this->goalPatternMatches($goal, $value)) {
+                continue;
+            }
+
+            $revenue = (int) ($goal['event_value_as_revenue'] ?? 0) === 1 && $eventValue !== null
+                ? $eventValue
+                : (float) ($goal['revenue'] ?? 0);
+            $matches[] = [
+                'id' => (int) ($goal['idgoal'] ?? 0),
+                'revenue' => $this->goalRevenue($revenue, 0.0),
+                'allowMultiple' => (int) ($goal['allow_multiple'] ?? 0) === 1,
+            ];
+        }
+
+        return array_values(array_filter($matches, static fn (array $goal): bool => $goal['id'] > 0));
+    }
+
+    /** @param array<string, float|int|string> $goal */
+    private function goalPatternMatches(array $goal, string $value): bool
+    {
+        $pattern = (string) ($goal['pattern'] ?? '');
+        $caseSensitive = (int) ($goal['case_sensitive'] ?? 0) === 1;
+        $subject = $caseSensitive ? $value : mb_strtolower($value);
+        $needle = $caseSensitive ? $pattern : mb_strtolower($pattern);
+
+        return match ((string) ($goal['pattern_type'] ?? 'contains')) {
+            'exact' => $subject === $needle,
+            'regex' => @preg_match('~'.str_replace('~', '\\~', $pattern).'~'.($caseSensitive ? '' : 'i'), $value) === 1,
+            default => str_contains($subject, $needle),
+        };
     }
 
     private function searchCount(mixed $value): ?int

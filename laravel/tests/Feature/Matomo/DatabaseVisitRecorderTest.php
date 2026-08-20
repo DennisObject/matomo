@@ -572,6 +572,34 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame(1, $connection->table('log_conversion_item')->where('idorder', '0')->where('deleted', 0)->count());
     }
 
+    public function test_automatic_goals_link_actions_and_apply_repeat_rules(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $request = new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/thanks',
+            actionName: 'Thanks',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            automaticGoals: [
+                ['id' => 5, 'revenue' => 3.0, 'allowMultiple' => false],
+                ['id' => 6, 'revenue' => 4.0, 'allowMultiple' => true],
+            ],
+        );
+
+        $recorder->record($request);
+        $recorder->record($request);
+
+        $this->assertSame(3, $connection->table('log_conversion')->count());
+        $this->assertSame(1, $connection->table('log_conversion')->where('idgoal', 5)->count());
+        $this->assertSame(2, $connection->table('log_conversion')->where('idgoal', 6)->count());
+        $this->assertSame(1, $connection->table('log_visit')->value('visit_goal_converted'));
+        $this->assertNotNull($connection->table('log_conversion')->where('idgoal', 5)->value('idaction_url'));
+        $this->assertNotNull($connection->table('log_conversion')->where('idgoal', 5)->value('idlink_va'));
+    }
+
     private function connection(): ConnectionInterface
     {
         config()->set('database.connections.tracker_test', ['driver' => 'sqlite', 'database' => ':memory:']);

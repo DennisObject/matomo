@@ -122,7 +122,6 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 [...$action, ...$request->actionProperties, ...$request->performanceTimings],
                 'idlink_va',
             );
-
             $this->updateVisit(
                 $visitId,
                 $visit,
@@ -136,6 +135,29 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 $request->userId,
                 $request->visitProperties,
             );
+            if ($request->automaticGoals !== []) {
+                $conversions = [];
+                foreach ($request->automaticGoals as $goal) {
+                    $conversions[] = [
+                        'idvisit' => $visitId,
+                        'idsite' => $request->siteId,
+                        'idvisitor' => $visitor,
+                        'server_time' => $now->format('Y-m-d H:i:s'),
+                        'idaction_url' => $urlId,
+                        'idlink_va' => $linkId,
+                        'idgoal' => $goal['id'],
+                        'buster' => $goal['allowMultiple'] ? random_int(1, 4_294_967_295) : 0,
+                        'url' => $request->url,
+                        'revenue' => $goal['revenue'],
+                        ...$request->visitProperties,
+                    ];
+                }
+
+                $this->connection->table('log_conversion')->insertOrIgnore($conversions);
+                $this->connection->table('log_visit')->where('idvisit', $visitId)->update([
+                    'visit_goal_converted' => 1,
+                ]);
+            }
         });
     }
 

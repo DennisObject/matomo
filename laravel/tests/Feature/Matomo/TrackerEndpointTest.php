@@ -588,6 +588,27 @@ final class TrackerEndpointTest extends TestCase
         ]))->assertOk();
     }
 
+    public function test_matches_automatic_url_and_event_goals(): void
+    {
+        $this->bindSite();
+        $goals = $this->createStub(GoalRepository::class);
+        $goals->method('activeForSites')->willReturn([
+            ['idgoal' => 2, 'match_attribute' => 'url', 'pattern_type' => 'contains', 'pattern' => '/thanks', 'revenue' => 5, 'allow_multiple' => 0],
+            ['idgoal' => 3, 'match_attribute' => 'event_action', 'pattern_type' => 'exact', 'pattern' => 'Buy', 'revenue' => 0, 'event_value_as_revenue' => 1, 'allow_multiple' => 1],
+        ]);
+        $this->app->instance(GoalRepository::class, $goals);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->exactly(2))->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->automaticGoals === ($request->actionType === 1
+                ? [['id' => 2, 'revenue' => 5.0, 'allowMultiple' => false]]
+                : [['id' => 3, 'revenue' => 17.0, 'allowMultiple' => true]]),
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['url' => 'https://example.test/thanks']))->assertOk();
+        $this->get($this->url(['e_c' => 'Shop', 'e_a' => 'Buy', 'e_v' => '17']))->assertOk();
+    }
+
     public function test_rejects_invalid_ecommerce_orders(): void
     {
         $this->bindSite();
