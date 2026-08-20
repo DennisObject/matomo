@@ -161,6 +161,25 @@ final readonly class ApiRequest
         'Contents.getContentPieces',
     ];
 
+    /** @var list<string> */
+    private const array BOT_TRACKING_ARCHIVE_METHODS = [
+        'BotTracking.get',
+        'BotTracking.getAIChatbotRequests',
+        'BotTracking.getPageUrlsForAIChatbot',
+        'BotTracking.getDocumentUrlsForAIChatbot',
+        'BotTracking.getAIChatbotContentPages',
+        'BotTracking.getAIChatbotContentDocuments',
+        'BotTracking.getAIChatbotBrokenContent',
+        'BotTracking.getAIChatbotHumanFavouredPages',
+        'BotTracking.getAIChatbotAIFavouredPages',
+    ];
+
+    /** @var list<string> */
+    private const array BOT_TRACKING_SUBTABLE_METHODS = [
+        'BotTracking.getPageUrlsForAIChatbot',
+        'BotTracking.getDocumentUrlsForAIChatbot',
+    ];
+
     private const string CUSTOM_JS_TRACKER_METHOD = 'CustomJsTracker.doesIncludePluginTrackersAutomatically';
 
     private const string PROFESSIONAL_SERVICES_METHOD = 'ProfessionalServices.dismissWidget';
@@ -699,6 +718,12 @@ final readonly class ApiRequest
     public function isContentsRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::CONTENTS_METHODS, true);
+    }
+
+    public function isBotTrackingArchiveRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::BOT_TRACKING_ARCHIVE_METHODS, true);
     }
 
     public function isCustomJsTrackerRequest(): bool
@@ -2044,6 +2069,7 @@ final readonly class ApiRequest
                 && $method !== self::EXAMPLE_REPORT_METHOD
                 && ! in_array($method, self::EVENTS_METHODS, true)
                 && ! in_array($method, self::CONTENTS_METHODS, true)
+                && ! in_array($method, self::BOT_TRACKING_ARCHIVE_METHODS, true)
                 && ! in_array($method, self::GOALS_REPORT_METHODS, true)
                 && $method !== self::AI_AGENTS_METHOD
                 && ! in_array($method, [
@@ -2084,6 +2110,10 @@ final readonly class ApiRequest
 
         $segment = self::nullableStringInput($request, 'segment');
 
+        if (in_array($method, self::BOT_TRACKING_ARCHIVE_METHODS, true)) {
+            $segment = null;
+        }
+
         return new VisitsSummaryRequest(
             siteIds: $siteIds,
             allSites: $allSites,
@@ -2095,7 +2125,7 @@ final readonly class ApiRequest
             hideColumns: self::reportColumnList($request, 'hideColumns') ?? [],
             idSubtable: self::reportSubtableId($request, $method),
             expanded: self::booleanInput($request, 'expanded', false),
-            secondaryDimension: self::eventsSecondaryDimension($request, $method),
+            secondaryDimension: self::reportSecondaryDimension($request, $method),
             flat: self::booleanInput($request, 'flat', false),
             showDimensions: self::booleanInput($request, 'show_dimensions', false),
         );
@@ -2105,14 +2135,16 @@ final readonly class ApiRequest
     {
         if (! in_array($method, self::CONTENTS_METHODS, true)
             && ! in_array($method, self::EVENTS_SUBTABLE_METHODS, true)
-            && ! in_array($method, self::ACTIONS_SUBTABLE_METHODS, true)) {
+            && ! in_array($method, self::ACTIONS_SUBTABLE_METHODS, true)
+            && ! in_array($method, self::BOT_TRACKING_SUBTABLE_METHODS, true)) {
             return null;
         }
 
         $value = self::inputValue($request, 'idSubtable');
 
         if (in_array($value, [null, '', false, 'false', '0'], true)) {
-            if (in_array($method, self::EVENTS_SUBTABLE_METHODS, true)
+            if ((in_array($method, self::EVENTS_SUBTABLE_METHODS, true)
+                || in_array($method, self::BOT_TRACKING_SUBTABLE_METHODS, true))
                 && ! in_array($value, ['0', 0], true)) {
                 throw new MissingApiParameter('idSubtable');
             }
@@ -2306,12 +2338,13 @@ final readonly class ApiRequest
         );
     }
 
-    private static function eventsSecondaryDimension(Request $request, string $method): ?string
+    private static function reportSecondaryDimension(Request $request, string $method): ?string
     {
         $allowed = match ($method) {
             'Events.getCategory' => ['eventAction', 'eventName'],
             'Events.getAction' => ['eventName', 'eventCategory'],
             'Events.getName' => ['eventAction', 'eventCategory'],
+            'BotTracking.getAIChatbotRequests' => ['pages', 'documents'],
             default => null,
         };
 
@@ -2329,7 +2362,7 @@ final readonly class ApiRequest
             throw new InvalidApiParameter(
                 'secondaryDimension',
                 "Secondary dimension '{$secondaryDimension}' is not valid for the API ".
-                    substr($method, strlen('Events.')).'. Use one of: '.implode(', ', $allowed),
+                    substr($method, strpos($method, '.') + 1).'. Use one of: '.implode(', ', $allowed),
             );
         }
 
