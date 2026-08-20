@@ -10,7 +10,7 @@ use Illuminate\Database\Query\Builder;
 use stdClass;
 
 /** @phpstan-import-type StoredSegment from StoredSegmentRepository */
-final readonly class DatabaseStoredSegmentRepository implements StoredSegmentRepository
+final readonly class DatabaseStoredSegmentRepository implements MutableStoredSegmentRepository
 {
     /** @param Closure(): Connection $connection */
     public function __construct(private Closure $connection) {}
@@ -44,6 +44,26 @@ final readonly class DatabaseStoredSegmentRepository implements StoredSegmentRep
         }
 
         return $segments;
+    }
+
+    public function delete(int $segmentId, string $editedAt): void
+    {
+        $this->connection()->table('segment')->where('idsegment', $segmentId)->update([
+            'deleted' => 1,
+            'ts_last_edit' => $editedAt,
+        ]);
+    }
+
+    public function update(int $segmentId, array $values): bool
+    {
+        if (isset($values['definition']) && is_string($values['definition'])) {
+            $values['hash'] = md5(urldecode($values['definition']));
+        }
+
+        return $this->connection()
+            ->table('segment')
+            ->where('idsegment', $segmentId)
+            ->update($values) > 0;
     }
 
     /** @return StoredSegment */

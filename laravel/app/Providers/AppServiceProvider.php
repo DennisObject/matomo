@@ -48,6 +48,7 @@ use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
 use App\Matomo\Api\Methods\SegmentEditorReadApiMethodHandler;
+use App\Matomo\Api\Methods\SegmentEditorStateApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\TourApiMethodHandler;
 use App\Matomo\Api\Methods\TransitionsApiMethodHandler;
@@ -205,6 +206,9 @@ use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\EgressHostResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Segments\DatabaseStoredSegmentRepository;
+use App\Matomo\Segments\LaravelSegmentCacheInvalidator;
+use App\Matomo\Segments\MutableStoredSegmentRepository;
+use App\Matomo\Segments\SegmentCacheInvalidator;
 use App\Matomo\Segments\SegmentCreationPolicy;
 use App\Matomo\Segments\StoredSegmentRepository;
 use App\Matomo\Settings\DatabasePolicySettingRepository;
@@ -287,11 +291,24 @@ class AppServiceProvider extends ServiceProvider
             },
         );
         $this->app->singleton(
-            StoredSegmentRepository::class,
-            fn (Application $application): StoredSegmentRepository => new DatabaseStoredSegmentRepository(
+            DatabaseStoredSegmentRepository::class,
+            fn (Application $application): DatabaseStoredSegmentRepository => new DatabaseStoredSegmentRepository(
                 fn (): Connection => $application->make(MatomoDatabase::class)->connection(),
             ),
         );
+        $this->app->singleton(
+            StoredSegmentRepository::class,
+            fn (Application $application): StoredSegmentRepository => $application->make(
+                DatabaseStoredSegmentRepository::class,
+            ),
+        );
+        $this->app->singleton(
+            MutableStoredSegmentRepository::class,
+            fn (Application $application): MutableStoredSegmentRepository => $application->make(
+                DatabaseStoredSegmentRepository::class,
+            ),
+        );
+        $this->app->singleton(SegmentCacheInvalidator::class, LaravelSegmentCacheInvalidator::class);
         $this->app->singleton(
             SegmentCreationPolicy::class,
             fn (Application $application): SegmentCreationPolicy => new SegmentCreationPolicy(
@@ -1319,6 +1336,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(CustomDimensionsReportApiMethodHandler::class),
                 $application->make(CustomDimensionsMutationApiMethodHandler::class),
                 $application->make(SegmentEditorReadApiMethodHandler::class),
+                $application->make(SegmentEditorStateApiMethodHandler::class),
                 $application->make(DashboardApiMethodHandler::class),
                 $application->make(DbStatsApiMethodHandler::class),
                 $application->make(ProfessionalServicesApiMethodHandler::class),
