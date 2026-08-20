@@ -47,6 +47,7 @@ use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\MultiSitesApiMethodHandler;
 use App\Matomo\Api\Methods\OverlayApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
+use App\Matomo\Api\Methods\PrivacyManagerAnonymisationSettingsApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerColumnApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceReadApiMethodHandler;
@@ -210,12 +211,14 @@ use App\Matomo\Plugins\ConfiguredPluginState;
 use App\Matomo\Plugins\LocalTrackerFileAvailability;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\Plugins\TrackerFileAvailability;
+use App\Matomo\Privacy\AnonymisationSettingsRepository;
 use App\Matomo\Privacy\AnonymizableColumnProvider;
 use App\Matomo\Privacy\CnilGranularComplianceSettingsProvider;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Privacy\ComplianceStatusProvider;
 use App\Matomo\Privacy\ConfiguredDeletionBatchLimits;
 use App\Matomo\Privacy\ConfiguredPrivacyFeatureFlags;
+use App\Matomo\Privacy\DatabaseAnonymisationSettingsRepository;
 use App\Matomo\Privacy\DatabaseAnonymizableColumnProvider;
 use App\Matomo\Privacy\DatabaseCompliancePolicyStateRepository;
 use App\Matomo\Privacy\DatabaseComplianceStatusProvider;
@@ -657,6 +660,12 @@ class AppServiceProvider extends ServiceProvider
             AnonymizableColumnProvider::class,
             fn (Application $application): AnonymizableColumnProvider => new DatabaseAnonymizableColumnProvider(
                 $application->make(ConnectionInterface::class),
+            ),
+        );
+        $this->app->singleton(
+            AnonymisationSettingsRepository::class,
+            fn (Application $application): AnonymisationSettingsRepository => new DatabaseAnonymisationSettingsRepository(
+                $application->make(MatomoDatabase::class)->connection(),
             ),
         );
         $this->app->singleton(
@@ -1605,6 +1614,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(DashboardApiMethodHandler::class),
                 $application->make(DbStatsApiMethodHandler::class),
                 $application->make(ProfessionalServicesApiMethodHandler::class),
+                $application->make(PrivacyManagerAnonymisationSettingsApiMethodHandler::class),
                 $application->make(PrivacyManagerSettingsApiMethodHandler::class),
                 $application->make(PrivacyManagerColumnApiMethodHandler::class),
                 $application->make(PrivacyManagerComplianceApiMethodHandler::class),

@@ -47,6 +47,7 @@ use App\Matomo\Login\LoginAttemptStatus;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
+use App\Matomo\Privacy\AnonymisationSettingsRepository;
 use App\Matomo\Privacy\AnonymizableColumnProvider;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Privacy\ComplianceStatusProvider;
@@ -452,6 +453,10 @@ abstract class TestCase extends BaseTestCase
         $this->app->instance(
             AnonymizableColumnProvider::class,
             $this->createStub(AnonymizableColumnProvider::class),
+        );
+        $this->app->instance(
+            AnonymisationSettingsRepository::class,
+            $this->createStub(AnonymisationSettingsRepository::class),
         );
         $this->app->instance(
             CompliancePolicyStateRepository::class,
