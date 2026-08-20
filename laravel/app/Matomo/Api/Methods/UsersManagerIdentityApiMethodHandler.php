@@ -80,7 +80,7 @@ final readonly class UsersManagerIdentityApiMethodHandler implements ApiMethodHa
 
             return $this->responses->scalar(
                 $request,
-                strcasecmp($login, $requested) === 0 || $this->users->loginExists($requested),
+                $login === $requested || $this->users->loginExists($requested),
             );
         }
 

@@ -64,6 +64,24 @@ class ReferrersOverviewApiTest extends TestCase
             ]);
     }
 
+    public function test_returns_unformatted_percentage_quotients(): void
+    {
+        $this->bindViewAccess();
+        $this->bindArchives([
+            $this->typeRow(1, 1),
+            $this->typeRow(2, 2),
+        ], []);
+
+        $this->get($this->url().'&format_metrics=0&columns='.
+            'Referrers_visitorsFromDirectEntry_percent,'.
+            'Referrers_visitorsFromSearchEngines_percent')
+            ->assertOk()
+            ->assertExactJson([
+                'Referrers_visitorsFromDirectEntry_percent' => 0.3333,
+                'Referrers_visitorsFromSearchEngines_percent' => 0.6667,
+            ]);
+    }
+
     public function test_passes_the_segment_hash_to_both_archive_sources(): void
     {
         $this->bindViewAccess();

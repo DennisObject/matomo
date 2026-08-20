@@ -12,9 +12,7 @@ final readonly class DatabaseUserIdentityRepository implements UserIdentityRepos
 
     public function loginExists(string $login): bool
     {
-        return $this->connection->table('user')
-            ->whereRaw('LOWER(login) = LOWER(?)', [$login])
-            ->exists();
+        return $this->connection->table('user')->where('login', $login)->exists();
     }
 
     public function emailExists(string $email): bool
