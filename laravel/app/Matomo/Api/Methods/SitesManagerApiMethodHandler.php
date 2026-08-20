@@ -22,6 +22,7 @@ use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Sites\SiteRuntimeSettings;
 use App\Matomo\Sites\SiteTrackingCodeGenerator;
 use App\Matomo\Sites\TimezoneProvider;
+use DateTimeZone;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -498,9 +499,13 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
             $timezone = $request->timezone
                 ?? throw new LogicException('The default timezone was not parsed.');
-            $validTimezones = array_merge(...array_values($this->timezones->all('en', true)));
+            $utcOffsets = $this->timezones->all('en', false)['UTC'] ?? [];
+            $validTimezones = [
+                ...DateTimeZone::listIdentifiers(DateTimeZone::ALL_WITH_BC),
+                ...array_keys($utcOffsets),
+            ];
 
-            if (! array_key_exists($timezone, $validTimezones)) {
+            if (! in_array($timezone, $validTimezones, true)) {
                 return $this->responses->error(
                     $request,
                     "The timezone \"{$timezone}\" is not valid. Please enter a valid timezone.",
@@ -789,9 +794,9 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             $referrers = $this->commaSeparated($settings->excludedReferrers ?? '');
 
             foreach ($referrers === '' ? [] : explode(',', $referrers) as $referrer) {
-                $host = parse_url('https://'.ltrim(preg_replace('#^https?://#', '', $referrer) ?? '', '.'), PHP_URL_HOST);
+                $prefixedUrl = 'https://'.ltrim(preg_replace('#^https?://#', '', $referrer) ?? '', '.');
 
-                if (! is_string($host) || $host === '' || str_contains($host, ' ')) {
+                if (parse_url($prefixedUrl) === false || ! $this->looksLikeUrl($prefixedUrl)) {
                     return $this->responses->error(
                         $request,
                         "The url '{$referrer}' is not a valid URL.",
@@ -866,6 +871,16 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             );
         }
 
+        $incoming = $this->normalizeSiteUrls($request->siteAliasUrls ?? []);
+
+        if ($incoming === null) {
+            return $this->responses->error($request, 'One of the provided URLs is not a valid URL.', 400);
+        }
+
+        if ($request->method === 'SitesManager.addSiteAliasUrls' && $incoming === []) {
+            return $this->responses->scalar($request, 0);
+        }
+
         $mainUrl = $this->sites->mainUrl($idSite);
 
         if ($mainUrl === null) {
@@ -874,12 +889,6 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
                 "An unexpected website was found in the request: website id was set to '{$idSite}' .",
                 500,
             );
-        }
-
-        $incoming = $this->normalizeSiteUrls($request->siteAliasUrls ?? []);
-
-        if ($incoming === null) {
-            return $this->responses->error($request, 'One of the provided URLs is not a valid URL.', 400);
         }
 
         $initial = $this->normalizeSiteUrls($this->sites->urls($idSite)) ?? [$mainUrl];
@@ -918,7 +927,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         $newGroup = $request->newSiteGroup
             ?? throw new LogicException('The new site group was not parsed.');
 
-        if ($oldGroup === $newGroup) {
+        if ($oldGroup == $newGroup) {
             return $this->responses->scalar($request, true);
         }
 
@@ -944,26 +953,25 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         $normalized = [];
 
         foreach ($urls as $url) {
-            $url = trim(urldecode($url));
-
             if ($url === '') {
                 continue;
             }
 
-            if (! str_contains($url, '://')) {
-                $url = str_starts_with($url, '//') ? 'http:'.$url : 'http://'.$url;
-            }
+            $url = urldecode($url);
 
             if (strlen($url) > 5 && str_ends_with($url, '/')) {
                 $url = substr($url, 0, -1);
             }
 
-            $parts = parse_url($url);
+            $scheme = parse_url($url, PHP_URL_SCHEME);
 
-            if (! is_array($parts)
-                || ! in_array($parts['scheme'] ?? null, ['http', 'https'], true)
-                || ! is_string($parts['host'] ?? null)
-                || $parts['host'] === '') {
+            if (empty($scheme) && ! str_contains($url, '://')) {
+                $url = str_starts_with($url, '//') ? 'http:'.$url : 'http://'.$url;
+            }
+
+            $url = trim($url);
+
+            if (! $this->looksLikeUrl($url)) {
                 return null;
             }
 
@@ -975,12 +983,18 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
     private function commaSeparated(string $value): string
     {
-        $values = array_values(array_unique(array_filter(
+        $values = array_values(array_filter(
             array_map(trim(...), explode(',', trim($value))),
             static fn (string $item): bool => $item !== '',
-        )));
+        ));
 
         return implode(',', $values);
+    }
+
+    private function looksLikeUrl(string $url): bool
+    {
+        return preg_match('~^(([[:alpha:]][[:alnum:]+.-]*)?:)?//(.+)$~D', $url, $matches) === 1
+            && ! preg_match('/^(javascript:|vbscript:|data:)/i', $matches[1]);
     }
 
     private function optionOrDefault(string $name, string $default): string
