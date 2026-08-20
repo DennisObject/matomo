@@ -11,14 +11,32 @@ use App\Matomo\Sites\SiteRepository;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 
-final readonly class TrackerRequestFactory
+final class TrackerRequestFactory
 {
+    /** @var array<int, array<string, int|string|null>> */
+    private array $sitesById = [];
+
+    /** @var array<int, list<string>> */
+    private array $siteUrlsById = [];
+
+    /** @var array<int, list<string>> */
+    private array $excludedParametersBySite = [];
+
+    /** @var array<string, bool> */
+    private array $doNotTrackByContext = [];
+
+    /** @var array<string, bool> */
+    private array $excludedVisitsByContext = [];
+
+    /** @var array<string, string> */
+    private array $storedIpsByContext = [];
+
     public function __construct(
-        private ClientIpResolver $ips,
-        private SiteRepository $sites,
-        private QueryParameterExclusionPolicy $excludedParameters,
-        private TrackingRequestPolicy $policy,
-        private InstallationConfig $configuration,
+        private readonly ClientIpResolver $ips,
+        private readonly SiteRepository $sites,
+        private readonly QueryParameterExclusionPolicy $excludedParameters,
+        private readonly TrackingRequestPolicy $policy,
+        private readonly InstallationConfig $configuration,
     ) {}
 
     public function make(Request $request): ?TrackingRequest
@@ -28,7 +46,7 @@ final readonly class TrackerRequestFactory
             throw new InvalidArgumentException('idsite must be a positive integer.');
         }
 
-        $site = $this->sites->details((int) $siteId);
+        $site = $this->site((int) $siteId);
         if ($site === []) {
             throw new InvalidArgumentException('The requested website does not exist.');
         }
@@ -59,7 +77,7 @@ final readonly class TrackerRequestFactory
 
         $ipAddress = $this->ips->resolve($request);
         $userAgent = mb_substr((string) $request->userAgent(), 0, 512);
-        if ($this->policy->excludesVisit($site, $ipAddress, $userAgent)) {
+        if ($this->excludesVisit($site, $ipAddress, $userAgent)) {
             return null;
         }
 
@@ -88,7 +106,7 @@ final readonly class TrackerRequestFactory
                 : $this->clean($url, $maximumUrlLength),
             actionName: is_string($actionName) ? $this->clean($actionName, 255) : '',
             visitorId: strtolower($visitorId),
-            ipAddress: $this->policy->storedIpAddress((int) $siteId, $ipAddress),
+            ipAddress: $this->storedIpAddress((int) $siteId, $ipAddress),
             userAgent: $userAgent,
             actionType: $actionType,
             eventCategory: $actionType === 10 ? $eventCategory : null,
@@ -96,6 +114,116 @@ final readonly class TrackerRequestFactory
             eventName: $actionType === 10 ? $this->optional($request->input('e_n'), 255) : null,
             eventValue: $eventValue === null ? null : (float) $eventValue,
         );
+    }
+
+    public function many(Request $request): TrackingRequestBatch
+    {
+        $payload = $request->input('requests');
+        if ($payload === null) {
+            return $this->batch([$request]);
+        }
+
+        if (is_string($payload)) {
+            $payload = json_decode($payload, true);
+        }
+
+        if (is_array($payload) && isset($payload['requests'])) {
+            $payload = $payload['requests'];
+        }
+
+        if (! is_array($payload) || count($payload) > 50) {
+            throw new InvalidArgumentException('requests must contain at most 50 tracking query strings.');
+        }
+
+        $requests = [];
+        $server = $request->server->all();
+        unset(
+            $server['CONTENT_LENGTH'],
+            $server['CONTENT_TYPE'],
+            $server['HTTP_CONTENT_LENGTH'],
+            $server['HTTP_CONTENT_TYPE'],
+        );
+
+        foreach ($payload as $query) {
+            if (! is_string($query)) {
+                throw new InvalidArgumentException('Every bulk tracking request must be a query string.');
+            }
+
+            parse_str(ltrim($query, '?'), $parameters);
+            $requests[] = Request::create(
+                '/matomo.php',
+                'POST',
+                $parameters,
+                $request->cookies->all(),
+                [],
+                $server,
+            );
+        }
+
+        return $this->batch($requests);
+    }
+
+    /** @param list<Request> $requests */
+    private function batch(array $requests): TrackingRequestBatch
+    {
+        $tracking = [];
+        $doNotTrackHonored = false;
+
+        foreach ($requests as $request) {
+            if ($this->honorsDoNotTrack($request)) {
+                $doNotTrackHonored = true;
+
+                continue;
+            }
+
+            if (! $this->policy->records($request)) {
+                continue;
+            }
+
+            $trackingRequest = $this->make($request);
+            if ($trackingRequest !== null) {
+                $tracking[] = $trackingRequest;
+            }
+        }
+
+        return new TrackingRequestBatch($tracking, $doNotTrackHonored);
+    }
+
+    /** @return array<string, int|string|null> */
+    private function site(int $siteId): array
+    {
+        return $this->sitesById[$siteId] ??= $this->sites->details($siteId);
+    }
+
+    private function honorsDoNotTrack(Request $request): bool
+    {
+        $siteId = $request->input('idsite');
+        $key = implode("\0", [
+            is_scalar($siteId) ? (string) $siteId : '',
+            (string) $request->header('DNT'),
+            (string) $request->header('X-Do-Not-Track'),
+        ]);
+
+        return $this->doNotTrackByContext[$key] ??= $this->policy->honorsDoNotTrack($request);
+    }
+
+    /** @param array<string, int|string|null> $site */
+    private function excludesVisit(array $site, string $ipAddress, string $userAgent): bool
+    {
+        $key = implode("\0", [(string) ($site['idsite'] ?? ''), $ipAddress, $userAgent]);
+
+        return $this->excludedVisitsByContext[$key] ??= $this->policy->excludesVisit(
+            $site,
+            $ipAddress,
+            $userAgent,
+        );
+    }
+
+    private function storedIpAddress(int $siteId, string $ipAddress): string
+    {
+        $key = $siteId."\0".$ipAddress;
+
+        return $this->storedIpsByContext[$key] ??= $this->policy->storedIpAddress($siteId, $ipAddress);
     }
 
     private function optional(mixed $value, int $length): ?string
@@ -116,7 +244,7 @@ final readonly class TrackerRequestFactory
             return false;
         }
 
-        foreach ($this->sites->urls($siteId) as $siteUrl) {
+        foreach ($this->siteUrlsById[$siteId] ??= $this->sites->urls($siteId) as $siteUrl) {
             if (strtolower((string) parse_url($siteUrl, PHP_URL_HOST)) === $host) {
                 return true;
             }
@@ -133,7 +261,7 @@ final readonly class TrackerRequestFactory
             return $url;
         }
 
-        $excluded = [
+        $excluded = $this->excludedParametersBySite[$siteId] ??= array_map(strtolower(...), [
             ...$this->configuration->urlQueryParametersToExclude(),
             ...$this->configuration->campaignNameParameters(),
             ...$this->configuration->campaignKeywordParameters(),
@@ -141,8 +269,7 @@ final readonly class TrackerRequestFactory
             ...$this->list($site['excluded_parameters'] ?? null),
             'ignore_referrer',
             'ignore_referer',
-        ];
-        $excluded = array_map(strtolower(...), $excluded);
+        ]);
 
         $query = [];
         parse_str((string) ($parts['query'] ?? ''), $query);

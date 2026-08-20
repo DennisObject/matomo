@@ -111,6 +111,68 @@ final class TrackerEndpointTest extends TestCase
         ]))->assertOk();
     }
 
+    public function test_records_bulk_tracking_requests(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->exactly(2))->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->post('/matomo.php', ['requests' => [
+            '?rec=1&idsite=1&url=https%3A%2F%2Fexample.test%2Fa',
+            '?rec=1&idsite=1&url=https%3A%2F%2Fexample.test%2Fb',
+        ]])->assertOk()->assertHeader('Content-Type', 'image/gif');
+    }
+
+    public function test_rejects_oversized_bulk_request(): void
+    {
+        $this->bindSite();
+        $requests = array_fill(0, 51, '?idsite=1&url=https%3A%2F%2Fexample.test');
+        $this->post('/matomo.php', ['requests' => $requests])->assertBadRequest();
+    }
+
+    public function test_records_json_bulk_envelopes_and_skips_requests_without_rec(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->url === 'https://example.test/recorded'
+                && $request->ipAddress === '127.0.0.0',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->postJson('/matomo.php', ['requests' => [
+            '?rec=1&idsite=1&url=https%3A%2F%2Fexample.test%2Frecorded',
+            '?idsite=1&url=https%3A%2F%2Fexample.test%2Fskipped',
+        ]])->assertOk();
+    }
+
+    public function test_rejects_an_invalid_batch_before_recording_any_items(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->post('/matomo.php', ['requests' => [
+            '?rec=1&idsite=1&url=https%3A%2F%2Fexample.test%2Fvalid',
+            '?rec=1&idsite=0&url=https%3A%2F%2Fexample.test%2Finvalid',
+        ]])->assertBadRequest();
+    }
+
+    public function test_applies_site_do_not_track_to_nested_requests(): void
+    {
+        $this->bindSite();
+        $this->mutableOptions()->set('PrivacyManager.idSite(1).doNotTrackEnabled', '1');
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->withHeader('DNT', '1')->post('/matomo.php', ['requests' => [
+            '?rec=1&idsite=1&url=https%3A%2F%2Fexample.test%2Fa',
+        ]])->assertOk()->assertHeader('Tk', 'N');
+    }
+
     public function test_rejects_incomplete_or_non_numeric_events(): void
     {
         $this->bindSite();

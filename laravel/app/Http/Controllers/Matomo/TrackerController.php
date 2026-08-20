@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Matomo;
 
 use App\Http\Controllers\Controller;
 use App\Matomo\Tracker\TrackerRequestFactory;
-use App\Matomo\Tracker\TrackingRequestPolicy;
 use App\Matomo\Tracker\VisitRecorder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -19,20 +18,11 @@ final class TrackerController extends Controller
     public function __invoke(
         Request $request,
         TrackerRequestFactory $requests,
-        TrackingRequestPolicy $policy,
         VisitRecorder $visits,
     ): Response {
-        if ($policy->honorsDoNotTrack($request)) {
-            return $this->pixel()->header('Tk', 'N');
-        }
-
-        if (! $policy->records($request)) {
-            return $this->pixel();
-        }
-
         try {
-            $trackingRequest = $requests->make($request);
-            if ($trackingRequest !== null) {
+            $batch = $requests->many($request);
+            foreach ($batch->requests as $trackingRequest) {
                 $visits->record($trackingRequest);
             }
         } catch (InvalidArgumentException $invalidArgumentException) {
@@ -40,7 +30,9 @@ final class TrackerController extends Controller
                 ->header('Content-Type', 'text/plain; charset=utf-8');
         }
 
-        return $this->pixel();
+        $response = $this->pixel();
+
+        return $batch->doNotTrackHonored ? $response->header('Tk', 'N') : $response;
     }
 
     private function pixel(): Response
