@@ -534,6 +534,7 @@ final readonly class ApiRequest
         public ?UsersManagerCreateRequest $usersManagerCreate,
         public ?UsersManagerInviteMaintenanceRequest $usersManagerInviteMaintenance,
         public ?UsersManagerSecurityMutationRequest $usersManagerSecurityMutation,
+        public ?UsersManagerUpdateDeleteRequest $usersManagerUpdateDelete,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -613,6 +614,7 @@ final readonly class ApiRequest
             usersManagerCreate: null,
             usersManagerInviteMaintenance: null,
             usersManagerSecurityMutation: null,
+            usersManagerUpdateDelete: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1221,6 +1223,7 @@ final readonly class ApiRequest
             usersManagerCreate: self::usersManagerCreate($request, $module, $method),
             usersManagerInviteMaintenance: self::usersManagerInviteMaintenance($request, $module, $method),
             usersManagerSecurityMutation: self::usersManagerSecurityMutation($request, $module, $method),
+            usersManagerUpdateDelete: self::usersManagerUpdateDelete($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2656,6 +2659,29 @@ final readonly class ApiRequest
             login: self::requiredString($request, 'userLogin'),
             superuserEnabled: $method === 'UsersManager.setSuperUserAccess'
                 ? self::requiredBoolean($request, 'hasSuperUserAccess') : null,
+            passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    private static function usersManagerUpdateDelete(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?UsersManagerUpdateDeleteRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'UsersManager.updateUser',
+            'UsersManager.deleteUser',
+        ], true)) {
+            return null;
+        }
+
+        $update = $method === 'UsersManager.updateUser';
+
+        return new UsersManagerUpdateDeleteRequest(
+            login: self::requiredString($request, 'userLogin'),
+            password: $update ? self::nullableStringInput($request, 'password') : null,
+            email: $update ? self::nullableStringInput($request, 'email') : null,
+            passwordIsHashed: $update && self::booleanInput($request, '_isPasswordHashed', false),
             passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
         );
     }
