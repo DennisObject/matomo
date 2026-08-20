@@ -16,6 +16,7 @@ final readonly class InstallationConfig
         #[\SensitiveParameter]
         private string $salt,
         private bool $onlyAllowSecureTokens,
+        private int $apiBulkRequestLimit,
         private int $sessionLifetime,
         private int $sessionIdleTimeout,
         /** @var list<string> */
@@ -178,6 +179,7 @@ final readonly class InstallationConfig
             databaseConnection: self::buildDatabaseConnection($database, $prefix),
             salt: $salt,
             onlyAllowSecureTokens: self::boolean($general, 'only_allow_secure_auth_tokens'),
+            apiBulkRequestLimit: self::integer($general, 'API_bulk_request_limit', -1),
             sessionLifetime: self::positiveInteger($general, 'login_cookie_expire', 1_209_600),
             sessionIdleTimeout: self::positiveInteger(
                 $general,
@@ -426,6 +428,11 @@ final readonly class InstallationConfig
     public function onlyAllowSecureTokens(): bool
     {
         return $this->onlyAllowSecureTokens;
+    }
+
+    public function apiBulkRequestLimit(): int
+    {
+        return $this->apiBulkRequestLimit;
     }
 
     public function sessionLifetime(): int
@@ -1134,6 +1141,14 @@ final readonly class InstallationConfig
         $value = self::string($values, $key, (string) $default);
 
         return preg_match('/^[1-9]\d*$/D', $value) === 1 ? (int) $value : $default;
+    }
+
+    /** @param array<string, mixed> $values */
+    private static function integer(array $values, string $key, int $default): int
+    {
+        $value = self::string($values, $key, (string) $default);
+
+        return preg_match('/^-?\d+$/D', $value) === 1 ? (int) $value : $default;
     }
 
     /** @param array<string, mixed> $values */

@@ -14,6 +14,8 @@ use App\Matomo\AiProviders\DatabaseAiProviderSettingsRepository;
 use App\Matomo\AiProviders\HttpAiProviderConnectionTester;
 use App\Matomo\Annotations\AnnotationRepository;
 use App\Matomo\Annotations\DatabaseAnnotationRepository;
+use App\Matomo\Api\BulkRequestLimit;
+use App\Matomo\Api\ConfiguredBulkRequestLimit;
 use App\Matomo\Api\Methods\ActionsApiMethodHandler;
 use App\Matomo\Api\Methods\AiAgentsApiMethodHandler;
 use App\Matomo\Api\Methods\AiProvidersApiMethodHandler;
@@ -21,6 +23,7 @@ use App\Matomo\Api\Methods\AnnotationsApiMethodHandler;
 use App\Matomo\Api\Methods\ApiMetadataMethodHandler;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Api\Methods\BotTrackingApiMethodHandler;
+use App\Matomo\Api\Methods\BulkApiMethodHandler;
 use App\Matomo\Api\Methods\ContentsApiMethodHandler;
 use App\Matomo\Api\Methods\CoreAdminHomeApiMethodHandler;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
@@ -405,6 +408,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(
+            BulkRequestLimit::class,
+            fn (Application $application): BulkRequestLimit => new ConfiguredBulkRequestLimit(
+                static fn (): InstallationConfig => $application->make(InstallationConfig::class),
+                $application->make(ApiAccessAuthorizer::class),
+            ),
+        );
         $this->app->singleton(InstallationConfig::class, function (Application $application): InstallationConfig {
             $path = $application->make(Repository::class)->get('matomo.config_path');
 
@@ -1770,6 +1780,7 @@ class AppServiceProvider extends ServiceProvider
             fn (Application $application): ApiMethodDispatcher => new ApiMethodDispatcher([
                 $application->make(CoreApiMethodHandler::class),
                 $application->make(ApiMetadataMethodHandler::class),
+                $application->make(BulkApiMethodHandler::class),
                 $application->make(CorePluginsAdminApiMethodHandler::class),
                 $application->make(CoreAdminHomeApiMethodHandler::class),
                 $application->make(SitesManagerApiMethodHandler::class),

@@ -551,6 +551,7 @@ final readonly class ApiRequest
         public ?CorePluginsAdminRequest $corePluginsAdmin,
         public ?SegmentsMetadataRequest $segmentsMetadata,
         public ?ReportMetadataRequest $reportMetadata,
+        public ?BulkApiRequest $bulk,
         public ?MarketplaceRequest $marketplace,
         public ?LiveRequest $live,
         public bool $forceCache,
@@ -560,6 +561,13 @@ final readonly class ApiRequest
     public static function fromRequest(Request $request): self
     {
         return self::make($request, self::authentication($request));
+    }
+
+    public static function fromRequestWithAuthentication(
+        Request $request,
+        ApiAuthentication $authentication,
+    ): self {
+        return self::make($request, $authentication);
     }
 
     public static function withoutAuthentication(Request $request): self
@@ -649,6 +657,7 @@ final readonly class ApiRequest
             corePluginsAdmin: null,
             segmentsMetadata: null,
             reportMetadata: null,
+            bulk: null,
             marketplace: null,
             live: null,
             forceCache: false,
@@ -1276,6 +1285,7 @@ final readonly class ApiRequest
             corePluginsAdmin: self::corePluginsAdmin($request, $module, $method),
             segmentsMetadata: self::segmentsMetadata($request, $module, $method),
             reportMetadata: self::reportMetadata($request, $module, $method),
+            bulk: self::bulk($request, $module, $method),
             marketplace: self::marketplace($request, $module, $method),
             live: self::live($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
@@ -3133,6 +3143,37 @@ final readonly class ApiRequest
             hideMetricsDocumentation: self::booleanInput($request, 'hideMetricsDoc', false),
             showSubtableReports: self::booleanInput($request, 'showSubtableReports', false),
         );
+    }
+
+    private static function bulk(Request $request, string $module, string $method): ?BulkApiRequest
+    {
+        if ($module !== 'API' || $method !== 'API.getBulkRequest') {
+            return null;
+        }
+
+        $input = self::inputValue($request, 'urls');
+        if ($input === null || $input === '') {
+            return new BulkApiRequest([]);
+        }
+
+        if (! is_array($input)) {
+            throw new InvalidApiParameter('urls', 'The value must be an array of API query strings.');
+        }
+
+        $urls = [];
+        foreach ($input as $url) {
+            if ($url === null) {
+                $url = '';
+            }
+
+            if (! is_string($url)) {
+                throw new InvalidApiParameter('urls', 'Every URL must be an API query string.');
+            }
+
+            $urls[] = $url;
+        }
+
+        return new BulkApiRequest($urls);
     }
 
     private static function scheduledReports(Request $request, string $module, string $method): ?ScheduledReportsRequest
