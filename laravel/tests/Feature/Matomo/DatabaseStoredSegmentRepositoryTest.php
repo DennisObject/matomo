@@ -26,14 +26,18 @@ class DatabaseStoredSegmentRepositoryTest extends TestCase
         ]);
         $repository = new DatabaseStoredSegmentRepository(static fn (): Connection => $connection);
 
+        $createdId = $repository->create($this->row(7, 'Created', 'alice', 0, 1));
+        $this->assertSame(7, $createdId);
+        $this->assertSame(md5('browserCode==FF'), $repository->find(7)['hash'] ?? null);
+
         $this->assertSame('Mine', $repository->find(1)['name'] ?? null);
         $this->assertNull($repository->find(99));
         $this->assertSame(
-            [6, 1, 2],
+            [6, 7, 1, 2],
             array_column($repository->visible('alice', false, 1), 'idsegment'),
         );
         $this->assertSame(
-            [6, 1, 3, 2],
+            [6, 7, 1, 3, 2],
             array_column($repository->visible('alice', true, 1), 'idsegment'),
         );
 

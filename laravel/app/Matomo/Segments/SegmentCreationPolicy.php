@@ -10,7 +10,7 @@ use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Config\InstallationConfig;
 use Closure;
 
-final readonly class SegmentCreationPolicy
+final readonly class SegmentCreationPolicy implements SegmentCreationAuthorizer
 {
     /** @param Closure(): InstallationConfig $configuration */
     public function __construct(

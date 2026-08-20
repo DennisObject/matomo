@@ -1025,7 +1025,16 @@ final readonly class ApiRequest
             $siteId = (int) $siteValue;
         }
 
-        return new SegmentEditorRequest($segmentId, $siteId);
+        $writes = in_array($method, ['SegmentEditor.add', 'SegmentEditor.update'], true);
+
+        return new SegmentEditorRequest(
+            $segmentId,
+            $siteId,
+            $writes ? self::requiredString($request, 'name') : null,
+            $writes ? self::requiredString($request, 'definition') : null,
+            $writes ? self::booleanInput($request, 'autoArchive', false) : null,
+            $writes ? self::booleanInput($request, 'enabledAllUsers', false) : null,
+        );
     }
 
     private static function customDimensions(

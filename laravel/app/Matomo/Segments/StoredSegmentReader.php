@@ -21,6 +21,11 @@ final readonly class StoredSegmentReader
         return $this->segments->find($segmentId);
     }
 
+    public function validateDefinition(string $definition): void
+    {
+        $this->definitions->validate($definition);
+    }
+
     /**
      * @param  list<int>  $viewableSiteIds
      * @return list<StoredSegment>
