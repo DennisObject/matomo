@@ -15,18 +15,30 @@ final class TrackerController extends Controller
 {
     private const string PIXEL = 'R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
-    public function __invoke(Request $request, TrackerRequestFactory $requests, VisitRecorder $visits): Response
-    {
-        if ($request->header('DNT') !== '1' && $request->cookie('matomo_ignore') === null) {
-            try {
-                foreach ($requests->many($request) as $trackingRequest) {
-                    $visits->record($trackingRequest);
-                }
-            } catch (InvalidArgumentException $exception) {
-                return response($exception->getMessage(), 400)->header('Content-Type', 'text/plain; charset=utf-8');
+    public function __invoke(
+        Request $request,
+        TrackerRequestFactory $requests,
+        VisitRecorder $visits,
+    ): Response {
+        try {
+            $batch = $requests->many($request);
+            foreach ($batch->requests as $trackingRequest) {
+                $visits->record($trackingRequest);
             }
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            return response($invalidArgumentException->getMessage(), 400)
+                ->header('Content-Type', 'text/plain; charset=utf-8');
         }
 
-        return response(base64_decode(self::PIXEL, true) ?: '', 200)->header('Content-Type', 'image/gif')->header('Cache-Control', 'no-store');
+        $response = $this->pixel();
+
+        return $batch->doNotTrackHonored ? $response->header('Tk', 'N') : $response;
+    }
+
+    private function pixel(): Response
+    {
+        return response(base64_decode(self::PIXEL, true) ?: '', 200)
+            ->header('Content-Type', 'image/gif')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 }

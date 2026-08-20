@@ -14,6 +14,8 @@ use App\Matomo\AiProviders\DatabaseAiProviderSettingsRepository;
 use App\Matomo\AiProviders\HttpAiProviderConnectionTester;
 use App\Matomo\Annotations\AnnotationRepository;
 use App\Matomo\Annotations\DatabaseAnnotationRepository;
+use App\Matomo\Api\BulkRequestLimit;
+use App\Matomo\Api\ConfiguredBulkRequestLimit;
 use App\Matomo\Api\Methods\ActionsApiMethodHandler;
 use App\Matomo\Api\Methods\AiAgentsApiMethodHandler;
 use App\Matomo\Api\Methods\AiProvidersApiMethodHandler;
@@ -255,6 +257,7 @@ use App\Matomo\Privacy\AnonymizableColumnProvider;
 use App\Matomo\Privacy\CnilGranularComplianceSettingsProvider;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Privacy\ComplianceStatusProvider;
+use App\Matomo\Privacy\ConfiguredDeletionBatchLimits;
 use App\Matomo\Privacy\ConfiguredPrivacyFeatureFlags;
 use App\Matomo\Privacy\DatabaseAnonymisationSettingsRepository;
 use App\Matomo\Privacy\DatabaseAnonymizableColumnProvider;
@@ -267,6 +270,7 @@ use App\Matomo\Privacy\DatabaseRawAnonymisationScheduler;
 use App\Matomo\Privacy\DataPurger;
 use App\Matomo\Privacy\DataSubjectFinder;
 use App\Matomo\Privacy\DataSubjectRepository;
+use App\Matomo\Privacy\DeletionBatchLimits;
 use App\Matomo\Privacy\GranularComplianceSettingsProvider;
 use App\Matomo\Privacy\PrivacyFeatureFlags;
 use App\Matomo\Privacy\RawAnonymisationScheduler;
@@ -315,6 +319,7 @@ use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\EgressHostResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Segments\ConfiguredSegmentEditorSettings;
+use App\Matomo\Segments\ConfiguredSegmentSuggestionPolicy;
 use App\Matomo\Segments\DatabaseSegmentValueRepository;
 use App\Matomo\Segments\DatabaseStoredSegmentRepository;
 use App\Matomo\Segments\LaravelSegmentCacheInvalidator;
@@ -326,6 +331,7 @@ use App\Matomo\Segments\SegmentCreationPolicy;
 use App\Matomo\Segments\SegmentEditorSettings;
 use App\Matomo\Segments\SegmentMetadataCatalog;
 use App\Matomo\Segments\SegmentRearchiveScheduler;
+use App\Matomo\Segments\SegmentSuggestionPolicy;
 use App\Matomo\Segments\SegmentValueRepository;
 use App\Matomo\Segments\StoredSegmentRepository;
 use App\Matomo\Settings\DatabasePolicySettingRepository;
@@ -351,9 +357,9 @@ use App\Matomo\Tour\ConfiguredTourSettings;
 use App\Matomo\Tour\DatabaseTourDataRepository;
 use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
-use App\Matomo\Tracker\ConfiguredTrackerSettings;
+use App\Matomo\Tracker\ConfiguredTrackingRequestPolicy;
 use App\Matomo\Tracker\DatabaseVisitRecorder;
-use App\Matomo\Tracker\TrackerSettings;
+use App\Matomo\Tracker\TrackingRequestPolicy;
 use App\Matomo\Tracker\VisitRecorder;
 use App\Matomo\TrackingFailures\DatabaseTrackingFailureRepository;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
@@ -368,6 +374,7 @@ use App\Matomo\UserChanges\UserChangeReadRepository;
 use App\Matomo\Users\AccessMetadataProvider;
 use App\Matomo\Users\AnonymousAccessNotifier;
 use App\Matomo\Users\ConfiguredAccessMetadataProvider;
+use App\Matomo\Users\ConfiguredUserPreferenceDefaults;
 use App\Matomo\Users\DatabaseMutableUserRepository;
 use App\Matomo\Users\DatabaseMutableUserSiteAccessRepository;
 use App\Matomo\Users\DatabaseUserDirectoryRepository;
@@ -386,6 +393,7 @@ use App\Matomo\Users\UserDirectoryRepository;
 use App\Matomo\Users\UserIdentityRepository;
 use App\Matomo\Users\UserInvitationLinkFactory;
 use App\Matomo\Users\UserInvitationNotifier;
+use App\Matomo\Users\UserPreferenceDefaults;
 use App\Matomo\Users\UserPreferenceRepository;
 use App\Matomo\Users\UserPresenter;
 use App\Matomo\Users\UserRoleDirectoryRepository;
@@ -412,6 +420,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(
+            BulkRequestLimit::class,
+            fn (Application $application): BulkRequestLimit => new ConfiguredBulkRequestLimit(
+                static fn (): InstallationConfig => $application->make(InstallationConfig::class),
+                $application->make(ApiAccessAuthorizer::class),
+            ),
+        );
         $this->app->singleton(InstallationConfig::class, function (Application $application): InstallationConfig {
             $path = $application->make(Repository::class)->get('matomo.config_path');
 
@@ -636,6 +651,8 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(AccessMetadataProvider::class, ConfiguredAccessMetadataProvider::class);
+        $this->app->singleton(DeletionBatchLimits::class, ConfiguredDeletionBatchLimits::class);
+        $this->app->singleton(UserPreferenceDefaults::class, ConfiguredUserPreferenceDefaults::class);
         $this->app->singleton(
             UserPreferenceRepository::class,
             fn (Application $application): UserPreferenceRepository => new DatabaseUserPreferenceRepository(
@@ -734,6 +751,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(MatomoDatabase::class)->connection(),
                 $application->make(Dispatcher::class),
                 $application->make(ArchiveInvalidationManager::class),
+                $application->make(SiteRepository::class),
             ),
         );
         $this->app->singleton(
@@ -1428,6 +1446,7 @@ class AppServiceProvider extends ServiceProvider
                 options: $application->make(OptionRepository::class),
                 policies: $application->make(CompliancePolicyStateRepository::class),
                 configuration: $application->make(InstallationConfig::class),
+                translator: $application->make(MatomoTranslator::class),
             ),
         );
         $this->app->singleton(
@@ -1544,13 +1563,14 @@ class AppServiceProvider extends ServiceProvider
                 base_path('../matomo.js'),
             ),
         );
+        $this->app->singleton(TrackingRequestPolicy::class, ConfiguredTrackingRequestPolicy::class);
         $this->app->singleton(
             VisitRecorder::class,
             fn (Application $application): VisitRecorder => new DatabaseVisitRecorder(
-                $application->make(MatomoDatabase::class)->connection(),
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                visitStandardLength: $application->make(InstallationConfig::class)->visitStandardLength(),
             ),
         );
-        $this->app->singleton(TrackerSettings::class, ConfiguredTrackerSettings::class);
 
         $this->app->singleton(
             PromoWidgetDismissalRepository::class,
@@ -1742,6 +1762,12 @@ class AppServiceProvider extends ServiceProvider
                 translator: $application->make(MatomoTranslator::class),
                 dimensions: $application->make(CustomDimensionRepository::class),
                 catalogPath: resource_path('matomo/segment-metadata.php'),
+            ),
+        );
+        $this->app->singleton(
+            SegmentSuggestionPolicy::class,
+            fn (Application $application): SegmentSuggestionPolicy => new ConfiguredSegmentSuggestionPolicy(
+                static fn (): InstallationConfig => $application->make(InstallationConfig::class),
             ),
         );
         $this->app->singleton(SegmentValueRepository::class, DatabaseSegmentValueRepository::class);

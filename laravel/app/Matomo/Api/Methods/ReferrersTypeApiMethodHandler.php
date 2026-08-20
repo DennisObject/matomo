@@ -104,6 +104,7 @@ final readonly class ReferrersTypeApiMethodHandler implements ApiMethodHandler
             segmentHash: $this->segments->resolve($query->segment),
             language: $this->languages->resolve($httpRequest, $request->authentication),
             showMetadata: $request->showMetadata,
+            formatMetrics: $query->formatMetrics,
             forceDateIndex: $forceDateIndex,
         );
 

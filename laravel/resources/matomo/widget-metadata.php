@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 return [
     0 => [
-        'name' => 'KPI Metric',
+        'name' => [
+            'translationKey' => 'General_KpiMetric',
+        ],
         'category' => [
             'id' => 'General_KpiMetric',
-            'name' => 'KPI Metric',
+            'name' => [
+                'translationKey' => 'General_KpiMetric',
+            ],
             'order' => '1',
             'icon' => '',
             'help' => '',
@@ -29,10 +33,14 @@ return [
         'isWide' => '0',
     ],
     1 => [
-        'name' => 'Real-time visitor count',
+        'name' => [
+            'translationKey' => 'Live_RealTimeVisitorCount',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -42,11 +50,15 @@ return [
             ],
         ],
         'subcategory' => '',
-        'module' => 'Live',
+        'module' => [
+            'translationKey' => 'General_Live',
+        ],
         'action' => 'getSimpleLastVisitCount',
         'order' => '15',
         'parameters' => [
-            'module' => 'Live',
+            'module' => [
+                'translationKey' => 'General_Live',
+            ],
             'action' => 'getSimpleLastVisitCount',
         ],
         'uniqueId' => 'widgetLivegetSimpleLastVisitCount',
@@ -55,10 +67,14 @@ return [
         'isReport' => '1',
     ],
     2 => [
-        'name' => 'Visitor profile',
+        'name' => [
+            'translationKey' => 'Live_VisitorProfile',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -68,21 +84,29 @@ return [
             ],
         ],
         'subcategory' => '',
-        'module' => 'Live',
+        'module' => [
+            'translationKey' => 'General_Live',
+        ],
         'action' => 'getVisitorProfilePopup',
         'order' => '25',
         'parameters' => [
-            'module' => 'Live',
+            'module' => [
+                'translationKey' => 'General_Live',
+            ],
             'action' => 'getVisitorProfilePopup',
         ],
         'uniqueId' => 'widgetLivegetVisitorProfilePopup',
         'isWide' => '0',
     ],
     3 => [
-        'name' => 'Visits Overview (with graph)',
+        'name' => [
+            'translationKey' => 'VisitsSummary_WidgetOverviewGraph',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -106,10 +130,14 @@ return [
         'isContainer' => '1',
         'widgets' => [
             0 => [
-                'name' => 'Visits Over Time',
+                'name' => [
+                    'translationKey' => 'VisitsSummary_WidgetLastVisits',
+                ],
                 'category' => [
                     'id' => 'General_Visitors',
-                    'name' => 'Visitors',
+                    'name' => [
+                        'translationKey' => 'General_Visitors',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -120,7 +148,9 @@ return [
                 ],
                 'subcategory' => [
                     'id' => 'General_Overview',
-                    'name' => 'Overview',
+                    'name' => [
+                        'translationKey' => 'General_Overview',
+                    ],
                     'order' => '99',
                     'help' => '',
                 ],
@@ -139,10 +169,14 @@ return [
                 'isReport' => '1',
             ],
             1 => [
-                'name' => 'Visits Overview',
+                'name' => [
+                    'translationKey' => 'VisitsSummary_WidgetVisits',
+                ],
                 'category' => [
                     'id' => 'General_Visitors',
-                    'name' => 'Visitors',
+                    'name' => [
+                        'translationKey' => 'General_Visitors',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -153,7 +187,9 @@ return [
                 ],
                 'subcategory' => [
                     'id' => 'General_Overview',
-                    'name' => 'Overview',
+                    'name' => [
+                        'translationKey' => 'General_Overview',
+                    ],
                     'order' => '99',
                     'help' => '',
                 ],
@@ -174,10 +210,14 @@ return [
         ],
     ],
     4 => [
-        'name' => 'Visits Over Time',
+        'name' => [
+            'translationKey' => 'VisitsSummary_WidgetLastVisits',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -188,7 +228,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Overview',
-            'name' => 'Overview',
+            'name' => [
+                'translationKey' => 'General_Overview',
+            ],
             'order' => '2',
             'help' => '<p>The Visitors Overview helps you understand the popularity of your site. It does this by providing charts that show how many visits your site is receiving over a selected period and the average level of engagement for key features, such as searches and downloads.</p>',
         ],
@@ -207,10 +249,14 @@ return [
         'isReport' => '1',
     ],
     5 => [
-        'name' => 'Visits Overview',
+        'name' => [
+            'translationKey' => 'VisitsSummary_WidgetVisits',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -221,7 +267,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Overview',
-            'name' => 'Overview',
+            'name' => [
+                'translationKey' => 'General_Overview',
+            ],
             'order' => '2',
             'help' => '<p>The Visitors Overview helps you understand the popularity of your site. It does this by providing charts that show how many visits your site is receiving over a selected period and the average level of engagement for key features, such as searches and downloads.</p>',
         ],
@@ -240,10 +288,14 @@ return [
         'isReport' => '1',
     ],
     6 => [
-        'name' => 'Visits Log',
+        'name' => [
+            'translationKey' => 'Live_VisitsLog',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -254,17 +306,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Live_VisitorLog',
-            'name' => 'Visits Log',
+            'name' => [
+                'translationKey' => 'Live_VisitsLog',
+            ],
             'order' => '5',
             'help' => '<p>The visits log shows you every visit your website receives in detail. Find out which actions each visitor has performed, how they got to your site, a bit about who they are, and more (while still complying with your local privacy regulations).</p><p>While other reports in Matomo show how your visitors behave at an aggregate level, the visits log provides granular detail. You can also use segments to narrow it down to specific types of visits to understand your visitors better.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/real-time/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Live.getLastVisitsDetails">Learn more in the visit-log guide.</a></p>',
         ],
-        'module' => 'Live',
+        'module' => [
+            'translationKey' => 'General_Live',
+        ],
         'action' => 'getLastVisitsDetails',
         'order' => '10',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'VisitorLog',
-            'module' => 'Live',
+            'module' => [
+                'translationKey' => 'General_Live',
+            ],
             'action' => 'getLastVisitsDetails',
             'small' => '1',
         ],
@@ -274,10 +332,14 @@ return [
         'isReport' => '1',
     ],
     7 => [
-        'name' => 'Visits in real-time',
+        'name' => [
+            'translationKey' => 'Live_VisitorsInRealTime',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -288,25 +350,35 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_RealTime',
-            'name' => 'Real-time',
+            'name' => [
+                'translationKey' => 'General_RealTime',
+            ],
             'order' => '7',
             'help' => '<p>The visits in the real-time report show the real-time flow of visits to your website. It includes a real-time counter of your visits and page views in the last 24 hours and the previous 30 minutes.</p><p>This report refreshes every 5 seconds and displays new visits (or existing visitors that view a new page) at the top of the list with a fade-in effect.</p>',
         ],
-        'module' => 'Live',
+        'module' => [
+            'translationKey' => 'General_Live',
+        ],
         'action' => 'widget',
         'order' => '20',
         'parameters' => [
-            'module' => 'Live',
+            'module' => [
+                'translationKey' => 'General_Live',
+            ],
             'action' => 'widget',
         ],
         'uniqueId' => 'widgetLivewidget',
         'isWide' => '1',
     ],
     8 => [
-        'name' => 'Real-time Map',
+        'name' => [
+            'translationKey' => 'UserCountryMap_RealTimeMap',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -317,7 +389,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'UserCountryMap_RealTimeMap',
-            'name' => 'Real-time Map',
+            'name' => [
+                'translationKey' => 'UserCountryMap_RealTimeMap',
+            ],
             'order' => '9',
             'help' => '<p>Shows the location of website visitors the last 30 minutes, and flashes for new ones. Recent visits are shown as large orange bubbles, and older ones as smaller gray ones. It refreshes every five seconds.</p>',
         ],
@@ -332,10 +406,14 @@ return [
         'isWide' => '1',
     ],
     9 => [
-        'name' => 'Visitor Map',
+        'name' => [
+            'translationKey' => 'UserCountryMap_VisitorMap',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -346,7 +424,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'UserCountry_SubmenuLocations',
-            'name' => 'Locations',
+            'name' => [
+                'translationKey' => 'UserCountry_SubmenuLocations',
+            ],
             'order' => '10',
             'help' => '<p>The "Locations" section is the best way to find out what countries, continents, regions, and cities your website visitors come from — in table and map form. It also says what language their browser is set to, helping identify international visitors in alternative locations.</p>',
         ],
@@ -361,10 +441,14 @@ return [
         'isWide' => '0',
     ],
     10 => [
-        'name' => 'City',
+        'name' => [
+            'translationKey' => 'UserCountry_City',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -375,7 +459,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'UserCountry_SubmenuLocations',
-            'name' => 'Locations',
+            'name' => [
+                'translationKey' => 'UserCountry_SubmenuLocations',
+            ],
             'order' => '10',
             'help' => '<p>The "Locations" section is the best way to find out what countries, continents, regions, and cities your website visitors come from — in table and map form. It also says what language their browser is set to, helping identify international visitors in alternative locations.</p>',
         ],
@@ -392,10 +478,14 @@ return [
         'isReport' => '1',
     ],
     11 => [
-        'name' => 'Continent',
+        'name' => [
+            'translationKey' => 'UserCountry_Continent',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -406,7 +496,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'UserCountry_SubmenuLocations',
-            'name' => 'Locations',
+            'name' => [
+                'translationKey' => 'UserCountry_SubmenuLocations',
+            ],
             'order' => '10',
             'help' => '<p>The "Locations" section is the best way to find out what countries, continents, regions, and cities your website visitors come from — in table and map form. It also says what language their browser is set to, helping identify international visitors in alternative locations.</p>',
         ],
@@ -423,10 +515,14 @@ return [
         'isReport' => '1',
     ],
     12 => [
-        'name' => 'Country',
+        'name' => [
+            'translationKey' => 'UserCountry_Country',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -437,7 +533,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'UserCountry_SubmenuLocations',
-            'name' => 'Locations',
+            'name' => [
+                'translationKey' => 'UserCountry_SubmenuLocations',
+            ],
             'order' => '10',
             'help' => '<p>The "Locations" section is the best way to find out what countries, continents, regions, and cities your website visitors come from — in table and map form. It also says what language their browser is set to, helping identify international visitors in alternative locations.</p>',
         ],
@@ -454,10 +552,14 @@ return [
         'isReport' => '1',
     ],
     13 => [
-        'name' => 'Region',
+        'name' => [
+            'translationKey' => 'UserCountry_Region',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -468,7 +570,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'UserCountry_SubmenuLocations',
-            'name' => 'Locations',
+            'name' => [
+                'translationKey' => 'UserCountry_SubmenuLocations',
+            ],
             'order' => '10',
             'help' => '<p>The "Locations" section is the best way to find out what countries, continents, regions, and cities your website visitors come from — in table and map form. It also says what language their browser is set to, helping identify international visitors in alternative locations.</p>',
         ],
@@ -485,10 +589,14 @@ return [
         'isReport' => '1',
     ],
     14 => [
-        'name' => 'Web-browser language',
+        'name' => [
+            'translationKey' => 'UserLanguage_BrowserLanguage',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -499,7 +607,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'UserCountry_SubmenuLocations',
-            'name' => 'Locations',
+            'name' => [
+                'translationKey' => 'UserCountry_SubmenuLocations',
+            ],
             'order' => '10',
             'help' => '<p>The "Locations" section is the best way to find out what countries, continents, regions, and cities your website visitors come from — in table and map form. It also says what language their browser is set to, helping identify international visitors in alternative locations.</p>',
         ],
@@ -516,10 +626,14 @@ return [
         'isReport' => '1',
     ],
     15 => [
-        'name' => 'Language code',
+        'name' => [
+            'translationKey' => 'UserLanguage_LanguageCode',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -530,7 +644,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'UserCountry_SubmenuLocations',
-            'name' => 'Locations',
+            'name' => [
+                'translationKey' => 'UserCountry_SubmenuLocations',
+            ],
             'order' => '10',
             'help' => '<p>The "Locations" section is the best way to find out what countries, continents, regions, and cities your website visitors come from — in table and map form. It also says what language their browser is set to, helping identify international visitors in alternative locations.</p>',
         ],
@@ -547,10 +663,14 @@ return [
         'isReport' => '1',
     ],
     16 => [
-        'name' => 'Device brand',
+        'name' => [
+            'translationKey' => 'DevicesDetection_DeviceBrand',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -561,7 +681,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'DevicesDetection_Devices',
-            'name' => 'Devices',
+            'name' => [
+                'translationKey' => 'DevicesDetection_Devices',
+            ],
             'order' => '15',
             'help' => '<p>The Devices section helps you understand the technology that your visitors are using to access your site. You will see reports on the type of device and specific models to enable you to optimise your site for the most popular devices.</p>',
         ],
@@ -578,10 +700,14 @@ return [
         'isReport' => '1',
     ],
     17 => [
-        'name' => 'Device model',
+        'name' => [
+            'translationKey' => 'DevicesDetection_DeviceModel',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -592,7 +718,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'DevicesDetection_Devices',
-            'name' => 'Devices',
+            'name' => [
+                'translationKey' => 'DevicesDetection_Devices',
+            ],
             'order' => '15',
             'help' => '<p>The Devices section helps you understand the technology that your visitors are using to access your site. You will see reports on the type of device and specific models to enable you to optimise your site for the most popular devices.</p>',
         ],
@@ -609,10 +737,14 @@ return [
         'isReport' => '1',
     ],
     18 => [
-        'name' => 'Device type',
+        'name' => [
+            'translationKey' => 'DevicesDetection_DeviceType',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -623,7 +755,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'DevicesDetection_Devices',
-            'name' => 'Devices',
+            'name' => [
+                'translationKey' => 'DevicesDetection_Devices',
+            ],
             'order' => '15',
             'help' => '<p>The Devices section helps you understand the technology that your visitors are using to access your site. You will see reports on the type of device and specific models to enable you to optimise your site for the most popular devices.</p>',
         ],
@@ -640,10 +774,14 @@ return [
         'isReport' => '1',
     ],
     19 => [
-        'name' => 'Screen Resolution',
+        'name' => [
+            'translationKey' => 'Resolution_WidgetResolutions',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -654,15 +792,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'DevicesDetection_Devices',
-            'name' => 'Devices',
+            'name' => [
+                'translationKey' => 'DevicesDetection_Devices',
+            ],
             'order' => '15',
             'help' => '<p>The Devices section helps you understand the technology that your visitors are using to access your site. You will see reports on the type of device and specific models to enable you to optimise your site for the most popular devices.</p>',
         ],
-        'module' => 'Resolution',
+        'module' => [
+            'translationKey' => 'Resolution_ColumnResolution',
+        ],
         'action' => 'getResolution',
         'order' => '108',
         'parameters' => [
-            'module' => 'Resolution',
+            'module' => [
+                'translationKey' => 'Resolution_ColumnResolution',
+            ],
             'action' => 'getResolution',
         ],
         'uniqueId' => 'widgetResolutiongetResolution',
@@ -671,10 +815,14 @@ return [
         'isReport' => '1',
     ],
     20 => [
-        'name' => 'Browser Plugins',
+        'name' => [
+            'translationKey' => 'DevicePlugins_WidgetPlugins',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -685,7 +833,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'DevicesDetection_Software',
-            'name' => 'Software',
+            'name' => [
+                'translationKey' => 'DevicesDetection_Software',
+            ],
             'order' => '20',
             'help' => '<p>The Software section shows the operating systems, browsers and plugins that your visitors are using to access the site so that you can optimise your site to ensure it is fully compatible with the most popular configurations.</p>',
         ],
@@ -702,10 +852,14 @@ return [
         'isReport' => '1',
     ],
     21 => [
-        'name' => 'Browser engines',
+        'name' => [
+            'translationKey' => 'DevicesDetection_BrowserEngines',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -716,7 +870,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'DevicesDetection_Software',
-            'name' => 'Software',
+            'name' => [
+                'translationKey' => 'DevicesDetection_Software',
+            ],
             'order' => '20',
             'help' => '<p>The Software section shows the operating systems, browsers and plugins that your visitors are using to access the site so that you can optimise your site to ensure it is fully compatible with the most popular configurations.</p>',
         ],
@@ -733,10 +889,14 @@ return [
         'isReport' => '1',
     ],
     22 => [
-        'name' => 'Browser version',
+        'name' => [
+            'translationKey' => 'DevicesDetection_BrowserVersion',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -747,7 +907,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'DevicesDetection_Software',
-            'name' => 'Software',
+            'name' => [
+                'translationKey' => 'DevicesDetection_Software',
+            ],
             'order' => '20',
             'help' => '<p>The Software section shows the operating systems, browsers and plugins that your visitors are using to access the site so that you can optimise your site to ensure it is fully compatible with the most popular configurations.</p>',
         ],
@@ -764,10 +926,14 @@ return [
         'isReport' => '1',
     ],
     23 => [
-        'name' => 'Browsers',
+        'name' => [
+            'translationKey' => 'DevicesDetection_Browsers',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -778,7 +944,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'DevicesDetection_Software',
-            'name' => 'Software',
+            'name' => [
+                'translationKey' => 'DevicesDetection_Software',
+            ],
             'order' => '20',
             'help' => '<p>The Software section shows the operating systems, browsers and plugins that your visitors are using to access the site so that you can optimise your site to ensure it is fully compatible with the most popular configurations.</p>',
         ],
@@ -795,10 +963,14 @@ return [
         'isReport' => '1',
     ],
     24 => [
-        'name' => 'Operating System families',
+        'name' => [
+            'translationKey' => 'DevicesDetection_OperatingSystemFamilies',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -809,7 +981,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'DevicesDetection_Software',
-            'name' => 'Software',
+            'name' => [
+                'translationKey' => 'DevicesDetection_Software',
+            ],
             'order' => '20',
             'help' => '<p>The Software section shows the operating systems, browsers and plugins that your visitors are using to access the site so that you can optimise your site to ensure it is fully compatible with the most popular configurations.</p>',
         ],
@@ -826,10 +1000,14 @@ return [
         'isReport' => '1',
     ],
     25 => [
-        'name' => 'Operating System versions',
+        'name' => [
+            'translationKey' => 'DevicesDetection_OperatingSystemVersions',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -840,7 +1018,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'DevicesDetection_Software',
-            'name' => 'Software',
+            'name' => [
+                'translationKey' => 'DevicesDetection_Software',
+            ],
             'order' => '20',
             'help' => '<p>The Software section shows the operating systems, browsers and plugins that your visitors are using to access the site so that you can optimise your site to ensure it is fully compatible with the most popular configurations.</p>',
         ],
@@ -857,10 +1037,14 @@ return [
         'isReport' => '1',
     ],
     26 => [
-        'name' => 'Configurations',
+        'name' => [
+            'translationKey' => 'Resolution_Configurations',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -871,15 +1055,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'DevicesDetection_Software',
-            'name' => 'Software',
+            'name' => [
+                'translationKey' => 'DevicesDetection_Software',
+            ],
             'order' => '20',
             'help' => '<p>The Software section shows the operating systems, browsers and plugins that your visitors are using to access the site so that you can optimise your site to ensure it is fully compatible with the most popular configurations.</p>',
         ],
-        'module' => 'Resolution',
+        'module' => [
+            'translationKey' => 'Resolution_ColumnResolution',
+        ],
         'action' => 'getConfiguration',
         'order' => '107',
         'parameters' => [
-            'module' => 'Resolution',
+            'module' => [
+                'translationKey' => 'Resolution_ColumnResolution',
+            ],
             'action' => 'getConfiguration',
         ],
         'uniqueId' => 'widgetResolutiongetConfiguration',
@@ -888,10 +1078,14 @@ return [
         'isReport' => '1',
     ],
     27 => [
-        'name' => 'Visits by day of the week',
+        'name' => [
+            'translationKey' => 'VisitTime_VisitsByDayOfWeek',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -902,7 +1096,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'VisitTime_SubmenuTimes',
-            'name' => 'Times',
+            'name' => [
+                'translationKey' => 'VisitTime_SubmenuTimes',
+            ],
             'order' => '35',
             'help' => '<p>The "Times" section shows when people visit your site. Popular local times helps you cater your site to their lives. The most popular server times reveals technical demand.</p>',
         ],
@@ -919,10 +1115,14 @@ return [
         'isReport' => '1',
     ],
     28 => [
-        'name' => 'Visits per local time',
+        'name' => [
+            'translationKey' => 'VisitTime_LocalTime',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -933,7 +1133,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'VisitTime_SubmenuTimes',
-            'name' => 'Times',
+            'name' => [
+                'translationKey' => 'VisitTime_SubmenuTimes',
+            ],
             'order' => '35',
             'help' => '<p>The "Times" section shows when people visit your site. Popular local times helps you cater your site to their lives. The most popular server times reveals technical demand.</p>',
         ],
@@ -950,10 +1152,14 @@ return [
         'isReport' => '1',
     ],
     29 => [
-        'name' => 'Visits per hour in the site\'s timezone',
+        'name' => [
+            'translationKey' => 'VisitTime_SiteTime',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -964,7 +1170,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'VisitTime_SubmenuTimes',
-            'name' => 'Times',
+            'name' => [
+                'translationKey' => 'VisitTime_SubmenuTimes',
+            ],
             'order' => '35',
             'help' => '<p>The "Times" section shows when people visit your site. Popular local times helps you cater your site to their lives. The most popular server times reveals technical demand.</p>',
         ],
@@ -981,10 +1189,14 @@ return [
         'isReport' => '1',
     ],
     30 => [
-        'name' => 'User IDs',
+        'name' => [
+            'translationKey' => 'General_UserIds',
+        ],
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -995,15 +1207,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'UserId_UserReportTitle',
-            'name' => 'User IDs',
+            'name' => [
+                'translationKey' => 'General_UserIds',
+            ],
             'order' => '40',
             'help' => '<p>The user ID report shows visits associated with all your registered and logged in users. Understand website usage by its specific users and find out who your most and least active users are.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/user-id?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.UserId.getUsers"><span class="icon-info"></span> Learn more</a></p>',
         ],
-        'module' => 'UserId',
+        'module' => [
+            'translationKey' => 'UserId_UserId',
+        ],
         'action' => 'getUsers',
         'order' => '109',
         'parameters' => [
-            'module' => 'UserId',
+            'module' => [
+                'translationKey' => 'UserId_UserId',
+            ],
             'action' => 'getUsers',
         ],
         'uniqueId' => 'widgetUserIdgetUsers',
@@ -1015,7 +1233,9 @@ return [
         'name' => 'Custom Variables',
         'category' => [
             'id' => 'General_Visitors',
-            'name' => 'Visitors',
+            'name' => [
+                'translationKey' => 'General_Visitors',
+            ],
             'order' => '5',
             'icon' => 'icon-reporting-visitors',
             'help' => '<p>The Visitors pages tell you things about who your visitors are. Things like where your visitors came from, what devices and browsers they\'re using and when they generally visit your website. Understand, in the aggregate, who your audience is, and look for outliers to see how your audience could grow.</p><p>In addition to general information about your visitors, you can also use the <a href="#" onclick="this.href=broadcast.buildReportingUrl(\'category=General_Visitors&subcategory=Live_VisitorLog\')">Visits Log</a> to see what occurred in every individual visit.</p>',
@@ -1043,10 +1263,14 @@ return [
         'isReport' => '1',
     ],
     32 => [
-        'name' => 'Pages',
+        'name' => [
+            'translationKey' => 'General_Pages',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1057,15 +1281,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Pages',
-            'name' => 'Pages',
+            'name' => [
+                'translationKey' => 'General_Pages',
+            ],
             'order' => '5',
             'help' => '<p>This report contains information about the page URLs that have been visited.</p><p>The table is organized hierarchically, the URLs are displayed as a folder structure.</p><p>Use the plus and minus icons on the left to navigate.</p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getPageUrls',
         'order' => '102',
         'parameters' => [
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getPageUrls',
         ],
         'uniqueId' => 'widgetActionsgetPageUrls',
@@ -1074,10 +1304,14 @@ return [
         'isReport' => '1',
     ],
     33 => [
-        'name' => 'Entry Page Titles',
+        'name' => [
+            'translationKey' => 'Actions_WidgetEntryPageTitles',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1088,15 +1322,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuPagesEntry',
-            'name' => 'Entry pages',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuPagesEntry',
+            ],
             'order' => '10',
             'help' => '<p>This report contains information about the entry pages that were used during the specified period. An entry page is the first page that a user views during their visit.</p><p>The entry URLs are displayed as a folder structure.</p><p>Use the plus and minus icons on the left to navigate.</p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getEntryPageTitles',
         'order' => '106',
         'parameters' => [
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getEntryPageTitles',
         ],
         'uniqueId' => 'widgetActionsgetEntryPageTitles',
@@ -1105,10 +1345,14 @@ return [
         'isReport' => '1',
     ],
     34 => [
-        'name' => 'Entry pages',
+        'name' => [
+            'translationKey' => 'Actions_SubmenuPagesEntry',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1119,15 +1363,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuPagesEntry',
-            'name' => 'Entry pages',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuPagesEntry',
+            ],
             'order' => '10',
             'help' => '<p>This report contains information about the entry pages that were used during the specified period. An entry page is the first page that a user views during their visit.</p><p>The entry URLs are displayed as a folder structure.</p><p>Use the plus and minus icons on the left to navigate.</p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getEntryPageUrls',
         'order' => '103',
         'parameters' => [
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getEntryPageUrls',
         ],
         'uniqueId' => 'widgetActionsgetEntryPageUrls',
@@ -1136,10 +1386,14 @@ return [
         'isReport' => '1',
     ],
     35 => [
-        'name' => 'Exit page titles',
+        'name' => [
+            'translationKey' => 'Actions_ExitPageTitles',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1150,15 +1404,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuPagesExit',
-            'name' => 'Exit pages',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuPagesExit',
+            ],
             'order' => '15',
             'help' => '<p>This report contains information about the exit pages that occurred during the specified period. An exit page is the last page that a user views during their visit.</p><p>The exit URLs are displayed as a folder structure.</p><p>Use the plus and minus icons on the left to navigate.</p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getExitPageTitles',
         'order' => '107',
         'parameters' => [
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getExitPageTitles',
         ],
         'uniqueId' => 'widgetActionsgetExitPageTitles',
@@ -1167,10 +1427,14 @@ return [
         'isReport' => '1',
     ],
     36 => [
-        'name' => 'Exit pages',
+        'name' => [
+            'translationKey' => 'Actions_SubmenuPagesExit',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1181,15 +1445,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuPagesExit',
-            'name' => 'Exit pages',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuPagesExit',
+            ],
             'order' => '15',
             'help' => '<p>This report contains information about the exit pages that occurred during the specified period. An exit page is the last page that a user views during their visit.</p><p>The exit URLs are displayed as a folder structure.</p><p>Use the plus and minus icons on the left to navigate.</p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getExitPageUrls',
         'order' => '104',
         'parameters' => [
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getExitPageUrls',
         ],
         'uniqueId' => 'widgetActionsgetExitPageUrls',
@@ -1198,10 +1468,14 @@ return [
         'isReport' => '1',
     ],
     37 => [
-        'name' => 'Page titles',
+        'name' => [
+            'translationKey' => 'Actions_SubmenuPageTitles',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1212,15 +1486,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuPageTitles',
-            'name' => 'Page titles',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuPageTitles',
+            ],
             'order' => '20',
             'help' => '<p>This report contains information about the titles of the pages that have been visited.</p><p>The page title is the HTML &lt;title&gt; Tag that most browsers show in their window title.</p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getPageTitles',
         'order' => '105',
         'parameters' => [
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getPageTitles',
         ],
         'uniqueId' => 'widgetActionsgetPageTitles',
@@ -1229,10 +1509,14 @@ return [
         'isReport' => '1',
     ],
     38 => [
-        'name' => 'Page Titles Following a Site Search',
+        'name' => [
+            'translationKey' => 'Actions_WidgetPageTitlesFollowingSearch',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1243,15 +1527,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuSitesearch',
-            'name' => 'Site Search',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuSitesearch',
+            ],
             'order' => '25',
             'help' => '<p>The Site Search section shows which keywords visitors use when searching your website. It also displays which pages users view after performing a search and which on-site search keywords return no results at all.</p><p>These reports can give you ideas about missing content on your site, insight into what your visitors are looking for but can’t find easily, and more.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/site-search/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Actions.getSiteSearchCategories">Learn more in the Site Search guide.</a></p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getPageTitlesFollowingSiteSearch',
         'order' => '119',
         'parameters' => [
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getPageTitlesFollowingSiteSearch',
         ],
         'uniqueId' => 'widgetActionsgetPageTitlesFollowingSiteSearch',
@@ -1260,10 +1550,14 @@ return [
         'isReport' => '1',
     ],
     39 => [
-        'name' => 'Pages Following a Site Search',
+        'name' => [
+            'translationKey' => 'Actions_WidgetPageUrlsFollowingSearch',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1274,15 +1568,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuSitesearch',
-            'name' => 'Site Search',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuSitesearch',
+            ],
             'order' => '25',
             'help' => '<p>The Site Search section shows which keywords visitors use when searching your website. It also displays which pages users view after performing a search and which on-site search keywords return no results at all.</p><p>These reports can give you ideas about missing content on your site, insight into what your visitors are looking for but can’t find easily, and more.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/site-search/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Actions.getSiteSearchCategories">Learn more in the Site Search guide.</a></p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getPageUrlsFollowingSiteSearch',
         'order' => '116',
         'parameters' => [
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getPageUrlsFollowingSiteSearch',
         ],
         'uniqueId' => 'widgetActionsgetPageUrlsFollowingSiteSearch',
@@ -1291,10 +1591,14 @@ return [
         'isReport' => '1',
     ],
     40 => [
-        'name' => 'Search Categories',
+        'name' => [
+            'translationKey' => 'Actions_WidgetSearchCategories',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1305,15 +1609,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuSitesearch',
-            'name' => 'Site Search',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuSitesearch',
+            ],
             'order' => '25',
             'help' => '<p>The Site Search section shows which keywords visitors use when searching your website. It also displays which pages users view after performing a search and which on-site search keywords return no results at all.</p><p>These reports can give you ideas about missing content on your site, insight into what your visitors are looking for but can’t find easily, and more.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/site-search/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Actions.getSiteSearchCategories">Learn more in the Site Search guide.</a></p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getSiteSearchCategories',
         'order' => '120',
         'parameters' => [
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getSiteSearchCategories',
         ],
         'uniqueId' => 'widgetActionsgetSiteSearchCategories',
@@ -1322,10 +1632,14 @@ return [
         'isReport' => '1',
     ],
     41 => [
-        'name' => 'Site Search Keywords',
+        'name' => [
+            'translationKey' => 'Actions_WidgetSearchKeywords',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1336,15 +1650,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuSitesearch',
-            'name' => 'Site Search',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuSitesearch',
+            ],
             'order' => '25',
             'help' => '<p>The Site Search section shows which keywords visitors use when searching your website. It also displays which pages users view after performing a search and which on-site search keywords return no results at all.</p><p>These reports can give you ideas about missing content on your site, insight into what your visitors are looking for but can’t find easily, and more.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/site-search/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Actions.getSiteSearchCategories">Learn more in the Site Search guide.</a></p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getSiteSearchKeywords',
         'order' => '115',
         'parameters' => [
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getSiteSearchKeywords',
         ],
         'uniqueId' => 'widgetActionsgetSiteSearchKeywords',
@@ -1353,10 +1673,14 @@ return [
         'isReport' => '1',
     ],
     42 => [
-        'name' => 'Search Keywords with No Results',
+        'name' => [
+            'translationKey' => 'Actions_WidgetSearchNoResultKeywords',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1367,15 +1691,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Actions_SubmenuSitesearch',
-            'name' => 'Site Search',
+            'name' => [
+                'translationKey' => 'Actions_SubmenuSitesearch',
+            ],
             'order' => '25',
             'help' => '<p>The Site Search section shows which keywords visitors use when searching your website. It also displays which pages users view after performing a search and which on-site search keywords return no results at all.</p><p>These reports can give you ideas about missing content on your site, insight into what your visitors are looking for but can’t find easily, and more.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/site-search/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Actions.getSiteSearchCategories">Learn more in the Site Search guide.</a></p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getSiteSearchNoResultKeywords',
         'order' => '118',
         'parameters' => [
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getSiteSearchNoResultKeywords',
         ],
         'uniqueId' => 'widgetActionsgetSiteSearchNoResultKeywords',
@@ -1384,10 +1714,14 @@ return [
         'isReport' => '1',
     ],
     43 => [
-        'name' => 'Outlinks',
+        'name' => [
+            'translationKey' => 'General_Outlinks',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1398,15 +1732,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Outlinks',
-            'name' => 'Outlinks',
+            'name' => [
+                'translationKey' => 'General_Outlinks',
+            ],
             'order' => '30',
             'help' => '<p>This report shows a hierarchical list of outlink URLs that were clicked by your visitors. An outlink is a link that leads the visitor away from your website (to another domain).</p><p>Use the plus and minus icons on the left to navigate.</p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getOutlinks',
         'order' => '108',
         'parameters' => [
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getOutlinks',
         ],
         'uniqueId' => 'widgetActionsgetOutlinks',
@@ -1415,10 +1755,14 @@ return [
         'isReport' => '1',
     ],
     44 => [
-        'name' => 'Downloads',
+        'name' => [
+            'translationKey' => 'General_Downloads',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1429,15 +1773,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Downloads',
-            'name' => 'Downloads',
+            'name' => [
+                'translationKey' => 'General_Downloads',
+            ],
             'order' => '35',
             'help' => '<p>In this report, you can see which files your visitors have downloaded.</p><p>What Matomo counts as a download is the click on a download link. Whether the download was completed or not isn\'t known to Matomo.</p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getDownloads',
         'order' => '109',
         'parameters' => [
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getDownloads',
         ],
         'uniqueId' => 'widgetActionsgetDownloads',
@@ -1449,7 +1799,9 @@ return [
         'name' => 'Actions: Event Actions',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1460,15 +1812,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Events_Events',
-            'name' => 'Events',
+            'name' => [
+                'translationKey' => 'Events_Events',
+            ],
             'order' => '40',
             'help' => '<p>The Events section offers reports on the custom events associated with your site. Events typically require custom configuration. Once configured you can review reports broken down by category, action and name.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/event-tracking/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Events.getCategory">Learn more about event tracking here.</a></p>',
         ],
-        'module' => 'Events',
+        'module' => [
+            'translationKey' => 'Events_Events',
+        ],
         'action' => 'getAction',
         'order' => '101',
         'parameters' => [
-            'module' => 'Events',
+            'module' => [
+                'translationKey' => 'Events_Events',
+            ],
             'action' => 'getAction',
             'secondaryDimension' => 'eventName',
         ],
@@ -1481,7 +1839,9 @@ return [
         'name' => 'Actions: Event Actions',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1492,15 +1852,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Events_Events',
-            'name' => 'Events',
+            'name' => [
+                'translationKey' => 'Events_Events',
+            ],
             'order' => '40',
             'help' => '<p>The Events section offers reports on the custom events associated with your site. Events typically require custom configuration. Once configured you can review reports broken down by category, action and name.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/event-tracking/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Events.getCategory">Learn more about event tracking here.</a></p>',
         ],
-        'module' => 'Events',
+        'module' => [
+            'translationKey' => 'Events_Events',
+        ],
         'action' => 'getAction',
         'order' => '101',
         'parameters' => [
-            'module' => 'Events',
+            'module' => [
+                'translationKey' => 'Events_Events',
+            ],
             'action' => 'getAction',
             'secondaryDimension' => 'eventName',
         ],
@@ -1513,7 +1879,9 @@ return [
         'name' => 'Actions: Event Categories',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1524,15 +1892,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Events_Events',
-            'name' => 'Events',
+            'name' => [
+                'translationKey' => 'Events_Events',
+            ],
             'order' => '40',
             'help' => '<p>The Events section offers reports on the custom events associated with your site. Events typically require custom configuration. Once configured you can review reports broken down by category, action and name.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/event-tracking/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Events.getCategory">Learn more about event tracking here.</a></p>',
         ],
-        'module' => 'Events',
+        'module' => [
+            'translationKey' => 'Events_Events',
+        ],
         'action' => 'getCategory',
         'order' => '100',
         'parameters' => [
-            'module' => 'Events',
+            'module' => [
+                'translationKey' => 'Events_Events',
+            ],
             'action' => 'getCategory',
             'secondaryDimension' => 'eventAction',
         ],
@@ -1545,7 +1919,9 @@ return [
         'name' => 'Actions: Event Categories',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1556,15 +1932,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Events_Events',
-            'name' => 'Events',
+            'name' => [
+                'translationKey' => 'Events_Events',
+            ],
             'order' => '40',
             'help' => '<p>The Events section offers reports on the custom events associated with your site. Events typically require custom configuration. Once configured you can review reports broken down by category, action and name.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/event-tracking/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Events.getCategory">Learn more about event tracking here.</a></p>',
         ],
-        'module' => 'Events',
+        'module' => [
+            'translationKey' => 'Events_Events',
+        ],
         'action' => 'getCategory',
         'order' => '100',
         'parameters' => [
-            'module' => 'Events',
+            'module' => [
+                'translationKey' => 'Events_Events',
+            ],
             'action' => 'getCategory',
             'secondaryDimension' => 'eventAction',
         ],
@@ -1577,7 +1959,9 @@ return [
         'name' => 'Actions: Event Names',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1588,15 +1972,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Events_Events',
-            'name' => 'Events',
+            'name' => [
+                'translationKey' => 'Events_Events',
+            ],
             'order' => '40',
             'help' => '<p>The Events section offers reports on the custom events associated with your site. Events typically require custom configuration. Once configured you can review reports broken down by category, action and name.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/event-tracking/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Events.getCategory">Learn more about event tracking here.</a></p>',
         ],
-        'module' => 'Events',
+        'module' => [
+            'translationKey' => 'Events_Events',
+        ],
         'action' => 'getName',
         'order' => '102',
         'parameters' => [
-            'module' => 'Events',
+            'module' => [
+                'translationKey' => 'Events_Events',
+            ],
             'action' => 'getName',
             'secondaryDimension' => 'eventAction',
         ],
@@ -1609,7 +1999,9 @@ return [
         'name' => 'Actions: Event Names',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1620,15 +2012,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Events_Events',
-            'name' => 'Events',
+            'name' => [
+                'translationKey' => 'Events_Events',
+            ],
             'order' => '40',
             'help' => '<p>The Events section offers reports on the custom events associated with your site. Events typically require custom configuration. Once configured you can review reports broken down by category, action and name.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/event-tracking/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Events.getCategory">Learn more about event tracking here.</a></p>',
         ],
-        'module' => 'Events',
+        'module' => [
+            'translationKey' => 'Events_Events',
+        ],
         'action' => 'getName',
         'order' => '102',
         'parameters' => [
-            'module' => 'Events',
+            'module' => [
+                'translationKey' => 'Events_Events',
+            ],
             'action' => 'getName',
             'secondaryDimension' => 'eventAction',
         ],
@@ -1641,7 +2039,9 @@ return [
         'name' => 'Actions: Content Name',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1652,15 +2052,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Contents_Contents',
-            'name' => 'Contents',
+            'name' => [
+                'translationKey' => 'Contents_Contents',
+            ],
             'order' => '45',
             'help' => '<p>Content tracking helps you determine the popularity of specific pieces of content on any page of your website or app. This section reports the number of impressions and interactions the various pieces of content on your site receive.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/content-tracking?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Contents.getContentNames">Learn more in the Content Tracking guide.</a></p>',
         ],
-        'module' => 'Contents',
+        'module' => [
+            'translationKey' => 'Contents_Contents',
+        ],
         'action' => 'getContentNames',
         'order' => '135',
         'parameters' => [
-            'module' => 'Contents',
+            'module' => [
+                'translationKey' => 'Contents_Contents',
+            ],
             'action' => 'getContentNames',
         ],
         'uniqueId' => 'widgetContentsgetContentNames',
@@ -1672,7 +2078,9 @@ return [
         'name' => 'Actions: Content Name',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1683,15 +2091,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Contents_Contents',
-            'name' => 'Contents',
+            'name' => [
+                'translationKey' => 'Contents_Contents',
+            ],
             'order' => '45',
             'help' => '<p>Content tracking helps you determine the popularity of specific pieces of content on any page of your website or app. This section reports the number of impressions and interactions the various pieces of content on your site receive.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/content-tracking?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Contents.getContentNames">Learn more in the Content Tracking guide.</a></p>',
         ],
-        'module' => 'Contents',
+        'module' => [
+            'translationKey' => 'Contents_Contents',
+        ],
         'action' => 'getContentNames',
         'order' => '135',
         'parameters' => [
-            'module' => 'Contents',
+            'module' => [
+                'translationKey' => 'Contents_Contents',
+            ],
             'action' => 'getContentNames',
         ],
         'uniqueId' => 'widgetContentsgetContentNames',
@@ -1703,7 +2117,9 @@ return [
         'name' => 'Actions: Content Piece',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1714,15 +2130,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Contents_Contents',
-            'name' => 'Contents',
+            'name' => [
+                'translationKey' => 'Contents_Contents',
+            ],
             'order' => '45',
             'help' => '<p>Content tracking helps you determine the popularity of specific pieces of content on any page of your website or app. This section reports the number of impressions and interactions the various pieces of content on your site receive.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/content-tracking?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Contents.getContentNames">Learn more in the Content Tracking guide.</a></p>',
         ],
-        'module' => 'Contents',
+        'module' => [
+            'translationKey' => 'Contents_Contents',
+        ],
         'action' => 'getContentPieces',
         'order' => '136',
         'parameters' => [
-            'module' => 'Contents',
+            'module' => [
+                'translationKey' => 'Contents_Contents',
+            ],
             'action' => 'getContentPieces',
         ],
         'uniqueId' => 'widgetContentsgetContentPieces',
@@ -1734,7 +2156,9 @@ return [
         'name' => 'Actions: Content Piece',
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1745,15 +2169,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Contents_Contents',
-            'name' => 'Contents',
+            'name' => [
+                'translationKey' => 'Contents_Contents',
+            ],
             'order' => '45',
             'help' => '<p>Content tracking helps you determine the popularity of specific pieces of content on any page of your website or app. This section reports the number of impressions and interactions the various pieces of content on your site receive.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/content-tracking?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Contents.getContentNames">Learn more in the Content Tracking guide.</a></p>',
         ],
-        'module' => 'Contents',
+        'module' => [
+            'translationKey' => 'Contents_Contents',
+        ],
         'action' => 'getContentPieces',
         'order' => '136',
         'parameters' => [
-            'module' => 'Contents',
+            'module' => [
+                'translationKey' => 'Contents_Contents',
+            ],
             'action' => 'getContentPieces',
         ],
         'uniqueId' => 'widgetContentsgetContentPieces',
@@ -1762,10 +2192,14 @@ return [
         'isReport' => '1',
     ],
     55 => [
-        'name' => 'Transitions',
+        'name' => [
+            'translationKey' => 'Transitions_Transitions',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1776,29 +2210,41 @@ return [
         ],
         'subcategory' => [
             'id' => 'Transitions_Transitions',
-            'name' => 'Transitions',
+            'name' => [
+                'translationKey' => 'Transitions_Transitions',
+            ],
             'order' => '46',
             'help' => '<p>Transitions is a report showing the things your visitors did directly before and after viewing a given page. This page explains how to access, understand, and use the powerful "Transitions" report.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/transitions/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Transitions.getTransitions">More details</a></p>',
         ],
-        'module' => 'Transitions',
+        'module' => [
+            'translationKey' => 'Transitions_Transitions',
+        ],
         'action' => 'getTransitions',
         'order' => '99',
         'parameters' => [
-            'module' => 'Transitions',
+            'module' => [
+                'translationKey' => 'Transitions_Transitions',
+            ],
             'action' => 'getTransitions',
         ],
         'uniqueId' => 'widgetTransitionsgetTransitions',
         'isWide' => '0',
         'clientComponent' => [
-            'plugin' => 'Transitions',
+            'plugin' => [
+                'translationKey' => 'Transitions_Transitions',
+            ],
             'name' => 'TransitionsPage',
         ],
     ],
     56 => [
-        'name' => 'Returning Visits Over Time',
+        'name' => [
+            'translationKey' => 'VisitFrequency_WidgetGraphReturning',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1809,7 +2255,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'VisitorInterest_Engagement',
-            'name' => 'Engagement',
+            'name' => [
+                'translationKey' => 'Tour_Engagement',
+            ],
             'order' => '46',
             'help' => '<p>The Engagement section provides reports that help to quantify how many new and returning visitors you get. You can also review reports that break down the average time and number of pages per visit, as well as the number of times a visitor has been to your site and the most common number of days between visits.</p><p>This can help you to optimise for frequency and high-interaction visits in addition to maximising your reach.</p>',
         ],
@@ -1828,10 +2276,14 @@ return [
         'isReport' => '1',
     ],
     57 => [
-        'name' => 'Frequency Overview',
+        'name' => [
+            'translationKey' => 'VisitFrequency_WidgetOverview',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1842,7 +2294,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'VisitorInterest_Engagement',
-            'name' => 'Engagement',
+            'name' => [
+                'translationKey' => 'Tour_Engagement',
+            ],
             'order' => '46',
             'help' => '<p>The Engagement section provides reports that help to quantify how many new and returning visitors you get. You can also review reports that break down the average time and number of pages per visit, as well as the number of times a visitor has been to your site and the most common number of days between visits.</p><p>This can help you to optimise for frequency and high-interaction visits in addition to maximising your reach.</p>',
         ],
@@ -1861,10 +2315,14 @@ return [
         'isReport' => '1',
     ],
     58 => [
-        'name' => 'Visits by days since last visit',
+        'name' => [
+            'translationKey' => 'VisitorInterest_VisitsByDaysSinceLast',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1875,7 +2333,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'VisitorInterest_Engagement',
-            'name' => 'Engagement',
+            'name' => [
+                'translationKey' => 'Tour_Engagement',
+            ],
             'order' => '46',
             'help' => '<p>The Engagement section provides reports that help to quantify how many new and returning visitors you get. You can also review reports that break down the average time and number of pages per visit, as well as the number of times a visitor has been to your site and the most common number of days between visits.</p><p>This can help you to optimise for frequency and high-interaction visits in addition to maximising your reach.</p>',
         ],
@@ -1892,10 +2352,14 @@ return [
         'isReport' => '1',
     ],
     59 => [
-        'name' => 'Visits by visit number',
+        'name' => [
+            'translationKey' => 'VisitorInterest_visitsByVisitCount',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1906,7 +2370,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'VisitorInterest_Engagement',
-            'name' => 'Engagement',
+            'name' => [
+                'translationKey' => 'Tour_Engagement',
+            ],
             'order' => '46',
             'help' => '<p>The Engagement section provides reports that help to quantify how many new and returning visitors you get. You can also review reports that break down the average time and number of pages per visit, as well as the number of times a visitor has been to your site and the most common number of days between visits.</p><p>This can help you to optimise for frequency and high-interaction visits in addition to maximising your reach.</p>',
         ],
@@ -1923,10 +2389,14 @@ return [
         'isReport' => '1',
     ],
     60 => [
-        'name' => 'Visits per number of pages',
+        'name' => [
+            'translationKey' => 'VisitorInterest_VisitsPerNbOfPages',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1937,7 +2407,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'VisitorInterest_Engagement',
-            'name' => 'Engagement',
+            'name' => [
+                'translationKey' => 'Tour_Engagement',
+            ],
             'order' => '46',
             'help' => '<p>The Engagement section provides reports that help to quantify how many new and returning visitors you get. You can also review reports that break down the average time and number of pages per visit, as well as the number of times a visitor has been to your site and the most common number of days between visits.</p><p>This can help you to optimise for frequency and high-interaction visits in addition to maximising your reach.</p>',
         ],
@@ -1954,10 +2426,14 @@ return [
         'isReport' => '1',
     ],
     61 => [
-        'name' => 'Visits per visit duration',
+        'name' => [
+            'translationKey' => 'VisitorInterest_VisitsPerDuration',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1968,7 +2444,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'VisitorInterest_Engagement',
-            'name' => 'Engagement',
+            'name' => [
+                'translationKey' => 'Tour_Engagement',
+            ],
             'order' => '46',
             'help' => '<p>The Engagement section provides reports that help to quantify how many new and returning visitors you get. You can also review reports that break down the average time and number of pages per visit, as well as the number of times a visitor has been to your site and the most common number of days between visits.</p><p>This can help you to optimise for frequency and high-interaction visits in addition to maximising your reach.</p>',
         ],
@@ -1985,10 +2463,14 @@ return [
         'isReport' => '1',
     ],
     62 => [
-        'name' => 'Evolution of page performance metrics',
+        'name' => [
+            'translationKey' => 'PagePerformance_EvolutionOverPeriod',
+        ],
         'category' => [
             'id' => 'General_Actions',
-            'name' => 'Behaviour',
+            'name' => [
+                'translationKey' => 'Actions_Behaviour',
+            ],
             'order' => '10',
             'icon' => 'icon-reporting-actions',
             'help' => '',
@@ -1999,7 +2481,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'PagePerformance_Performance',
-            'name' => 'Performance',
+            'name' => [
+                'translationKey' => 'PagePerformance_Performance',
+            ],
             'order' => '47',
             'help' => '<p>The Performance section can help you analyse how fast your website or app is performing on the whole and help discover whether you have specific pages that significantly deviate from your averages.</p><p>You can also find reports showing exactly how long each page of your website takes to load and what is contributing to their loading time.</p>',
         ],
@@ -2018,10 +2502,14 @@ return [
         'isReport' => '1',
     ],
     63 => [
-        'name' => 'Referrers',
+        'name' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2032,15 +2520,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Referrers_WidgetGetAll',
-            'name' => 'All Channels',
+            'name' => [
+                'translationKey' => 'Referrers_WidgetGetAll',
+            ],
             'order' => '5',
             'help' => '<p>This section shows you the number of visits that arrive from different channel types and referrers. Click on the plus or minus buttons to view the referrers within each type.</p><p>You can also analyse the number of actions performed by each of your traffic sources by enabling the table with Visitor engagement metrics view.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getAll',
         'order' => '102',
         'parameters' => [
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getAll',
         ],
         'uniqueId' => 'widgetReferrersgetAll',
@@ -2049,10 +2543,14 @@ return [
         'isReport' => '1',
     ],
     64 => [
-        'name' => 'Channel Types',
+        'name' => [
+            'translationKey' => 'Referrers_ReferrerTypes',
+        ],
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2063,15 +2561,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Referrers_WidgetGetAll',
-            'name' => 'All Channels',
+            'name' => [
+                'translationKey' => 'Referrers_WidgetGetAll',
+            ],
             'order' => '5',
             'help' => '<p>This section shows you the number of visits that arrive from different channel types and referrers. Click on the plus or minus buttons to view the referrers within each type.</p><p>You can also analyse the number of actions performed by each of your traffic sources by enabling the table with Visitor engagement metrics view.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getReferrerType',
         'order' => '101',
         'parameters' => [
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getReferrerType',
         ],
         'uniqueId' => 'widgetReferrersgetReferrerType',
@@ -2080,10 +2584,14 @@ return [
         'isReport' => '1',
     ],
     65 => [
-        'name' => 'Keywords',
+        'name' => [
+            'translationKey' => 'Marketplace_PluginKeywords',
+        ],
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2098,11 +2606,15 @@ return [
             'order' => '10',
             'help' => '<p>This section helps you analyse your search engine optimisation and performance. You can analyse your most popular keywords with the combined keyword reports or see which keywords perform well on specific search engines for more targeted analysis and optimisation.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/matomo-cloud/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Referrers.getSearchEngines">Matomo Cloud</a> and <a target="_blank" rel="noreferrer noopener" href="https://plugins.matomo.org/SearchEngineKeywordsPerformance?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Referrers.getSearchEngines">Search Engine Keywords Performance</a> plugin users will receive the best results from this report.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getKeywords',
         'order' => '103',
         'parameters' => [
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getKeywords',
         ],
         'uniqueId' => 'widgetReferrersgetKeywords',
@@ -2111,10 +2623,14 @@ return [
         'isReport' => '1',
     ],
     66 => [
-        'name' => 'Search Engines',
+        'name' => [
+            'translationKey' => 'Referrers_SearchEngines',
+        ],
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2129,11 +2645,15 @@ return [
             'order' => '10',
             'help' => '<p>This section helps you analyse your search engine optimisation and performance. You can analyse your most popular keywords with the combined keyword reports or see which keywords perform well on specific search engines for more targeted analysis and optimisation.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/matomo-cloud/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Referrers.getSearchEngines">Matomo Cloud</a> and <a target="_blank" rel="noreferrer noopener" href="https://plugins.matomo.org/SearchEngineKeywordsPerformance?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Referrers.getSearchEngines">Search Engine Keywords Performance</a> plugin users will receive the best results from this report.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getSearchEngines',
         'order' => '107',
         'parameters' => [
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getSearchEngines',
         ],
         'uniqueId' => 'widgetReferrersgetSearchEngines',
@@ -2142,10 +2662,14 @@ return [
         'isReport' => '1',
     ],
     67 => [
-        'name' => 'Websites',
+        'name' => [
+            'translationKey' => 'CorePluginsAdmin_Websites',
+        ],
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2156,15 +2680,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Referrers_SubmenuWebsitesOnly',
-            'name' => 'Websites',
+            'name' => [
+                'translationKey' => 'CorePluginsAdmin_Websites',
+            ],
             'order' => '15',
             'help' => '<p>In this table, you can see which websites referred visitors to your site.</p><p>By clicking on a row in the table, you can see which URLs the links to your website were on.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getWebsites',
         'order' => '105',
         'parameters' => [
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getWebsites',
         ],
         'uniqueId' => 'widgetReferrersgetWebsites',
@@ -2173,10 +2703,14 @@ return [
         'isReport' => '1',
     ],
     68 => [
-        'name' => 'Social Networks',
+        'name' => [
+            'translationKey' => 'Referrers_Socials',
+        ],
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2187,15 +2721,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Referrers_Socials',
-            'name' => 'Social Networks',
+            'name' => [
+                'translationKey' => 'Referrers_Socials',
+            ],
             'order' => '16',
             'help' => '<p>In this table, you can see which websites referred visitors to your site.</p><p>By clicking on a row in the table, you can see which URLs the links to your website were on.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getSocials',
         'order' => '111',
         'parameters' => [
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getSocials',
         ],
         'uniqueId' => 'widgetReferrersgetSocials',
@@ -2204,10 +2744,14 @@ return [
         'isReport' => '1',
     ],
     69 => [
-        'name' => 'AI Assistants',
+        'name' => [
+            'translationKey' => 'General_AIAssistants',
+        ],
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2218,15 +2762,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Referrers_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '18',
             'help' => '<p>In this table, you can see which AI assistants referred visitors to your site.</p><p>By clicking on a row in the table, you can see which URLs the links to your website were on.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getAIAssistants',
         'order' => '113',
         'parameters' => [
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getAIAssistants',
         ],
         'uniqueId' => 'widgetReferrersgetAIAssistants',
@@ -2235,10 +2785,14 @@ return [
         'isReport' => '1',
     ],
     70 => [
-        'name' => 'Campaigns',
+        'name' => [
+            'translationKey' => 'Referrers_Campaigns',
+        ],
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2249,15 +2803,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Referrers_Campaigns',
-            'name' => 'Campaigns',
+            'name' => [
+                'translationKey' => 'Referrers_Campaigns',
+            ],
             'order' => '20',
             'help' => '<p>The Campaign Tracking section allows you to analyse the visits associated with the various tracking values that have been linked to your digital campaigns. It can reveal things like, how much traffic your campaigns are bringing in, which creatives are performing best, how engaged campaign visitors are, and whether the campaign is resulting in sales or not.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getCampaigns',
         'order' => '109',
         'parameters' => [
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getCampaigns',
         ],
         'uniqueId' => 'widgetReferrersgetCampaigns',
@@ -2266,10 +2826,14 @@ return [
         'isReport' => '1',
     ],
     71 => [
-        'name' => 'Campaign URL Builder',
+        'name' => [
+            'translationKey' => 'Referrers_URLCampaignBuilder',
+        ],
         'category' => [
             'id' => 'Referrers_Referrers',
-            'name' => 'Acquisition',
+            'name' => [
+                'translationKey' => 'Referrers_Acquisition',
+            ],
             'order' => '15',
             'icon' => 'icon-reporting-referer',
             'help' => '',
@@ -2280,21 +2844,29 @@ return [
         ],
         'subcategory' => [
             'id' => 'Referrers_URLCampaignBuilder',
-            'name' => 'Campaign URL Builder',
+            'name' => [
+                'translationKey' => 'Referrers_URLCampaignBuilder',
+            ],
             'order' => '21',
             'help' => '',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getCampaignUrlBuilder',
         'order' => '99',
         'parameters' => [
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getCampaignUrlBuilder',
         ],
         'uniqueId' => 'widgetReferrersgetCampaignUrlBuilder',
         'isWide' => '0',
         'clientComponent' => [
-            'plugin' => 'Referrers',
+            'plugin' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'name' => 'CampaignBuilderWidget',
             'props' => [
                 'hasExtraPlugin' => '0',
@@ -2302,10 +2874,14 @@ return [
         ],
     ],
     72 => [
-        'name' => 'Ecommerce Overview',
+        'name' => [
+            'translationKey' => 'Goals_EcommerceOverview',
+        ],
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2316,7 +2892,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Overview',
-            'name' => 'Overview',
+            'name' => [
+                'translationKey' => 'General_Overview',
+            ],
             'order' => '2',
             'help' => '<p>The Ecommerce Overview section is the best place to get a high-level view of your online store’s performance. At a glance, you can see how many sales you’re making, how much revenue you are generating, and your website’s conversion rate.</p><p>Click on an individual metric within the sparkline chart to focus on it within the full-sized evolution graph.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/ecommerce-analytics/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Ecommerce.Overview">Learn more in our Ecommerce guide here.</a></p>',
         ],
@@ -2337,7 +2915,9 @@ return [
                 'name' => '',
                 'category' => [
                     'id' => 'Goals_Ecommerce',
-                    'name' => 'Ecommerce',
+                    'name' => [
+                        'translationKey' => 'Goals_Ecommerce',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -2348,17 +2928,23 @@ return [
                 ],
                 'subcategory' => [
                     'id' => 'General_Overview',
-                    'name' => 'Overview',
+                    'name' => [
+                        'translationKey' => 'General_Overview',
+                    ],
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Goals',
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'getEvolutionGraph',
                 'order' => '5',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'graphEvolution',
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'getEvolutionGraph',
                     'idGoal' => 'ecommerceOrder',
                 ],
@@ -2371,7 +2957,9 @@ return [
                 'name' => '',
                 'category' => [
                     'id' => 'Goals_Ecommerce',
-                    'name' => 'Ecommerce',
+                    'name' => [
+                        'translationKey' => 'Goals_Ecommerce',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -2382,17 +2970,23 @@ return [
                 ],
                 'subcategory' => [
                     'id' => 'General_Overview',
-                    'name' => 'Overview',
+                    'name' => [
+                        'translationKey' => 'General_Overview',
+                    ],
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Ecommerce',
+                'module' => [
+                    'translationKey' => 'Goals_Ecommerce',
+                ],
                 'action' => 'getSparklines',
                 'order' => '15',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'sparklines',
-                    'module' => 'Ecommerce',
+                    'module' => [
+                        'translationKey' => 'Goals_Ecommerce',
+                    ],
                     'action' => 'getSparklines',
                     'idGoal' => 'ecommerceOrder',
                 ],
@@ -2402,10 +2996,14 @@ return [
                 'isReport' => '1',
             ],
             2 => [
-                'name' => 'Conversions Overview',
+                'name' => [
+                    'translationKey' => 'Goals_ConversionsOverview',
+                ],
                 'category' => [
                     'id' => 'Goals_Goals',
-                    'name' => 'Goals',
+                    'name' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -2420,18 +3018,24 @@ return [
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Ecommerce',
+                'module' => [
+                    'translationKey' => 'Goals_Ecommerce',
+                ],
                 'action' => 'getConversionsOverview',
                 'order' => '25',
                 'parameters' => [
-                    'module' => 'Ecommerce',
+                    'module' => [
+                        'translationKey' => 'Goals_Ecommerce',
+                    ],
                     'action' => 'getConversionsOverview',
                     'idGoal' => 'ecommerceOrder',
                 ],
                 'uniqueId' => 'widgetEcommercegetConversionsOverviewidGoalecommerceOrder',
                 'isWide' => '0',
                 'middlewareParameters' => [
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'hasConversions',
                     'idGoal' => 'ecommerceOrder',
                 ],
@@ -2441,10 +3045,14 @@ return [
         ],
     ],
     73 => [
-        'name' => 'Ecommerce Log',
+        'name' => [
+            'translationKey' => 'Goals_EcommerceLog',
+        ],
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2455,15 +3063,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Goals_EcommerceLog',
-            'name' => 'Ecommerce Log',
+            'name' => [
+                'translationKey' => 'Goals_EcommerceLog',
+            ],
             'order' => '5',
             'help' => '<p>The Ecommerce log provides granular session-level data so you can look at the full session for each user that either made a purchase or abandoned their cart. This can help you understand what users do before and after purchasing to reveal optimisation opportunities.</p><p>Data on this page is updated in real-time.</p>',
         ],
-        'module' => 'Ecommerce',
+        'module' => [
+            'translationKey' => 'Goals_Ecommerce',
+        ],
         'action' => 'getEcommerceLog',
         'order' => '99',
         'parameters' => [
-            'module' => 'Ecommerce',
+            'module' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'action' => 'getEcommerceLog',
         ],
         'uniqueId' => 'widgetEcommercegetEcommerceLog',
@@ -2473,7 +3087,9 @@ return [
         'name' => 'Ecommerce: Product Category',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2484,15 +3100,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Goals_Products',
-            'name' => 'Products',
+            'name' => [
+                'translationKey' => 'Goals_Products',
+            ],
             'order' => '10',
             'help' => '<p>The Products view can help you identify products and categories that are over-performing or under-performing to reveal trends and opportunities related to your product selection and store pages.</p>',
         ],
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getItemsCategory',
         'order' => '132',
         'parameters' => [
-            'module' => 'Goals',
+            'module' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'action' => 'getItemsCategory',
         ],
         'uniqueId' => 'widgetGoalsgetItemsCategory',
@@ -2504,7 +3126,9 @@ return [
         'name' => 'Ecommerce: Product Category',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2515,15 +3139,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Goals_Products',
-            'name' => 'Products',
+            'name' => [
+                'translationKey' => 'Goals_Products',
+            ],
             'order' => '10',
             'help' => '<p>The Products view can help you identify products and categories that are over-performing or under-performing to reveal trends and opportunities related to your product selection and store pages.</p>',
         ],
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getItemsCategory',
         'order' => '132',
         'parameters' => [
-            'module' => 'Goals',
+            'module' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'action' => 'getItemsCategory',
         ],
         'uniqueId' => 'widgetGoalsgetItemsCategory',
@@ -2535,7 +3165,9 @@ return [
         'name' => 'Ecommerce: Product Name',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2546,15 +3178,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Goals_Products',
-            'name' => 'Products',
+            'name' => [
+                'translationKey' => 'Goals_Products',
+            ],
             'order' => '10',
             'help' => '<p>The Products view can help you identify products and categories that are over-performing or under-performing to reveal trends and opportunities related to your product selection and store pages.</p>',
         ],
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getItemsName',
         'order' => '130',
         'parameters' => [
-            'module' => 'Goals',
+            'module' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'action' => 'getItemsName',
         ],
         'uniqueId' => 'widgetGoalsgetItemsName',
@@ -2566,7 +3204,9 @@ return [
         'name' => 'Ecommerce: Product Name',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2577,15 +3217,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Goals_Products',
-            'name' => 'Products',
+            'name' => [
+                'translationKey' => 'Goals_Products',
+            ],
             'order' => '10',
             'help' => '<p>The Products view can help you identify products and categories that are over-performing or under-performing to reveal trends and opportunities related to your product selection and store pages.</p>',
         ],
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getItemsName',
         'order' => '130',
         'parameters' => [
-            'module' => 'Goals',
+            'module' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'action' => 'getItemsName',
         ],
         'uniqueId' => 'widgetGoalsgetItemsName',
@@ -2597,7 +3243,9 @@ return [
         'name' => 'Ecommerce: Product SKU',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2608,15 +3256,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Goals_Products',
-            'name' => 'Products',
+            'name' => [
+                'translationKey' => 'Goals_Products',
+            ],
             'order' => '10',
             'help' => '<p>The Products view can help you identify products and categories that are over-performing or under-performing to reveal trends and opportunities related to your product selection and store pages.</p>',
         ],
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getItemsSku',
         'order' => '131',
         'parameters' => [
-            'module' => 'Goals',
+            'module' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'action' => 'getItemsSku',
         ],
         'uniqueId' => 'widgetGoalsgetItemsSku',
@@ -2628,7 +3282,9 @@ return [
         'name' => 'Ecommerce: Product SKU',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2639,15 +3295,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Goals_Products',
-            'name' => 'Products',
+            'name' => [
+                'translationKey' => 'Goals_Products',
+            ],
             'order' => '10',
             'help' => '<p>The Products view can help you identify products and categories that are over-performing or under-performing to reveal trends and opportunities related to your product selection and store pages.</p>',
         ],
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getItemsSku',
         'order' => '131',
         'parameters' => [
-            'module' => 'Goals',
+            'module' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'action' => 'getItemsSku',
         ],
         'uniqueId' => 'widgetGoalsgetItemsSku',
@@ -2659,7 +3321,9 @@ return [
         'name' => 'Sales by Pages: Entry page titles',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2670,17 +3334,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getEntryPageTitles',
         'order' => '103',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'tableGoals',
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getEntryPageTitles',
             'documentationForGoalsPage' => '1',
             'idGoal' => 'ecommerceOrder',
@@ -2695,7 +3365,9 @@ return [
         'name' => 'Sales by Pages: Entry pages',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2706,17 +3378,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getEntryPageUrls',
         'order' => '102',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'tableGoals',
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getEntryPageUrls',
             'documentationForGoalsPage' => '1',
             'idGoal' => 'ecommerceOrder',
@@ -2731,7 +3409,9 @@ return [
         'name' => 'Sales by Pages: Page titles',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2742,17 +3422,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getPageTitles',
         'order' => '104',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'tableGoals',
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getPageTitles',
             'documentationForGoalsPage' => '1',
             'idGoal' => 'ecommerceOrder',
@@ -2767,7 +3453,9 @@ return [
         'name' => 'Sales by Pages: Page URLs',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2778,17 +3466,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
-        'module' => 'Actions',
+        'module' => [
+            'translationKey' => 'General_Actions',
+        ],
         'action' => 'getPageUrls',
         'order' => '101',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'tableGoals',
-            'module' => 'Actions',
+            'module' => [
+                'translationKey' => 'General_Actions',
+            ],
             'action' => 'getPageUrls',
             'documentationForGoalsPage' => '1',
             'idGoal' => 'ecommerceOrder',
@@ -2803,7 +3497,9 @@ return [
         'name' => 'Sales by User attribute: Custom Variables',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2814,7 +3510,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
@@ -2839,7 +3537,9 @@ return [
         'name' => 'Sales by User location: Device brand',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2850,7 +3550,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
@@ -2875,7 +3577,9 @@ return [
         'name' => 'Sales by User location: Browsers',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2886,7 +3590,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
@@ -2911,7 +3617,9 @@ return [
         'name' => 'Sales by User location: Device model',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2922,7 +3630,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
@@ -2947,7 +3657,9 @@ return [
         'name' => 'Sales by User location: Device type',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2958,7 +3670,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
@@ -2983,7 +3697,9 @@ return [
         'name' => 'Sales engagement: Days to Conversion',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -2994,17 +3710,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getDaysToConversion',
         'order' => '202',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'table',
-            'module' => 'Goals',
+            'module' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'action' => 'getDaysToConversion',
             'documentationForGoalsPage' => '1',
             'idGoal' => 'ecommerceOrder',
@@ -3019,7 +3741,9 @@ return [
         'name' => 'Sales engagement: Visits to Conversion',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -3030,17 +3754,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
-        'module' => 'Goals',
+        'module' => [
+            'translationKey' => 'Goals_Goals',
+        ],
         'action' => 'getVisitsUntilConversion',
         'order' => '201',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'table',
-            'module' => 'Goals',
+            'module' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'action' => 'getVisitsUntilConversion',
             'documentationForGoalsPage' => '1',
             'idGoal' => 'ecommerceOrder',
@@ -3055,7 +3785,9 @@ return [
         'name' => 'Sales by Referrers: AI Assistants',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -3066,17 +3798,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getAIAssistants',
         'order' => '6',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'tableGoals',
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getAIAssistants',
             'documentationForGoalsPage' => '1',
             'idGoal' => 'ecommerceOrder',
@@ -3091,7 +3829,9 @@ return [
         'name' => 'Sales by Referrers: Campaigns',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -3102,17 +3842,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getCampaigns',
         'order' => '7',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'tableGoals',
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getCampaigns',
             'documentationForGoalsPage' => '1',
             'idGoal' => 'ecommerceOrder',
@@ -3127,7 +3873,9 @@ return [
         'name' => 'Sales by Referrers: Keywords',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -3138,17 +3886,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getKeywords',
         'order' => '2',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'tableGoals',
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getKeywords',
             'documentationForGoalsPage' => '1',
             'idGoal' => 'ecommerceOrder',
@@ -3163,7 +3917,9 @@ return [
         'name' => 'Sales by Referrers: Channel Type',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -3174,17 +3930,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getReferrerType',
         'order' => '1',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'tableGoals',
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getReferrerType',
             'documentationForGoalsPage' => '1',
             'idGoal' => 'ecommerceOrder',
@@ -3199,7 +3961,9 @@ return [
         'name' => 'Sales by Referrers: Search Engines',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -3210,17 +3974,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getSearchEngines',
         'order' => '3',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'tableGoals',
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getSearchEngines',
             'documentationForGoalsPage' => '1',
             'idGoal' => 'ecommerceOrder',
@@ -3235,7 +4005,9 @@ return [
         'name' => 'Sales by Referrers: Social Networks',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -3246,17 +4018,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getSocials',
         'order' => '5',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'tableGoals',
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getSocials',
             'documentationForGoalsPage' => '1',
             'idGoal' => 'ecommerceOrder',
@@ -3271,7 +4049,9 @@ return [
         'name' => 'Sales by Referrers: Websites',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -3282,17 +4062,23 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
-        'module' => 'Referrers',
+        'module' => [
+            'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+        ],
         'action' => 'getWebsites',
         'order' => '4',
         'parameters' => [
             'forceView' => '1',
             'viewDataTable' => 'tableGoals',
-            'module' => 'Referrers',
+            'module' => [
+                'translationKey' => 'Goals_CategoryTextReferrers_Referrers',
+            ],
             'action' => 'getWebsites',
             'documentationForGoalsPage' => '1',
             'idGoal' => 'ecommerceOrder',
@@ -3307,7 +4093,9 @@ return [
         'name' => 'Sales by User location: City',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -3318,7 +4106,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
@@ -3343,7 +4133,9 @@ return [
         'name' => 'Sales by User location: Continent',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -3354,7 +4146,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
@@ -3379,7 +4173,9 @@ return [
         'name' => 'Sales by User location: Country',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -3390,7 +4186,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
@@ -3415,7 +4213,9 @@ return [
         'name' => 'Sales by User location: Region',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -3426,7 +4226,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
@@ -3451,7 +4253,9 @@ return [
         'name' => 'Sales by User attribute: Visits per hour in the site\'s timezone',
         'category' => [
             'id' => 'Goals_Ecommerce',
-            'name' => 'Ecommerce',
+            'name' => [
+                'translationKey' => 'Goals_Ecommerce',
+            ],
             'order' => '20',
             'icon' => 'icon-reporting-ecommerce',
             'help' => '',
@@ -3462,7 +4266,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'Ecommerce_Sales',
-            'name' => 'Sales',
+            'name' => [
+                'translationKey' => 'Ecommerce_Sales',
+            ],
             'order' => '15',
             'help' => '<p>This section contains an extensive collection of reports to help you analyse the different conditions that most commonly lead to sales, such as the traffic and campaign sources, user time and location and devices used to access them.</p><p>You can also learn exactly how revenue is associated with each dimension, such as specific traffic types or tracked campaigns.</p>',
         ],
@@ -3484,10 +4290,14 @@ return [
         'isReport' => '1',
     ],
     103 => [
-        'name' => 'Overview',
+        'name' => [
+            'translationKey' => 'General_Overview',
+        ],
         'category' => [
             'id' => 'Goals_Goals',
-            'name' => 'Goals',
+            'name' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'order' => '25',
             'icon' => 'icon-reporting-goal',
             'help' => '',
@@ -3498,7 +4308,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'General_Overview',
-            'name' => 'Overview',
+            'name' => [
+                'translationKey' => 'General_Overview',
+            ],
             'order' => '2',
             'help' => '<p>The Goals Overview reports on the performance of the goals defined for your website. You can access your goal’s conversion percentages, amount of revenue generated and full reports for each.</p><p>Click on an individual metric within the sparkline chart to focus on it within the full-sized evolution graph.</p><p><a target="_blank" rel="noreferrer noopener" href="https://matomo.org/docs/tracking-goals-web-analytics/?mtm_campaign=Matomo_App&mtm_source=Matomo_App_OnPremise&mtm_medium=App.Goals.Overview">Learn more in our Goals guide here.</a></p>',
         ],
@@ -3519,7 +4331,9 @@ return [
                 'name' => '',
                 'category' => [
                     'id' => 'Goals_Goals',
-                    'name' => 'Goals',
+                    'name' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -3530,17 +4344,23 @@ return [
                 ],
                 'subcategory' => [
                     'id' => 'General_Overview',
-                    'name' => 'Overview',
+                    'name' => [
+                        'translationKey' => 'General_Overview',
+                    ],
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Goals',
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'getEvolutionGraph',
                 'order' => '5',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'graphEvolution',
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'getEvolutionGraph',
                 ],
                 'uniqueId' => 'widgetGoalsgetEvolutionGraphforceView1viewDataTablegraphEvolution',
@@ -3552,7 +4372,9 @@ return [
                 'name' => '',
                 'category' => [
                     'id' => 'Goals_Goals',
-                    'name' => 'Goals',
+                    'name' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -3563,17 +4385,23 @@ return [
                 ],
                 'subcategory' => [
                     'id' => 'General_Overview',
-                    'name' => 'Overview',
+                    'name' => [
+                        'translationKey' => 'General_Overview',
+                    ],
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Goals',
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'getMetrics',
                 'order' => '15',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'sparklines',
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'getMetrics',
                 ],
                 'uniqueId' => 'widgetGoalsgetMetricsforceView1viewDataTablesparklines',
@@ -3585,7 +4413,9 @@ return [
                 'name' => '',
                 'category' => [
                     'id' => 'Goals_Goals',
-                    'name' => 'Goals',
+                    'name' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -3596,15 +4426,21 @@ return [
                 ],
                 'subcategory' => [
                     'id' => 'General_Overview',
-                    'name' => 'Overview',
+                    'name' => [
+                        'translationKey' => 'General_Overview',
+                    ],
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Goals',
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'getSparklines',
                 'order' => '25',
                 'parameters' => [
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'getSparklines',
                 ],
                 'uniqueId' => 'widgetGoalsgetSparklines',
@@ -3618,7 +4454,9 @@ return [
         'name' => 'Goal 1 - Thank you',
         'category' => [
             'id' => 'Goals_Goals',
-            'name' => 'Goals',
+            'name' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'order' => '25',
             'icon' => 'icon-reporting-goal',
             'help' => '',
@@ -3650,7 +4488,9 @@ return [
                 'name' => '',
                 'category' => [
                     'id' => 'Goals_Goals',
-                    'name' => 'Goals',
+                    'name' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -3665,13 +4505,17 @@ return [
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Goals',
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'getEvolutionGraph',
                 'order' => '5',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'graphEvolution',
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'getEvolutionGraph',
                     'idGoal' => '1',
                 ],
@@ -3684,7 +4528,9 @@ return [
                 'name' => '',
                 'category' => [
                     'id' => 'Goals_Goals',
-                    'name' => 'Goals',
+                    'name' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -3699,13 +4545,17 @@ return [
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Goals',
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'get',
                 'order' => '15',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'sparklines',
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'get',
                     'idGoal' => '1',
                     'allow_multiple' => '1',
@@ -3716,10 +4566,14 @@ return [
                 'isReport' => '1',
             ],
             2 => [
-                'name' => 'Conversions Overview',
+                'name' => [
+                    'translationKey' => 'Goals_ConversionsOverview',
+                ],
                 'category' => [
                     'id' => 'Goals_Goals',
-                    'name' => 'Goals',
+                    'name' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -3734,18 +4588,24 @@ return [
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Goals',
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'goalConversionsOverview',
                 'order' => '25',
                 'parameters' => [
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'goalConversionsOverview',
                     'idGoal' => '1',
                 ],
                 'uniqueId' => 'widgetGoalsgoalConversionsOverviewidGoal1',
                 'isWide' => '0',
                 'middlewareParameters' => [
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'hasConversions',
                     'idGoal' => '1',
                 ],
@@ -3758,7 +4618,9 @@ return [
         'name' => 'Goal 2 - Hello',
         'category' => [
             'id' => 'Goals_Goals',
-            'name' => 'Goals',
+            'name' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'order' => '25',
             'icon' => 'icon-reporting-goal',
             'help' => '',
@@ -3790,7 +4652,9 @@ return [
                 'name' => '',
                 'category' => [
                     'id' => 'Goals_Goals',
-                    'name' => 'Goals',
+                    'name' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -3805,13 +4669,17 @@ return [
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Goals',
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'getEvolutionGraph',
                 'order' => '5',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'graphEvolution',
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'getEvolutionGraph',
                     'idGoal' => '2',
                 ],
@@ -3824,7 +4692,9 @@ return [
                 'name' => '',
                 'category' => [
                     'id' => 'Goals_Goals',
-                    'name' => 'Goals',
+                    'name' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -3839,13 +4709,17 @@ return [
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Goals',
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'get',
                 'order' => '15',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'sparklines',
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'get',
                     'idGoal' => '2',
                     'allow_multiple' => '0',
@@ -3856,10 +4730,14 @@ return [
                 'isReport' => '1',
             ],
             2 => [
-                'name' => 'Conversions Overview',
+                'name' => [
+                    'translationKey' => 'Goals_ConversionsOverview',
+                ],
                 'category' => [
                     'id' => 'Goals_Goals',
-                    'name' => 'Goals',
+                    'name' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -3874,18 +4752,24 @@ return [
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Goals',
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'goalConversionsOverview',
                 'order' => '25',
                 'parameters' => [
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'goalConversionsOverview',
                     'idGoal' => '2',
                 ],
                 'uniqueId' => 'widgetGoalsgoalConversionsOverviewidGoal2',
                 'isWide' => '0',
                 'middlewareParameters' => [
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'hasConversions',
                     'idGoal' => '2',
                 ],
@@ -3898,7 +4782,9 @@ return [
         'name' => 'triggered js',
         'category' => [
             'id' => 'Goals_Goals',
-            'name' => 'Goals',
+            'name' => [
+                'translationKey' => 'Goals_Goals',
+            ],
             'order' => '25',
             'icon' => 'icon-reporting-goal',
             'help' => '',
@@ -3930,7 +4816,9 @@ return [
                 'name' => '',
                 'category' => [
                     'id' => 'Goals_Goals',
-                    'name' => 'Goals',
+                    'name' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -3945,13 +4833,17 @@ return [
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Goals',
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'getEvolutionGraph',
                 'order' => '5',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'graphEvolution',
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'getEvolutionGraph',
                     'idGoal' => '3',
                 ],
@@ -3964,7 +4856,9 @@ return [
                 'name' => '',
                 'category' => [
                     'id' => 'Goals_Goals',
-                    'name' => 'Goals',
+                    'name' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -3979,13 +4873,17 @@ return [
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Goals',
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'get',
                 'order' => '15',
                 'parameters' => [
                     'forceView' => '1',
                     'viewDataTable' => 'sparklines',
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'get',
                     'idGoal' => '3',
                     'allow_multiple' => '0',
@@ -3996,10 +4894,14 @@ return [
                 'isReport' => '1',
             ],
             2 => [
-                'name' => 'Conversions Overview',
+                'name' => [
+                    'translationKey' => 'Goals_ConversionsOverview',
+                ],
                 'category' => [
                     'id' => 'Goals_Goals',
-                    'name' => 'Goals',
+                    'name' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'order' => '99',
                     'icon' => '',
                     'help' => '',
@@ -4014,18 +4916,24 @@ return [
                     'order' => '99',
                     'help' => '',
                 ],
-                'module' => 'Goals',
+                'module' => [
+                    'translationKey' => 'Goals_Goals',
+                ],
                 'action' => 'goalConversionsOverview',
                 'order' => '25',
                 'parameters' => [
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'goalConversionsOverview',
                     'idGoal' => '3',
                 ],
                 'uniqueId' => 'widgetGoalsgoalConversionsOverviewidGoal3',
                 'isWide' => '0',
                 'middlewareParameters' => [
-                    'module' => 'Goals',
+                    'module' => [
+                        'translationKey' => 'Goals_Goals',
+                    ],
                     'action' => 'hasConversions',
                     'idGoal' => '3',
                 ],
@@ -4035,10 +4943,14 @@ return [
         ],
     ],
     107 => [
-        'name' => 'AI Chatbots',
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsReportTitle',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4050,7 +4962,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsOverview',
-            'name' => 'AI Chatbots Overview',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsOverview',
+            ],
             'order' => '10',
             'help' => '<p>The AI Chatbots Overview page provides insights into website traffic originating from AI chatbots such as ChatGPT and other large language model–based assistants. These reports track key metrics including the number of requests made by these bots, the pages and documents they access, and any errors encountered. They also offer detailed breakdowns showing which bots visit specific page URLs, helping you understand how AI chatbots interact with your content and identify opportunities to improve visibility and accessibility for AI-driven users.</p><p>It’s important to note that none of these pages were actually viewed by humans in the traditional way — all requests originate from AI chatbots fetching content automatically.</p><p>Currently, these reports exclusively include requests from AI chatbots that do not execute JavaScript. They do not include traffic from AI crawlers used for training AI models or from AI agents capable of executing JavaScript.</p>',
         ],
@@ -4067,10 +4981,14 @@ return [
         'isReport' => '1',
     ],
     108 => [
-        'name' => 'AI Chatbots Over Time',
+        'name' => [
+            'translationKey' => 'BotTracking_ReportTitleChatbotsOverTime',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4082,7 +5000,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsOverview',
-            'name' => 'AI Chatbots Overview',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsOverview',
+            ],
             'order' => '10',
             'help' => '<p>The AI Chatbots Overview page provides insights into website traffic originating from AI chatbots such as ChatGPT and other large language model–based assistants. These reports track key metrics including the number of requests made by these bots, the pages and documents they access, and any errors encountered. They also offer detailed breakdowns showing which bots visit specific page URLs, helping you understand how AI chatbots interact with your content and identify opportunities to improve visibility and accessibility for AI-driven users.</p><p>It’s important to note that none of these pages were actually viewed by humans in the traditional way — all requests originate from AI chatbots fetching content automatically.</p><p>Currently, these reports exclusively include requests from AI chatbots that do not execute JavaScript. They do not include traffic from AI crawlers used for training AI models or from AI agents capable of executing JavaScript.</p>',
         ],
@@ -4101,10 +5021,14 @@ return [
         'isReport' => '1',
     ],
     109 => [
-        'name' => 'AI Chatbots Overview',
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsOverview',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4116,7 +5040,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsOverview',
-            'name' => 'AI Chatbots Overview',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsOverview',
+            ],
             'order' => '10',
             'help' => '<p>The AI Chatbots Overview page provides insights into website traffic originating from AI chatbots such as ChatGPT and other large language model–based assistants. These reports track key metrics including the number of requests made by these bots, the pages and documents they access, and any errors encountered. They also offer detailed breakdowns showing which bots visit specific page URLs, helping you understand how AI chatbots interact with your content and identify opportunities to improve visibility and accessibility for AI-driven users.</p><p>It’s important to note that none of these pages were actually viewed by humans in the traditional way — all requests originate from AI chatbots fetching content automatically.</p><p>Currently, these reports exclusively include requests from AI chatbots that do not execute JavaScript. They do not include traffic from AI crawlers used for training AI models or from AI agents capable of executing JavaScript.</p>',
         ],
@@ -4135,10 +5061,14 @@ return [
         'isReport' => '1',
     ],
     110 => [
-        'name' => 'AI Chatbots - Last 30 Minutes',
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsLast30MinutesTitle',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4150,7 +5080,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsRealtime',
-            'name' => 'AI Chatbots Real-time',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsRealtime',
+            ],
             'order' => '12',
             'help' => '<p>The AI Chatbots Real-time page shows recent AI chatbot activity from raw bot tracking data, including chatbot request volume, unique page URLs, and HTTP error counts.</p><p>These reports are limited to short real-time windows so they remain fast and predictable on large sites.</p>',
         ],
@@ -4168,10 +5100,14 @@ return [
         'isReport' => '1',
     ],
     111 => [
-        'name' => 'AI Chatbots - Last 8 Hours',
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsLast8HoursTitle',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4183,7 +5119,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsRealtime',
-            'name' => 'AI Chatbots Real-time',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsRealtime',
+            ],
             'order' => '12',
             'help' => '<p>The AI Chatbots Real-time page shows recent AI chatbot activity from raw bot tracking data, including chatbot request volume, unique page URLs, and HTTP error counts.</p><p>These reports are limited to short real-time windows so they remain fast and predictable on large sites.</p>',
         ],
@@ -4201,10 +5139,14 @@ return [
         'isReport' => '1',
     ],
     112 => [
-        'name' => 'Top Page URLs - Last 30 minutes',
+        'name' => [
+            'translationKey' => 'BotTracking_TopPageUrlsLast30MinutesTitle',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4216,7 +5158,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsRealtime',
-            'name' => 'AI Chatbots Real-time',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsRealtime',
+            ],
             'order' => '12',
             'help' => '<p>The AI Chatbots Real-time page shows recent AI chatbot activity from raw bot tracking data, including chatbot request volume, unique page URLs, and HTTP error counts.</p><p>These reports are limited to short real-time windows so they remain fast and predictable on large sites.</p>',
         ],
@@ -4234,10 +5178,14 @@ return [
         'isReport' => '1',
     ],
     113 => [
-        'name' => 'Top Page URLs - Last 8 hours',
+        'name' => [
+            'translationKey' => 'BotTracking_TopPageUrlsLast8HoursTitle',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4249,7 +5197,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsRealtime',
-            'name' => 'AI Chatbots Real-time',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsRealtime',
+            ],
             'order' => '12',
             'help' => '<p>The AI Chatbots Real-time page shows recent AI chatbot activity from raw bot tracking data, including chatbot request volume, unique page URLs, and HTTP error counts.</p><p>These reports are limited to short real-time windows so they remain fast and predictable on large sites.</p>',
         ],
@@ -4267,10 +5217,14 @@ return [
         'isReport' => '1',
     ],
     114 => [
-        'name' => 'AI-Favoured Pages',
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsAIFavouredPagesTitle',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4282,7 +5236,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsContentRequests',
-            'name' => 'AI Chatbots Content Requests',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsContentRequests',
+            ],
             'order' => '15',
             'help' => '<p>This reporting page shows which pages and documents on your website have been requested by AI chatbots such as ChatGPT and similar large language model–based bots. These reports detail which HTML pages and downloadable files (like PDFs, Word, or Excel documents) were accessed, along with those that could not be retrieved due to errors. This helps you understand which content AI systems are referencing, identify broken or inaccessible resources, and ensure your website provides reliable access to information used by AI-driven tools.</p><p>It’s important to note that none of these pages or documents were actually viewed by humans in the traditional way — all requests originate from AI assistants fetching content automatically.</p><p>Currently, these reports only include requests from AI bots that do not execute JavaScript, and exclude traffic from AI crawlers used for model training or AI agents capable of running JavaScript.</p>',
         ],
@@ -4299,10 +5255,14 @@ return [
         'isReport' => '1',
     ],
     115 => [
-        'name' => 'Broken Pages and Documents',
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsBrokenContentTitle',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4314,7 +5274,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsContentRequests',
-            'name' => 'AI Chatbots Content Requests',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsContentRequests',
+            ],
             'order' => '15',
             'help' => '<p>This reporting page shows which pages and documents on your website have been requested by AI chatbots such as ChatGPT and similar large language model–based bots. These reports detail which HTML pages and downloadable files (like PDFs, Word, or Excel documents) were accessed, along with those that could not be retrieved due to errors. This helps you understand which content AI systems are referencing, identify broken or inaccessible resources, and ensure your website provides reliable access to information used by AI-driven tools.</p><p>It’s important to note that none of these pages or documents were actually viewed by humans in the traditional way — all requests originate from AI assistants fetching content automatically.</p><p>Currently, these reports only include requests from AI bots that do not execute JavaScript, and exclude traffic from AI crawlers used for model training or AI agents capable of running JavaScript.</p>',
         ],
@@ -4331,10 +5293,14 @@ return [
         'isReport' => '1',
     ],
     116 => [
-        'name' => 'Documents',
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsContentDocumentsTitle',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4346,7 +5312,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsContentRequests',
-            'name' => 'AI Chatbots Content Requests',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsContentRequests',
+            ],
             'order' => '15',
             'help' => '<p>This reporting page shows which pages and documents on your website have been requested by AI chatbots such as ChatGPT and similar large language model–based bots. These reports detail which HTML pages and downloadable files (like PDFs, Word, or Excel documents) were accessed, along with those that could not be retrieved due to errors. This helps you understand which content AI systems are referencing, identify broken or inaccessible resources, and ensure your website provides reliable access to information used by AI-driven tools.</p><p>It’s important to note that none of these pages or documents were actually viewed by humans in the traditional way — all requests originate from AI assistants fetching content automatically.</p><p>Currently, these reports only include requests from AI bots that do not execute JavaScript, and exclude traffic from AI crawlers used for model training or AI agents capable of running JavaScript.</p>',
         ],
@@ -4363,10 +5331,14 @@ return [
         'isReport' => '1',
     ],
     117 => [
-        'name' => 'Pages',
+        'name' => [
+            'translationKey' => 'General_Pages',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4378,7 +5350,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsContentRequests',
-            'name' => 'AI Chatbots Content Requests',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsContentRequests',
+            ],
             'order' => '15',
             'help' => '<p>This reporting page shows which pages and documents on your website have been requested by AI chatbots such as ChatGPT and similar large language model–based bots. These reports detail which HTML pages and downloadable files (like PDFs, Word, or Excel documents) were accessed, along with those that could not be retrieved due to errors. This helps you understand which content AI systems are referencing, identify broken or inaccessible resources, and ensure your website provides reliable access to information used by AI-driven tools.</p><p>It’s important to note that none of these pages or documents were actually viewed by humans in the traditional way — all requests originate from AI assistants fetching content automatically.</p><p>Currently, these reports only include requests from AI bots that do not execute JavaScript, and exclude traffic from AI crawlers used for model training or AI agents capable of running JavaScript.</p>',
         ],
@@ -4395,10 +5369,14 @@ return [
         'isReport' => '1',
     ],
     118 => [
-        'name' => 'Human-Favoured Pages',
+        'name' => [
+            'translationKey' => 'BotTracking_AIChatbotsHumanFavouredPagesTitle',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4410,7 +5388,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'BotTracking_AIChatbotsContentRequests',
-            'name' => 'AI Chatbots Content Requests',
+            'name' => [
+                'translationKey' => 'BotTracking_AIChatbotsContentRequests',
+            ],
             'order' => '15',
             'help' => '<p>This reporting page shows which pages and documents on your website have been requested by AI chatbots such as ChatGPT and similar large language model–based bots. These reports detail which HTML pages and downloadable files (like PDFs, Word, or Excel documents) were accessed, along with those that could not be retrieved due to errors. This helps you understand which content AI systems are referencing, identify broken or inaccessible resources, and ensure your website provides reliable access to information used by AI-driven tools.</p><p>It’s important to note that none of these pages or documents were actually viewed by humans in the traditional way — all requests originate from AI assistants fetching content automatically.</p><p>Currently, these reports only include requests from AI bots that do not execute JavaScript, and exclude traffic from AI crawlers used for model training or AI agents capable of running JavaScript.</p>',
         ],
@@ -4427,10 +5407,14 @@ return [
         'isReport' => '1',
     ],
     119 => [
-        'name' => 'AI Agents Over Time',
+        'name' => [
+            'translationKey' => 'AIAgents_WidgetGraphAIAgents',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4442,7 +5426,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'AIAgents_AIAgentsOverview',
-            'name' => 'AI Agents Overview',
+            'name' => [
+                'translationKey' => 'AIAgents_AIAgentsOverview',
+            ],
             'order' => '20',
             'help' => '<p>Review how AI agents and human visitors engage with your site at a glance. This overview surfaces combined metrics and trends so you can quickly spot changes before exploring detailed reports.</p>',
         ],
@@ -4461,10 +5447,14 @@ return [
         'isReport' => '1',
     ],
     120 => [
-        'name' => 'AI Agents Overview',
+        'name' => [
+            'translationKey' => 'AIAgents_AIAgentsOverview',
+        ],
         'category' => [
             'id' => 'General_AIAssistants',
-            'name' => 'AI Assistants',
+            'name' => [
+                'translationKey' => 'General_AIAssistants',
+            ],
             'order' => '80',
             'icon' => 'icon-ai-assistants',
             'help' => '',
@@ -4476,7 +5466,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'AIAgents_AIAgentsOverview',
-            'name' => 'AI Agents Overview',
+            'name' => [
+                'translationKey' => 'AIAgents_AIAgentsOverview',
+            ],
             'order' => '20',
             'help' => '<p>Review how AI agents and human visitors engage with your site at a glance. This overview surfaces combined metrics and trends so you can quickly spot changes before exploring detailed reports.</p>',
         ],
@@ -4498,7 +5490,9 @@ return [
         'name' => 'Pie graph',
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -4529,7 +5523,9 @@ return [
         'name' => 'Advanced tag cloud: with logos and links',
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -4560,7 +5556,9 @@ return [
         'name' => 'Simple tag cloud',
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -4590,10 +5588,14 @@ return [
         'isReport' => '1',
     ],
     124 => [
-        'name' => 'Data tables',
+        'name' => [
+            'translationKey' => 'ExampleUI_GetTemperaturesDataTable',
+        ],
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -4604,7 +5606,9 @@ return [
         ],
         'subcategory' => [
             'id' => 'ExampleUI_GetTemperaturesDataTable',
-            'name' => 'Data tables',
+            'name' => [
+                'translationKey' => 'ExampleUI_GetTemperaturesDataTable',
+            ],
             'order' => '99',
             'help' => '',
         ],
@@ -4621,10 +5625,14 @@ return [
         'isReport' => '1',
     ],
     125 => [
-        'name' => 'Evolution of server temperatures over the last few days',
+        'name' => [
+            'translationKey' => 'ExampleUI_TemperaturesEvolution',
+        ],
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -4658,10 +5666,14 @@ return [
         'isReport' => '1',
     ],
     126 => [
-        'name' => 'Temperatures evolution over time',
+        'name' => [
+            'translationKey' => 'ExampleUI_GetTemperaturesEvolution',
+        ],
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -4691,10 +5703,14 @@ return [
         'isReport' => '1',
     ],
     127 => [
-        'name' => 'Data tables',
+        'name' => [
+            'translationKey' => 'ExampleUI_GetTemperaturesDataTable',
+        ],
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -4727,7 +5743,9 @@ return [
         'name' => 'Treemap example',
         'category' => [
             'id' => 'ExampleUI_UiFramework',
-            'name' => 'UI Framework',
+            'name' => [
+                'translationKey' => 'ExampleUI_UiFramework',
+            ],
             'order' => '90',
             'icon' => '',
             'help' => '',
@@ -4757,7 +5775,9 @@ return [
         'isReport' => '1',
     ],
     129 => [
-        'name' => 'Tracking failures',
+        'name' => [
+            'translationKey' => 'CoreAdminHome_TrackingFailures',
+        ],
         'category' => [
             'id' => 'About Matomo',
             'name' => 'About Matomo',
@@ -4781,7 +5801,9 @@ return [
         'isWide' => '0',
     ],
     130 => [
-        'name' => 'Support Matomo!',
+        'name' => [
+            'translationKey' => 'CoreHome_SupportPiwik',
+        ],
         'category' => [
             'id' => 'About Matomo',
             'name' => 'About Matomo',
@@ -4805,7 +5827,9 @@ return [
         'isWide' => '0',
     ],
     131 => [
-        'name' => 'Welcome',
+        'name' => [
+            'translationKey' => 'Installation_Welcome',
+        ],
         'category' => [
             'id' => 'About Matomo',
             'name' => 'About Matomo',
@@ -4829,7 +5853,9 @@ return [
         'isWide' => '0',
     ],
     132 => [
-        'name' => 'System Summary',
+        'name' => [
+            'translationKey' => 'CoreHome_SystemSummaryWidget',
+        ],
         'category' => [
             'id' => 'About Matomo',
             'name' => 'About Matomo',
@@ -4853,7 +5879,9 @@ return [
         'isWide' => '0',
     ],
     133 => [
-        'name' => 'Quick Links',
+        'name' => [
+            'translationKey' => 'CoreHome_QuickLinks',
+        ],
         'category' => [
             'id' => 'About Matomo',
             'name' => 'About Matomo',
@@ -4901,10 +5929,14 @@ return [
         'isWide' => '0',
     ],
     135 => [
-        'name' => 'Insights Overview',
+        'name' => [
+            'translationKey' => 'Insights_OverviewWidgetTitle',
+        ],
         'category' => [
             'id' => 'Insights_WidgetCategory',
-            'name' => 'Insights',
+            'name' => [
+                'translationKey' => 'Insights_WidgetCategory',
+            ],
             'order' => '99',
             'icon' => '',
             'help' => '',
@@ -4914,21 +5946,29 @@ return [
             ],
         ],
         'subcategory' => '',
-        'module' => 'Insights',
+        'module' => [
+            'translationKey' => 'Insights_WidgetCategory',
+        ],
         'action' => 'getInsightsOverview',
         'order' => '99',
         'parameters' => [
-            'module' => 'Insights',
+            'module' => [
+                'translationKey' => 'Insights_WidgetCategory',
+            ],
             'action' => 'getInsightsOverview',
         ],
         'uniqueId' => 'widgetInsightsgetInsightsOverview',
         'isWide' => '0',
     ],
     136 => [
-        'name' => 'Movers and Shakers',
+        'name' => [
+            'translationKey' => 'Insights_MoversAndShakersWidgetTitle',
+        ],
         'category' => [
             'id' => 'Insights_WidgetCategory',
-            'name' => 'Insights',
+            'name' => [
+                'translationKey' => 'Insights_WidgetCategory',
+            ],
             'order' => '99',
             'icon' => '',
             'help' => '',
@@ -4938,18 +5978,24 @@ return [
             ],
         ],
         'subcategory' => '',
-        'module' => 'Insights',
+        'module' => [
+            'translationKey' => 'Insights_WidgetCategory',
+        ],
         'action' => 'getOverallMoversAndShakers',
         'order' => '99',
         'parameters' => [
-            'module' => 'Insights',
+            'module' => [
+                'translationKey' => 'Insights_WidgetCategory',
+            ],
             'action' => 'getOverallMoversAndShakers',
         ],
         'uniqueId' => 'widgetInsightsgetOverallMoversAndShakers',
         'isWide' => '0',
     ],
     137 => [
-        'name' => 'System Check',
+        'name' => [
+            'translationKey' => 'Installation_SystemCheck',
+        ],
         'category' => [
             'id' => 'About Matomo',
             'name' => 'About Matomo',
@@ -4962,11 +6008,15 @@ return [
             ],
         ],
         'subcategory' => '',
-        'module' => 'Installation',
+        'module' => [
+            'translationKey' => 'Installation_Installation',
+        ],
         'action' => 'getSystemCheck',
         'order' => '16',
         'parameters' => [
-            'module' => 'Installation',
+            'module' => [
+                'translationKey' => 'Installation_Installation',
+            ],
             'action' => 'getSystemCheck',
         ],
         'uniqueId' => 'widgetInstallationgetSystemCheck',
@@ -5045,7 +6095,9 @@ return [
         'isWide' => '0',
     ],
     141 => [
-        'name' => 'Become a Matomo expert',
+        'name' => [
+            'translationKey' => 'Tour_BecomeMatomoExpert',
+        ],
         'category' => [
             'id' => 'About Matomo',
             'name' => 'About Matomo',
@@ -5058,25 +6110,35 @@ return [
             ],
         ],
         'subcategory' => '',
-        'module' => 'Tour',
+        'module' => [
+            'translationKey' => 'Tour_Tour',
+        ],
         'action' => 'getEngagement',
         'order' => '99',
         'parameters' => [
-            'module' => 'Tour',
+            'module' => [
+                'translationKey' => 'Tour_Tour',
+            ],
             'action' => 'getEngagement',
         ],
         'uniqueId' => 'widgetTourgetEngagement',
         'isWide' => '0',
         'clientComponent' => [
-            'plugin' => 'Tour',
+            'plugin' => [
+                'translationKey' => 'Tour_Tour',
+            ],
             'name' => 'BecomeMatomoExpert',
         ],
     ],
     142 => [
-        'name' => 'Latest Marketplace Updates',
+        'name' => [
+            'translationKey' => 'Marketplace_LatestMarketplaceUpdates',
+        ],
         'category' => [
             'id' => 'Marketplace_Marketplace',
-            'name' => 'Marketplace',
+            'name' => [
+                'translationKey' => 'Marketplace_Marketplace',
+            ],
             'order' => '200',
             'icon' => '',
             'help' => '',
@@ -5086,21 +6148,29 @@ return [
             ],
         ],
         'subcategory' => '',
-        'module' => 'Marketplace',
+        'module' => [
+            'translationKey' => 'Marketplace_Marketplace',
+        ],
         'action' => 'getNewPlugins',
         'order' => '19',
         'parameters' => [
-            'module' => 'Marketplace',
+            'module' => [
+                'translationKey' => 'Marketplace_Marketplace',
+            ],
             'action' => 'getNewPlugins',
         ],
         'uniqueId' => 'widgetMarketplacegetNewPlugins',
         'isWide' => '0',
     ],
     143 => [
-        'name' => 'Premium Features',
+        'name' => [
+            'translationKey' => 'Marketplace_PaidPlugins',
+        ],
         'category' => [
             'id' => 'Marketplace_Marketplace',
-            'name' => 'Marketplace',
+            'name' => [
+                'translationKey' => 'Marketplace_Marketplace',
+            ],
             'order' => '200',
             'icon' => '',
             'help' => '',
@@ -5111,15 +6181,21 @@ return [
         ],
         'subcategory' => [
             'id' => 'Marketplace_PaidPlugins',
-            'name' => 'Premium Features',
+            'name' => [
+                'translationKey' => 'Marketplace_PaidPlugins',
+            ],
             'order' => '99',
             'help' => '',
         ],
-        'module' => 'Marketplace',
+        'module' => [
+            'translationKey' => 'Marketplace_Marketplace',
+        ],
         'action' => 'getPremiumFeatures',
         'order' => '20',
         'parameters' => [
-            'module' => 'Marketplace',
+            'module' => [
+                'translationKey' => 'Marketplace_Marketplace',
+            ],
             'action' => 'getPremiumFeatures',
         ],
         'uniqueId' => 'widgetMarketplacegetPremiumFeatures',
