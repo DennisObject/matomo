@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Matomo\ScheduledReports;
 
+use Carbon\CarbonImmutable;
+
 final readonly class ScheduledReportManager
 {
     public function __construct(private ScheduledReportRepository $reports) {}
@@ -38,6 +40,39 @@ final readonly class ScheduledReportManager
     public function markSent(int $idReport): void
     {
         $this->reports->update($idReport, ['ts_last_sent' => gmdate('Y-m-d H:i:s')]);
+    }
+
+    /** @param array<string, mixed> $report */
+    public function sentInCurrentCadence(array $report): bool
+    {
+        $lastSent = $report['ts_last_sent'] ?? null;
+        $cadence = $report['period'] ?? null;
+        if (! is_string($lastSent) || $lastSent === '' || ! is_string($cadence) || $cadence === 'never') {
+            return false;
+        }
+
+        try {
+            $sent = CarbonImmutable::parse($lastSent, 'UTC');
+        } catch (\Throwable) {
+            return false;
+        }
+
+        $now = CarbonImmutable::now('UTC');
+
+        return match ($cadence) {
+            'day' => $sent->isSameDay($now),
+            'week' => $sent->format('o-W') === $now->format('o-W'),
+            'month' => $sent->format('Y-m') === $now->format('Y-m'),
+            default => false,
+        };
+    }
+
+    public function validateFormat(string $type, string $format): void
+    {
+        $formats = ['email' => ['html', 'pdf'], 'mobile' => ['sms']];
+        if (! isset($formats[$type]) || ! in_array($format, $formats[$type], true)) {
+            throw new ScheduledReportException('The report type or format is invalid.');
+        }
     }
 
     /** @return list<array<string, mixed>> */
@@ -90,10 +125,7 @@ final readonly class ScheduledReportManager
 
         $type = (string) ($attributes['type'] ?? '');
         $format = (string) ($attributes['format'] ?? '');
-        $formats = ['email' => ['html', 'pdf'], 'mobile' => ['sms']];
-        if (! isset($formats[$type]) || ! in_array($format, $formats[$type], true)) {
-            throw new ScheduledReportException('The report type or format is invalid.');
-        }
+        $this->validateFormat($type, $format);
 
         $selected = $attributes['reports'] ?? [];
         if (! is_array($selected) || $selected === []) {

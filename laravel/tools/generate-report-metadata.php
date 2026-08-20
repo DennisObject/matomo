@@ -17,13 +17,16 @@ foreach ($languageFiles as $file) {
     if (! is_array($decoded)) {
         continue;
     }
-    $plugin = basename(dirname(dirname($file)));
-    if ($plugin === 'lang') {
-        $plugin = 'General';
-    }
-    foreach ($decoded as $key => $value) {
-        if (is_string($key) && is_string($value) && $value !== '') {
-            $translations[$value] ??= $plugin.'_'.$key;
+
+    foreach ($decoded as $namespace => $messages) {
+        if (! is_string($namespace) || ! is_array($messages)) {
+            continue;
+        }
+
+        foreach ($messages as $key => $value) {
+            if (is_string($key) && is_string($value) && $value !== '') {
+                $translations[$value] ??= $namespace.'_'.$key;
+            }
         }
     }
 }
@@ -67,4 +70,14 @@ $output = "<?php\n\ndeclare(strict_types=1);\n\nreturn ".var_export($rows, true)
 $target = __DIR__.'/../resources/matomo/report-metadata.php';
 if (file_put_contents($target, $output) === false) {
     throw new RuntimeException('The report metadata catalog could not be written.');
+}
+
+$pint = __DIR__.'/../vendor/bin/pint';
+if (! is_file($pint)) {
+    throw new RuntimeException('Install Laravel dependencies before generating the catalog.');
+}
+
+passthru(escapeshellarg($pint).' '.escapeshellarg($target).' --quiet', $status);
+if ($status !== 0) {
+    throw new RuntimeException('The generated report metadata catalog could not be formatted.');
 }

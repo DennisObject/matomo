@@ -146,6 +146,7 @@ final readonly class ScheduledReportsApiMethodHandler implements ApiMethodHandle
     ): Response {
         $report = $this->report($parameters->idReport ?? 0, $login, $superUser);
         if ($parameters->reportFormat !== null) {
+            $this->reports->validateFormat((string) ($report['type'] ?? ''), $parameters->reportFormat);
             $report['format'] = $parameters->reportFormat;
         }
 
@@ -201,6 +202,10 @@ final readonly class ScheduledReportsApiMethodHandler implements ApiMethodHandle
         Request $httpRequest,
     ): Response {
         $report = $this->report($parameters->idReport ?? 0, $login, $superUser);
+        if (! $parameters->force && $this->reports->sentInCurrentCadence($report)) {
+            return $this->responses->scalar($request, true);
+        }
+
         $storedParameters = is_array($report['parameters'] ?? null) ? $report['parameters'] : [];
         $html = $this->generator->generate(
             $report,
