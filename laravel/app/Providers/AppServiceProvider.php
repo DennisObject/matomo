@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
+use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\UserLanguageApiMethodHandler;
 use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
@@ -30,11 +31,13 @@ use App\Matomo\Plugins\PluginState;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\CarbonReportingPeriodFactory;
 use App\Matomo\Reporting\ConfiguredReportingSettings;
+use App\Matomo\Reporting\ConfiguredScreenResolutionPolicy;
 use App\Matomo\Reporting\DatabaseBlobArchiveRepository;
 use App\Matomo\Reporting\DatabaseSegmentHashResolver;
 use App\Matomo\Reporting\DatabaseVisitsSummaryArchiveRepository;
 use App\Matomo\Reporting\ReportingPeriodFactory;
 use App\Matomo\Reporting\ReportingSettings;
+use App\Matomo\Reporting\ScreenResolutionPolicy;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
 use App\Matomo\Security\ClientIpResolver;
@@ -156,6 +159,14 @@ class AppServiceProvider extends ServiceProvider
             BlobArchiveRepository::class,
             fn (Application $application): BlobArchiveRepository => new DatabaseBlobArchiveRepository(
                 $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
+            ScreenResolutionPolicy::class,
+            fn (Application $application): ScreenResolutionPolicy => new ConfiguredScreenResolutionPolicy(
+                settings: $application->make(PolicySettingRepository::class),
+                configuredCnilPolicy: $application->make(InstallationConfig::class)->configuredCnilPolicy(),
             ),
         );
 
@@ -329,6 +340,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(VisitTimeApiMethodHandler::class),
                 $application->make(VisitorInterestApiMethodHandler::class),
                 $application->make(UserLanguageApiMethodHandler::class),
+                $application->make(ResolutionApiMethodHandler::class),
             ]),
         );
     }

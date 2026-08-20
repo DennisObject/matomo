@@ -48,6 +48,12 @@ final readonly class ApiRequest
         'UserLanguage.getLanguageCode',
     ];
 
+    /** @var list<string> */
+    private const array RESOLUTION_METHODS = [
+        'Resolution.getResolution',
+        'Resolution.getConfiguration',
+    ];
+
     private function __construct(
         public string $module,
         public string $method,
@@ -341,6 +347,12 @@ final readonly class ApiRequest
     {
         return $this->module === 'API'
             && in_array($this->method, self::USER_LANGUAGE_METHODS, true);
+    }
+
+    public function isResolutionRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::RESOLUTION_METHODS, true);
     }
 
     public function hasSupportedFormat(): bool
@@ -705,7 +717,8 @@ final readonly class ApiRequest
                 && $method !== 'VisitFrequency.get'
                 && ! in_array($method, self::VISIT_TIME_METHODS, true)
                 && ! in_array($method, self::VISITOR_INTEREST_METHODS, true)
-                && ! in_array($method, self::USER_LANGUAGE_METHODS, true))) {
+                && ! in_array($method, self::USER_LANGUAGE_METHODS, true)
+                && ! in_array($method, self::RESOLUTION_METHODS, true))) {
             return null;
         }
 

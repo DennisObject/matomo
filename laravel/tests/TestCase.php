@@ -10,6 +10,7 @@ use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\ReportingSettings;
+use App\Matomo\Reporting\ScreenResolutionPolicy;
 use App\Matomo\Reporting\SegmentHashResolver;
 use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
 use App\Matomo\Security\ClientIpResolver;
@@ -121,6 +122,13 @@ abstract class TestCase extends BaseTestCase
             public function anonymousSegmentsEnabled(): bool
             {
                 return true;
+            }
+        });
+        $this->app->instance(ScreenResolutionPolicy::class, new class implements ScreenResolutionPolicy
+        {
+            public function detectionDisabled(int $idSite): bool
+            {
+                return false;
             }
         });
         $this->app->instance(SegmentHashResolver::class, new class implements SegmentHashResolver
