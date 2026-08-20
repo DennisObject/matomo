@@ -48,6 +48,7 @@ use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\Privacy\AnonymizableColumnProvider;
+use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Privacy\DeletionBatchLimits;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Reporting\BlobArchiveMetadataRepository;
@@ -448,6 +449,10 @@ abstract class TestCase extends BaseTestCase
         $this->app->instance(
             AnonymizableColumnProvider::class,
             $this->createStub(AnonymizableColumnProvider::class),
+        );
+        $this->app->instance(
+            CompliancePolicyStateRepository::class,
+            $this->createStub(CompliancePolicyStateRepository::class),
         );
         $this->app->instance(NewsletterSubscriber::class, $this->createStub(NewsletterSubscriber::class));
         $this->app->instance(

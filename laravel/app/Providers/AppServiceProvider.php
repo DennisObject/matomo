@@ -49,6 +49,7 @@ use App\Matomo\Api\Methods\OverlayApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerColumnApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceApiMethodHandler;
+use App\Matomo\Api\Methods\PrivacyManagerComplianceStatusApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerSettingsApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersAiApiMethodHandler;
@@ -208,8 +209,10 @@ use App\Matomo\Plugins\LocalTrackerFileAvailability;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\Plugins\TrackerFileAvailability;
 use App\Matomo\Privacy\AnonymizableColumnProvider;
+use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Privacy\ConfiguredDeletionBatchLimits;
 use App\Matomo\Privacy\DatabaseAnonymizableColumnProvider;
+use App\Matomo\Privacy\DatabaseCompliancePolicyStateRepository;
 use App\Matomo\Privacy\DeletionBatchLimits;
 use App\Matomo\ProfessionalServices\DatabasePromoWidgetDismissalRepository;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
@@ -1264,6 +1267,12 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(MatomoDatabase::class)->connection(),
             ),
         );
+        $this->app->singleton(
+            CompliancePolicyStateRepository::class,
+            fn (Application $application): CompliancePolicyStateRepository => new DatabaseCompliancePolicyStateRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
 
         $this->app->singleton(
             QueryParameterExclusionPolicy::class,
@@ -1571,6 +1580,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(PrivacyManagerSettingsApiMethodHandler::class),
                 $application->make(PrivacyManagerColumnApiMethodHandler::class),
                 $application->make(PrivacyManagerComplianceApiMethodHandler::class),
+                $application->make(PrivacyManagerComplianceStatusApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),
                 $application->make(AiProvidersApiMethodHandler::class),

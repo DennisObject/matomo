@@ -537,6 +537,7 @@ final readonly class ApiRequest
         public ?UsersManagerUpdateDeleteRequest $usersManagerUpdateDelete,
         public ?UsersManagerTokenRequest $usersManagerToken,
         public ?PrivacyPurgeSettingsRequest $privacyPurgeSettings,
+        public ?PrivacyComplianceStatusRequest $privacyComplianceStatus,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -619,6 +620,7 @@ final readonly class ApiRequest
             usersManagerUpdateDelete: null,
             usersManagerToken: null,
             privacyPurgeSettings: null,
+            privacyComplianceStatus: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1230,6 +1232,7 @@ final readonly class ApiRequest
             usersManagerUpdateDelete: self::usersManagerUpdateDelete($request, $module, $method),
             usersManagerToken: self::usersManagerToken($request, $module, $method),
             privacyPurgeSettings: self::privacyPurgeSettings($request, $module, $method),
+            privacyComplianceStatus: self::privacyComplianceStatus($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2752,6 +2755,23 @@ final readonly class ApiRequest
 
         return new PrivacyPurgeSettingsRequest(
             values: $values,
+            passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    private static function privacyComplianceStatus(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?PrivacyComplianceStatusRequest {
+        if ($module !== 'API' || $method !== 'PrivacyManager.setComplianceStatus') {
+            return null;
+        }
+
+        return new PrivacyComplianceStatusRequest(
+            site: self::requiredString($request, 'idSite'),
+            policy: self::requiredString($request, 'complianceType'),
+            enforce: self::requiredBoolean($request, 'enforce'),
             passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
         );
     }
