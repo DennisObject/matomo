@@ -39,6 +39,10 @@ final readonly class InstallationConfig
         private array $customCurrencies,
         private ?bool $configuredCnilPolicy,
         private ?bool $configuredFilterPiiEnforcement,
+        private bool $thirdPartyCookiesEnabled,
+        /** @var array<int, bool> */
+        private array $siteThirdPartyCookiesEnabled,
+        private int $deleteLogsOlderThan,
         /** @var list<string>|null */
         private ?array $commonPiiParameters,
         private string $defaultLanguage,
@@ -200,6 +204,13 @@ final readonly class InstallationConfig
                 $sitesManager,
                 'FilterPIIParameters_policy_enforced',
             ),
+            thirdPartyCookiesEnabled: self::boolean($tracker, 'use_third_party_id_cookie'),
+            siteThirdPartyCookiesEnabled: self::siteBooleanValues(
+                $configuration,
+                'Tracker',
+                'use_third_party_id_cookie',
+            ),
+            deleteLogsOlderThan: self::positiveInteger($deleteLogs, 'delete_logs_older_than', 180),
             commonPiiParameters: self::nullableStringList($sitesManager, 'CommonPIIParams'),
             defaultLanguage: strtolower(self::string($general, 'default_language', 'en')),
             defaultReportDate: self::string($general, 'default_day', 'yesterday'),
@@ -505,6 +516,20 @@ final readonly class InstallationConfig
         return $this->configuredFilterPiiEnforcement;
     }
 
+    public function thirdPartyCookiesEnabled(?int $idSite = null): bool
+    {
+        if ($idSite !== null && array_key_exists($idSite, $this->siteThirdPartyCookiesEnabled)) {
+            return $this->siteThirdPartyCookiesEnabled[$idSite];
+        }
+
+        return $this->thirdPartyCookiesEnabled;
+    }
+
+    public function deleteLogsOlderThan(): int
+    {
+        return $this->deleteLogsOlderThan;
+    }
+
     /**
      * @return list<string>|null
      */
@@ -793,6 +818,28 @@ final readonly class InstallationConfig
         }
 
         return $accessBySite;
+    }
+
+    /**
+     * @param  array<string, mixed>  $configuration
+     * @return array<int, bool>
+     */
+    private static function siteBooleanValues(array $configuration, string $section, string $key): array
+    {
+        $valuesBySite = [];
+
+        foreach ($configuration as $name => $values) {
+            if (preg_match('/^'.preg_quote($section, '/').'_([1-9][0-9]*)$/D', $name, $matches) !== 1
+                || ! is_array($values)
+                || ! array_key_exists($key, $values)) {
+                continue;
+            }
+
+            /** @var array<string, mixed> $values */
+            $valuesBySite[(int) $matches[1]] = self::boolean($values, $key);
+        }
+
+        return $valuesBySite;
     }
 
     /** @param array<string, mixed> $general */

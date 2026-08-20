@@ -49,6 +49,7 @@ use App\Matomo\Api\Methods\OverlayApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerColumnApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceApiMethodHandler;
+use App\Matomo\Api\Methods\PrivacyManagerComplianceReadApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerComplianceStatusApiMethodHandler;
 use App\Matomo\Api\Methods\PrivacyManagerSettingsApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
@@ -210,9 +211,11 @@ use App\Matomo\Plugins\PluginState;
 use App\Matomo\Plugins\TrackerFileAvailability;
 use App\Matomo\Privacy\AnonymizableColumnProvider;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
+use App\Matomo\Privacy\ComplianceStatusProvider;
 use App\Matomo\Privacy\ConfiguredDeletionBatchLimits;
 use App\Matomo\Privacy\DatabaseAnonymizableColumnProvider;
 use App\Matomo\Privacy\DatabaseCompliancePolicyStateRepository;
+use App\Matomo\Privacy\DatabaseComplianceStatusProvider;
 use App\Matomo\Privacy\DeletionBatchLimits;
 use App\Matomo\ProfessionalServices\DatabasePromoWidgetDismissalRepository;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
@@ -1269,8 +1272,23 @@ class AppServiceProvider extends ServiceProvider
         );
         $this->app->singleton(
             CompliancePolicyStateRepository::class,
-            fn (Application $application): CompliancePolicyStateRepository => new DatabaseCompliancePolicyStateRepository(
-                $application->make(MatomoDatabase::class)->connection(),
+            function (Application $application): CompliancePolicyStateRepository {
+                $configuration = $application->make(InstallationConfig::class);
+
+                return new DatabaseCompliancePolicyStateRepository(
+                    $application->make(MatomoDatabase::class)->connection(),
+                    $configuration->configuredCnilPolicy(),
+                );
+            },
+        );
+        $this->app->singleton(
+            ComplianceStatusProvider::class,
+            fn (Application $application): ComplianceStatusProvider => new DatabaseComplianceStatusProvider(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                options: $application->make(OptionRepository::class),
+                policies: $application->make(CompliancePolicyStateRepository::class),
+                configuration: $application->make(InstallationConfig::class),
+                translator: $application->make(MatomoTranslator::class),
             ),
         );
 
@@ -1580,6 +1598,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(PrivacyManagerSettingsApiMethodHandler::class),
                 $application->make(PrivacyManagerColumnApiMethodHandler::class),
                 $application->make(PrivacyManagerComplianceApiMethodHandler::class),
+                $application->make(PrivacyManagerComplianceReadApiMethodHandler::class),
                 $application->make(PrivacyManagerComplianceStatusApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),
