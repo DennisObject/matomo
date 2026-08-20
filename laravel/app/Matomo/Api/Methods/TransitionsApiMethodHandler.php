@@ -6,9 +6,14 @@ namespace App\Matomo\Api\Methods;
 
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
+use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Localization\MatomoTranslator;
+use App\Matomo\Reporting\ReportingPeriodFactory;
+use App\Matomo\Reporting\ReportingSettings;
+use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Transitions\TransitionsPeriodPolicy;
+use App\Matomo\Transitions\TransitionsReportBuilderFactory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use InvalidArgumentException;
@@ -60,9 +65,14 @@ final readonly class TransitionsApiMethodHandler implements ApiMethodHandler
 
     public function __construct(
         private ApiResponseFactory $responses,
+        private ApiAccessAuthorizer $authorizer,
         private LanguageResolver $languages,
         private MatomoTranslator $translator,
         private TransitionsPeriodPolicy $periods,
+        private ReportingPeriodFactory $reportingPeriods,
+        private ReportingSettings $reportingSettings,
+        private SiteRepository $sites,
+        private TransitionsReportBuilderFactory $reportBuilders,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -74,6 +84,17 @@ final readonly class TransitionsApiMethodHandler implements ApiMethodHandler
     {
         if (! $this->supports($request)) {
             throw new LogicException('The Transitions API handler does not support this request.');
+        }
+
+        if ($request->method === 'Transitions.getTranslations') {
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+            $translations = [];
+
+            foreach (self::TRANSLATIONS as $name => $key) {
+                $translations[$name] = $this->translator->translate($key, $language);
+            }
+
+            return $this->responses->row($request, $translations);
         }
 
         if ($request->method === 'Transitions.isPeriodAllowed') {
@@ -93,13 +114,77 @@ final readonly class TransitionsApiMethodHandler implements ApiMethodHandler
             return $this->responses->scalar($request, $allowed);
         }
 
-        $language = $this->languages->resolve($httpRequest, $request->authentication);
-        $translations = [];
+        $parameters = $request->transitions
+            ?? throw new LogicException('The Transitions report parameters were not parsed.');
 
-        foreach (self::TRANSLATIONS as $name => $key) {
-            $translations[$name] = $this->translator->translate($key, $language);
+        if (! $this->authorizer->hasViewAccessToSite(
+            $request->authentication,
+            $parameters->siteId,
+        )) {
+            return $this->responses->error(
+                $request,
+                "You can't access this resource as it requires 'view' access for the website id = {$parameters->siteId}.",
+                401,
+            );
         }
 
-        return $this->responses->row($request, $translations);
+        $timezone = $this->sites->timezone($parameters->siteId);
+
+        if ($timezone === null) {
+            return $this->responses->error(
+                $request,
+                "The website id = {$parameters->siteId} does not exist.",
+                400,
+            );
+        }
+
+        if (! $this->periods->isAllowed(
+            $parameters->siteId,
+            $parameters->period,
+            $parameters->date,
+        )) {
+            return $this->responses->error($request, 'PeriodNotAllowed', 400);
+        }
+
+        if (! $this->reportingSettings->periodEnabled($parameters->period)) {
+            return $this->responses->error(
+                $request,
+                "The period '{$parameters->period}' is not enabled.",
+                400,
+            );
+        }
+
+        if ($parameters->segment !== null
+            && ! $this->reportingSettings->anonymousSegmentsEnabled()
+            && $this->authorizer->authenticatedLogin($request->authentication) === 'anonymous') {
+            return $this->responses->error(
+                $request,
+                'The Super User has disabled the Segmentation feature.',
+                401,
+            );
+        }
+
+        try {
+            [$periods] = $this->reportingPeriods->make(
+                $parameters->period,
+                $parameters->date,
+                $timezone,
+            );
+
+            if ($periods === []) {
+                throw new InvalidArgumentException('The requested period did not produce any dates.');
+            }
+
+            $report = $this->reportBuilders->make()->build(
+                $parameters,
+                $periods,
+                $timezone,
+                $this->languages->resolve($httpRequest, $request->authentication),
+            );
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            return $this->responses->error($request, $invalidArgumentException->getMessage(), 400);
+        }
+
+        return $this->responses->structured($request, $report);
     }
 }
