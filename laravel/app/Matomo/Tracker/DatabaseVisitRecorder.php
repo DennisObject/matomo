@@ -45,6 +45,8 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 ? $this->createVisit($request, $visitor, $ip, $now, $urlId, $nameId)
                 : (int) $visit->idvisit;
             $position = $visit === null ? 1 : max(1, (int) $visit->visit_total_actions + 1);
+            $totalEvents = ($visit === null ? 0 : (int) $visit->visit_total_events)
+                + ($request->actionType === 10 ? 1 : 0);
             $previousUrlId = $visit === null ? 0 : (int) ($visit->visit_exit_idaction_url ?? 0);
             $previousNameId = $visit === null ? null : $this->nullableInteger($visit->visit_exit_idaction_name ?? null);
             $secondsSincePreviousAction = $visit === null
@@ -77,7 +79,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 'idlink_va',
             );
 
-            $this->updateVisit($visitId, $visit, $now, $urlId, $nameId, $position, $linkId);
+            $this->updateVisit($visitId, $visit, $now, $urlId, $nameId, $position, $totalEvents, $linkId);
         });
     }
 
@@ -89,6 +91,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 'visit_first_action_time',
                 'visit_last_action_time',
                 'visit_total_actions',
+                'visit_total_events',
                 'visit_exit_idaction_url',
                 'visit_exit_idaction_name',
             ])
@@ -129,6 +132,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'visit_exit_idaction_url' => $urlId,
             'visit_exit_idaction_name' => $nameId,
             'visit_total_actions' => 1,
+            'visit_total_events' => $request->actionType === 10 ? 1 : 0,
             'visit_total_interactions' => 1,
             'visit_total_time' => 0,
         ], 'idvisit');
@@ -141,6 +145,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         int $urlId,
         ?int $nameId,
         int $position,
+        int $totalEvents,
         int $linkId,
     ): void {
         $firstAction = $visit === null
@@ -152,6 +157,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'visit_exit_idaction_url' => $urlId,
             'visit_exit_idaction_name' => $nameId,
             'visit_total_actions' => $position,
+            'visit_total_events' => $totalEvents,
             'visit_total_interactions' => $position,
             'visit_total_time' => max(0, $now->diffInSeconds($firstAction, true)),
             'last_idlink_va' => $linkId,

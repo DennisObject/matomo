@@ -47,6 +47,7 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame('2026-08-20 12:00:00', $visit['visit_first_action_time']);
         $this->assertSame('2026-08-20 12:00:10', $visit['visit_last_action_time']);
         $this->assertSame(2, $visit['visit_total_actions']);
+        $this->assertSame(0, $visit['visit_total_events']);
         $this->assertSame(2, $visit['visit_total_interactions']);
         $this->assertSame(10, $visit['visit_total_time']);
         $this->assertSame(2, $visit['last_idlink_va']);
@@ -110,6 +111,7 @@ final class DatabaseVisitRecorderTest extends TestCase
         );
 
         $recorder->record($request);
+        $recorder->record($request);
 
         $actions = $connection->table('log_action')->get()->keyBy('name');
         $eventUrl = $actions->get('example.test/page');
@@ -134,6 +136,7 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame($action->idaction, $link->idaction_event_action);
         $this->assertSame($name->idaction, $link->idaction_event_name);
         $this->assertSame(2.5, $link->custom_float);
+        $this->assertSame(2, $connection->table('log_visit')->value('visit_total_events'));
     }
 
     private function connection(): ConnectionInterface
@@ -157,6 +160,7 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedInteger('visit_exit_idaction_url')->nullable();
             $table->unsignedInteger('visit_exit_idaction_name')->nullable();
             $table->unsignedInteger('visit_total_actions');
+            $table->unsignedInteger('visit_total_events');
             $table->unsignedInteger('visit_total_interactions');
             $table->unsignedInteger('visit_total_time');
             $table->unsignedBigInteger('last_idlink_va')->nullable();
