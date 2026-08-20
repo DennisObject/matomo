@@ -69,6 +69,7 @@ use App\Matomo\Api\Methods\UserCountryApiMethodHandler;
 use App\Matomo\Api\Methods\UserIdApiMethodHandler;
 use App\Matomo\Api\Methods\UserLanguageApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerAccessApiMethodHandler;
+use App\Matomo\Api\Methods\UsersManagerAccessMutationApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerIdentityApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerPreferenceApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerReadApiMethodHandler;
@@ -276,13 +277,17 @@ use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
 use App\Matomo\UserChanges\DatabaseUserChangeReadRepository;
 use App\Matomo\UserChanges\UserChangeReadRepository;
 use App\Matomo\Users\AccessMetadataProvider;
+use App\Matomo\Users\AnonymousAccessNotifier;
 use App\Matomo\Users\ConfiguredAccessMetadataProvider;
 use App\Matomo\Users\ConfiguredUserPreferenceDefaults;
+use App\Matomo\Users\DatabaseMutableUserSiteAccessRepository;
 use App\Matomo\Users\DatabaseUserDirectoryRepository;
 use App\Matomo\Users\DatabaseUserIdentityRepository;
 use App\Matomo\Users\DatabaseUserPreferenceRepository;
 use App\Matomo\Users\DatabaseUserRoleDirectoryRepository;
 use App\Matomo\Users\DatabaseUserSiteAccessRepository;
+use App\Matomo\Users\LaravelAnonymousAccessNotifier;
+use App\Matomo\Users\MutableUserSiteAccessRepository;
 use App\Matomo\Users\UserDirectoryRepository;
 use App\Matomo\Users\UserIdentityRepository;
 use App\Matomo\Users\UserPreferenceDefaults;
@@ -555,6 +560,19 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(UserPresenter::class);
+        $this->app->singleton(
+            MutableUserSiteAccessRepository::class,
+            fn (Application $application): MutableUserSiteAccessRepository => new DatabaseMutableUserSiteAccessRepository(
+                $application->make(ConnectionInterface::class),
+            ),
+        );
+        $this->app->singleton(
+            AnonymousAccessNotifier::class,
+            fn (Application $application): AnonymousAccessNotifier => new LaravelAnonymousAccessNotifier(
+                $application->make(ConnectionInterface::class),
+                $application->make(Mailer::class),
+            ),
+        );
         $this->app->singleton(
             UserSiteAccessRepository::class,
             fn (Application $application): UserSiteAccessRepository => new DatabaseUserSiteAccessRepository(
@@ -1436,6 +1454,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(VisitorInterestApiMethodHandler::class),
                 $application->make(UserLanguageApiMethodHandler::class),
                 $application->make(UsersManagerAccessApiMethodHandler::class),
+                $application->make(UsersManagerAccessMutationApiMethodHandler::class),
                 $application->make(UsersManagerIdentityApiMethodHandler::class),
                 $application->make(UsersManagerPreferenceApiMethodHandler::class),
                 $application->make(UsersManagerReadApiMethodHandler::class),
