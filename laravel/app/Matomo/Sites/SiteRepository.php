@@ -58,6 +58,12 @@ interface SiteRepository
      */
     public function aliasUrlsForIds(array $idSites): array;
 
+    /**
+     * @param  list<string>  $urls
+     * @return list<string>
+     */
+    public function replaceAliasUrls(int $idSite, array $urls): array;
+
     public function excludedReferrers(int $idSite): ?string;
 
     public function excludedParameters(int $idSite): ?string;

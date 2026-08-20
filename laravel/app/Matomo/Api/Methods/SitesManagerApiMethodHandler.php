@@ -9,6 +9,7 @@ use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
 use App\Matomo\Geolocation\TrackerCacheInvalidator;
+use App\Matomo\Goals\SiteTrackerCacheInvalidator;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
@@ -79,6 +80,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         private OptionRepository $options,
         private MutableOptionRepository $mutableOptions,
         private TrackerCacheInvalidator $trackerCache,
+        private SiteTrackerCacheInvalidator $siteTrackerCache,
         private SiteRuntimeSettings $runtime,
         private CurrencyProvider $currencies,
         private QueryParameterExclusionPolicy $queryParameterExclusions,
@@ -124,6 +126,7 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
             || $request->isIpRangeRequest()
             || $request->isSiteIdFromUrlRequest()
             || $request->isSitesManagerGlobalSettingsRequest()
+            || $request->isSiteAliasMutationRequest()
             || $this->globalOption($request) !== null;
     }
 
@@ -135,6 +138,10 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
 
         if ($request->isSitesManagerGlobalSettingsRequest()) {
             return $this->setGlobalSettings($request);
+        }
+
+        if ($request->isSiteAliasMutationRequest()) {
+            return $this->mutateSiteAliases($request);
         }
 
         if ($request->isCurrencySymbolsRequest()) {
@@ -818,6 +825,100 @@ final readonly class SitesManagerApiMethodHandler implements ApiMethodHandler
         return $returnsValue
             ? $this->responses->scalar($request, true)
             : $this->responses->success($request);
+    }
+
+    private function mutateSiteAliases(ApiRequest $request): Response
+    {
+        $idSite = $request->idSite ?? throw new LogicException('The site ID was not parsed.');
+        $adminSites = $this->authorizer->siteIdsWithRole(
+            $request->authentication,
+            SiteAccessRole::Admin,
+        );
+
+        if (! in_array($idSite, $adminSites, true)) {
+            return $this->responses->error(
+                $request,
+                "You can't access this resource as it requires 'admin' access for the website id = {$idSite}.",
+                401,
+            );
+        }
+
+        $incoming = $this->normalizeSiteUrls($request->siteAliasUrls ?? []);
+
+        if ($incoming === null) {
+            return $this->responses->error($request, 'One of the provided URLs is not a valid URL.', 400);
+        }
+
+        if ($request->method === 'SitesManager.addSiteAliasUrls' && $incoming === []) {
+            return $this->responses->scalar($request, 0);
+        }
+
+        $mainUrl = $this->sites->mainUrl($idSite);
+
+        if ($mainUrl === null) {
+            return $this->responses->error(
+                $request,
+                "An unexpected website was found in the request: website id was set to '{$idSite}' .",
+                500,
+            );
+        }
+
+        $initial = $this->normalizeSiteUrls($this->sites->urls($idSite)) ?? [$mainUrl];
+        $normalizedMain = $this->normalizeSiteUrls([$mainUrl]) ?? [$mainUrl];
+        $mainUrl = $normalizedMain[0];
+        $requested = $request->method === 'SitesManager.addSiteAliasUrls'
+            ? [...$initial, ...$incoming]
+            : [$mainUrl, ...$incoming];
+        $final = array_values(array_unique($requested));
+        $aliases = array_values(array_filter(
+            $final,
+            static fn (string $url): bool => $url !== $mainUrl,
+        ));
+        $this->sites->replaceAliasUrls($idSite, $aliases);
+        $this->siteTrackerCache->clear($idSite);
+        $this->trackerCache->clearGeneral();
+        $inserted = $request->method === 'SitesManager.addSiteAliasUrls'
+            ? count(array_diff($final, $initial))
+            : count(array_diff($final, [$mainUrl, ...$incoming]));
+
+        return $this->responses->scalar($request, $inserted);
+    }
+
+    /**
+     * @param  list<string>  $urls
+     * @return list<string>|null
+     */
+    private function normalizeSiteUrls(array $urls): ?array
+    {
+        $normalized = [];
+
+        foreach ($urls as $url) {
+            if ($url === '') {
+                continue;
+            }
+
+            $url = urldecode($url);
+
+            if (strlen($url) > 5 && str_ends_with($url, '/')) {
+                $url = substr($url, 0, -1);
+            }
+
+            $scheme = parse_url($url, PHP_URL_SCHEME);
+
+            if (empty($scheme) && ! str_contains($url, '://')) {
+                $url = str_starts_with($url, '//') ? 'http:'.$url : 'http://'.$url;
+            }
+
+            $url = trim($url);
+
+            if (! $this->looksLikeUrl($url)) {
+                return null;
+            }
+
+            $normalized[] = htmlspecialchars($url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        }
+
+        return array_values(array_unique($normalized));
     }
 
     private function commaSeparated(string $value): string

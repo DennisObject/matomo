@@ -213,6 +213,22 @@ final readonly class DatabaseSiteRepository implements SiteRepository
         return $urls;
     }
 
+    public function replaceAliasUrls(int $idSite, array $urls): array
+    {
+        return $this->connection->transaction(function () use ($idSite, $urls): array {
+            $this->connection->table('site_url')->where('idsite', $idSite)->delete();
+
+            if ($urls !== []) {
+                $this->connection->table('site_url')->insert(array_map(
+                    static fn (string $url): array => ['idsite' => $idSite, 'url' => $url],
+                    $urls,
+                ));
+            }
+
+            return $urls;
+        });
+    }
+
     public function excludedReferrers(int $idSite): ?string
     {
         $value = $this->connection

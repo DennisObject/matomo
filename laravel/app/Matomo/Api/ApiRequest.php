@@ -480,6 +480,8 @@ final readonly class ApiRequest
         public ?string $siteUrl,
         public ?string $timezone,
         public ?string $defaultCurrency,
+        /** @var list<string>|null */
+        public ?array $siteAliasUrls,
         public ?string $widgetName,
         public ?string $tourChallengeId,
         public ?string $countryCode,
@@ -547,6 +549,7 @@ final readonly class ApiRequest
             siteUrl: null,
             timezone: null,
             defaultCurrency: null,
+            siteAliasUrls: null,
             widgetName: null,
             tourChallengeId: null,
             countryCode: null,
@@ -1081,6 +1084,15 @@ final readonly class ApiRequest
             && in_array($this->method, self::SITES_MANAGER_GLOBAL_SETTING_METHODS, true);
     }
 
+    public function isSiteAliasMutationRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, [
+                'SitesManager.addSiteAliasUrls',
+                'SitesManager.setSiteAliasUrls',
+            ], true);
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -1112,6 +1124,7 @@ final readonly class ApiRequest
             siteUrl: self::siteUrl($request, $module, $method),
             timezone: self::timezone($request, $module, $method),
             defaultCurrency: self::defaultCurrency($request, $module, $method),
+            siteAliasUrls: self::siteAliasUrls($request, $module, $method),
             widgetName: self::widgetName($request, $module, $method),
             tourChallengeId: self::tourChallengeId($request, $module, $method),
             countryCode: self::timezoneCountryCode($request, $module, $method),
@@ -2261,6 +2274,8 @@ final readonly class ApiRequest
             'SitesManager.getSiteFromId',
             'SitesManager.getSiteUrlsFromId',
             'SitesManager.detectConsentManager',
+            'SitesManager.addSiteAliasUrls',
+            'SitesManager.setSiteAliasUrls',
         ];
         $optionalMethods = [
             'SitesManager.getExcludedQueryParametersGlobal',
@@ -2399,6 +2414,34 @@ final readonly class ApiRequest
         }
 
         return $value;
+    }
+
+    /** @return list<string>|null */
+    private static function siteAliasUrls(Request $request, string $module, string $method): ?array
+    {
+        if ($module !== 'API'
+            || ! in_array($method, ['SitesManager.addSiteAliasUrls', 'SitesManager.setSiteAliasUrls'], true)) {
+            return null;
+        }
+
+        $input = self::inputValue($request, 'urls');
+
+        if ($input === null || $input === '') {
+            return [];
+        }
+
+        $values = is_array($input) ? $input : [$input];
+        $urls = [];
+
+        foreach ($values as $value) {
+            if (! is_scalar($value)) {
+                throw new InvalidApiParameter('urls');
+            }
+
+            $urls[] = str_replace("\0", '', (string) $value);
+        }
+
+        return $urls;
     }
 
     private static function sitesManagerGlobalSettings(
