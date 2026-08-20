@@ -64,6 +64,7 @@ use App\Matomo\Archiving\EventArchiveCollector;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\ExamplePluginArchiveCollector;
 use App\Matomo\Archiving\GoalArchiveCollector;
+use App\Matomo\Archiving\PagePerformanceArchiveCollector;
 use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Archiving\ReportingSubperiodFactory;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
@@ -776,6 +777,18 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(
+            PagePerformanceArchiveCollector::class,
+            fn (Application $application): PagePerformanceArchiveCollector => new PagePerformanceArchiveCollector(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                actionQueries: $application->make(ArchiveActionQueryFactory::class),
+                subperiods: $application->make(ReportingSubperiodFactory::class),
+                segments: $application->make(SegmentHashResolver::class),
+                numbers: $application->make(NumericArchiveRepository::class),
+                sites: $application->make(SiteRepository::class),
+                caps: $application->make(InstallationConfig::class)->pagePerformanceTimingCaps(),
+            ),
+        );
+        $this->app->singleton(
             ReportArchiver::class,
             fn (Application $application): ReportArchiver => new DatabaseReportArchiver(
                 connection: $application->make(MatomoDatabase::class)->connection(),
@@ -1092,6 +1105,7 @@ class AppServiceProvider extends ServiceProvider
         $events->listen(ArchiveReportsCollecting::class, EventArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, ContentArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, ExamplePluginArchiveCollector::class);
+        $events->listen(ArchiveReportsCollecting::class, PagePerformanceArchiveCollector::class);
     }
 
     /**

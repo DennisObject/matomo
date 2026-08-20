@@ -79,6 +79,8 @@ final readonly class InstallationConfig
         private array $transitionsMaxPeriodAllowed,
         /** @var array<string, mixed> */
         private array $aiProviders,
+        /** @var array<string, int> */
+        private array $pagePerformanceTimingCaps,
     ) {}
 
     public static function fromFile(string $path): self
@@ -105,6 +107,7 @@ final readonly class InstallationConfig
         $development = $configuration['Development'] ?? [];
         $aiProviders = $configuration['AIProviders'] ?? [];
         $segments = $configuration['Segments'] ?? [];
+        $pagePerformance = $configuration['PagePerformance'] ?? [];
 
         if (! is_array($database)
             || ! is_array($general)
@@ -117,7 +120,8 @@ final readonly class InstallationConfig
             || ! is_array($tracker)
             || ! is_array($development)
             || ! is_array($aiProviders)
-            || ! is_array($segments)) {
+            || ! is_array($segments)
+            || ! is_array($pagePerformance)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
 
@@ -250,6 +254,7 @@ final readonly class InstallationConfig
             trustedHostCheckEnabled: self::boolean($general, 'enable_trusted_host_check', true),
             transitionsMaxPeriodAllowed: self::parseTransitionsMaxPeriodAllowed($configuration),
             aiProviders: $aiProviders,
+            pagePerformanceTimingCaps: self::parsePagePerformanceTimingCaps($pagePerformance),
         );
     }
 
@@ -539,6 +544,12 @@ final readonly class InstallationConfig
         return $this->aiProviders;
     }
 
+    /** @return array<string, int> */
+    public function pagePerformanceTimingCaps(): array
+    {
+        return $this->pagePerformanceTimingCaps;
+    }
+
     /** @param array<string, mixed> $general */
     private static function parsedTemporaryPath(array $general): string
     {
@@ -820,5 +831,28 @@ final readonly class InstallationConfig
         $value = self::string($values, $key);
 
         return preg_match('/^[1-9]\d*$/D', $value) === 1 ? (int) $value : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     * @return array<string, int>
+     */
+    private static function parsePagePerformanceTimingCaps(array $values): array
+    {
+        $caps = [];
+
+        foreach ([
+            'time_network',
+            'time_server',
+            'time_transfer',
+            'time_dom_processing',
+            'time_dom_completion',
+            'time_on_load',
+        ] as $column) {
+            $value = self::string($values, $column.'_cap_duration_ms', '0');
+            $caps[$column] = preg_match('/^\d+$/D', $value) === 1 ? (int) $value : 0;
+        }
+
+        return $caps;
     }
 }
