@@ -273,7 +273,9 @@ use App\Matomo\UserChanges\DatabaseUserChangeReadRepository;
 use App\Matomo\UserChanges\UserChangeReadRepository;
 use App\Matomo\Users\AccessMetadataProvider;
 use App\Matomo\Users\ConfiguredAccessMetadataProvider;
+use App\Matomo\Users\ConfiguredUserPreferenceDefaults;
 use App\Matomo\Users\DatabaseUserPreferenceRepository;
+use App\Matomo\Users\UserPreferenceDefaults;
 use App\Matomo\Users\UserPreferenceRepository;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
@@ -520,6 +522,7 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(AccessMetadataProvider::class, ConfiguredAccessMetadataProvider::class);
+        $this->app->singleton(UserPreferenceDefaults::class, ConfiguredUserPreferenceDefaults::class);
         $this->app->singleton(
             UserPreferenceRepository::class,
             fn (Application $application): UserPreferenceRepository => new DatabaseUserPreferenceRepository(
