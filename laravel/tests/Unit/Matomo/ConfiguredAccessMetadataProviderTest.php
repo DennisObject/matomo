@@ -23,6 +23,11 @@ final class ConfiguredAccessMetadataProviderTest extends TestCase
         $roles = $provider->roles('fr');
 
         $this->assertSame(['view', 'write', 'admin'], array_column($roles, 'id'));
+        $this->assertSame([
+            'https://matomo.org/faq/general/faq_70/',
+            'https://matomo.org/faq/general/faq_26910',
+            'https://matomo.org/faq/general/faq_69/',
+        ], array_column($roles, 'helpUrl'));
         $this->assertSame('UsersManager_PrivView:fr', $roles[0]['name']);
         $this->assertSame(
             'UsersManager_PrivAdminDescription:fr:UsersManager_PrivWrite:fr',
