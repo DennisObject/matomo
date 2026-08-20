@@ -49,8 +49,35 @@ final class DatabaseDataPurgerTest extends TestCase
         $this->assertSame([2], $connection->table('log_visit')->pluck('idvisit')->all());
         $this->assertSame([12], $connection->table('log_link_visit_action')->pluck('idlink_va')->all());
         $this->assertSame([102], $connection->table('log_action')->pluck('idaction')->all());
-        $this->assertFalse($connection->getSchemaBuilder()->hasTable('archive_numeric_2020_01'));
-        $this->assertFalse($connection->getSchemaBuilder()->hasTable('archive_blob_2020_01'));
+        $this->assertSame(0, $connection->table('archive_numeric_2020_01')->count());
+        $this->assertSame(0, $connection->table('archive_blob_2020_01')->count());
+    }
+
+    public function test_report_purge_keeps_only_basic_and_goal_metrics_when_configured(): void
+    {
+        CarbonImmutable::setTestNow('2026-08-15 12:00:00');
+        $connection = $this->app->make('db')->connection();
+        $this->tables($connection);
+        $connection->table('archive_numeric_2020_01')->insert([
+            ['idarchive' => 1, 'period' => 1, 'name' => 'done'],
+            ['idarchive' => 1, 'period' => 1, 'name' => 'nb_visits'],
+            ['idarchive' => 1, 'period' => 1, 'name' => 'Goal_3_revenue'],
+            ['idarchive' => 1, 'period' => 1, 'name' => 'Actions_actions'],
+        ]);
+        $options = $this->createStub(OptionRepository::class);
+        $options->method('value')->willReturnMap([
+            ['delete_logs_enable', '0'],
+            ['delete_reports_enable', '1'],
+            ['delete_reports_older_than', '3'],
+            ['delete_reports_keep_basic_metrics', '1'],
+        ]);
+
+        (new DatabaseDataPurger($connection, $options, new Dispatcher($this->app)))->purge();
+
+        $this->assertSame(
+            ['Goal_3_revenue', 'done', 'nb_visits'],
+            $connection->table('archive_numeric_2020_01')->orderBy('name')->pluck('name')->all(),
+        );
     }
 
     private function tables(Connection $connection): void

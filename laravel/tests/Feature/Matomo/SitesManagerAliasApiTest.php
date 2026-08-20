@@ -63,6 +63,18 @@ class SitesManagerAliasApiTest extends TestCase
             ->assertBadRequest();
     }
 
+    public function test_empty_add_returns_zero_without_site_reads_or_cache_changes(): void
+    {
+        $sites = $this->createMock(SiteRepository::class);
+        $sites->expects($this->never())->method('mainUrl');
+        $sites->expects($this->never())->method('replaceAliasUrls');
+        $this->bindDependencies($sites, false);
+
+        $this->get($this->url('addSiteAliasUrls'))
+            ->assertOk()
+            ->assertExactJson(['value' => 0]);
+    }
+
     public function test_requires_site_admin_access_before_site_reads(): void
     {
         $authorizer = $this->createStub(ApiAccessAuthorizer::class);
