@@ -3198,6 +3198,13 @@ final readonly class ApiRequest
             throw new InvalidApiParameter('apiParameters', 'The value must be an array or query string.');
         }
 
+        if ($apiParameters !== [] && array_is_list($apiParameters)) {
+            throw new InvalidApiParameter('apiParameters', 'The value must be an object or query string.');
+        }
+
+        $subtableId = self::nullableIntegerOrFalse($request, 'idSubtable');
+        $dimensionId = self::nullableIntegerOrFalse($request, 'idDimension');
+
         return new ProcessedReportRequest(
             siteId: self::requiredInteger($request, 'idSite'),
             period: self::requiredString($request, 'period'),
@@ -3205,8 +3212,15 @@ final readonly class ApiRequest
             apiModule: self::requiredString($request, 'apiModule'),
             apiAction: self::requiredString($request, 'apiAction'),
             apiParameters: $apiParameters,
+            segment: self::nullableStringInput($request, 'segment') ?: null,
+            goalId: self::nullableStringInput($request, 'idGoal') ?: null,
+            language: self::nullableStringInput($request, 'language') ?: null,
+            showTimer: self::booleanInput($request, 'showTimer', true),
             hideMetricsDocumentation: self::booleanInput($request, 'hideMetricsDoc', false),
+            subtableId: $subtableId === false ? null : $subtableId,
             showRawMetrics: self::booleanInput($request, 'showRawMetrics', false),
+            formatMetrics: self::nullableStringInput($request, 'format_metrics'),
+            dimensionId: $dimensionId === false ? null : $dimensionId,
         );
     }
 
