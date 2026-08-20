@@ -108,6 +108,22 @@ final class ReportMetadataApiTest extends TestCase
         $this->assertArrayHasKey('uniqueId', $widgets[0]);
     }
 
+    public function test_translates_generated_navigation_metadata(): void
+    {
+        $this->bindAccess(true);
+        $this->app->instance(LanguageResolver::class, new class implements LanguageResolver
+        {
+            public function resolve(Request $request, ApiAuthentication $authentication): string
+            {
+                return 'de';
+            }
+        });
+
+        $pages = $this->get($this->url('API.getReportPagesMetadata').'&idSite=7')->assertOk()->json();
+        $this->assertIsArray($pages);
+        $this->assertSame('KI-Assistenten', $pages[0]['category']['name'] ?? null);
+    }
+
     public function test_rejects_dynamic_metadata_options_until_native_discovery_supports_them(): void
     {
         $this->bindAccess(true);
