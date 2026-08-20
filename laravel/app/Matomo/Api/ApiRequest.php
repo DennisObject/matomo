@@ -3296,15 +3296,52 @@ final readonly class ApiRequest
             return null;
         }
 
+        [$siteIds, $allSites] = self::reportSiteIds($request);
+        if ($allSites || count($siteIds) !== 1) {
+            throw new InvalidApiParameter('idSite', 'Row evolution requires one website ID.');
+        }
+
+        $period = self::requiredString($request, 'period');
+        if (! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
+            throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
+        }
+
+        $date = self::requiredString($request, 'date');
+        if ($date === '' || ! self::validReportDate($date)) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not valid.");
+        }
+
+        $apiModule = trim(self::requiredString($request, 'apiModule'));
+        $apiAction = trim(self::requiredString($request, 'apiAction'));
+        if ($apiModule === '' || $apiAction === '') {
+            throw new InvalidApiParameter($apiModule === '' ? 'apiModule' : 'apiAction');
+        }
+
+        $optionalString = static function (Request $request, string $name): ?string {
+            $value = self::nullableStringInput($request, $name);
+
+            return in_array($value, [null, '', 'false'], true) ? null : $value;
+        };
+        $hasUnsupportedVariants = false;
+        foreach (['idGoal', 'idDimension', 'labelSeries', 'showGoalMetricsForGoal'] as $name) {
+            if (! in_array(self::inputValue($request, $name), [null, '', false, 'false', 0, '0'], true)) {
+                $hasUnsupportedVariants = true;
+                break;
+            }
+        }
+
         return new RowEvolutionRequest(
-            siteId: self::requiredInteger($request, 'idSite'),
-            period: self::requiredString($request, 'period'),
-            date: self::requiredString($request, 'date'),
-            apiModule: self::requiredString($request, 'apiModule'),
-            apiAction: self::requiredString($request, 'apiAction'),
-            label: self::nullableStringInput($request, 'label'),
-            segment: self::nullableStringInput($request, 'segment'),
-            column: self::nullableStringInput($request, 'column'),
+            siteId: $siteIds[0],
+            period: $period,
+            date: $date,
+            apiModule: $apiModule,
+            apiAction: $apiAction,
+            label: $optionalString($request, 'label'),
+            segment: $optionalString($request, 'segment'),
+            column: $optionalString($request, 'column'),
+            language: $optionalString($request, 'language'),
+            labelUseAbsoluteUrl: self::booleanInput($request, 'labelUseAbsoluteUrl', true),
+            hasUnsupportedVariants: $hasUnsupportedVariants,
         );
     }
 
