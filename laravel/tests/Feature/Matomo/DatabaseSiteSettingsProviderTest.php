@@ -67,6 +67,10 @@ final class DatabaseSiteSettingsProviderTest extends TestCase
         $this->assertSame(['WebsiteMeasurable', 'Live', 'ExampleSettingsPlugin'], array_column($metadata, 'pluginName'));
         $this->assertSame(['https://example.test', 'https://alias.test'], $metadata[0]['settings'][0]['value']);
         $this->assertSame(['127.0.0.1', '10.0.0.0/8'], $metadata[0]['settings'][3]['value']);
+        $this->assertSame([1 => 'SitesManager_EnableSiteSearch', 0 => 'SitesManager_DisableSiteSearch'], (array) $metadata[0]['settings'][7]['availableValues']);
+        $this->assertSame('1 && sitesearch', $metadata[0]['settings'][8]['condition']);
+        $this->assertSame('sitesearch && !use_default_site_search_params', $metadata[0]['settings'][10]['condition']);
+        $this->assertSame([0 => 'SitesManager_NotAnEcommerceSite', 1 => 'SitesManager_EnableEcommerce'], (array) $metadata[0]['settings'][11]['availableValues']);
         $this->assertTrue($metadata[1]['settings'][0]['value']);
         $this->assertSame(['admin@example.test'], $metadata[2]['settings'][0]['value']);
     }

@@ -46,6 +46,17 @@ final readonly class DatabaseDataSubjectFinder implements DataSubjectFinder
 
     private function profileEnabled(int $siteId): bool
     {
+        $settingNames = ['disable_visitor_log', 'disable_visitor_profile'];
+        if ($this->connection->getSchemaBuilder()->hasTable('plugin_setting')
+            && $this->connection->table('plugin_setting')
+                ->where('plugin_name', 'Live')
+                ->where('user_login', '')
+                ->whereIn('setting_name', $settingNames)
+                ->whereIn('setting_value', ['1', 1, true, 'true'])
+                ->exists()) {
+            return false;
+        }
+
         if (! $this->connection->getSchemaBuilder()->hasTable('site_setting')) {
             return true;
         }
@@ -53,8 +64,8 @@ final readonly class DatabaseDataSubjectFinder implements DataSubjectFinder
         return ! $this->connection->table('site_setting')
             ->where('idsite', $siteId)
             ->where('plugin_name', 'Live')
-            ->whereIn('setting_name', ['disable_visitor_log', 'disable_visitor_profile'])
-            ->whereIn('setting_value', ['1', 1, true])
+            ->whereIn('setting_name', $settingNames)
+            ->whereIn('setting_value', ['1', 1, true, 'true'])
             ->exists();
     }
 

@@ -3126,7 +3126,11 @@ final readonly class ApiRequest
             siteId: $siteId,
             apiModule: self::nullableStringInput($request, 'apiModule'),
             apiAction: self::nullableStringInput($request, 'apiAction'),
+            apiParameters: self::mixedParameterMap($request, 'apiParameters'),
+            period: self::nullableStringInput($request, 'period'),
+            date: self::nullableStringInput($request, 'date'),
             hideMetricsDocumentation: self::booleanInput($request, 'hideMetricsDoc', false),
+            showSubtableReports: self::booleanInput($request, 'showSubtableReports', false),
         );
     }
 
@@ -3918,6 +3922,7 @@ final readonly class ApiRequest
             typeReferrer: self::reportTypeReferrer($request, $method),
             setReferrerTypeLabel: $method !== 'Referrers.getReferrerType'
                 || self::booleanInput($request, '_setReferrerTypeLabel', true),
+            formatMetrics: self::booleanInput($request, 'format_metrics', true),
         );
     }
 
