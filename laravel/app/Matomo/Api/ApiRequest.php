@@ -482,6 +482,8 @@ final readonly class ApiRequest
         public ?string $defaultCurrency,
         /** @var list<string>|null */
         public ?array $siteAliasUrls,
+        public ?string $oldSiteGroup,
+        public ?string $newSiteGroup,
         public ?string $widgetName,
         public ?string $tourChallengeId,
         public ?string $countryCode,
@@ -550,6 +552,8 @@ final readonly class ApiRequest
             timezone: null,
             defaultCurrency: null,
             siteAliasUrls: null,
+            oldSiteGroup: null,
+            newSiteGroup: null,
             widgetName: null,
             tourChallengeId: null,
             countryCode: null,
@@ -1093,6 +1097,11 @@ final readonly class ApiRequest
             ], true);
     }
 
+    public function isSiteGroupRenameRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === 'SitesManager.renameGroup';
+    }
+
     public function hasSupportedFormat(): bool
     {
         return in_array(
@@ -1125,6 +1134,8 @@ final readonly class ApiRequest
             timezone: self::timezone($request, $module, $method),
             defaultCurrency: self::defaultCurrency($request, $module, $method),
             siteAliasUrls: self::siteAliasUrls($request, $module, $method),
+            oldSiteGroup: self::siteGroupRenameValue($request, $module, $method, 'oldGroupName'),
+            newSiteGroup: self::siteGroupRenameValue($request, $module, $method, 'newGroupName'),
             widgetName: self::widgetName($request, $module, $method),
             tourChallengeId: self::tourChallengeId($request, $module, $method),
             countryCode: self::timezoneCountryCode($request, $module, $method),
@@ -2442,6 +2453,25 @@ final readonly class ApiRequest
         }
 
         return $urls;
+    }
+
+    private static function siteGroupRenameValue(
+        Request $request,
+        string $module,
+        string $method,
+        string $parameter,
+    ): ?string {
+        if ($module !== 'API' || $method !== 'SitesManager.renameGroup') {
+            return null;
+        }
+
+        $value = self::nullableStringInput($request, $parameter);
+
+        if ($value === null) {
+            throw new MissingApiParameter($parameter);
+        }
+
+        return $value;
     }
 
     private static function sitesManagerGlobalSettings(

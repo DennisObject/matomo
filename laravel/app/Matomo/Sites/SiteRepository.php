@@ -64,6 +64,9 @@ interface SiteRepository
      */
     public function replaceAliasUrls(int $idSite, array $urls): array;
 
+    /** @return list<int> */
+    public function renameGroup(string $oldGroupName, string $newGroupName): array;
+
     public function excludedReferrers(int $idSite): ?string;
 
     public function excludedParameters(int $idSite): ?string;

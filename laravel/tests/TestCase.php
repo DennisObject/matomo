@@ -872,6 +872,11 @@ abstract class TestCase extends BaseTestCase
                 return $urls;
             }
 
+            public function renameGroup(string $oldGroupName, string $newGroupName): array
+            {
+                return [];
+            }
+
             public function excludedReferrers(int $idSite): ?string
             {
                 return null;
