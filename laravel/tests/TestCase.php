@@ -75,6 +75,7 @@ use App\Matomo\TrackingFailures\TrackingFailureRepository;
 use App\Matomo\Transitions\TransitionsPeriodPolicy;
 use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
 use App\Matomo\UserChanges\UserChangeReadRepository;
+use App\Matomo\Users\UserPreferenceDefaults;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Request;
 
@@ -92,6 +93,13 @@ abstract class TestCase extends BaseTestCase
             }
         });
         $this->app->instance(MutableSiteRepository::class, $this->createStub(MutableSiteRepository::class));
+        $this->app->instance(UserPreferenceDefaults::class, new class implements UserPreferenceDefaults
+        {
+            public function reportDate(): string
+            {
+                return 'yesterday';
+            }
+        });
 
         $this->app->instance(FeedbackStore::class, new class implements FeedbackStore
         {
