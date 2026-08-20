@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\DbStats\ArchiveStorageRepository;
 use App\Matomo\DbStats\DatabaseMetadataProvider;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -19,6 +20,7 @@ class DbStatsApiTest extends TestCase
         $authorizer->method('hasSuperUserAccess')->willReturn(true);
         $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
         $this->app->instance(DatabaseMetadataProvider::class, new FakeDatabaseMetadataProvider);
+        $this->app->instance(ArchiveStorageRepository::class, new FakeArchiveStorageRepository);
     }
 
     public function test_returns_general_information_and_database_status(): void
@@ -124,6 +126,44 @@ class DbStatsApiTest extends TestCase
         $this->get($this->url('getDatabaseUsageSummary'))->assertUnauthorized();
     }
 
+    public function test_groups_and_estimates_individual_metric_storage(): void
+    {
+        $this->get($this->url('getIndividualMetricsSummary'))
+            ->assertOk()
+            ->assertExactJson([
+                ['label' => 'done', 'row_count' => 4, 'estimated_size' => 44],
+                ['label' => 'Goal_*_nb_conversions', 'row_count' => 3, 'estimated_size' => 33],
+                ['label' => 'metric_*', 'row_count' => 2, 'estimated_size' => 22],
+            ]);
+    }
+
+    public function test_groups_and_estimates_individual_report_storage(): void
+    {
+        $storage = new FakeArchiveStorageRepository;
+        $this->app->instance(ArchiveStorageRepository::class, $storage);
+
+        $this->get($this->url('getIndividualReportsSummary'))
+            ->assertOk()
+            ->assertExactJson([
+                ['label' => 'Actions_url_*', 'row_count' => 2, 'estimated_size' => 156],
+                ['label' => 'Goal_*_conversion_rate', 'row_count' => 1, 'estimated_size' => 38],
+            ]);
+        self::assertSame(['archive_blob_2025_01'], $storage->columnQueries);
+    }
+
+    public function test_reuses_individual_summary_cache_unless_forced(): void
+    {
+        $storage = new FakeArchiveStorageRepository;
+        $this->app->instance(ArchiveStorageRepository::class, $storage);
+
+        $this->get($this->url('getIndividualMetricsSummary'))->assertOk();
+        $this->get($this->url('getIndividualMetricsSummary'))->assertOk();
+        self::assertCount(3, $storage->rowQueries);
+
+        $this->get($this->url('getIndividualMetricsSummary').'&forceCache=1')->assertOk();
+        self::assertCount(6, $storage->rowQueries);
+    }
+
     private function url(string $method): string
     {
         return "/index.php?module=API&method=DBStats.{$method}&format=json&token_auth=super-token";
@@ -164,5 +204,46 @@ final class FakeDatabaseMetadataProvider implements DatabaseMetadataProvider
             'Opens' => 'unavailable',
             'Queries per second avg' => 'unavailable',
         ];
+    }
+}
+
+final class FakeArchiveStorageRepository implements ArchiveStorageRepository
+{
+    /** @var list<string> */
+    public array $rowQueries = [];
+
+    /** @var list<string> */
+    public array $columnQueries = [];
+
+    public function rowsByName(string $table, bool $includeBlobSizes): array
+    {
+        $this->rowQueries[] = $table;
+
+        return match ($table) {
+            'archive_numeric_2025_01' => [
+                ['label' => 'done7', 'row_count' => 1, 'blob_size' => 0, 'name_size' => 0],
+                ['label' => 'done_period', 'row_count' => 1, 'blob_size' => 0, 'name_size' => 0],
+                ['label' => 'Goal_2_nb_conversions', 'row_count' => 1, 'blob_size' => 0, 'name_size' => 0],
+            ],
+            'archive_numeric_2025_02' => [
+                ['label' => 'metric_12', 'row_count' => 2, 'blob_size' => 0, 'name_size' => 0],
+                ['label' => 'Goal_-1_nb_conversions', 'row_count' => 2, 'blob_size' => 0, 'name_size' => 0],
+            ],
+            'archive_numeric_2026_01' => [
+                ['label' => 'done9', 'row_count' => 2, 'blob_size' => 0, 'name_size' => 0],
+            ],
+            'archive_blob_2025_01' => [
+                ['label' => 'Actions_url_5', 'row_count' => 2, 'blob_size' => 100, 'name_size' => 30],
+                ['label' => 'Goal_3_conversion_rate', 'row_count' => 1, 'blob_size' => 20, 'name_size' => 5],
+            ],
+            default => [],
+        };
+    }
+
+    public function columnTypes(string $table): array
+    {
+        $this->columnQueries[] = $table;
+
+        return ['bigint(20) unsigned', 'int(11)', 'blob', 'varchar(255)'];
     }
 }

@@ -7,6 +7,7 @@ namespace App\Matomo\Api\Methods;
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\DbStats\ArchiveStorageSummaryBuilder;
 use App\Matomo\DbStats\DbStatsReportBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -18,6 +19,7 @@ final readonly class DbStatsApiMethodHandler implements ApiMethodHandler
         private ApiAccessAuthorizer $authorizer,
         private ApiResponseFactory $responses,
         private DbStatsReportBuilder $reports,
+        private ArchiveStorageSummaryBuilder $archiveStorage,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -75,6 +77,14 @@ final readonly class DbStatsApiMethodHandler implements ApiMethodHandler
             'DBStats.getAdminDataSummary' => $this->responses->tableReport(
                 $request,
                 $this->reports->adminDataSummary(),
+            ),
+            'DBStats.getIndividualReportsSummary' => $this->responses->tableReport(
+                $request,
+                $this->archiveStorage->reports($request->forceCache),
+            ),
+            'DBStats.getIndividualMetricsSummary' => $this->responses->tableReport(
+                $request,
+                $this->archiveStorage->metrics($request->forceCache),
             ),
             default => throw new LogicException('The DBStats API method is not implemented.'),
         };
