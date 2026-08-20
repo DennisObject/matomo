@@ -53,6 +53,22 @@ class ReferrersCampaignApiTest extends TestCase
             );
     }
 
+    public function test_returns_unformatted_percentage_quotients(): void
+    {
+        $this->bindViewAccess();
+        $this->bindRecords([
+            'Referrers_keywordByCampaign' => [
+                $this->row('summer', 1, 2),
+                $this->row('winter', 2, 4),
+            ],
+        ]);
+
+        $this->get($this->url('getCampaigns').'&format_metrics=0')
+            ->assertOk()
+            ->assertJsonPath('0.nb_visits_percent_of_total', 0.3333)
+            ->assertJsonPath('0.bounce_rate', 1);
+    }
+
     public function test_returns_a_campaign_keyword_subtable_directly(): void
     {
         $this->bindViewAccess();

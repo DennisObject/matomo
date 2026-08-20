@@ -56,6 +56,10 @@ final readonly class DatabaseLiveVisitorIdentityRepository implements LiveVisito
         ?string $segment,
         bool $next,
     ): string|false {
+        if (strlen($visitorId) % 2 !== 0 || ! ctype_xdigit($visitorId)) {
+            return false;
+        }
+
         $binary = hex2bin($visitorId);
         if ($binary === false) {
             return false;

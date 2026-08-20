@@ -67,11 +67,37 @@ final class DatabaseDataSubjectFinderTest extends TestCase
         $this->assertSame('New Zealand', $rows[0]['country']);
     }
 
+    public function test_global_live_privacy_setting_excludes_every_site(): void
+    {
+        $connection = $this->app->make('db')->connection();
+        $this->tables($connection);
+        $connection->table('log_visit')->insert($this->visit(11, 2, 'person', '2026-08-03 12:00:00'));
+        $connection->table('plugin_setting')->insert([
+            'plugin_name' => 'Live',
+            'user_login' => '',
+            'setting_name' => 'disable_visitor_profile',
+            'setting_value' => '1',
+        ]);
+        $segments = $this->createMock(VisitSegmentApplicator::class);
+        $segments->expects($this->never())->method('apply');
+        $translator = $this->createStub(MatomoTranslator::class);
+        $finder = new DatabaseDataSubjectFinder(
+            $connection,
+            $segments,
+            $this->createStub(SiteRepository::class),
+            new DeviceDetectionMetadata($translator, dirname(__DIR__, 4)),
+            $this->createStub(CountryMetadataProvider::class),
+        );
+
+        $this->assertSame([], $finder->find([2], 'userId==person', 'en'));
+    }
+
     private function tables(Connection $connection): void
     {
         $schema = $connection->getSchemaBuilder();
         $schema->dropIfExists('log_visit');
         $schema->dropIfExists('site_setting');
+        $schema->dropIfExists('plugin_setting');
         $schema->create('log_visit', static function (Blueprint $table): void {
             $table->integer('idvisit')->primary();
             $table->integer('idsite');
@@ -91,6 +117,12 @@ final class DatabaseDataSubjectFinderTest extends TestCase
         $schema->create('site_setting', static function (Blueprint $table): void {
             $table->integer('idsite');
             $table->string('plugin_name');
+            $table->string('setting_name');
+            $table->string('setting_value')->nullable();
+        });
+        $schema->create('plugin_setting', static function (Blueprint $table): void {
+            $table->string('plugin_name');
+            $table->string('user_login')->default('');
             $table->string('setting_name');
             $table->string('setting_value')->nullable();
         });

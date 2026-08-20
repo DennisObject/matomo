@@ -102,8 +102,8 @@ final readonly class UsersManagerReadApiMethodHandler implements ApiMethodHandle
     {
         $login = $requestedLogin ?? throw new LogicException('The user login was not parsed.');
         $superuser = $this->authorizer->hasSuperUserAccess($request->authentication);
-        $ownLogin = ($currentLogin !== null && strcasecmp($currentLogin, $login) === 0)
-            || ($currentLogin === null && strcasecmp($login, 'anonymous') === 0);
+        $ownLogin = ($currentLogin !== null && $currentLogin === $login)
+            || ($currentLogin === null && $login === 'anonymous');
         if (! $superuser && ! $ownLogin) {
             return $this->responses->error($request, 'You can only access your own user account.', 401);
         }
