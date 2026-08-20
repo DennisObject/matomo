@@ -529,6 +529,7 @@ final readonly class ApiRequest
         public ?UsersManagerIdentityRequest $usersManagerIdentity,
         public ?UsersManagerReadRequest $usersManagerRead,
         public ?UsersManagerSiteAccessRequest $usersManagerSiteAccess,
+        public ?UsersManagerRoleDirectoryRequest $usersManagerRoleDirectory,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -603,6 +604,7 @@ final readonly class ApiRequest
             usersManagerIdentity: null,
             usersManagerRead: null,
             usersManagerSiteAccess: null,
+            usersManagerRoleDirectory: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1206,6 +1208,7 @@ final readonly class ApiRequest
             usersManagerIdentity: self::usersManagerIdentity($request, $module, $method),
             usersManagerRead: self::usersManagerRead($request, $module, $method),
             usersManagerSiteAccess: self::usersManagerSiteAccess($request, $module, $method),
+            usersManagerRoleDirectory: self::usersManagerRoleDirectory($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2515,6 +2518,27 @@ final readonly class ApiRequest
             offset: self::integerInput($request, 'offset', 0, 0),
             search: self::nullableStringInput($request, 'filter_search'),
             accessFilter: self::nullableStringInput($request, 'filter_access'),
+        );
+    }
+
+    private static function usersManagerRoleDirectory(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?UsersManagerRoleDirectoryRequest {
+        if ($module !== 'API' || $method !== 'UsersManager.getUsersPlusRole') {
+            return null;
+        }
+
+        $limit = self::integerInput($request, 'limit', 0, 0);
+
+        return new UsersManagerRoleDirectoryRequest(
+            siteId: self::requiredInteger($request, 'idSite'),
+            limit: $limit > 0 ? $limit : null,
+            offset: self::integerInput($request, 'offset', 0, 0),
+            search: self::nullableStringInput($request, 'filter_search'),
+            access: self::nullableStringInput($request, 'filter_access'),
+            status: self::nullableStringInput($request, 'filter_status'),
         );
     }
 
