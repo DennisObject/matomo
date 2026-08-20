@@ -75,7 +75,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             }
 
             $linkId = (int) $this->connection->table('log_link_visit_action')->insertGetId(
-                $action,
+                [...$action, ...$request->actionProperties],
                 'idlink_va',
             );
 
@@ -89,6 +89,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 $totalEvents,
                 $linkId,
                 $request->userId,
+                $request->visitProperties,
             );
         });
     }
@@ -151,9 +152,11 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'visitor_localtime' => $request->localTime,
             'config_resolution' => $request->resolution,
             'config_cookie' => $request->cookiesEnabled ? 1 : 0,
+            ...$request->visitProperties,
         ], 'idvisit');
     }
 
+    /** @param array<string, string> $visitProperties */
     private function updateVisit(
         int $visitId,
         ?stdClass $visit,
@@ -164,6 +167,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         int $totalEvents,
         int $linkId,
         ?string $userId,
+        array $visitProperties,
     ): void {
         $firstAction = $visit === null
             ? $now
@@ -178,6 +182,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'visit_total_interactions' => $position,
             'visit_total_time' => max(0, $now->diffInSeconds($firstAction, true)),
             'last_idlink_va' => $linkId,
+            ...$visitProperties,
         ];
         if ($userId !== null) {
             $updates['user_id'] = $userId;

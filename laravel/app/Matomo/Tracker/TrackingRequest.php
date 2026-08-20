@@ -24,5 +24,9 @@ final readonly class TrackingRequest
         public string $localTime = '00:00:00',
         public string $resolution = 'unknown',
         public bool $cookiesEnabled = false,
+        /** @var array<string, string> */
+        public array $visitProperties = [],
+        /** @var array<string, string> */
+        public array $actionProperties = [],
     ) {}
 }

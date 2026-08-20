@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\CustomDimensions\CustomDimensionRepository;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Settings\PolicySettingRepository;
@@ -196,6 +197,65 @@ final class TrackerEndpointTest extends TestCase
         ]])->assertOk()->assertHeader('Content-Type', 'image/gif');
     }
 
+    public function test_records_scoped_custom_dimensions_and_variables(): void
+    {
+        $this->bindSite();
+        $this->bindDimensions([
+            ['idcustomdimension' => 7, 'index' => 1, 'scope' => 'visit', 'active' => true],
+            ['idcustomdimension' => 8, 'index' => 2, 'scope' => 'action', 'active' => true],
+        ]);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->visitProperties === [
+                'custom_var_k1' => 'Plan', 'custom_var_v1' => 'Pro', 'custom_dimension_1' => 'Account',
+            ] && $request->actionProperties === [
+                'custom_var_k2' => 'Author', 'custom_var_v2' => 'Ada', 'custom_dimension_2' => 'Article',
+            ],
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            '_cvar' => '{"1":["Plan","Pro"]}',
+            'cvar' => '{"2":["Author","Ada"]}',
+            'dimension7' => 'Account',
+            'dimension8' => 'Article',
+        ]))->assertOk();
+    }
+
+    public function test_rejects_invalid_custom_data(): void
+    {
+        $this->bindSite();
+        $this->bindDimensions([
+            ['idcustomdimension' => 7, 'index' => 1, 'scope' => 'visit', 'active' => true],
+        ]);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['_cvar' => '{invalid']))->assertBadRequest();
+        $this->get($this->url(['_cvar' => 'null']))->assertBadRequest();
+        $this->get($this->url(['cvar' => '{"6":["Name","Value"]}']))->assertBadRequest();
+        $this->get($this->url().'&dimension7%5B0%5D=nested')->assertBadRequest();
+    }
+
+    public function test_caches_custom_dimensions_for_bulk_requests(): void
+    {
+        $this->bindSite();
+        $dimensions = $this->createMock(CustomDimensionRepository::class);
+        $dimensions->expects($this->once())->method('configuredForSite')->with(1)->willReturn([
+            ['idcustomdimension' => 7, 'index' => 1, 'scope' => 'visit', 'active' => true],
+        ]);
+        $this->app->instance(CustomDimensionRepository::class, $dimensions);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->exactly(2))->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->post('/matomo.php', ['requests' => [
+            '?rec=1&idsite=1&url=https%3A%2F%2Fexample.test%2Fa&dimension7=One',
+            '?rec=1&idsite=1&url=https%3A%2F%2Fexample.test%2Fb&dimension7=Two',
+        ]])->assertOk();
+    }
+
     public function test_rejects_oversized_bulk_request(): void
     {
         $this->bindSite();
@@ -385,6 +445,14 @@ final class TrackerEndpointTest extends TestCase
         $sites->method('details')->willReturn($details);
         $sites->method('urls')->willReturn(['https://example.test']);
         $this->app->instance(SiteRepository::class, $sites);
+    }
+
+    /** @param list<array<string, bool|int|string|list<array<string, mixed>>>> $dimensions */
+    private function bindDimensions(array $dimensions): void
+    {
+        $customDimensions = $this->createStub(CustomDimensionRepository::class);
+        $customDimensions->method('configuredForSite')->willReturn($dimensions);
+        $this->app->instance(CustomDimensionRepository::class, $customDimensions);
     }
 
     private function mutableOptions(): MutableOptionRepository

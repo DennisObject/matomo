@@ -177,6 +177,41 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame(1, $visit['config_cookie']);
     }
 
+    public function test_stores_visit_and_action_custom_properties(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $request = new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/page',
+            actionName: '',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            visitProperties: [
+                'custom_var_k1' => 'Plan',
+                'custom_var_v1' => 'Pro',
+                'custom_dimension_1' => 'Account',
+            ],
+            actionProperties: [
+                'custom_var_k2' => 'Author',
+                'custom_var_v2' => 'Ada',
+                'custom_dimension_2' => 'Article',
+            ],
+        );
+
+        $recorder->record($request);
+
+        $visit = (array) $connection->table('log_visit')->first();
+        $this->assertSame('Plan', $visit['custom_var_k1']);
+        $this->assertSame('Pro', $visit['custom_var_v1']);
+        $this->assertSame('Account', $visit['custom_dimension_1']);
+        $action = (array) $connection->table('log_link_visit_action')->first();
+        $this->assertSame('Author', $action['custom_var_k2']);
+        $this->assertSame('Ada', $action['custom_var_v2']);
+        $this->assertSame('Article', $action['custom_dimension_2']);
+    }
+
     private function connection(): ConnectionInterface
     {
         config()->set('database.connections.tracker_test', ['driver' => 'sqlite', 'database' => ':memory:']);
@@ -208,6 +243,9 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->time('visitor_localtime')->nullable();
             $table->string('config_resolution', 18)->nullable();
             $table->boolean('config_cookie')->nullable();
+            $table->string('custom_var_k1', 200)->nullable();
+            $table->string('custom_var_v1', 200)->nullable();
+            $table->string('custom_dimension_1', 250)->nullable();
         });
         $schema->create('log_action', static function (Blueprint $table): void {
             $table->id('idaction');
@@ -232,6 +270,9 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->dateTime('server_time');
             $table->unsignedInteger('pageview_position')->nullable();
             $table->unsignedInteger('time_spent_ref_action')->nullable();
+            $table->string('custom_var_k2', 200)->nullable();
+            $table->string('custom_var_v2', 200)->nullable();
+            $table->string('custom_dimension_2', 250)->nullable();
         });
 
         return $connection;
