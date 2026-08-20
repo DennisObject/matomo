@@ -28,6 +28,8 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
 
     private const string COOKIELESS_OPTION = 'PrivacyManager.forceCookielessTracking';
 
+    private const string ANONYMIZED_IP_ENRICHMENT_OPTION = 'PrivacyManager.useAnonymizedIpForVisitEnrichment';
+
     public function __construct(
         private InstallationConfig $configuration,
         private OptionRepository $options,
@@ -198,6 +200,11 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
         $postToken = $request->request->get('token_auth');
 
         return is_string($postToken) && $postToken === $token;
+    }
+
+    public function usesAnonymizedIpForEnrichment(int $siteId): bool
+    {
+        return $this->booleanOption(self::ANONYMIZED_IP_ENRICHMENT_OPTION, $siteId, false);
     }
 
     private function siteId(Request $request): ?int

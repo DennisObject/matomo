@@ -30,4 +30,6 @@ interface TrackingRequestPolicy
     public function forcesCookielessTracking(int $siteId): bool;
 
     public function allowsPrivilegedOverrides(Request $request, int $siteId): bool;
+
+    public function usesAnonymizedIpForEnrichment(int $siteId): bool;
 }
