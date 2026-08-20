@@ -64,17 +64,19 @@ final readonly class DatabaseVisitsSummaryArchiveRepository implements NumericAr
 
             $rows = [];
 
-            foreach (array_chunk($archiveIds, 1_000) as $archiveIdChunk) {
-                $rows = [
-                    ...$rows,
-                    ...$this->connection
-                        ->table($table)
-                        ->select(['idarchive', 'idsite', 'date1', 'date2', 'name', 'value', 'ts_archived'])
-                        ->whereIn('idarchive', $archiveIdChunk)
-                        ->whereIn('name', $metrics)
-                        ->get()
-                        ->all(),
-                ];
+            foreach (array_chunk($archiveIds, 500) as $archiveIdChunk) {
+                foreach (array_chunk($metrics, 500) as $metricChunk) {
+                    $rows = [
+                        ...$rows,
+                        ...$this->connection
+                            ->table($table)
+                            ->select(['idarchive', 'idsite', 'date1', 'date2', 'name', 'value', 'ts_archived'])
+                            ->whereIn('idarchive', $archiveIdChunk)
+                            ->whereIn('name', $metricChunk)
+                            ->get()
+                            ->all(),
+                    ];
+                }
             }
 
             usort($rows, static function (object $left, object $right): int {

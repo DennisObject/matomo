@@ -9,7 +9,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
 use stdClass;
 
-final readonly class DatabaseBlobArchiveRepository implements BlobArchiveMetadataRepository, BlobArchiveRepository, HierarchicalBlobArchiveRepository
+final readonly class DatabaseBlobArchiveRepository implements BatchBlobArchiveRepository, BlobArchiveMetadataRepository, BlobArchiveRepository, HierarchicalBlobArchiveRepository
 {
     private const int DONE_PARTIAL = 5;
 
@@ -76,6 +76,102 @@ final readonly class DatabaseBlobArchiveRepository implements BlobArchiveMetadat
         }
 
         return $rows;
+    }
+
+    public function rowsForRecords(
+        array $siteIds,
+        array $periods,
+        string $segmentHash,
+        array $recordNames,
+    ): array {
+        $recordNames = array_values(array_unique(array_filter(
+            $recordNames,
+            static fn (string $recordName): bool => $recordName !== '',
+        )));
+
+        if ($siteIds === [] || $periods === [] || $recordNames === []) {
+            return [];
+        }
+
+        $periodsByTable = [];
+
+        foreach ($periods as $period) {
+            $periodsByTable[$period->archiveTable()][$period->rangeKey()] = $period;
+        }
+
+        $recordsByPlugin = [];
+
+        foreach ($recordNames as $recordName) {
+            $recordsByPlugin[$this->pluginName($recordName)][] = $recordName;
+        }
+
+        $result = [];
+
+        foreach ($periodsByTable as $numericTable => $tablePeriods) {
+            $blobTable = str_replace('archive_numeric_', 'archive_blob_', $numericTable);
+
+            if (! $this->connection->getSchemaBuilder()->hasTable($numericTable)
+                || ! $this->connection->getSchemaBuilder()->hasTable($blobTable)) {
+                continue;
+            }
+
+            foreach ($recordsByPlugin as $pluginName => $pluginRecords) {
+                $archiveIds = $this->archiveIds(
+                    $numericTable,
+                    $siteIds,
+                    array_values($tablePeriods),
+                    $segmentHash,
+                    $pluginName,
+                );
+
+                if ($archiveIds === []) {
+                    continue;
+                }
+
+                foreach (array_chunk($pluginRecords, 500) as $recordChunk) {
+                    $rows = $this->connection
+                        ->table($blobTable)
+                        ->select([
+                            'idarchive',
+                            'idsite',
+                            'date1',
+                            'date2',
+                            'name',
+                            'value',
+                            'ts_archived',
+                        ])
+                        ->whereIn('idarchive', $archiveIds)
+                        ->whereIn('name', $recordChunk)
+                        ->orderBy('ts_archived')
+                        ->orderBy('idarchive')
+                        ->get();
+
+                    foreach ($rows as $row) {
+                        $idSite = $row->idsite ?? null;
+                        $date1 = $row->date1 ?? null;
+                        $date2 = $row->date2 ?? null;
+                        $name = $row->name ?? null;
+                        $value = $row->value ?? null;
+
+                        if ((! is_int($idSite) && ! is_string($idSite))
+                            || ! is_string($date1)
+                            || ! is_string($date2)
+                            || ! is_string($name)
+                            || ! is_string($value)) {
+                            continue;
+                        }
+
+                        $decoded = $this->decode($value);
+
+                        if ($decoded !== null) {
+                            $result[(int) $idSite][$date1.','.$date2][$name] = $decoded;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $result;
     }
 
     public function archives(array $siteIds, array $periods, string $segmentHash, string $recordName): array

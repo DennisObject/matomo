@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\Archiving\ArchiveActionQueryFactory;
 use App\Matomo\Archiving\ArchiveConversionQueryFactory;
 use App\Matomo\Archiving\ArchiveRecordSet;
 use App\Matomo\Archiving\ArchiveReportRequest;
@@ -13,21 +14,26 @@ use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\DatabaseReportArchiver;
 use App\Matomo\Archiving\DynamicSegmentResolver;
+use App\Matomo\Archiving\EcommerceItemArchiveCollector;
+use App\Matomo\Archiving\Events\ArchiveActionsQueryBuilding;
 use App\Matomo\Archiving\Events\ArchiveConversionsQueryBuilding;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\Events\ArchiveReportsCompleted;
 use App\Matomo\Archiving\Events\ArchiveReportsStarting;
 use App\Matomo\Archiving\Events\ArchiveVisitsQueryBuilding;
+use App\Matomo\Archiving\GoalArchiveCollector;
 use App\Matomo\Archiving\SegmentConditionQueryApplier;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
 use App\Matomo\Archiving\SegmentExpressionParser;
 use App\Matomo\Archiving\VisitAggregateArchiveCollector;
 use App\Matomo\Archiving\VisitDimensionArchiveCollector;
 use App\Matomo\Geolocation\CountryMetadataProvider;
+use App\Matomo\Goals\DatabaseGoalRepository;
 use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Reporting\CarbonReportingPeriodFactory;
 use App\Matomo\Reporting\DatabaseBlobArchiveRepository;
 use App\Matomo\Reporting\DatabaseSegmentHashResolver;
+use App\Matomo\Reporting\DatabaseVisitsSummaryArchiveRepository;
 use App\Matomo\Sites\DatabaseSiteRepository;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Connection;
@@ -64,6 +70,7 @@ class DatabaseReportArchiverTest extends TestCase
         $schema->create('site', static function (Blueprint $table): void {
             $table->unsignedInteger('idsite')->primary();
             $table->string('timezone');
+            $table->boolean('ecommerce')->default(false);
         });
         $schema->create('option', static function (Blueprint $table): void {
             $table->string('option_name')->primary();
@@ -186,6 +193,7 @@ class DatabaseReportArchiverTest extends TestCase
             $table->unsignedInteger('idsite');
             $table->integer('idgoal');
             $table->string('name');
+            $table->boolean('deleted')->default(false);
         });
         $schema->create('log_conversion', static function (Blueprint $table): void {
             $table->unsignedInteger('idsite');
@@ -198,6 +206,8 @@ class DatabaseReportArchiverTest extends TestCase
             $table->float('revenue_shipping')->nullable();
             $table->float('revenue_discount')->nullable();
             $table->unsignedInteger('items')->nullable();
+            $table->unsignedInteger('visitor_count_visits')->nullable();
+            $table->unsignedInteger('visitor_seconds_since_first')->nullable();
             $table->dateTime('server_time')->nullable();
             $table->string('config_device_type')->nullable();
             $table->string('config_device_brand')->nullable();
@@ -220,6 +230,9 @@ class DatabaseReportArchiverTest extends TestCase
             $table->unsignedInteger('idaction_category4')->nullable();
             $table->unsignedInteger('idaction_category5')->nullable();
             $table->float('price')->nullable();
+            $table->unsignedInteger('quantity')->default(1);
+            $table->boolean('deleted')->default(false);
+            $table->dateTime('server_time')->nullable();
         });
         $schema->create('custom_dimensions', static function (Blueprint $table): void {
             $table->unsignedInteger('idcustomdimension');
@@ -1316,6 +1329,326 @@ class DatabaseReportArchiverTest extends TestCase
         $this->assertSame(2, $rows[499]['columns']['nb_uniq_visitors']);
     }
 
+    public function test_collects_goal_metrics_ranges_segments_and_parent_records(): void
+    {
+        $this->insertVisits();
+        $this->insertActionRows();
+        $this->insertConversionRows();
+        $this->connection->table('goal')->insert([
+            'idsite' => 1,
+            'idgoal' => 3,
+            'name' => 'Unused goal',
+        ]);
+        $this->connection->table('log_visit')->where('idvisit', 1)->update([
+            'visit_goal_converted' => 1,
+        ]);
+        $this->connection->table('log_conversion')->where('idgoal', 1)->update([
+            'visitor_count_visits' => 1,
+            'visitor_seconds_since_first' => 0,
+        ]);
+        $this->connection->table('log_conversion')->where('idgoal', 2)->update([
+            'visitor_count_visits' => 12,
+            'visitor_seconds_since_first' => 172_800,
+        ]);
+        $this->connection->table('log_conversion')->where('idgoal', 0)->update([
+            'revenue_subtotal' => 100,
+            'revenue_tax' => 10,
+            'revenue_shipping' => 15,
+            'revenue_discount' => 5,
+            'items' => 3,
+            'visitor_count_visits' => 3,
+            'visitor_seconds_since_first' => 86_400,
+        ]);
+        $this->connection->table('log_conversion')->where('idgoal', -1)->update([
+            'items' => 2,
+            'visitor_count_visits' => 3,
+            'visitor_seconds_since_first' => 86_400,
+        ]);
+        $this->registerGoalCollector();
+
+        $this->archiver()->archive(new ArchiveReportRequest(1, 'day', '2026-08-15'));
+
+        $periods = new CarbonReportingPeriodFactory;
+        $day = $periods->make('day', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $numbers = new DatabaseVisitsSummaryArchiveRepository($this->connection);
+        $numeric = $numbers->pluginMetrics(
+            [1],
+            [$day],
+            '',
+            [
+                'Goal_nb_conversions',
+                'Goal_nb_visits_converted',
+                'Goal_revenue',
+                'Goal_1_nb_conversions',
+                'Goal_1_nb_visits_converted',
+                'Goal_1_revenue',
+                'Goal_0_revenue_subtotal',
+                'Goal_0_revenue_tax',
+                'Goal_0_revenue_shipping',
+                'Goal_0_revenue_discount',
+                'Goal_0_items',
+                'Goal_-1_nb_conversions',
+                'Goal_-1_items',
+                'Goal_3_nb_conversions',
+            ],
+            'Goals',
+        )[1][$day->rangeKey()];
+        $this->assertSame(3, $numeric['Goal_nb_conversions']);
+        $this->assertSame(2, $numeric['Goal_nb_visits_converted']);
+        $this->assertSame(185, $numeric['Goal_revenue']);
+        $this->assertSame(1, $numeric['Goal_1_nb_conversions']);
+        $this->assertSame(1, $numeric['Goal_1_nb_visits_converted']);
+        $this->assertSame(50, $numeric['Goal_1_revenue']);
+        $this->assertSame(100, $numeric['Goal_0_revenue_subtotal']);
+        $this->assertSame(10, $numeric['Goal_0_revenue_tax']);
+        $this->assertSame(15, $numeric['Goal_0_revenue_shipping']);
+        $this->assertSame(5, $numeric['Goal_0_revenue_discount']);
+        $this->assertSame(3, $numeric['Goal_0_items']);
+        $this->assertSame(1, $numeric['Goal_-1_nb_conversions']);
+        $this->assertSame(2, $numeric['Goal_-1_items']);
+        $this->assertSame(0, $numeric['Goal_3_nb_conversions']);
+
+        $blobs = new DatabaseBlobArchiveRepository($this->connection);
+        $overviewVisits = $this->rangeValues($blobs->rows(
+            [1],
+            [$day],
+            '',
+            'Goal_visits_until_conv',
+        )[1][$day->rangeKey()]);
+        $this->assertSame(1, $overviewVisits['1-1']);
+        $this->assertSame(1, $overviewVisits['9-14']);
+        $this->assertSame(0, $overviewVisits['3-3']);
+        $overviewDays = $this->rangeValues($blobs->rows(
+            [1],
+            [$day],
+            '',
+            'Goal_days_until_conv',
+        )[1][$day->rangeKey()]);
+        $this->assertSame(1, $overviewDays['0-0']);
+        $this->assertSame(1, $overviewDays['2-2']);
+        $this->assertSame([], $blobs->rows(
+            [1],
+            [$day],
+            '',
+            'Goal_3_visits_until_conv',
+        )[1][$day->rangeKey()]);
+
+        $segment = 'visitConvertedGoalId==1';
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $segment,
+            plugin: 'Goals',
+        ));
+        $segmentHash = (new DatabaseSegmentHashResolver($this->connection))->resolve($segment);
+        $segmentNumeric = $numbers->pluginMetrics(
+            [1],
+            [$day],
+            $segmentHash,
+            ['Goal_nb_conversions', 'Goal_nb_visits_converted', 'Goal_revenue'],
+            'Goals',
+        )[1][$day->rangeKey()];
+        $this->assertSame([
+            'Goal_nb_conversions' => 1,
+            'Goal_nb_visits_converted' => 1,
+            'Goal_revenue' => 50,
+        ], $segmentNumeric);
+
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'week',
+            date: '2026-08-15',
+            force: true,
+        ));
+        $week = $periods->make('week', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $weekNumeric = $numbers->pluginMetrics(
+            [1],
+            [$week],
+            '',
+            ['Goal_nb_conversions', 'Goal_nb_visits_converted', 'Goal_revenue'],
+            'Goals',
+        )[1][$week->rangeKey()];
+        $this->assertSame([
+            'Goal_nb_conversions' => 3,
+            'Goal_nb_visits_converted' => 2,
+            'Goal_revenue' => 185,
+        ], $weekNumeric);
+        $weekVisits = $this->rangeValues($blobs->rows(
+            [1],
+            [$week],
+            '',
+            'Goal_visits_until_conv',
+        )[1][$week->rangeKey()]);
+        $this->assertSame(1, $weekVisits['1-1']);
+        $this->assertSame(1, $weekVisits['9-14']);
+    }
+
+    public function test_collects_ecommerce_item_views_carts_segments_and_parent_records(): void
+    {
+        $this->insertVisits();
+        $this->insertActionRows();
+        $this->insertConversionRows();
+        $this->connection->table('site')->where('idsite', 1)->update(['ecommerce' => 1]);
+        $this->connection->table('log_conversion_item')->where('idaction_sku', 21)->update([
+            'quantity' => 2,
+            'server_time' => '2026-08-15 10:00:00',
+        ]);
+        $this->connection->table('log_conversion_item')->where('idaction_sku', 25)->update([
+            'quantity' => 1,
+            'server_time' => '2026-08-15 10:00:00',
+        ]);
+        $this->connection->table('log_conversion_item')->insert([
+            'idsite' => 1,
+            'idvisit' => 2,
+            'idorder' => '0',
+            'idaction_sku' => 21,
+            'idaction_name' => 20,
+            'idaction_category' => 22,
+            'idaction_category2' => 23,
+            'price' => 20,
+            'quantity' => 3,
+            'server_time' => '2026-08-15 10:05:00',
+        ]);
+        $this->connection->table('log_conversion_item')->insert([
+            'idsite' => 1,
+            'idvisit' => 2,
+            'idorder' => 'OVERFLOW',
+            'idaction_sku' => 25,
+            'idaction_name' => 24,
+            'price' => 2_000_000_000_000,
+            'quantity' => 1,
+            'server_time' => '2026-08-15 10:06:00',
+        ]);
+        $this->connection->table('log_action')->insert([
+            'idaction' => 30,
+            'name' => '',
+            'type' => 5,
+        ]);
+        $this->connection->table('log_conversion_item')->insert([
+            'idsite' => 1,
+            'idvisit' => 2,
+            'idorder' => 'UNDEFINED',
+            'idaction_sku' => 30,
+            'idaction_name' => 24,
+            'price' => 5,
+            'quantity' => 1,
+            'server_time' => '2026-08-15 10:07:00',
+        ]);
+        $this->registerEcommerceItemCollector();
+
+        $this->archiver()->archive(new ArchiveReportRequest(1, 'day', '2026-08-15'));
+
+        $periods = new CarbonReportingPeriodFactory;
+        $day = $periods->make('day', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $blobs = new DatabaseBlobArchiveRepository($this->connection);
+        $skuRows = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$day],
+            '',
+            'Goals_ItemsSku',
+        )[1][$day->rangeKey()]);
+        $this->assertSame(99.9, $skuRows['SKU-2']['revenue']);
+        $this->assertSame(2, $skuRows['SKU-2']['quantity']);
+        $this->assertSame(49.95, $skuRows['SKU-2']['price']);
+        $this->assertSame(1, $skuRows['SKU-2']['orders']);
+        $this->assertSame(10, $skuRows['OTHER']['revenue']);
+        $this->assertSame(10, $skuRows['OTHER']['price']);
+        $this->assertSame(2, $skuRows['OTHER']['quantity']);
+        $this->assertSame(2, $skuRows['OTHER']['orders']);
+        $this->assertSame(5, $skuRows['Value not defined']['revenue']);
+        $this->assertSame(1, $skuRows['VIEW-SKU']['nb_uniq_visitors']);
+        $this->assertSame(1, $skuRows['VIEW-SKU']['nb_visits']);
+        $this->assertSame(1, $skuRows['VIEW-SKU']['nb_actions']);
+        $this->assertSame(42.5, $skuRows['VIEW-SKU']['avg_price_viewed']);
+        $cartRows = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$day],
+            '',
+            'Goals_ItemsSku_Cart',
+        )[1][$day->rangeKey()]);
+        $this->assertSame(60, $cartRows['SKU-2']['revenue']);
+        $this->assertSame(3, $cartRows['SKU-2']['quantity']);
+        $this->assertSame(20, $cartRows['SKU-2']['price']);
+        $this->assertSame(1, $cartRows['SKU-2']['orders']);
+        $this->assertSame(42.5, $cartRows['VIEW-SKU']['avg_price_viewed']);
+        $categoryRows = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$day],
+            '',
+            'Goals_ItemsCategory',
+        )[1][$day->rangeKey()]);
+        $this->assertSame(99.9, $categoryRows['Tools']['revenue']);
+        $this->assertSame(99.9, $categoryRows['Sale']['revenue']);
+        $this->assertSame(1, $categoryRows['Viewed Tools']['nb_actions']);
+        $this->assertSame(1, $categoryRows['Featured']['nb_actions']);
+
+        $segment = 'countryCode==nz';
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $segment,
+            plugin: 'Goals',
+        ));
+        $segmentRows = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$day],
+            (new DatabaseSegmentHashResolver($this->connection))->resolve($segment),
+            'Goals_ItemsSku',
+        )[1][$day->rangeKey()]);
+        $this->assertArrayHasKey('SKU-2', $segmentRows);
+        $this->assertArrayNotHasKey('VIEW-SKU', $segmentRows);
+
+        $this->events->listen(ArchiveActionsQueryBuilding::class, static function (
+            ArchiveActionsQueryBuilding $event,
+        ): void {
+            if ($event->request->segment === 'extensionAction==view') {
+                $event->query->where('log_link_visit_action.product_price', 42.5);
+                $event->segmentApplied = true;
+            }
+        });
+        $this->events->listen(ArchiveVisitsQueryBuilding::class, static function (
+            ArchiveVisitsQueryBuilding $event,
+        ): void {
+            if ($event->request->segment === 'extensionAction==view') {
+                $event->query->where('log_visit.idvisit', 2);
+                $event->segmentApplied = true;
+            }
+        });
+        $extensionSegment = 'extensionAction==view';
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $extensionSegment,
+            plugin: 'Goals',
+        ));
+        $extensionRows = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$day],
+            (new DatabaseSegmentHashResolver($this->connection))->resolve($extensionSegment),
+            'Goals_ItemsSku',
+        )[1][$day->rangeKey()]);
+        $this->assertSame(1, $extensionRows['VIEW-SKU']['nb_actions']);
+
+        $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'week',
+            date: '2026-08-15',
+            force: true,
+        ));
+        $week = $periods->make('week', '2026-08-15', 'Pacific/Auckland')[0][0];
+        $weekRows = $this->blobRowsByLabel($blobs->rows(
+            [1],
+            [$week],
+            '',
+            'Goals_ItemsSku',
+        )[1][$week->rangeKey()]);
+        $this->assertSame(99.9, $weekRows['SKU-2']['revenue']);
+        $this->assertSame(1, $weekRows['VIEW-SKU']['nb_actions']);
+    }
+
     private function archiver(): DatabaseReportArchiver
     {
         return new DatabaseReportArchiver(
@@ -1361,6 +1694,80 @@ class DatabaseReportArchiverTest extends TestCase
             blobs: new DatabaseBlobArchiveRepository($this->connection),
             sites: new DatabaseSiteRepository($this->connection),
         ));
+    }
+
+    private function registerGoalCollector(): void
+    {
+        $visits = $this->visitSegmentApplicator();
+        $this->events->listen(ArchiveReportsCollecting::class, new GoalArchiveCollector(
+            connection: $this->connection,
+            conversionQueries: new ArchiveConversionQueryFactory(
+                $this->connection,
+                $visits,
+                $this->events,
+            ),
+            subperiods: new CarbonReportingSubperiodFactory,
+            segments: new DatabaseSegmentHashResolver($this->connection),
+            blobs: new DatabaseBlobArchiveRepository($this->connection),
+            numbers: new DatabaseVisitsSummaryArchiveRepository($this->connection),
+            goals: new DatabaseGoalRepository($this->connection),
+            sites: new DatabaseSiteRepository($this->connection),
+        ));
+    }
+
+    private function registerEcommerceItemCollector(): void
+    {
+        $this->events->listen(ArchiveReportsCollecting::class, new EcommerceItemArchiveCollector(
+            connection: $this->connection,
+            actionQueries: new ArchiveActionQueryFactory(
+                $this->connection,
+                $this->visitSegmentApplicator(),
+                $this->events,
+            ),
+            subperiods: new CarbonReportingSubperiodFactory,
+            segments: new DatabaseSegmentHashResolver($this->connection),
+            blobs: new DatabaseBlobArchiveRepository($this->connection),
+            sites: new DatabaseSiteRepository($this->connection),
+        ));
+    }
+
+    /**
+     * @param  list<array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>}>  $rows
+     * @return array<string, array<string, float|int|string|null>>
+     */
+    private function blobRowsByLabel(array $rows): array
+    {
+        $values = [];
+
+        foreach ($rows as $row) {
+            $label = $row['columns']['label'] ?? null;
+
+            if (is_float($label) || is_int($label) || is_string($label)) {
+                $values[(string) $label] = $row['columns'];
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * @param  list<array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>}>  $rows
+     * @return array<string, int|float>
+     */
+    private function rangeValues(array $rows): array
+    {
+        $values = [];
+
+        foreach ($rows as $row) {
+            $label = $row['columns']['label'] ?? null;
+            $conversions = $row['columns']['nb_conversions'] ?? null;
+
+            if (is_string($label) && (is_float($conversions) || is_int($conversions))) {
+                $values[$label] = $conversions;
+            }
+        }
+
+        return $values;
     }
 
     private function visitSegmentApplicator(): BuiltInVisitSegmentApplicator
