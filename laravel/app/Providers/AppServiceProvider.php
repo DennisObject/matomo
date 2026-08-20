@@ -24,6 +24,7 @@ use App\Matomo\Api\Methods\ContentsApiMethodHandler;
 use App\Matomo\Api\Methods\CoreAdminHomeApiMethodHandler;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
 use App\Matomo\Api\Methods\CustomDimensionsApiMethodHandler;
+use App\Matomo\Api\Methods\CustomDimensionsReportApiMethodHandler;
 use App\Matomo\Api\Methods\CustomJsTrackerApiMethodHandler;
 use App\Matomo\Api\Methods\DashboardApiMethodHandler;
 use App\Matomo\Api\Methods\DbStatsApiMethodHandler;
@@ -1297,6 +1298,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(BotTrackingApiMethodHandler::class),
                 $application->make(CustomJsTrackerApiMethodHandler::class),
                 $application->make(CustomDimensionsApiMethodHandler::class),
+                $application->make(CustomDimensionsReportApiMethodHandler::class),
                 $application->make(DashboardApiMethodHandler::class),
                 $application->make(DbStatsApiMethodHandler::class),
                 $application->make(ProfessionalServicesApiMethodHandler::class),

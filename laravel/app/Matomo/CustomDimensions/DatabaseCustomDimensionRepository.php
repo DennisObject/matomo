@@ -40,6 +40,17 @@ final readonly class DatabaseCustomDimensionRepository implements CustomDimensio
         return $result;
     }
 
+    public function find(int $siteId, int $dimensionId): ?array
+    {
+        foreach ($this->configuredForSite($siteId) as $dimension) {
+            if ((int) ($dimension['idcustomdimension'] ?? 0) === $dimensionId) {
+                return $dimension;
+            }
+        }
+
+        return null;
+    }
+
     public function installedIndexes(string $scope): array
     {
         $table = match ($scope) {

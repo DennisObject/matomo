@@ -2192,6 +2192,7 @@ final readonly class ApiRequest
                 && ! in_array($method, self::CONTENTS_METHODS, true)
                 && ! in_array($method, self::BOT_TRACKING_ARCHIVE_METHODS, true)
                 && ! in_array($method, self::GOALS_REPORT_METHODS, true)
+                && $method !== 'CustomDimensions.getCustomDimension'
                 && $method !== self::AI_AGENTS_METHOD
                 && ! in_array($method, [
                     'UserCountry.getCountry',
@@ -2257,7 +2258,8 @@ final readonly class ApiRequest
         if (! in_array($method, self::CONTENTS_METHODS, true)
             && ! in_array($method, self::EVENTS_SUBTABLE_METHODS, true)
             && ! in_array($method, self::ACTIONS_SUBTABLE_METHODS, true)
-            && ! in_array($method, self::BOT_TRACKING_SUBTABLE_METHODS, true)) {
+            && ! in_array($method, self::BOT_TRACKING_SUBTABLE_METHODS, true)
+            && $method !== 'CustomDimensions.getCustomDimension') {
             return null;
         }
 
