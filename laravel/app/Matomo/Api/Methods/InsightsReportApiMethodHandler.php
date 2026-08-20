@@ -8,6 +8,7 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Api\ApiTableReport;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Insights\InsightOverviewReportBuilder;
 use App\Matomo\Insights\InsightReportBuilder;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Reporting\ReportingSettings;
@@ -20,6 +21,8 @@ use LogicException;
 final readonly class InsightsReportApiMethodHandler implements ApiMethodHandler
 {
     private const array METHODS = [
+        'Insights.getInsightsOverview',
+        'Insights.getMoversAndShakersOverview',
         'Insights.getMoversAndShakers',
         'Insights.getInsights',
     ];
@@ -31,6 +34,7 @@ final readonly class InsightsReportApiMethodHandler implements ApiMethodHandler
         private ReportingSettings $settings,
         private LanguageResolver $languages,
         private InsightReportBuilder $reports,
+        private InsightOverviewReportBuilder $overviews,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -86,10 +90,27 @@ final readonly class InsightsReportApiMethodHandler implements ApiMethodHandler
         }
 
         try {
+            $language = $this->languages->resolve($httpRequest, $request->authentication);
+
+            if (in_array($request->method, [
+                'Insights.getInsightsOverview',
+                'Insights.getMoversAndShakersOverview',
+            ], true)) {
+                return $this->responses->structured(
+                    $request,
+                    $this->overviews->build(
+                        $parameters,
+                        $timezone,
+                        $language,
+                        $request->method === 'Insights.getMoversAndShakersOverview',
+                    ),
+                );
+            }
+
             $report = $this->reports->build(
                 $parameters,
                 $timezone,
-                $this->languages->resolve($httpRequest, $request->authentication),
+                $language,
                 $request->method === 'Insights.getMoversAndShakers',
             );
         } catch (InvalidArgumentException $invalidArgumentException) {
