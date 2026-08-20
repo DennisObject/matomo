@@ -8,12 +8,16 @@ $files = array_merge(glob($root.'/lang/en.json') ?: [], glob($root.'/plugins/*/l
 sort($files);
 foreach ($files as $file) {
     $values = json_decode((string) file_get_contents($file), true, 512, JSON_THROW_ON_ERROR);
-    $plugin = basename(dirname(dirname($file)));
-    $plugin = $plugin === 'lang' ? 'General' : $plugin;
     if (is_array($values)) {
-        foreach ($values as $key => $value) {
-            if (is_string($key) && is_string($value) && $value !== '') {
-                $translations[$value] ??= $plugin.'_'.$key;
+        foreach ($values as $namespace => $messages) {
+            if (! is_string($namespace) || ! is_array($messages)) {
+                continue;
+            }
+
+            foreach ($messages as $key => $value) {
+                if (is_string($key) && is_string($value) && $value !== '') {
+                    $translations[$value] ??= $namespace.'_'.$key;
+                }
             }
         }
     }
@@ -56,7 +60,18 @@ foreach ([
         $rows[] = $convert($row);
     }
     $output = "<?php\n\ndeclare(strict_types=1);\n\nreturn ".var_export($rows, true).";\n";
-    if (file_put_contents(__DIR__.'/../resources/matomo/'.$target, $output) === false) {
+    $targetPath = __DIR__.'/../resources/matomo/'.$target;
+    if (file_put_contents($targetPath, $output) === false) {
         throw new RuntimeException("The {$target} catalog could not be written.");
+    }
+
+    $pint = __DIR__.'/../vendor/bin/pint';
+    if (! is_file($pint)) {
+        throw new RuntimeException('Install Laravel dependencies before generating the catalogs.');
+    }
+
+    passthru(escapeshellarg($pint).' '.escapeshellarg($targetPath).' --quiet', $status);
+    if ($status !== 0) {
+        throw new RuntimeException("The {$target} catalog could not be formatted.");
     }
 }

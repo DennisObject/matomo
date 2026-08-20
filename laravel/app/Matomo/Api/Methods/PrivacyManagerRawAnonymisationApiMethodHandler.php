@@ -72,9 +72,7 @@ final readonly class PrivacyManagerRawAnonymisationApiMethodHandler implements A
         }
 
         try {
-            $periodName = str_contains($parameters->date, ',')
-                || preg_match('/^(last|previous)[0-9]+$/D', $parameters->date) === 1
-                ? 'range' : 'day';
+            $periodName = str_contains($parameters->date, ',') ? 'range' : 'day';
             [$periods] = $this->periods->make($periodName, $parameters->date, 'UTC');
             $period = $periods[0];
         } catch (InvalidArgumentException $invalidArgumentException) {
