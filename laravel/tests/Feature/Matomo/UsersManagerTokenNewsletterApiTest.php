@@ -49,6 +49,21 @@ final class UsersManagerTokenNewsletterApiTest extends TestCase
             '&format=json&token_auth=alice-token')->assertUnauthorized();
     }
 
+    public function test_authenticated_identity_is_case_sensitive_for_token_creation(): void
+    {
+        $this->authorize('Alice');
+        $directory = $this->createStub(UserDirectoryRepository::class);
+        $directory->method('user')->willReturn(['login' => 'alice']);
+        $users = $this->createMock(MutableUserRepository::class);
+        $users->expects($this->never())->method('createToken');
+        $this->app->instance(UserDirectoryRepository::class, $directory);
+        $this->app->instance(MutableUserRepository::class, $users);
+
+        $this->get('/index.php?module=API&method=UsersManager.createAppSpecificTokenAuth'.
+            '&userLogin=alice&passwordConfirmation=correct&description=App'.
+            '&format=json&token_auth=alice-token')->assertUnauthorized();
+    }
+
     public function test_anonymous_request_can_create_token_with_target_credentials(): void
     {
         $this->authorize(null);
