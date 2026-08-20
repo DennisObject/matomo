@@ -73,7 +73,17 @@ final readonly class SiteTrackingCodeGenerator
             'matomoJsFilename' => $javascriptEndpoint,
             'matomoPhpFilename' => $phpEndpoint,
         ];
-        $event = new JavascriptTrackingCodeGenerating($code, get_object_vars($request));
+        $event = new JavascriptTrackingCodeGenerating($code, [
+            'mergeSubdomains' => $request->mergeSubdomains,
+            'groupPageTitlesByDomain' => $request->groupPageTitlesByDomain,
+            'mergeAliasUrls' => $request->mergeAliasUrls,
+            'visitorCustomVariables' => $request->visitorCustomVariables,
+            'pageCustomVariables' => $request->pageCustomVariables,
+            'customCampaignNameQueryParam' => $request->campaignNameParameter,
+            'customCampaignKeywordParam' => $request->campaignKeywordParameter,
+            'doNotTrack' => $request->doNotTrack,
+            'disableCampaignParameters' => $request->disableCampaignParameters,
+        ]);
         $this->events->dispatch($event);
 
         return $this->renderJavascript($event->code);
@@ -156,11 +166,15 @@ final readonly class SiteTrackingCodeGenerator
     {
         $protocol = (string) ($code['protocol'] ?? '//');
         $host = (string) ($code['piwikUrl'] ?? '');
-        $trackerUrl = json_encode(
-            $protocol.$host.'/',
-            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES,
-        );
-        $setTrackerUrl = 'var u='.($trackerUrl === false ? '""' : $trackerUrl).';';
+        $httpTrackerUrl = $this->javascriptString($protocol.$host.'/');
+        $httpsHost = $code['httpsPiwikUrl'] ?? '';
+        $setTrackerUrl = is_string($httpsHost) && $httpsHost !== ''
+            ? sprintf(
+                'var u=((document.location.protocol === "https:") ? %s : %s);',
+                $this->javascriptString('https://'.rtrim($httpsHost, '/').'/'),
+                $this->javascriptString('http://'.rtrim($host, '/').'/'),
+            )
+            : 'var u='.$httpTrackerUrl.';';
         $result = "<!-- Matomo -->\n<script>\n  var _paq = window._paq = window._paq || [];\n  /* tracker methods like \"setCustomDimension\" should be called before \"trackPageView\" */\n".
             (string) ($code['options'] ?? '')."  _paq.push(['trackPageView']);\n  _paq.push(['enableLinkTracking']);\n  (function() {\n    {$setTrackerUrl}\n    ".
             (string) ($code['optionsBeforeTrackerUrl'] ?? '')."_paq.push(['setTrackerUrl', u+'".(string) $code['matomoPhpFilename']."']);\n    _paq.push(['setSiteId', '".(string) $code['idSite']."']);\n";
@@ -174,5 +188,15 @@ final readonly class SiteTrackingCodeGenerator
         }
 
         return $result.'<!-- End Matomo Code -->';
+    }
+
+    private function javascriptString(string $value): string
+    {
+        $encoded = json_encode(
+            $value,
+            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES,
+        );
+
+        return $encoded === false ? '""' : $encoded;
     }
 }

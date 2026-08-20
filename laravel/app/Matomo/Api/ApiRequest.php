@@ -564,6 +564,13 @@ final readonly class ApiRequest
         return self::make($request, self::authentication($request));
     }
 
+    public static function fromRequestWithAuthentication(
+        Request $request,
+        ApiAuthentication $authentication,
+    ): self {
+        return self::make($request, $authentication);
+    }
+
     public static function withoutAuthentication(Request $request): self
     {
         return new self(
@@ -3133,7 +3140,11 @@ final readonly class ApiRequest
             siteId: $siteId,
             apiModule: self::nullableStringInput($request, 'apiModule'),
             apiAction: self::nullableStringInput($request, 'apiAction'),
+            apiParameters: self::mixedParameterMap($request, 'apiParameters'),
+            period: self::nullableStringInput($request, 'period'),
+            date: self::nullableStringInput($request, 'date'),
             hideMetricsDocumentation: self::booleanInput($request, 'hideMetricsDoc', false),
+            showSubtableReports: self::booleanInput($request, 'showSubtableReports', false),
         );
     }
 
@@ -3154,6 +3165,10 @@ final readonly class ApiRequest
 
         $urls = [];
         foreach ($input as $url) {
+            if ($url === null) {
+                $url = '';
+            }
+
             if (! is_string($url)) {
                 throw new InvalidApiParameter('urls', 'Every URL must be an API query string.');
             }
@@ -3983,6 +3998,7 @@ final readonly class ApiRequest
             typeReferrer: self::reportTypeReferrer($request, $method),
             setReferrerTypeLabel: $method !== 'Referrers.getReferrerType'
                 || self::booleanInput($request, '_setReferrerTypeLabel', true),
+            formatMetrics: self::booleanInput($request, 'format_metrics', true),
         );
     }
 
