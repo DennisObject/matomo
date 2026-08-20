@@ -49,6 +49,17 @@ final class HttpMarketplaceServiceTest extends TestCase
         $this->service(['example.test'])->createAccount('owner@blocked.test');
     }
 
+    public function test_allowed_email_domains_are_case_insensitive(): void
+    {
+        Http::fake(['https://marketplace.example/api/createAccount' => Http::response([
+            'data' => ['license_key' => 'created-key'],
+        ], 200)]);
+
+        $this->service([' EXAMPLE.TEST '])->createAccount('owner@example.test');
+
+        $this->assertSame('created-key', $this->optionRepository()->value('marketplace_license_key'));
+    }
+
     /** @param list<string> $allowedDomains */
     private function service(array $allowedDomains = []): HttpMarketplaceService
     {
