@@ -8,6 +8,8 @@ use App\Matomo\Api\OptOutEmbedRequest;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Archiving\ArchiveReportRequest;
 use App\Matomo\Archiving\ArchiveReportResult;
+use App\Matomo\Archiving\CronArchiveRunner;
+use App\Matomo\Archiving\CronArchiveRunResult;
 use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\SiteAccessRole;
@@ -597,6 +599,37 @@ class CoreAdminHomeTrackingFailuresApiTest extends TestCase
             'message',
             'The website id = 7 does not exist.',
         );
+    }
+
+    public function test_superuser_can_run_cron_archiving(): void
+    {
+        $this->authenticate(true);
+        $runner = $this->createMock(CronArchiveRunner::class);
+        $runner->expects($this->once())->method('run')->willReturn(new CronArchiveRunResult([
+            'Starting reports archiving.',
+            'Processed 5 archives with 0 errors.',
+        ], 5, 0));
+        $this->app->instance(CronArchiveRunner::class, $runner);
+
+        $this->post($this->url('runCronArchiving'))->assertOk()->assertExactJson([
+            'Starting reports archiving.',
+            'Processed 5 archives with 0 errors.',
+        ]);
+    }
+
+    public function test_cron_archiving_requires_superuser_access(): void
+    {
+        $this->authenticate(false, true, [7]);
+        $runner = $this->createMock(CronArchiveRunner::class);
+        $runner->expects($this->never())->method('run');
+        $this->app->instance(CronArchiveRunner::class, $runner);
+
+        $this->post($this->url('runCronArchiving'))
+            ->assertStatus(401)
+            ->assertJsonPath(
+                'message',
+                "You can't access this resource as it requires a 'superuser' access.",
+            );
     }
 
     /**

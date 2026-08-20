@@ -16,6 +16,8 @@ use App\Matomo\Api\OptOutEmbedRequest;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
 use App\Matomo\Archiving\ArchiveReportRequest;
 use App\Matomo\Archiving\ArchiveReportResult;
+use App\Matomo\Archiving\CronArchiveRunner;
+use App\Matomo\Archiving\CronArchiveRunResult;
 use App\Matomo\Archiving\ReportArchiver;
 use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
@@ -239,6 +241,13 @@ abstract class TestCase extends BaseTestCase
             public function archive(ArchiveReportRequest $request): ArchiveReportResult
             {
                 return new ArchiveReportResult([], 0, false);
+            }
+        });
+        $this->app->instance(CronArchiveRunner::class, new class implements CronArchiveRunner
+        {
+            public function run(): CronArchiveRunResult
+            {
+                return new CronArchiveRunResult([], 0, 0);
             }
         });
         $this->app->instance(ScheduledTaskRunner::class, new class implements ScheduledTaskRunner
