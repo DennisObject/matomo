@@ -541,6 +541,7 @@ final readonly class ApiRequest
         public ?PrivacyComplianceReadRequest $privacyComplianceRead,
         public ?PrivacyGranularComplianceRequest $privacyGranularCompliance,
         public ?PrivacyAnonymisationSettingsRequest $privacyAnonymisationSettings,
+        public ?PrivacyRawAnonymisationRequest $privacyRawAnonymisation,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -627,6 +628,7 @@ final readonly class ApiRequest
             privacyComplianceRead: null,
             privacyGranularCompliance: null,
             privacyAnonymisationSettings: null,
+            privacyRawAnonymisation: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1242,6 +1244,7 @@ final readonly class ApiRequest
             privacyComplianceRead: self::privacyComplianceRead($request, $module, $method),
             privacyGranularCompliance: self::privacyGranularCompliance($request, $module, $method),
             privacyAnonymisationSettings: self::privacyAnonymisationSettings($request, $module, $method),
+            privacyRawAnonymisation: self::privacyRawAnonymisation($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2847,6 +2850,35 @@ final readonly class ApiRequest
             passwordConfirmation: $mutation
                 ? self::nullableStringInput($request, 'passwordConfirmation') : null,
         );
+    }
+
+    private static function privacyRawAnonymisation(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?PrivacyRawAnonymisationRequest {
+        if ($module !== 'API' || $method !== 'PrivacyManager.anonymizeSomeRawData') {
+            return null;
+        }
+
+        return new PrivacyRawAnonymisationRequest(
+            sites: self::optionalCommaSeparatedStringList($request, 'idSites'),
+            date: self::requiredString($request, 'date'),
+            anonymizeIp: self::booleanInput($request, 'anonymizeIp', false),
+            anonymizeLocation: self::booleanInput($request, 'anonymizeLocation', false),
+            anonymizeUserId: self::booleanInput($request, 'anonymizeUserId', false),
+            visitColumns: self::optionalCommaSeparatedStringList($request, 'unsetVisitColumns') ?? [],
+            actionColumns: self::optionalCommaSeparatedStringList($request, 'unsetLinkVisitActionColumns') ?? [],
+            passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    /** @return list<string>|null */
+    private static function optionalCommaSeparatedStringList(Request $request, string $key): ?array
+    {
+        $value = self::inputValue($request, $key);
+
+        return $value === null ? null : self::stringList($value, $key);
     }
 
     /** @return list<string>|null */
