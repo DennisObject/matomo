@@ -526,6 +526,7 @@ final readonly class ApiRequest
         public ?SitesManagerTrackingCodeRequest $sitesManagerTrackingCode,
         public ?SitesManagerLifecycleRequest $sitesManagerLifecycle,
         public ?UsersManagerPreferenceRequest $usersManagerPreference,
+        public ?UsersManagerIdentityRequest $usersManagerIdentity,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -597,6 +598,7 @@ final readonly class ApiRequest
             sitesManagerTrackingCode: null,
             sitesManagerLifecycle: null,
             usersManagerPreference: null,
+            usersManagerIdentity: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1197,6 +1199,7 @@ final readonly class ApiRequest
             sitesManagerTrackingCode: self::sitesManagerTrackingCode($request, $module, $method),
             sitesManagerLifecycle: self::sitesManagerLifecycle($request, $module, $method),
             usersManagerPreference: self::usersManagerPreference($request, $module, $method),
+            usersManagerIdentity: self::usersManagerIdentity($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2412,6 +2415,31 @@ final readonly class ApiRequest
             preferenceName: $all ? null : self::requiredString($request, 'preferenceName'),
             preferenceValue: $input['preferenceValue'] ?? null,
             preferenceNames: $all ? self::requiredStringList($request, 'preferenceNames') : [],
+        );
+    }
+
+    private static function usersManagerIdentity(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?UsersManagerIdentityRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'UsersManager.userExists',
+            'UsersManager.userEmailExists',
+            'UsersManager.getUserLoginFromUserEmail',
+            'UsersManager.hasSuperUserAccess',
+        ], true)) {
+            return null;
+        }
+
+        return new UsersManagerIdentityRequest(
+            userLogin: $method === 'UsersManager.userExists'
+                ? self::requiredString($request, 'userLogin')
+                : null,
+            userEmail: in_array($method, [
+                'UsersManager.userEmailExists',
+                'UsersManager.getUserLoginFromUserEmail',
+            ], true) ? self::requiredString($request, 'userEmail') : null,
         );
     }
 
