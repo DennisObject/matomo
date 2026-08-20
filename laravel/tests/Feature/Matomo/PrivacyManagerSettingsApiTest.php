@@ -8,6 +8,7 @@ use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Geolocation\TrackerCacheInvalidator;
 use App\Matomo\Options\MutableOptionRepository;
+use App\Matomo\Privacy\DeletionBatchLimits;
 use Tests\TestCase;
 
 final class PrivacyManagerSettingsApiTest extends TestCase
@@ -60,6 +61,34 @@ final class PrivacyManagerSettingsApiTest extends TestCase
 
         $this->get('/index.php?module=API&method=PrivacyManager.deactivateDoNotTrack'.
             '&format=json&token_auth=user-token')->assertUnauthorized();
+    }
+
+    public function test_delete_report_settings_preserve_deletion_batch_limits(): void
+    {
+        $this->authorize();
+        $passwords = $this->createStub(PasswordConfirmationVerifier::class);
+        $passwords->method('isCorrect')->willReturn(true);
+        $values = [];
+        $options = $this->createStub(MutableOptionRepository::class);
+        $options->method('set')->willReturnCallback(
+            static function (string $name, string $value) use (&$values): void {
+                $values[$name] = $value;
+            },
+        );
+        $this->app->instance(PasswordConfirmationVerifier::class, $passwords);
+        $this->app->instance(MutableOptionRepository::class, $options);
+        $this->app->instance(TrackerCacheInvalidator::class, $this->createStub(TrackerCacheInvalidator::class));
+
+        $limits = $this->createStub(DeletionBatchLimits::class);
+        $limits->method('logs')->willReturn(100_000);
+        $limits->method('unusedActions')->willReturn(100_000);
+        $this->app->instance(DeletionBatchLimits::class, $limits);
+
+        $this->get('/index.php?module=API&method=PrivacyManager.setDeleteReportsSettings'.
+            '&passwordConfirmation=correct&format=json&token_auth=super-token')->assertOk();
+
+        $this->assertSame('100000', $values['delete_logs_max_rows_per_query']);
+        $this->assertSame('100000', $values['delete_logs_unused_actions_max_rows_per_query']);
     }
 
     private function authorize(): void
