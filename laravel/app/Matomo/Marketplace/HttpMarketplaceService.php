@@ -109,7 +109,11 @@ final readonly class HttpMarketplaceService implements MarketplaceService
         }
 
         $domain = strtolower(substr(strrchr($email, '@') ?: '', 1));
-        if ($this->allowedEmailDomains !== [] && ! in_array($domain, $this->allowedEmailDomains, true)) {
+        $allowedDomains = array_map(
+            static fn (string $allowedDomain): string => strtolower(trim($allowedDomain)),
+            $this->allowedEmailDomains,
+        );
+        if ($allowedDomains !== [] && ! in_array($domain, $allowedDomains, true)) {
             throw new MarketplaceException('The email address domain is not allowed.');
         }
     }

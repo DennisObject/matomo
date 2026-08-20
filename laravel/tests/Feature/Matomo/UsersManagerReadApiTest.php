@@ -88,6 +88,21 @@ final class UsersManagerReadApiTest extends TestCase
             ->assertUnauthorized();
     }
 
+    public function test_self_access_requires_the_exact_login_case(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->method('authenticatedLogin')->willReturn('Alice');
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $users = $this->createMock(UserDirectoryRepository::class);
+        $users->expects($this->never())->method('user');
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(UserDirectoryRepository::class, $users);
+
+        $this->get('/index.php?module=API&method=UsersManager.getUser'.
+            '&userLogin=alice&format=json&token_auth=alice-token')
+            ->assertUnauthorized();
+    }
+
     public function test_authenticated_user_can_list_superusers(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
