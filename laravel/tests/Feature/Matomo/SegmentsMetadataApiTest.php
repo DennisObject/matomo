@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
+use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\CustomDimensions\CustomDimensionRepository;
+use App\Matomo\Localization\LanguageResolver;
+use Illuminate\Http\Request;
 use Tests\TestCase;
 
 final class SegmentsMetadataApiTest extends TestCase
@@ -31,6 +34,22 @@ final class SegmentsMetadataApiTest extends TestCase
         $this->assertNotNull($this->segment($segments, 'visitorId'));
     }
 
+    public function test_translates_generated_segment_metadata(): void
+    {
+        $this->bindAccess('alice', true);
+        $this->app->instance(LanguageResolver::class, new class implements LanguageResolver
+        {
+            public function resolve(Request $request, ApiAuthentication $authentication): string
+            {
+                return 'de';
+            }
+        });
+
+        $translated = $this->get($this->url())->assertOk()->json();
+        $this->assertIsArray($translated);
+        $this->assertSame('Besucher', $this->segment($translated, 'browserName')['category'] ?? null);
+    }
+
     public function test_anonymous_metadata_hides_restricted_segments(): void
     {
         $this->bindAccess('anonymous', true);
@@ -44,6 +63,18 @@ final class SegmentsMetadataApiTest extends TestCase
     {
         $this->bindAccess('alice', false);
         $this->get($this->url().'&idSites=7,8')->assertUnauthorized();
+    }
+
+    public function test_rejects_internal_metadata_until_the_native_catalog_supports_it(): void
+    {
+        $this->bindAccess('alice', true);
+
+        $this->get($this->url().'&_hideImplementationData=0')
+            ->assertStatus(501)
+            ->assertJsonPath('message', 'Internal segment metadata is not available in the Laravel runtime.');
+        $this->get($this->url().'&_showAllSegments=1')
+            ->assertStatus(501)
+            ->assertJsonPath('message', 'Internal segment metadata is not available in the Laravel runtime.');
     }
 
     private function bindAccess(string $login, bool $view): void

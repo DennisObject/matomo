@@ -15,7 +15,7 @@ final class PrivacyManagerComplianceReadApiTest extends TestCase
         $authorizer = $this->createStub(ApiAccessAuthorizer::class);
         $authorizer->method('hasSuperUserAccess')->willReturn(true);
         $status = $this->createMock(ComplianceStatusProvider::class);
-        $status->expects($this->once())->method('status')->with(7)->willReturn([
+        $status->expects($this->once())->method('status')->with(7, 'en')->willReturn([
             'complianceModeEnforced' => true,
             'complianceConfigControlled' => false,
             'complianceRequirements' => [[
