@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Matomo;
 
+use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Config\InstallationConfig;
 use App\Matomo\CustomDimensions\CustomDimensionRepository;
 use App\Matomo\Goals\GoalRepository;
@@ -905,6 +906,86 @@ final class TrackerEndpointTest extends TestCase
             ->assertHeaderMissing('P3P');
     }
 
+    public function test_uses_a_forced_visitor_id_before_cookies_and_request_ids(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->visitorId === 'aaaaaaaaaaaaaaaa',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'cid' => 'aaaaaaaaaaaaaaaa',
+            '_id' => '0123456789abcdef',
+        ]))->assertOk();
+    }
+
+    public function test_rejects_an_invalid_forced_visitor_id(): void
+    {
+        $this->bindSite();
+        $this->get($this->url(['cid' => 'short']))
+            ->assertBadRequest()
+            ->assertSeeText('Visitor ID (cid) short must be 16 characters long');
+    }
+
+    public function test_hashes_the_user_id_over_the_visitor_id_when_configured(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->visitorId === substr(sha1('alice'), 0, 16)
+                && $request->userId === 'alice',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['uid' => 'alice', 'cid' => 'aaaaaaaaaaaaaaaa']))->assertOk();
+    }
+
+    public function test_rejects_a_custom_ip_without_tracking_authentication(): void
+    {
+        $this->bindSite();
+        $this->get($this->url(['cip' => '203.0.113.10']))
+            ->assertBadRequest()
+            ->assertSeeText("Tracker API 'cip' was used, requires valid token_auth");
+    }
+
+    public function test_uses_a_custom_ip_when_the_token_can_write_the_site(): void
+    {
+        $this->bindSite();
+        $this->grantTrackingOverrides();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->ipAddress === '203.0.0.0',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->post('/matomo.php', $this->parameters(['cip' => '203.0.113.10', 'token_auth' => 'write-token']))
+            ->assertOk();
+    }
+
+    public function test_records_a_recent_custom_timestamp_without_a_token(): void
+    {
+        $this->bindSite();
+        $recordedAt = time() - 60;
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->recordedAt?->getTimestamp() === $recordedAt,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['cdt' => (string) $recordedAt]))->assertOk();
+    }
+
+    public function test_rejects_an_old_custom_timestamp_without_tracking_authentication(): void
+    {
+        $this->bindSite();
+        $recordedAt = time() - 200_000;
+        $this->get($this->url(['cdt' => (string) $recordedAt]))
+            ->assertBadRequest()
+            ->assertSeeText('requires &token_auth');
+    }
+
     public function test_does_not_set_a_visitor_cookie_when_third_party_cookies_are_disabled(): void
     {
         $this->bindSite();
@@ -949,6 +1030,15 @@ final class TrackerEndpointTest extends TestCase
         $this->get($this->url(['url' => 'https://other.test/page']))
             ->assertBadRequest()
             ->assertSeeText('url does not belong to the requested website.');
+    }
+
+    private function grantTrackingOverrides(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasSuperUserAccess')->willReturn(true);
+        $authorizer->method('siteIdsWithMinimumRole')->willReturn([1]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->forgetInstance(TrackingRequestPolicy::class);
     }
 
     private function enableThirdPartyCookies(string $extra = ''): void

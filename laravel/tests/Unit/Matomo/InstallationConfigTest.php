@@ -110,6 +110,9 @@ class InstallationConfigTest extends TestCase
         $this->assertContains('utm_term', $configuration->campaignKeywordParameters());
         $this->assertSame(1024, $configuration->pageMaximumLength());
         $this->assertTrue($configuration->trackingEnabled());
+        $this->assertTrue($configuration->trackingRequestsRequireAuthentication());
+        $this->assertSame(86_400, $configuration->customTimestampAuthGraceSeconds());
+        $this->assertTrue($configuration->userIdOverwritesVisitorId());
         $this->assertSame(1_800, $configuration->visitStandardLength());
         $this->assertSame('matomo_ignore', $configuration->ignoreVisitsCookieName());
         $this->assertSame('_pk_uid', $configuration->trackerCookies()->name());

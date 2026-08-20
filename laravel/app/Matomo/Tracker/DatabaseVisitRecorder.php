@@ -31,7 +31,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             return;
         }
 
-        $now = CarbonImmutable::now('UTC');
+        $now = $request->recordedAt ?? CarbonImmutable::now('UTC');
         $this->connection->transaction(function () use ($request, $visitor, $ip, $now): void {
             if ($request->heartbeat) {
                 $this->recordHeartbeat($request->siteId, $visitor, $now);

@@ -100,6 +100,9 @@ final readonly class InstallationConfig
         private array $campaignKeywordParameters,
         private int $pageMaximumLength,
         private bool $trackingEnabled,
+        private bool $trackingRequestsRequireAuthentication,
+        private int $customTimestampAuthGraceSeconds,
+        private bool $userIdOverwritesVisitorId,
         private int $visitStandardLength,
         private string $ignoreVisitsCookieName,
         private int $liveAiChatbotsMaximumRows,
@@ -385,6 +388,21 @@ final readonly class InstallationConfig
             ),
             pageMaximumLength: self::positiveInteger($tracker, 'page_maximum_length', 1024),
             trackingEnabled: self::boolean($tracker, 'record_statistics', true),
+            trackingRequestsRequireAuthentication: self::boolean(
+                $tracker,
+                'tracking_requests_require_authentication',
+                true,
+            ),
+            customTimestampAuthGraceSeconds: self::positiveInteger(
+                $tracker,
+                'tracking_requests_require_authentication_when_custom_timestamp_newer_than',
+                86_400,
+            ),
+            userIdOverwritesVisitorId: self::boolean(
+                $tracker,
+                'enable_userid_overwrites_visitorid',
+                true,
+            ),
             visitStandardLength: self::positiveInteger($tracker, 'visit_standard_length', 1_800),
             ignoreVisitsCookieName: self::string($tracker, 'ignore_visits_cookie_name', 'matomo_ignore'),
             liveAiChatbotsMaximumRows: self::positiveInteger(
@@ -803,6 +821,21 @@ final readonly class InstallationConfig
     public function trackingEnabled(): bool
     {
         return $this->trackingEnabled;
+    }
+
+    public function trackingRequestsRequireAuthentication(): bool
+    {
+        return $this->trackingRequestsRequireAuthentication;
+    }
+
+    public function customTimestampAuthGraceSeconds(): int
+    {
+        return $this->customTimestampAuthGraceSeconds;
+    }
+
+    public function userIdOverwritesVisitorId(): bool
+    {
+        return $this->userIdOverwritesVisitorId;
     }
 
     public function visitStandardLength(): int
