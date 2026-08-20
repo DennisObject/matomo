@@ -44,6 +44,7 @@ final readonly class ReferrersOverviewReportBuilder
         array $periods,
         string $segmentHash,
         ?array $columns,
+        bool $formatMetrics,
         bool $forceSiteIndex,
         bool $forceDateIndex,
     ): ApiReport {
@@ -70,6 +71,7 @@ final readonly class ReferrersOverviewReportBuilder
                     $types[$idSite][$period->rangeKey()] ?? [],
                     $numbers[$idSite][$period->rangeKey()] ?? [],
                     $columns,
+                    $formatMetrics,
                 ), []);
             }
 
@@ -78,6 +80,7 @@ final readonly class ReferrersOverviewReportBuilder
                 $numbers[$idSite] ?? [],
                 $periods,
                 $columns,
+                $formatMetrics,
             ), $dimensions);
         }
 
@@ -90,6 +93,7 @@ final readonly class ReferrersOverviewReportBuilder
                     $numbers[$idSite] ?? [],
                     $periods,
                     $columns,
+                    $formatMetrics,
                 );
             } else {
                 $period = $periods[0] ?? null;
@@ -97,6 +101,7 @@ final readonly class ReferrersOverviewReportBuilder
                     $types[$idSite][$period->rangeKey()] ?? [],
                     $numbers[$idSite][$period->rangeKey()] ?? [],
                     $columns,
+                    $formatMetrics,
                 );
             }
         }
@@ -111,8 +116,13 @@ final readonly class ReferrersOverviewReportBuilder
      * @param  list<string>|null  $columns
      * @return array<string, array<string, int|float|string>>
      */
-    private function dateRows(array $types, array $numbers, array $periods, ?array $columns): array
-    {
+    private function dateRows(
+        array $types,
+        array $numbers,
+        array $periods,
+        ?array $columns,
+        bool $formatMetrics,
+    ): array {
         $rows = [];
 
         foreach ($periods as $period) {
@@ -120,6 +130,7 @@ final readonly class ReferrersOverviewReportBuilder
                 $types[$period->rangeKey()] ?? [],
                 $numbers[$period->rangeKey()] ?? [],
                 $columns,
+                $formatMetrics,
             );
         }
 
@@ -132,8 +143,12 @@ final readonly class ReferrersOverviewReportBuilder
      * @param  list<string>|null  $columns
      * @return array<string, int|float|string>
      */
-    private function row(array $typeRows, array $numbers, ?array $columns): array
-    {
+    private function row(
+        array $typeRows,
+        array $numbers,
+        ?array $columns,
+        bool $formatMetrics,
+    ): array {
         $row = array_fill_keys(array_values(self::TYPE_METRICS), 0);
         $totalVisits = 0.0;
 
@@ -154,7 +169,7 @@ final readonly class ReferrersOverviewReportBuilder
         }
 
         foreach (array_values(self::TYPE_METRICS) as $metric) {
-            $row[$metric.'_percent'] = $this->percent($row[$metric], $totalVisits);
+            $row[$metric.'_percent'] = $this->percent($row[$metric], $totalVisits, $formatMetrics);
         }
 
         foreach (self::DISTINCT_METRICS as $metric) {
@@ -172,9 +187,15 @@ final readonly class ReferrersOverviewReportBuilder
         );
     }
 
-    private function percent(int|float $value, float $total): string
+    private function percent(int|float $value, float $total, bool $format): int|float|string
     {
-        $percent = $total === 0.0 ? 0 : round($value / $total * 100, 2);
+        $quotient = $total === 0.0 ? 0 : round($value / $total, 4);
+
+        if (! $format) {
+            return $quotient;
+        }
+
+        $percent = $quotient * 100;
 
         return rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.').'%';
     }
