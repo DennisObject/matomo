@@ -6,9 +6,11 @@ namespace App\Matomo\Api\Methods;
 
 use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
+use App\Matomo\Api\Events\ComparisonPagesCollecting;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\Security\ClientIpResolver;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use LogicException;
@@ -21,6 +23,7 @@ final readonly class CoreApiMethodHandler implements ApiMethodHandler
         private ApiResponseFactory $responses,
         private ClientIpResolver $clientIps,
         private PluginState $plugins,
+        private Dispatcher $events,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -28,6 +31,7 @@ final readonly class CoreApiMethodHandler implements ApiMethodHandler
         return $request->isVersionRequest()
             || $request->isPhpVersionRequest()
             || $request->isClientIpRequest()
+            || $request->isComparisonPagesRequest()
             || $request->isPluginActivatedRequest();
     }
 
@@ -39,6 +43,13 @@ final readonly class CoreApiMethodHandler implements ApiMethodHandler
 
         if ($request->isPhpVersionRequest()) {
             return $this->phpVersion($request);
+        }
+
+        if ($request->isComparisonPagesRequest()) {
+            $event = new ComparisonPagesCollecting;
+            $this->events->dispatch($event);
+
+            return $this->responses->values($request, $event->pages);
         }
 
         if (! $this->authorizer->hasSomeViewAccess($request->authentication)) {
