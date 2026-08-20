@@ -3233,14 +3233,36 @@ final readonly class ApiRequest
             return null;
         }
 
-        $columns = self::nullableStringInput($request, 'columns');
+        $siteId = self::requiredInteger($request, 'idSite');
+        if ($siteId < 1) {
+            throw new InvalidApiParameter('idSite', "The parameter 'idSite=' contains an invalid value.");
+        }
+
+        $period = self::requiredString($request, 'period');
+        if (! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
+            throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
+        }
+
+        $date = self::requiredString($request, 'date');
+        if (! self::validReportDate($date)) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not valid.");
+        }
+
+        if ($period === 'range'
+            && ! str_contains($date, ',')
+            && preg_match('/^(last|previous)[0-9]*$/D', $date) !== 1) {
+            throw new InvalidApiParameter('date', "The date '{$date}' is not a valid range.");
+        }
+
+        $segment = self::nullableStringInput($request, 'segment');
+        $columns = self::optionalCommaSeparatedStringList($request, 'columns') ?? [];
 
         return new ApiOverviewRequest(
-            siteId: self::requiredInteger($request, 'idSite'),
-            period: self::requiredString($request, 'period'),
-            date: self::requiredString($request, 'date'),
-            segment: self::nullableStringInput($request, 'segment'),
-            columns: $columns === null ? [] : array_values(array_filter(explode(',', $columns), static fn (string $column): bool => $column !== '')),
+            siteId: $siteId,
+            period: $period,
+            date: $date,
+            segment: $segment === null || trim($segment) === '' ? null : trim($segment),
+            columns: array_values(array_filter($columns, static fn (string $column): bool => $column !== '')),
         );
     }
 
