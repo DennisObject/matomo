@@ -56,6 +56,8 @@ final readonly class ApiRequest
 
     private const string DEVICE_PLUGINS_METHOD = 'DevicePlugins.getPlugin';
 
+    private const string PAGE_PERFORMANCE_METHOD = 'PagePerformance.get';
+
     private function __construct(
         public string $module,
         public string $method,
@@ -360,6 +362,11 @@ final readonly class ApiRequest
     public function isDevicePluginsRequest(): bool
     {
         return $this->module === 'API' && $this->method === self::DEVICE_PLUGINS_METHOD;
+    }
+
+    public function isPagePerformanceRequest(): bool
+    {
+        return $this->module === 'API' && $this->method === self::PAGE_PERFORMANCE_METHOD;
     }
 
     public function hasSupportedFormat(): bool
@@ -726,7 +733,8 @@ final readonly class ApiRequest
                 && ! in_array($method, self::VISITOR_INTEREST_METHODS, true)
                 && ! in_array($method, self::USER_LANGUAGE_METHODS, true)
                 && ! in_array($method, self::RESOLUTION_METHODS, true)
-                && $method !== self::DEVICE_PLUGINS_METHOD)) {
+                && $method !== self::DEVICE_PLUGINS_METHOD
+                && $method !== self::PAGE_PERFORMANCE_METHOD)) {
             return null;
         }
 
