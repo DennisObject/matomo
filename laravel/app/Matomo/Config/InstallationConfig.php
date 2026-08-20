@@ -42,6 +42,7 @@ final readonly class InstallationConfig
         /** @var list<string>|null */
         private ?array $commonPiiParameters,
         private string $defaultLanguage,
+        private string $defaultReportDate,
         private string $languageCookieName,
         private string $feedbackEmailAddress,
         private bool $emailsEnabled,
@@ -197,6 +198,7 @@ final readonly class InstallationConfig
             ),
             commonPiiParameters: self::nullableStringList($sitesManager, 'CommonPIIParams'),
             defaultLanguage: strtolower(self::string($general, 'default_language', 'en')),
+            defaultReportDate: self::string($general, 'default_day', 'yesterday'),
             languageCookieName: self::string($general, 'language_cookie_name', 'matomo_lang'),
             feedbackEmailAddress: self::string(
                 $general,
@@ -500,6 +502,11 @@ final readonly class InstallationConfig
     public function defaultLanguage(): string
     {
         return $this->defaultLanguage;
+    }
+
+    public function defaultReportDate(): string
+    {
+        return $this->defaultReportDate;
     }
 
     public function languageCookieName(): string
