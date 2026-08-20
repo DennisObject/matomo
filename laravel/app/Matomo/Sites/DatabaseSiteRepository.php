@@ -56,6 +56,16 @@ final readonly class DatabaseSiteRepository implements SiteRepository
         return is_string($url) && $url !== '' ? $url : null;
     }
 
+    public function timezone(int $idSite): ?string
+    {
+        $timezone = $this->connection
+            ->table('site')
+            ->where('idsite', $idSite)
+            ->value('timezone');
+
+        return is_string($timezone) && $timezone !== '' ? $timezone : null;
+    }
+
     public function allDetails(): array
     {
         $sites = [];

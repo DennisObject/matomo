@@ -45,6 +45,11 @@ final readonly class InstallationConfig
         private string $languageCookieName,
         /** @var list<string>|null */
         private ?array $availableLanguages,
+        /** @var array<string, bool> */
+        private array $uniqueVisitorsByPeriod,
+        /** @var list<string> */
+        private array $enabledReportingPeriods,
+        private bool $anonymousSegmentsEnabled,
     ) {}
 
     public static function fromFile(string $path): self
@@ -133,6 +138,17 @@ final readonly class InstallationConfig
             defaultLanguage: strtolower(self::string($general, 'default_language', 'en')),
             languageCookieName: self::string($general, 'language_cookie_name', 'matomo_lang'),
             availableLanguages: self::nullableStringList($languages, 'Languages'),
+            uniqueVisitorsByPeriod: self::uniqueVisitorsByPeriod($general),
+            enabledReportingPeriods: self::commaSeparatedList(
+                $general,
+                'enabled_periods_API',
+                ['day', 'week', 'month', 'year', 'range'],
+            ),
+            anonymousSegmentsEnabled: self::boolean(
+                $general,
+                'anonymous_user_enable_use_segments_API',
+                true,
+            ),
         );
     }
 
@@ -281,6 +297,21 @@ final readonly class InstallationConfig
         return $this->availableLanguages;
     }
 
+    public function uniqueVisitorsEnabled(string $period): bool
+    {
+        return $this->uniqueVisitorsByPeriod[$period] ?? false;
+    }
+
+    public function reportingPeriodEnabled(string $period): bool
+    {
+        return in_array($period, $this->enabledReportingPeriods, true);
+    }
+
+    public function anonymousSegmentsEnabled(): bool
+    {
+        return $this->anonymousSegmentsEnabled;
+    }
+
     /**
      * @param  array<string, mixed>  $database
      * @return array<string, mixed>
@@ -385,14 +416,42 @@ final readonly class InstallationConfig
 
     /**
      * @param  array<string, mixed>  $values
+     * @param  list<string>  $default
      * @return list<string>
      */
-    private static function commaSeparatedList(array $values, string $key): array
-    {
+    private static function commaSeparatedList(
+        array $values,
+        string $key,
+        array $default = [],
+    ): array {
+        if (! array_key_exists($key, $values)) {
+            return $default;
+        }
+
         return array_values(array_filter(
             array_map(trim(...), explode(',', self::string($values, $key))),
             static fn (string $value): bool => $value !== '',
         ));
+    }
+
+    /**
+     * @param  array<string, mixed>  $general
+     * @return array<string, bool>
+     */
+    private static function uniqueVisitorsByPeriod(array $general): array
+    {
+        $yearAndRange = self::boolean(
+            $general,
+            'enable_processing_unique_visitors_year_and_range',
+        );
+
+        return [
+            'day' => self::boolean($general, 'enable_processing_unique_visitors_day', true),
+            'week' => self::boolean($general, 'enable_processing_unique_visitors_week', true),
+            'month' => self::boolean($general, 'enable_processing_unique_visitors_month', true),
+            'year' => self::boolean($general, 'enable_processing_unique_visitors_year') || $yearAndRange,
+            'range' => self::boolean($general, 'enable_processing_unique_visitors_range') || $yearAndRange,
+        ];
     }
 
     /**

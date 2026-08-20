@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
+use App\Matomo\Api\Methods\VisitsSummaryApiMethodHandler;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseApiAccessAuthorizer;
 use App\Matomo\Authentication\DatabaseSessionAuthenticator;
@@ -22,6 +23,14 @@ use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\ConfiguredPluginState;
 use App\Matomo\Plugins\PluginState;
+use App\Matomo\Reporting\CarbonReportingPeriodFactory;
+use App\Matomo\Reporting\ConfiguredReportingSettings;
+use App\Matomo\Reporting\DatabaseSegmentHashResolver;
+use App\Matomo\Reporting\DatabaseVisitsSummaryArchiveRepository;
+use App\Matomo\Reporting\ReportingPeriodFactory;
+use App\Matomo\Reporting\ReportingSettings;
+use App\Matomo\Reporting\SegmentHashResolver;
+use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\EgressHostResolver;
@@ -107,6 +116,32 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             SiteRepository::class,
             fn (Application $application): SiteRepository => new DatabaseSiteRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
+            ReportingPeriodFactory::class,
+            CarbonReportingPeriodFactory::class,
+        );
+
+        $this->app->singleton(
+            ReportingSettings::class,
+            fn (Application $application): ReportingSettings => new ConfiguredReportingSettings(
+                $application->make(InstallationConfig::class),
+            ),
+        );
+
+        $this->app->singleton(
+            SegmentHashResolver::class,
+            fn (Application $application): SegmentHashResolver => new DatabaseSegmentHashResolver(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+
+        $this->app->singleton(
+            VisitsSummaryArchiveRepository::class,
+            fn (Application $application): VisitsSummaryArchiveRepository => new DatabaseVisitsSummaryArchiveRepository(
                 $application->make(MatomoDatabase::class)->connection(),
             ),
         );
@@ -276,6 +311,7 @@ class AppServiceProvider extends ServiceProvider
             fn (Application $application): ApiMethodDispatcher => new ApiMethodDispatcher([
                 $application->make(CoreApiMethodHandler::class),
                 $application->make(SitesManagerApiMethodHandler::class),
+                $application->make(VisitsSummaryApiMethodHandler::class),
             ]),
         );
     }

@@ -8,6 +8,9 @@ use App\Matomo\Authentication\ApiAuthentication;
 use App\Matomo\Localization\LanguageResolver;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
+use App\Matomo\Reporting\ReportingSettings;
+use App\Matomo\Reporting\SegmentHashResolver;
+use App\Matomo\Reporting\VisitsSummaryArchiveRepository;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Sites\ConsentManagerDetector;
@@ -102,6 +105,41 @@ abstract class TestCase extends BaseTestCase
                 return false;
             }
         });
+        $this->app->instance(ReportingSettings::class, new class implements ReportingSettings
+        {
+            public function periodEnabled(string $period): bool
+            {
+                return true;
+            }
+
+            public function uniqueVisitorsEnabled(string $period): bool
+            {
+                return in_array($period, ['day', 'week', 'month'], true);
+            }
+
+            public function anonymousSegmentsEnabled(): bool
+            {
+                return true;
+            }
+        });
+        $this->app->instance(SegmentHashResolver::class, new class implements SegmentHashResolver
+        {
+            public function resolve(?string $segment): string
+            {
+                return $segment === null ? '' : md5(urldecode($segment));
+            }
+        });
+        $this->app->instance(VisitsSummaryArchiveRepository::class, new class implements VisitsSummaryArchiveRepository
+        {
+            public function metrics(
+                array $siteIds,
+                array $periods,
+                string $segmentHash,
+                array $metrics,
+            ): array {
+                return [];
+            }
+        });
         $this->app->instance(ReportingApiIpAllowlist::class, new class implements ReportingApiIpAllowlist
         {
             public function deniedClientIp(Request $request): ?string
@@ -122,6 +160,11 @@ abstract class TestCase extends BaseTestCase
             }
 
             public function mainUrl(int $idSite): ?string
+            {
+                return null;
+            }
+
+            public function timezone(int $idSite): ?string
             {
                 return null;
             }

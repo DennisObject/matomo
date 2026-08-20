@@ -628,7 +628,7 @@ class VersionApiTest extends TestCase
         $authorizer->expects($this->never())->method('hasSomeViewAccess');
         $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
 
-        $this->get('/index.php?module=API&method=VisitsSummary.get&format=json')
+        $this->get('/index.php?module=API&method=VisitFrequency.get&format=json')
             ->assertStatus(501)
             ->assertExactJson([
                 'result' => 'error',
