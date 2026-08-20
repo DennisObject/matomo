@@ -76,6 +76,7 @@ class InstallationConfigTest extends TestCase
         $this->assertTrue($configuration->defaultLocationProviderEnabled());
         $this->assertTrue($configuration->languageToCountryGuessEnabled());
         $this->assertTrue($configuration->professionalServicesAdsEnabled());
+        $this->assertFalse($configuration->developmentModeEnabled());
         $this->assertSame('month', $configuration->transitionsMaxPeriodAllowed(2));
         $this->assertSame('week', $configuration->transitionsMaxPeriodAllowed(7));
         $this->assertSame([

@@ -30,10 +30,18 @@ class DatabaseLanguagePreferenceRepositoryTest extends TestCase
         $connection->getSchemaBuilder()->create('user_language', function (Blueprint $table): void {
             $table->string('login')->primary();
             $table->string('language');
+            $table->boolean('use_12_hour_clock')->default(false);
         });
         $connection->table('user_language')->insert(['login' => 'alice', 'language' => 'fr']);
 
         $this->assertSame('fr', $languages->forLogin('alice'));
         $this->assertNull($languages->forLogin('bob'));
+        $this->assertFalse($languages->uses12HourClock('alice'));
+        $this->assertTrue($languages->setLanguage('alice', 'de'));
+        $this->assertTrue($languages->set12HourClock('alice', true));
+        $this->assertSame('de', $languages->forLogin('alice'));
+        $this->assertTrue($languages->uses12HourClock('alice'));
+        $this->assertTrue($languages->set12HourClock('bob', true));
+        $this->assertSame('', $languages->forLogin('bob'));
     }
 }

@@ -176,6 +176,19 @@ final readonly class ApiRequest
         'JsTrackerInstallCheck.initiateJsTrackerInstallTest',
     ];
 
+    /** @var list<string> */
+    private const array LANGUAGES_MANAGER_METHODS = [
+        'LanguagesManager.isLanguageAvailable',
+        'LanguagesManager.getAvailableLanguages',
+        'LanguagesManager.getAvailableLanguagesInfo',
+        'LanguagesManager.getAvailableLanguageNames',
+        'LanguagesManager.getTranslationsForLanguage',
+        'LanguagesManager.getLanguageForUser',
+        'LanguagesManager.setLanguageForUser',
+        'LanguagesManager.uses12HourClockForUser',
+        'LanguagesManager.set12HourClockForUser',
+    ];
+
     private const string OVERLAY_TRANSLATIONS_METHOD = 'Overlay.getTranslations';
 
     /** @var list<string> */
@@ -264,6 +277,7 @@ final readonly class ApiRequest
         public ?GoalsRequest $goals,
         public ?GoalsReportRequest $goalsReport,
         public ?JsTrackerInstallCheckRequest $jsTrackerInstallCheck,
+        public ?LanguagesManagerRequest $languagesManager,
         public ?TransitionsRequest $transitions,
         public ApiAuthentication $authentication,
     ) {}
@@ -316,6 +330,7 @@ final readonly class ApiRequest
             goals: null,
             goalsReport: null,
             jsTrackerInstallCheck: null,
+            languagesManager: null,
             transitions: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -645,6 +660,12 @@ final readonly class ApiRequest
             && in_array($this->method, self::JS_TRACKER_INSTALL_CHECK_METHODS, true);
     }
 
+    public function isLanguagesManagerRequest(): bool
+    {
+        return $this->module === 'API'
+            && in_array($this->method, self::LANGUAGES_MANAGER_METHODS, true);
+    }
+
     public function isOverlayTranslationsRequest(): bool
     {
         return $this->module === 'API' && $this->method === self::OVERLAY_TRANSLATIONS_METHOD;
@@ -736,8 +757,61 @@ final readonly class ApiRequest
             goals: self::goals($request, $module, $method),
             goalsReport: self::goalsReport($request, $module, $method),
             jsTrackerInstallCheck: self::jsTrackerInstallCheck($request, $module, $method),
+            languagesManager: self::languagesManager($request, $module, $method),
             transitions: self::transitions($request, $module, $method),
             authentication: $authentication,
+        );
+    }
+
+    private static function languagesManager(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?LanguagesManagerRequest {
+        if ($module !== 'API' || ! in_array($method, self::LANGUAGES_MANAGER_METHODS, true)) {
+            return null;
+        }
+
+        $languageCode = '';
+        $login = '';
+
+        if (in_array($method, [
+            'LanguagesManager.isLanguageAvailable',
+            'LanguagesManager.getTranslationsForLanguage',
+            'LanguagesManager.setLanguageForUser',
+        ], true)) {
+            $languageCode = self::nullableStringInput($request, 'languageCode')
+                ?? throw new MissingApiParameter('languageCode');
+        }
+
+        if (in_array($method, [
+            'LanguagesManager.getLanguageForUser',
+            'LanguagesManager.setLanguageForUser',
+            'LanguagesManager.uses12HourClockForUser',
+            'LanguagesManager.set12HourClockForUser',
+        ], true)) {
+            $login = self::nullableStringInput($request, 'login')
+                ?? throw new MissingApiParameter('login');
+        }
+
+        $use12HourClock = false;
+
+        if ($method === 'LanguagesManager.set12HourClockForUser') {
+            if (self::inputValue($request, 'use12HourClock') === null) {
+                throw new MissingApiParameter('use12HourClock');
+            }
+
+            $use12HourClock = self::booleanFromArray($request->query->all(), 'use12HourClock')
+                ?? self::booleanFromArray($request->request->all(), 'use12HourClock')
+                ?? false;
+        }
+
+        return new LanguagesManagerRequest(
+            languageCode: $languageCode,
+            login: $login,
+            ignoreConfig: self::booleanInput($request, '_ignoreConfig', false),
+            excludeNonCorePlugins: self::booleanInput($request, 'excludeNonCorePlugins', true),
+            use12HourClock: $use12HourClock,
         );
     }
 
