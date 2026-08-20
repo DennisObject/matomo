@@ -59,6 +59,67 @@ class DatabaseBlobArchiveRepositoryTest extends TestCase
         $this->assertSame([], $repository->rows([3], [$this->day()], '', 'VisitTime_localTime'));
     }
 
+    public function test_reads_hierarchical_records_and_keeps_subtable_ids(): void
+    {
+        $connection = $this->archiveConnection();
+        $this->createTables($connection->getSchemaBuilder());
+        $connection->table('archive_numeric_2026_08')->insert(
+            $this->numericRow(30, 'done.Events', 1, '2026-08-15 00:00:00'),
+        );
+        $connection->table('archive_blob_2026_08')->insert([
+            $this->blobRow(
+                30,
+                'Events_category_action',
+                $this->hierarchicalBlob([['Movie', 4, 42]]),
+                '2026-08-15 00:00:00',
+            ),
+            $this->blobRow(
+                30,
+                'Events_category_action_42',
+                $this->hierarchicalBlob([['Play', 3, null]]),
+                '2026-08-15 00:00:00',
+            ),
+            $this->blobRow(
+                30,
+                'Events_category_action_extra',
+                $this->hierarchicalBlob([['Ignored', 1, null]]),
+                '2026-08-15 00:00:00',
+            ),
+        ]);
+
+        $repository = new DatabaseBlobArchiveRepository($connection);
+        $records = $repository->records(
+            [3],
+            [$this->day()],
+            '',
+            'Events_category_action',
+            true,
+        );
+
+        $this->assertSame([
+            'Events_category_action' => [[
+                'columns' => ['label' => 'Movie', 'nb_visits' => 4],
+                'metadata' => [],
+                'subtableId' => 42,
+            ]],
+            'Events_category_action_42' => [[
+                'columns' => ['label' => 'Play', 'nb_visits' => 3],
+                'metadata' => [],
+                'subtableId' => null,
+            ]],
+        ], $records[3]['2026-08-14,2026-08-14']);
+        $this->assertSame(
+            ['Events_category_action'],
+            array_keys($repository->records(
+                [3],
+                [$this->day()],
+                '',
+                'Events_category_action',
+                false,
+            )[3]['2026-08-14,2026-08-14']),
+        );
+    }
+
     private function archiveConnection(): Connection
     {
         config()->set('database.connections.matomo_blob_test', [
@@ -130,6 +191,18 @@ class DatabaseBlobArchiveRepositoryTest extends TestCase
             0 => $columns,
             1 => ['segment' => 'visitLocalHour=='.$columns['label']],
             3 => null,
+        ], $rows);
+
+        return $this->compress(serialize($payload));
+    }
+
+    /** @param list<array{string, int, int|null}> $rows */
+    private function hierarchicalBlob(array $rows): string
+    {
+        $payload = array_map(static fn (array $row): array => [
+            0 => ['label' => $row[0], 'nb_visits' => $row[1]],
+            1 => [],
+            3 => $row[2],
         ], $rows);
 
         return $this->compress(serialize($payload));

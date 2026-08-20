@@ -73,6 +73,29 @@ final readonly class ApiRequest
     private const string USER_ID_METHOD = 'UserId.getUsers';
 
     /** @var list<string> */
+    private const array EVENTS_METHODS = [
+        'Events.getCategory',
+        'Events.getAction',
+        'Events.getName',
+        'Events.getActionFromCategoryId',
+        'Events.getNameFromCategoryId',
+        'Events.getCategoryFromActionId',
+        'Events.getNameFromActionId',
+        'Events.getActionFromNameId',
+        'Events.getCategoryFromNameId',
+    ];
+
+    /** @var list<string> */
+    private const array EVENTS_SUBTABLE_METHODS = [
+        'Events.getActionFromCategoryId',
+        'Events.getNameFromCategoryId',
+        'Events.getCategoryFromActionId',
+        'Events.getNameFromActionId',
+        'Events.getActionFromNameId',
+        'Events.getCategoryFromNameId',
+    ];
+
+    /** @var list<string> */
     private const array CONTENTS_METHODS = [
         'Contents.getContentNames',
         'Contents.getContentPieces',
@@ -448,6 +471,11 @@ final readonly class ApiRequest
     public function isUserIdRequest(): bool
     {
         return $this->module === 'API' && $this->method === self::USER_ID_METHOD;
+    }
+
+    public function isEventsRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::EVENTS_METHODS, true);
     }
 
     public function isContentsRequest(): bool
@@ -1045,6 +1073,7 @@ final readonly class ApiRequest
                 && ! in_array($method, self::DEVICES_DETECTION_METHODS, true)
                 && $method !== self::PAGE_PERFORMANCE_METHOD
                 && $method !== self::USER_ID_METHOD
+                && ! in_array($method, self::EVENTS_METHODS, true)
                 && ! in_array($method, self::CONTENTS_METHODS, true)
                 && $method !== self::AI_AGENTS_METHOD
                 && ! in_array($method, [
@@ -1095,18 +1124,28 @@ final readonly class ApiRequest
             showColumns: self::reportColumnList($request, 'showColumns') ?? [],
             hideColumns: self::reportColumnList($request, 'hideColumns') ?? [],
             idSubtable: self::reportSubtableId($request, $method),
+            expanded: self::booleanInput($request, 'expanded', false),
+            secondaryDimension: self::eventsSecondaryDimension($request, $method),
+            flat: self::booleanInput($request, 'flat', false),
+            showDimensions: self::booleanInput($request, 'show_dimensions', false),
         );
     }
 
     private static function reportSubtableId(Request $request, string $method): ?int
     {
-        if (! in_array($method, self::CONTENTS_METHODS, true)) {
+        if (! in_array($method, self::CONTENTS_METHODS, true)
+            && ! in_array($method, self::EVENTS_SUBTABLE_METHODS, true)) {
             return null;
         }
 
         $value = self::inputValue($request, 'idSubtable');
 
         if (in_array($value, [null, '', false, 'false', '0'], true)) {
+            if (in_array($method, self::EVENTS_SUBTABLE_METHODS, true)
+                && ! in_array($value, ['0', 0], true)) {
+                throw new MissingApiParameter('idSubtable');
+            }
+
             return null;
         }
 
@@ -1118,6 +1157,36 @@ final readonly class ApiRequest
         }
 
         return (int) $value;
+    }
+
+    private static function eventsSecondaryDimension(Request $request, string $method): ?string
+    {
+        $allowed = match ($method) {
+            'Events.getCategory' => ['eventAction', 'eventName'],
+            'Events.getAction' => ['eventName', 'eventCategory'],
+            'Events.getName' => ['eventAction', 'eventCategory'],
+            default => null,
+        };
+
+        if ($allowed === null) {
+            return null;
+        }
+
+        $secondaryDimension = self::nullableStringInput($request, 'secondaryDimension');
+
+        if ($secondaryDimension === null || $secondaryDimension === '') {
+            return null;
+        }
+
+        if (! in_array($secondaryDimension, $allowed, true)) {
+            throw new InvalidApiParameter(
+                'secondaryDimension',
+                "Secondary dimension '{$secondaryDimension}' is not valid for the API ".
+                    substr($method, strlen('Events.')).'. Use one of: '.implode(', ', $allowed),
+            );
+        }
+
+        return $secondaryDimension;
     }
 
     /**

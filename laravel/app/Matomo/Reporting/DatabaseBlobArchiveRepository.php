@@ -8,7 +8,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
 use stdClass;
 
-final readonly class DatabaseBlobArchiveRepository implements BlobArchiveMetadataRepository, BlobArchiveRepository
+final readonly class DatabaseBlobArchiveRepository implements BlobArchiveMetadataRepository, BlobArchiveRepository, HierarchicalBlobArchiveRepository
 {
     private const int DONE_PARTIAL = 5;
 
@@ -94,6 +94,89 @@ final readonly class DatabaseBlobArchiveRepository implements BlobArchiveMetadat
                         $decoded,
                         is_string($archivedAt) ? $archivedAt : null,
                     );
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    public function records(
+        array $siteIds,
+        array $periods,
+        string $segmentHash,
+        string $recordName,
+        bool $includeSubtables,
+    ): array {
+        if ($siteIds === [] || $periods === [] || $recordName === '') {
+            return [];
+        }
+
+        $periodsByTable = [];
+
+        foreach ($periods as $period) {
+            $periodsByTable[$period->archiveTable()][$period->rangeKey()] = $period;
+        }
+
+        $result = [];
+
+        foreach ($periodsByTable as $numericTable => $tablePeriods) {
+            $blobTable = str_replace('archive_numeric_', 'archive_blob_', $numericTable);
+
+            if (! $this->connection->getSchemaBuilder()->hasTable($numericTable)
+                || ! $this->connection->getSchemaBuilder()->hasTable($blobTable)) {
+                continue;
+            }
+
+            $archiveIds = $this->archiveIds(
+                $numericTable,
+                $siteIds,
+                array_values($tablePeriods),
+                $segmentHash,
+                $this->pluginName($recordName),
+            );
+
+            if ($archiveIds === []) {
+                continue;
+            }
+
+            $rows = $this->connection
+                ->table($blobTable)
+                ->select(['idarchive', 'idsite', 'date1', 'date2', 'name', 'value', 'ts_archived'])
+                ->whereIn('idarchive', $archiveIds)
+                ->when(
+                    $includeSubtables,
+                    static fn (Builder $query): Builder => $query->where(
+                        static fn (Builder $names): Builder => $names
+                            ->where('name', $recordName)
+                            ->orWhere('name', 'like', $recordName.'_%'),
+                    ),
+                    static fn (Builder $query): Builder => $query->where('name', $recordName),
+                )
+                ->orderBy('ts_archived')
+                ->orderBy('idarchive')
+                ->get();
+
+            foreach ($rows as $row) {
+                $idSite = $row->idsite ?? null;
+                $date1 = $row->date1 ?? null;
+                $date2 = $row->date2 ?? null;
+                $name = $row->name ?? null;
+                $value = $row->value ?? null;
+
+                if ((! is_int($idSite) && ! is_string($idSite))
+                    || ! is_string($date1)
+                    || ! is_string($date2)
+                    || ! is_string($name)
+                    || ! is_string($value)
+                    || ! $this->isRequestedRecord($name, $recordName, $includeSubtables)) {
+                    continue;
+                }
+
+                $decoded = $this->decodeHierarchy($value);
+
+                if ($decoded !== null) {
+                    $result[(int) $idSite][$date1.','.$date2][$name] = $decoded;
                 }
             }
         }
@@ -218,6 +301,72 @@ final readonly class DatabaseBlobArchiveRepository implements BlobArchiveMetadat
         }
 
         return $rows;
+    }
+
+    /**
+     * @return list<array{
+     *     columns: array<string, float|int|string|null>,
+     *     metadata: array<string, float|int|string|null>,
+     *     subtableId: int|null
+     * }>|null
+     */
+    private function decodeHierarchy(string $value): ?array
+    {
+        $uncompressed = @gzuncompress($value);
+        $serialized = is_string($uncompressed) ? $uncompressed : $value;
+        $payload = @unserialize($serialized, ['allowed_classes' => false]);
+
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        $rows = [];
+
+        foreach ($payload as $row) {
+            if (! is_array($row)) {
+                return null;
+            }
+
+            $columns = $this->scalarMap($row[0] ?? []);
+            $metadata = $this->scalarMap($row[1] ?? []);
+            $subtableId = $this->storedSubtableId($row[3] ?? null);
+
+            if ($columns === null || $metadata === null || $subtableId === false) {
+                return null;
+            }
+
+            $rows[] = [
+                'columns' => $columns,
+                'metadata' => $metadata,
+                'subtableId' => $subtableId,
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function isRequestedRecord(string $name, string $recordName, bool $includeSubtables): bool
+    {
+        if ($name === $recordName) {
+            return true;
+        }
+
+        return $includeSubtables
+            && preg_match('/^'.preg_quote($recordName, '/').'_[1-9][0-9]*$/D', $name) === 1;
+    }
+
+    private function storedSubtableId(mixed $value): int|null|false
+    {
+        if ($value === null || $value === false) {
+            return null;
+        }
+
+        if ((is_int($value) || is_string($value))
+            && preg_match('/^[1-9][0-9]*$/D', (string) $value) === 1) {
+            return (int) $value;
+        }
+
+        return false;
     }
 
     /** @return array<string, float|int|string|null>|null */

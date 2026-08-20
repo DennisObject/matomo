@@ -506,7 +506,20 @@ final class ApiResponseFactory
     private function xmlTableReport(ApiTableReport $report): Response
     {
         if (! $report->isMapped()) {
-            return $this->xmlRows($report->flattenedRows());
+            if ($report->data === []) {
+                return $this->response(
+                    "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result />",
+                    200,
+                    'text/xml; charset=utf-8',
+                );
+            }
+
+            return $this->response(
+                "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result>\n".
+                    $this->xmlTableRows($report->data, "\t").'</result>',
+                200,
+                'text/xml; charset=utf-8',
+            );
         }
 
         return $this->response(
@@ -556,8 +569,19 @@ final class ApiResponseFactory
             $xml .= "{$indent}<row>\n";
 
             foreach ($row as $name => $value) {
-                if (! is_string($name)
-                    || (! is_float($value) && ! is_int($value) && ! is_string($value) && $value !== null)) {
+                if (! is_string($name)) {
+                    continue;
+                }
+
+                if ($name === 'subtable' && is_array($value)) {
+                    $xml .= "{$indent}\t<subtable>\n";
+                    $xml .= $this->xmlTableRows($value, $indent."\t\t");
+                    $xml .= "{$indent}\t</subtable>\n";
+
+                    continue;
+                }
+
+                if (! is_float($value) && ! is_int($value) && ! is_string($value) && $value !== null) {
                     continue;
                 }
 

@@ -28,6 +28,7 @@ use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Reporting\BlobArchiveMetadataRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\DeviceModelPolicy;
+use App\Matomo\Reporting\HierarchicalBlobArchiveRepository;
 use App\Matomo\Reporting\NumericArchiveRepository;
 use App\Matomo\Reporting\ReportingSettings;
 use App\Matomo\Reporting\ScreenResolutionPolicy;
@@ -466,6 +467,21 @@ abstract class TestCase extends BaseTestCase
                 return [];
             }
         });
+        $this->app->instance(
+            HierarchicalBlobArchiveRepository::class,
+            new class implements HierarchicalBlobArchiveRepository
+            {
+                public function records(
+                    array $siteIds,
+                    array $periods,
+                    string $segmentHash,
+                    string $recordName,
+                    bool $includeSubtables,
+                ): array {
+                    return [];
+                }
+            },
+        );
         $this->app->instance(ReportingApiIpAllowlist::class, new class implements ReportingApiIpAllowlist
         {
             public function deniedClientIp(Request $request): ?string
