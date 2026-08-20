@@ -9,4 +9,6 @@ interface SiteRuntimeSettings
     public function timezoneSupportEnabled(): bool;
 
     public function websitesCountToDisplay(): int;
+
+    public function administrationEnabled(): bool;
 }

@@ -248,6 +248,7 @@ use App\Matomo\Sites\DatabaseSiteSettingsProvider;
 use App\Matomo\Sites\HttpConsentManagerDetector;
 use App\Matomo\Sites\LocalizedSiteDetailsPresenter;
 use App\Matomo\Sites\LocalizedTimezoneProvider;
+use App\Matomo\Sites\MutableSiteRepository;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteDetailsPresenter;
 use App\Matomo\Sites\SiteRepository;
@@ -511,6 +512,7 @@ class AppServiceProvider extends ServiceProvider
                 translator: $application->make(MatomoTranslator::class),
             ),
         );
+        $this->app->alias(SiteRepository::class, MutableSiteRepository::class);
 
         $this->app->singleton(
             DashboardRepository::class,
