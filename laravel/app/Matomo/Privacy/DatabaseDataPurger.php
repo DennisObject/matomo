@@ -15,6 +15,13 @@ final readonly class DatabaseDataPurger implements DataPurger
 {
     private const int CHUNK_SIZE = 25_000;
 
+    /** @var list<string> */
+    private const array BASIC_METRICS = [
+        'nb_uniq_visitors', 'nb_visits', 'nb_users', 'nb_actions', 'max_actions',
+        'sum_visit_length', 'bounce_count', 'nb_visits_converted', 'nb_conversions',
+        'revenue', 'quantity', 'price', 'orders',
+    ];
+
     public function __construct(
         private Connection $connection,
         private OptionRepository $options,
@@ -139,31 +146,29 @@ final readonly class DatabaseDataPurger implements DataPurger
         $keepSegments = $this->enabled('delete_reports_keep_segment_reports');
         $keepBasic = $this->enabled('delete_reports_keep_basic_metrics');
 
-        if ($keepPeriods === [] && ! $keepSegments && ! $keepBasic) {
-            foreach ([$blob, $numeric] as $table) {
-                if ($table !== null) {
-                    $this->connection->getSchemaBuilder()->drop($table);
-                }
-            }
-
-            return;
-        }
-
         if ($numeric === null) {
+            if ($blob !== null && $keepPeriods === [] && ! $keepSegments) {
+                $this->connection->table($blob)->delete();
+            }
+
             return;
         }
 
-        $keepIds = $this->connection->table($numeric)->where(function (Builder $query) use ($keepPeriods, $keepSegments): void {
-            if ($keepPeriods !== []) {
-                $query->whereIn('period', $keepPeriods);
-            }
+        $keepIds = [];
+        if ($keepPeriods !== [] || $keepSegments) {
+            $keepIds = $this->connection->table($numeric)
+                ->where(function (Builder $query) use ($keepPeriods, $keepSegments): void {
+                    if ($keepPeriods !== []) {
+                        $query->whereIn('period', $keepPeriods);
+                    }
 
-            if ($keepSegments) {
-                $method = $keepPeriods === [] ? 'where' : 'orWhere';
-                $query->{$method}('name', 'like', 'done%');
-                $query->where('name', '!=', 'done');
-            }
-        })->pluck('idarchive')->unique()->all();
+                    if ($keepSegments) {
+                        $method = $keepPeriods === [] ? 'where' : 'orWhere';
+                        $query->{$method}('name', 'like', 'done%');
+                        $query->where('name', '!=', 'done');
+                    }
+                })->pluck('idarchive')->unique()->all();
+        }
 
         if ($blob !== null) {
             $query = $this->connection->table($blob);
@@ -175,9 +180,12 @@ final readonly class DatabaseDataPurger implements DataPurger
             $query->whereNotIn('idarchive', $keepIds);
         }
 
-        if (! $keepBasic) {
-            $query->delete();
+        if ($keepBasic) {
+            $query->whereNotIn('name', self::BASIC_METRICS)
+                ->where('name', 'not like', 'Goal_%');
         }
+
+        $query->delete();
     }
 
     private function enabled(string $name): bool
