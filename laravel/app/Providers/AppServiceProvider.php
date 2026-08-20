@@ -47,6 +47,7 @@ use App\Matomo\Api\Methods\LoginApiMethodHandler;
 use App\Matomo\Api\Methods\MultiSitesApiMethodHandler;
 use App\Matomo\Api\Methods\OverlayApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
+use App\Matomo\Api\Methods\PrivacyManagerSettingsApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersAiApiMethodHandler;
 use App\Matomo\Api\Methods\ReferrersCampaignApiMethodHandler;
@@ -204,6 +205,8 @@ use App\Matomo\Plugins\ConfiguredPluginState;
 use App\Matomo\Plugins\LocalTrackerFileAvailability;
 use App\Matomo\Plugins\PluginState;
 use App\Matomo\Plugins\TrackerFileAvailability;
+use App\Matomo\Privacy\ConfiguredDeletionBatchLimits;
+use App\Matomo\Privacy\DeletionBatchLimits;
 use App\Matomo\ProfessionalServices\DatabasePromoWidgetDismissalRepository;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Referrers\ReferrerDefinitionCatalog;
@@ -553,6 +556,7 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(AccessMetadataProvider::class, ConfiguredAccessMetadataProvider::class);
+        $this->app->singleton(DeletionBatchLimits::class, ConfiguredDeletionBatchLimits::class);
         $this->app->singleton(UserPreferenceDefaults::class, ConfiguredUserPreferenceDefaults::class);
         $this->app->singleton(
             UserPreferenceRepository::class,
@@ -1554,6 +1558,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(DashboardApiMethodHandler::class),
                 $application->make(DbStatsApiMethodHandler::class),
                 $application->make(ProfessionalServicesApiMethodHandler::class),
+                $application->make(PrivacyManagerSettingsApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),
                 $application->make(AiProvidersApiMethodHandler::class),

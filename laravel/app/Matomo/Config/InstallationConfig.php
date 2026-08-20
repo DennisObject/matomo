@@ -100,6 +100,8 @@ final readonly class InstallationConfig
         private bool $realtimeSegmentsAllowed,
         private bool $browserArchivingAvailableForSegments,
         private string $processNewSegmentsFrom,
+        private int $deleteLogsMaxRowsPerQuery,
+        private int $deleteLogsUnusedActionsMaxRowsPerQuery,
     ) {}
 
     public static function fromFile(string $path): self
@@ -127,6 +129,7 @@ final readonly class InstallationConfig
         $aiProviders = $configuration['AIProviders'] ?? [];
         $segments = $configuration['Segments'] ?? [];
         $pagePerformance = $configuration['PagePerformance'] ?? [];
+        $deleteLogs = $configuration['Deletelogs'] ?? [];
 
         if (! is_array($database)
             || ! is_array($general)
@@ -140,7 +143,8 @@ final readonly class InstallationConfig
             || ! is_array($development)
             || ! is_array($aiProviders)
             || ! is_array($segments)
-            || ! is_array($pagePerformance)) {
+            || ! is_array($pagePerformance)
+            || ! is_array($deleteLogs)) {
             throw new RuntimeException('The Matomo configuration is missing required sections.');
         }
 
@@ -368,6 +372,16 @@ final readonly class InstallationConfig
                 $general,
                 'process_new_segments_from',
                 'beginning_of_time',
+            ),
+            deleteLogsMaxRowsPerQuery: self::positiveInteger(
+                $deleteLogs,
+                'delete_logs_max_rows_per_query',
+                100_000,
+            ),
+            deleteLogsUnusedActionsMaxRowsPerQuery: self::positiveInteger(
+                $deleteLogs,
+                'delete_logs_unused_actions_max_rows_per_query',
+                100_000,
             ),
         );
     }
@@ -739,6 +753,16 @@ final readonly class InstallationConfig
     public function processNewSegmentsFrom(): string
     {
         return $this->processNewSegmentsFrom;
+    }
+
+    public function deleteLogsMaxRowsPerQuery(): int
+    {
+        return $this->deleteLogsMaxRowsPerQuery;
+    }
+
+    public function deleteLogsUnusedActionsMaxRowsPerQuery(): int
+    {
+        return $this->deleteLogsUnusedActionsMaxRowsPerQuery;
     }
 
     /** @param array<string, mixed> $general */

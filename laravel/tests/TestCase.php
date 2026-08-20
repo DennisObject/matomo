@@ -47,6 +47,7 @@ use App\Matomo\Login\LoginAttemptStatus;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
+use App\Matomo\Privacy\DeletionBatchLimits;
 use App\Matomo\ProfessionalServices\PromoWidgetDismissalRepository;
 use App\Matomo\Reporting\BlobArchiveMetadataRepository;
 use App\Matomo\Reporting\BlobArchiveRepository;
@@ -102,6 +103,18 @@ abstract class TestCase extends BaseTestCase
             public function reportDate(): string
             {
                 return 'yesterday';
+            }
+        });
+        $this->app->instance(DeletionBatchLimits::class, new class implements DeletionBatchLimits
+        {
+            public function logs(): int
+            {
+                return 100_000;
+            }
+
+            public function unusedActions(): int
+            {
+                return 100_000;
             }
         });
 
