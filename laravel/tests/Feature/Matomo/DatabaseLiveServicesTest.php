@@ -112,6 +112,9 @@ final class DatabaseLiveServicesTest extends TestCase
         $this->assertFalse(
             $repository->adjacentVisitorId(2, '0304', '2026-08-15 10:00:00', null, false),
         );
+        $this->assertFalse(
+            $repository->adjacentVisitorId(2, 'invalid', '2026-08-15 10:00:00', null, true),
+        );
     }
 
     public function test_visit_details_are_normalized_and_actions_are_batched(): void
@@ -152,6 +155,7 @@ final class DatabaseLiveServicesTest extends TestCase
         $this->assertSame('returning', $rows[0]['visitorType']);
         $this->assertSame('https://example.test/page', $rows[0]['actionDetails'][0]['url']);
         $this->assertSame('Page title', $rows[0]['actionDetails'][0]['pageTitle']);
+        $this->assertSame([], $repository->visits([2], null, null, null, null, 0, 10, visitorId: 'invalid'));
     }
 
     private function connection(): Connection
