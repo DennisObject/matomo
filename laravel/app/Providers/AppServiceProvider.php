@@ -25,6 +25,7 @@ use App\Matomo\Api\Methods\CoreAdminHomeApiMethodHandler;
 use App\Matomo\Api\Methods\CoreApiMethodHandler;
 use App\Matomo\Api\Methods\CustomJsTrackerApiMethodHandler;
 use App\Matomo\Api\Methods\DashboardApiMethodHandler;
+use App\Matomo\Api\Methods\DbStatsApiMethodHandler;
 use App\Matomo\Api\Methods\DevicePluginsApiMethodHandler;
 use App\Matomo\Api\Methods\DevicesDetectionApiMethodHandler;
 use App\Matomo\Api\Methods\EventsApiMethodHandler;
@@ -111,6 +112,9 @@ use App\Matomo\Dashboard\DashboardRepository;
 use App\Matomo\Dashboard\DatabaseDashboardRecipientPolicy;
 use App\Matomo\Dashboard\DatabaseDashboardRepository;
 use App\Matomo\Database\MatomoDatabase;
+use App\Matomo\DbStats\DatabaseMetadataProvider;
+use App\Matomo\DbStats\DbStatsReportBuilder;
+use App\Matomo\DbStats\MySqlDatabaseMetadataProvider;
 use App\Matomo\Feedback\ConfiguredFeedbackSettings;
 use App\Matomo\Feedback\DatabaseFeedbackStore;
 use App\Matomo\Feedback\FeedbackFeatureNameResolver;
@@ -225,6 +229,7 @@ use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Mail\Mailer;
+use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Http\Client\Factory as HttpFactory;
@@ -511,6 +516,18 @@ class AppServiceProvider extends ServiceProvider
                     maximumExecutionTime: $configuration->liveQueryMaximumExecutionTime(),
                 );
             },
+        );
+        $this->app->singleton(
+            DatabaseMetadataProvider::class,
+            fn (Application $application): DatabaseMetadataProvider => new MySqlDatabaseMetadataProvider(
+                fn (): Connection => $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            DbStatsReportBuilder::class,
+            fn (Application $application): DbStatsReportBuilder => new DbStatsReportBuilder(
+                metadata: $application->make(DatabaseMetadataProvider::class),
+            ),
         );
 
         $this->app->singleton(
@@ -1246,6 +1263,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(BotTrackingApiMethodHandler::class),
                 $application->make(CustomJsTrackerApiMethodHandler::class),
                 $application->make(DashboardApiMethodHandler::class),
+                $application->make(DbStatsApiMethodHandler::class),
                 $application->make(ProfessionalServicesApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),
