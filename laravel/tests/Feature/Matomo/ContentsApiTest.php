@@ -6,7 +6,7 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
-use App\Matomo\Reporting\BlobArchiveRepository;
+use App\Matomo\Reporting\HierarchicalBlobArchiveRepository;
 use App\Matomo\Sites\SiteRepository;
 use Tests\TestCase;
 
@@ -15,16 +15,18 @@ class ContentsApiTest extends TestCase
     public function test_returns_content_name_metrics_and_segments(): void
     {
         $this->bindAccessAndSite();
-        $archives = $this->createMock(BlobArchiveRepository::class);
+        $archives = $this->createMock(HierarchicalBlobArchiveRepository::class);
         $archives->expects($this->once())
-            ->method('rows')
-            ->with([7], $this->isType('array'), '', 'Contents_name_piece')
+            ->method('records')
+            ->with([7], $this->isArray(), '', 'Contents_name_piece', false)
             ->willReturn([7 => ['2026-08-14,2026-08-14' => [
-                $this->row('Image Ad', 8, 8, 2),
-                $this->row('Text Ad', 6, 6, 4),
-                $this->row('Piwik_ContentPieceNotSet', 2, 2, 0),
+                'Contents_name_piece' => [
+                    $this->row('Image Ad', 8, 8, 2, 41),
+                    $this->row('Text Ad', 6, 6, 4, 42),
+                    $this->row('Piwik_ContentPieceNotSet', 2, 2, 0, 43),
+                ],
             ]]]);
-        $this->app->instance(BlobArchiveRepository::class, $archives);
+        $this->app->instance(HierarchicalBlobArchiveRepository::class, $archives);
 
         $this->get(
             '/index.php?module=API&method=Contents.getContentNames&idSite=7'.
@@ -35,6 +37,7 @@ class ContentsApiTest extends TestCase
                 'nb_visits' => 8,
                 'nb_impressions' => 8,
                 'nb_interactions' => 2,
+                'idsubdatatable' => 41,
                 'nb_visits_percent_of_total' => '50%',
                 'interaction_rate' => '25%',
                 'segment' => 'contentName==Image+Ad',
@@ -44,6 +47,7 @@ class ContentsApiTest extends TestCase
                 'nb_visits' => 6,
                 'nb_impressions' => 6,
                 'nb_interactions' => 4,
+                'idsubdatatable' => 42,
                 'nb_visits_percent_of_total' => '37.5%',
                 'interaction_rate' => '66.67%',
                 'segment' => 'contentName==Text+Ad',
@@ -53,6 +57,7 @@ class ContentsApiTest extends TestCase
                 'nb_visits' => 2,
                 'nb_impressions' => 2,
                 'nb_interactions' => 0,
+                'idsubdatatable' => 43,
                 'nb_visits_percent_of_total' => '12.5%',
                 'interaction_rate' => '0%',
             ],
@@ -62,14 +67,16 @@ class ContentsApiTest extends TestCase
     public function test_reads_requested_piece_subtable_without_top_level_segment(): void
     {
         $this->bindAccessAndSite();
-        $archives = $this->createMock(BlobArchiveRepository::class);
+        $archives = $this->createMock(HierarchicalBlobArchiveRepository::class);
         $archives->expects($this->once())
-            ->method('rows')
-            ->with([7], $this->isType('array'), '', 'Contents_piece_name_42')
+            ->method('records')
+            ->with([7], $this->isArray(), '', 'Contents_piece_name_42', false)
             ->willReturn([7 => ['2026-08-14,2026-08-14' => [
-                $this->row('Hero name', 3, 3, 1),
+                'Contents_piece_name_42' => [
+                    $this->row('Hero name', 3, 3, 1),
+                ],
             ]]]);
-        $this->app->instance(BlobArchiveRepository::class, $archives);
+        $this->app->instance(HierarchicalBlobArchiveRepository::class, $archives);
 
         $this->get(
             '/index.php?module=API&method=Contents.getContentPieces&idSite=7'.
@@ -98,10 +105,15 @@ class ContentsApiTest extends TestCase
     }
 
     /**
-     * @return array{columns: array{label: string, nb_visits: int, nb_impressions: int, nb_interactions: int}, metadata: array{}}
+     * @return array{columns: array{label: string, nb_visits: int, nb_impressions: int, nb_interactions: int}, metadata: array{}, subtableId: int|null}
      */
-    private function row(string $label, int $visits, int $impressions, int $interactions): array
-    {
+    private function row(
+        string $label,
+        int $visits,
+        int $impressions,
+        int $interactions,
+        ?int $subtableId = null,
+    ): array {
         return [
             'columns' => [
                 'label' => $label,
@@ -110,6 +122,7 @@ class ContentsApiTest extends TestCase
                 'nb_interactions' => $interactions,
             ],
             'metadata' => [],
+            'subtableId' => $subtableId,
         ];
     }
 

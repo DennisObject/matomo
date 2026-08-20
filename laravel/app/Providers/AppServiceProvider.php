@@ -55,6 +55,7 @@ use App\Matomo\Archiving\ArchiveVisitQueryFactory;
 use App\Matomo\Archiving\BrowserLanguageArchiveLabeler;
 use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
+use App\Matomo\Archiving\ContentArchiveCollector;
 use App\Matomo\Archiving\ConversionSegmentApplicator;
 use App\Matomo\Archiving\DatabaseArchiveInvalidationManager;
 use App\Matomo\Archiving\DatabaseReportArchiver;
@@ -750,6 +751,17 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(
+            ContentArchiveCollector::class,
+            fn (Application $application): ContentArchiveCollector => new ContentArchiveCollector(
+                connection: $application->make(MatomoDatabase::class)->connection(),
+                actionQueries: $application->make(ArchiveActionQueryFactory::class),
+                subperiods: $application->make(ReportingSubperiodFactory::class),
+                segments: $application->make(SegmentHashResolver::class),
+                blobs: $application->make(HierarchicalBlobArchiveRepository::class),
+                sites: $application->make(SiteRepository::class),
+            ),
+        );
+        $this->app->singleton(
             ReportArchiver::class,
             fn (Application $application): ReportArchiver => new DatabaseReportArchiver(
                 connection: $application->make(MatomoDatabase::class)->connection(),
@@ -1064,6 +1076,7 @@ class AppServiceProvider extends ServiceProvider
         $events->listen(ArchiveReportsCollecting::class, GoalArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, EcommerceItemArchiveCollector::class);
         $events->listen(ArchiveReportsCollecting::class, EventArchiveCollector::class);
+        $events->listen(ArchiveReportsCollecting::class, ContentArchiveCollector::class);
     }
 
     /**
