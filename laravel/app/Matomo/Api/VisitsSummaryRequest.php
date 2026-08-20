@@ -28,5 +28,6 @@ final readonly class VisitsSummaryRequest
         public bool $showDimensions,
         public ?string $typeReferrer,
         public bool $setReferrerTypeLabel,
+        public bool $formatMetrics,
     ) {}
 }
