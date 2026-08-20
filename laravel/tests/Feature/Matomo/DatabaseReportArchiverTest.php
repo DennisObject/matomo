@@ -6,13 +6,18 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Archiving\ArchiveRecordSet;
 use App\Matomo\Archiving\ArchiveReportRequest;
+use App\Matomo\Archiving\BuiltInVisitSegmentApplicator;
 use App\Matomo\Archiving\CarbonReportingSubperiodFactory;
 use App\Matomo\Archiving\DatabaseReportArchiver;
+use App\Matomo\Archiving\DynamicSegmentResolver;
 use App\Matomo\Archiving\Events\ArchiveReportsCollecting;
 use App\Matomo\Archiving\Events\ArchiveReportsCompleted;
 use App\Matomo\Archiving\Events\ArchiveReportsStarting;
 use App\Matomo\Archiving\Events\ArchiveVisitsQueryBuilding;
+use App\Matomo\Archiving\SegmentConditionQueryApplier;
 use App\Matomo\Archiving\SegmentDefinitionValidator;
+use App\Matomo\Archiving\SegmentExpressionParser;
+use App\Matomo\Geolocation\CountryMetadataProvider;
 use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Reporting\CarbonReportingPeriodFactory;
 use App\Matomo\Reporting\DatabaseBlobArchiveRepository;
@@ -69,11 +74,118 @@ class DatabaseReportArchiverTest extends TestCase
             $table->string('idvisitor');
             $table->string('config_id');
             $table->string('user_id')->nullable();
+            $table->string('config_browser_name')->nullable();
+            $table->string('config_os')->nullable();
+            $table->string('custom_var_k1')->nullable();
+            $table->string('custom_var_v1')->nullable();
+            $table->string('custom_var_k2')->nullable();
+            $table->string('custom_var_v2')->nullable();
+            $table->string('custom_var_k3')->nullable();
+            $table->string('custom_var_v3')->nullable();
+            $table->string('custom_var_k4')->nullable();
+            $table->string('custom_var_v4')->nullable();
+            $table->string('custom_var_k5')->nullable();
+            $table->string('custom_var_v5')->nullable();
+            $table->string('custom_dimension_1')->nullable();
+            $table->unsignedInteger('visit_entry_idaction_url')->nullable();
+            $table->unsignedInteger('visit_entry_idaction_name')->nullable();
+            $table->unsignedInteger('visit_exit_idaction_url')->nullable();
+            $table->unsignedInteger('visit_exit_idaction_name')->nullable();
+            $table->dateTime('visit_first_action_time')->nullable();
             $table->dateTime('visit_last_action_time');
             $table->unsignedInteger('visit_total_actions');
+            $table->unsignedInteger('visit_total_interactions')->nullable();
+            $table->unsignedInteger('visit_total_searches')->nullable();
+            $table->unsignedInteger('visit_total_events')->nullable();
             $table->unsignedInteger('visit_total_time');
             $table->boolean('visit_goal_converted');
+            $table->unsignedTinyInteger('visitor_returning')->nullable();
+            $table->unsignedTinyInteger('visit_goal_buyer')->nullable();
+            $table->unsignedInteger('visitor_seconds_since_first')->nullable();
+            $table->unsignedInteger('visitor_seconds_since_last')->nullable();
+            $table->unsignedInteger('visitor_seconds_since_order')->nullable();
+            $table->unsignedTinyInteger('config_device_type')->nullable();
+            $table->string('referer_name')->nullable();
+            $table->string('referer_url')->nullable();
+            $table->binary('location_ip')->nullable();
             $table->string('location_country', 3)->nullable();
+        });
+        $schema->create('log_action', static function (Blueprint $table): void {
+            $table->unsignedInteger('idaction')->primary();
+            $table->text('name');
+            $table->unsignedTinyInteger('type');
+            $table->unsignedTinyInteger('url_prefix')->nullable();
+        });
+        $schema->create('log_link_visit_action', static function (Blueprint $table): void {
+            $table->increments('idlink_va');
+            $table->unsignedInteger('idsite');
+            $table->unsignedInteger('idvisit');
+            $table->unsignedInteger('idaction_url')->nullable();
+            $table->unsignedInteger('idaction_name')->nullable();
+            $table->unsignedInteger('idaction_event_category')->nullable();
+            $table->unsignedInteger('idaction_event_action')->nullable();
+            $table->unsignedInteger('idaction_content_name')->nullable();
+            $table->unsignedInteger('idaction_content_piece')->nullable();
+            $table->unsignedInteger('idaction_content_target')->nullable();
+            $table->unsignedInteger('idaction_content_interaction')->nullable();
+            $table->unsignedInteger('idaction_product_name')->nullable();
+            $table->unsignedInteger('idaction_product_sku')->nullable();
+            $table->unsignedInteger('idaction_product_cat')->nullable();
+            $table->unsignedInteger('idaction_product_cat2')->nullable();
+            $table->unsignedInteger('idaction_product_cat3')->nullable();
+            $table->unsignedInteger('idaction_product_cat4')->nullable();
+            $table->unsignedInteger('idaction_product_cat5')->nullable();
+            $table->string('search_cat')->nullable();
+            $table->unsignedInteger('search_count')->nullable();
+            $table->float('custom_float')->nullable();
+            $table->float('product_price')->nullable();
+            $table->unsignedBigInteger('bandwidth')->nullable();
+            $table->string('custom_var_k1')->nullable();
+            $table->string('custom_var_v1')->nullable();
+            $table->string('custom_var_k2')->nullable();
+            $table->string('custom_var_v2')->nullable();
+            $table->string('custom_var_k3')->nullable();
+            $table->string('custom_var_v3')->nullable();
+            $table->string('custom_var_k4')->nullable();
+            $table->string('custom_var_v4')->nullable();
+            $table->string('custom_var_k5')->nullable();
+            $table->string('custom_var_v5')->nullable();
+            $table->string('custom_dimension_2')->nullable();
+            $table->string('custom_dimension_4')->nullable();
+            $table->dateTime('server_time');
+        });
+        $schema->create('goal', static function (Blueprint $table): void {
+            $table->unsignedInteger('idsite');
+            $table->integer('idgoal');
+            $table->string('name');
+        });
+        $schema->create('log_conversion', static function (Blueprint $table): void {
+            $table->unsignedInteger('idsite');
+            $table->unsignedInteger('idvisit');
+            $table->integer('idgoal');
+            $table->string('idorder')->nullable();
+            $table->float('revenue')->nullable();
+            $table->string('custom_dimension_3')->nullable();
+        });
+        $schema->create('log_conversion_item', static function (Blueprint $table): void {
+            $table->unsignedInteger('idsite');
+            $table->unsignedInteger('idvisit');
+            $table->string('idorder')->nullable();
+            $table->unsignedInteger('idaction_sku')->nullable();
+            $table->unsignedInteger('idaction_name')->nullable();
+            $table->unsignedInteger('idaction_category')->nullable();
+            $table->unsignedInteger('idaction_category2')->nullable();
+            $table->unsignedInteger('idaction_category3')->nullable();
+            $table->unsignedInteger('idaction_category4')->nullable();
+            $table->unsignedInteger('idaction_category5')->nullable();
+            $table->float('price')->nullable();
+        });
+        $schema->create('custom_dimensions', static function (Blueprint $table): void {
+            $table->unsignedInteger('idcustomdimension');
+            $table->unsignedInteger('idsite');
+            $table->unsignedSmallInteger('index');
+            $table->string('scope', 10);
+            $table->boolean('active');
         });
         $this->connection->table('site')->insert([
             ['idsite' => 1, 'timezone' => 'Pacific/Auckland'],
@@ -226,7 +338,7 @@ class DatabaseReportArchiverTest extends TestCase
             ->all());
     }
 
-    public function test_segment_query_must_be_handled_and_can_apply_bound_filters(): void
+    public function test_built_in_segments_apply_bound_filters_and_unknown_segments_fail_closed(): void
     {
         $this->insertVisits();
         $request = new ArchiveReportRequest(
@@ -235,15 +347,31 @@ class DatabaseReportArchiverTest extends TestCase
             date: '2026-08-15',
             segment: 'countryCode==nz',
         );
+        $result = $this->archiver()->archive($request);
+
+        $this->assertSame([1], $result->archiveIds);
+        $this->assertSame(1, $result->visits);
+        $this->assertSame(1, (int) $this->connection
+            ->table('archive_numeric_2026_08')
+            ->where('idarchive', 1)
+            ->where('name', 'done'.md5('countryCode==nz'))
+            ->value('value'));
+
+        $unsupported = new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: 'extensionDimension==nz',
+        );
 
         try {
-            $this->archiver()->archive($request);
+            $this->archiver()->archive($unsupported);
             $this->fail('An unsupported segment must not create a successful archive.');
         } catch (InvalidArgumentException $invalidArgumentException) {
             $this->assertStringContainsString('no segment handler supports it', $invalidArgumentException->getMessage());
         }
 
-        $hash = md5('countryCode==nz');
+        $hash = md5('extensionDimension==nz');
         $this->assertSame(2, (int) $this->connection
             ->table('archive_numeric_2026_08')
             ->where('name', 'done'.$hash)
@@ -251,21 +379,347 @@ class DatabaseReportArchiverTest extends TestCase
         $this->events->listen(ArchiveVisitsQueryBuilding::class, static function (
             ArchiveVisitsQueryBuilding $event,
         ): void {
-            if ($event->request->segment === 'countryCode==nz') {
+            if ($event->request->segment === 'extensionDimension==nz') {
                 $event->query->where('location_country', 'nz');
                 $event->segmentApplied = true;
             }
         });
 
-        $result = $this->archiver()->archive($request);
+        $result = $this->archiver()->archive($unsupported);
 
-        $this->assertSame([2], $result->archiveIds);
+        $this->assertSame([3], $result->archiveIds);
         $this->assertSame(1, $result->visits);
         $this->assertSame(1, (int) $this->connection
             ->table('archive_numeric_2026_08')
-            ->where('idarchive', 2)
+            ->where('idarchive', 3)
             ->where('name', 'done'.$hash)
             ->value('value'));
+    }
+
+    public function test_visit_segment_labels_groups_functions_and_binary_values_match_legacy_behavior(): void
+    {
+        $countryMetadata = $this->createMock(CountryMetadataProvider::class);
+        $countryMetadata->method('codes')->willReturn(['nz', 'au', 'fr']);
+        $countryMetadata->method('continentCode')->willReturnCallback(
+            static fn (string $country): string => match ($country) {
+                'nz', 'au' => 'oce',
+                'fr' => 'eur',
+                default => 'unk',
+            },
+        );
+        $this->app->instance(CountryMetadataProvider::class, $countryMetadata);
+        $this->insertVisits();
+        $visitorId = '34c31e04394bdc63';
+        $this->connection->table('log_visit')
+            ->where('idvisitor', 'visitor-b')
+            ->update([
+                'idvisitor' => hex2bin($visitorId),
+                'visit_first_action_time' => '2026-08-15 08:30:00',
+                'visitor_returning' => 1,
+                'visit_goal_buyer' => 1,
+                'visitor_seconds_since_first' => 172_800,
+                'config_device_type' => 2,
+                'referer_name' => 'weekly newsletter',
+                'location_ip' => inet_pton('80.229.12.34'),
+            ]);
+        $segment = implode(';', [
+            'visitorType==returning,deviceType==tablet',
+            'visitEcommerceStatus==ordered',
+            'referrerName=@newsletter',
+            'visitStartServerHour>=8',
+            'daysSinceFirstVisit==2',
+            'continentCode==oce',
+            'visitEndServerDate==2026-08-15',
+            "visitorId=={$visitorId}",
+            'visitIp>=80.229.0.0',
+            'visitIp<=80.229.255.255',
+        ]);
+        $applicator = $this->visitSegmentApplicator();
+        $conditions = explode(';', $segment);
+
+        foreach (array_keys($conditions) as $index) {
+            $partial = implode(';', array_slice($conditions, 0, $index + 1));
+            $query = $this->connection->table('log_visit')->where('idsite', 1);
+            $this->assertTrue($applicator->apply($query, $partial));
+            $this->assertSame(1, $query->count(), "The segment '{$partial}' must match one visit.");
+        }
+
+        $result = $this->archiver()->archive(new ArchiveReportRequest(
+            siteId: 1,
+            period: 'day',
+            date: '2026-08-15',
+            segment: $segment,
+        ));
+
+        $this->assertSame(1, $result->visits);
+        $this->assertSame(1.0, $this->connection
+            ->table('archive_numeric_2026_08')
+            ->where('idarchive', $result->archiveIds[0])
+            ->where('name', 'nb_visits')
+            ->value('value'));
+    }
+
+    public function test_visit_segment_string_and_empty_operators_keep_null_and_escape_semantics(): void
+    {
+        $this->insertVisits();
+        $this->connection->table('log_visit')
+            ->where('idvisitor', 'visitor-b')
+            ->update([
+                'referer_name' => 'weekly_news%letter',
+                'visitor_returning' => 1,
+            ]);
+        $this->connection->table('log_visit')
+            ->where('idvisitor', 'outside-b')
+            ->update(['location_country' => null]);
+        $expectedCounts = [
+            'referrerName=@news%2525letter' => 1,
+            'referrerName!@news' => 3,
+            'referrerName=^weekly%255F' => 1,
+            'referrerName=$letter' => 1,
+            'referrerName==' => 3,
+            'referrerName!=' => 1,
+            'countryCode==' => 1,
+            'countryCode!=' => 3,
+            'userId!=bob' => 4,
+            'userId!@alice' => 3,
+            'referrerName!=0' => 1,
+            'referrerName!@0' => 1,
+            'visitorType!=new' => 1,
+            "referrerName==x' OR 1=1 --" => 0,
+        ];
+        $applicator = $this->visitSegmentApplicator();
+
+        foreach ($expectedCounts as $segment => $expected) {
+            $query = $this->connection->table('log_visit')->where('idsite', 1);
+            $this->assertTrue($applicator->apply($query, $segment));
+            $this->assertSame($expected, $query->count(), "The segment '{$segment}' has the wrong result.");
+        }
+    }
+
+    public function test_action_segments_match_same_action_rows_and_negative_rules_exclude_whole_visits(): void
+    {
+        $this->insertVisits();
+        $this->insertActionRows();
+        $this->connection->table('log_visit')->where('idvisit', 2)->update([
+            'visit_entry_idaction_url' => 1,
+            'visit_entry_idaction_name' => 2,
+            'visit_exit_idaction_url' => 3,
+            'visit_exit_idaction_name' => 4,
+        ]);
+        $segments = [
+            'pageUrl==https%3A%2F%2Fwww.example.test%2Fone' => 1,
+            'pageUrl==https%3A%2F%2Fwww.example.test%2Fone;pageTitle==Alpha' => 1,
+            'pageUrl==https%3A%2F%2Fwww.example.test%2Fone;pageTitle==Beta' => 0,
+            'eventCategory==Video;eventAction==play;eventName==Trailer;eventValue>=9' => 1,
+            'actionType==events' => 1,
+            'actionServerHour==10' => 1,
+            'siteSearchCategory==docs;siteSearchCount==2' => 1,
+            'entryPageUrl==https%3A%2F%2Fwww.example.test%2Fone' => 1,
+            'entryPageTitle==Alpha;exitPageTitle==Beta' => 1,
+            'entryPageTitle!=Alpha' => 1,
+            'entryPageTitle==' => 1,
+            'entryPageTitle!=' => 1,
+            'pageTitle!=Alpha' => 1,
+            'pageTitle!@ph' => 1,
+            'pageTitle=@Alpha%255F100%2525' => 1,
+            'pageTitle!@Alpha%255F100%2525' => 1,
+            'pageTitle!=Missing' => 2,
+            'countryCode==nz,pageTitle==Alpha' => 2,
+            "pageTitle==x' OR 1=1 --" => 0,
+        ];
+
+        foreach ($segments as $segment => $expectedVisits) {
+            $result = $this->archiver()->archive(new ArchiveReportRequest(
+                siteId: 1,
+                period: 'day',
+                date: '2026-08-15',
+                segment: $segment,
+            ));
+
+            $this->assertSame(
+                $expectedVisits,
+                $result->visits,
+                "The action segment '{$segment}' has the wrong visit count.",
+            );
+        }
+    }
+
+    public function test_conversion_and_ecommerce_segments_preserve_related_row_semantics(): void
+    {
+        $this->insertVisits();
+        $this->insertActionRows();
+        $this->insertConversionRows();
+        $this->connection->table('log_visit')->insert(
+            $this->visit(1, '2026-08-15 10:30:00', 'visitor-c', 'config-c', null, 1, 5, 0, 'nz'),
+        );
+        $segments = [
+            'visitConvertedGoalId==1' => 1,
+            'visitConvertedGoalId!=1' => 2,
+            'visitConvertedGoalId==' => 2,
+            'visitConvertedGoalId!=' => 2,
+            'visitConvertedGoalName==Newsletter' => 1,
+            'visitConvertedGoalName==Other Site Goal' => 0,
+            'visitConvertedGoalName==' => 2,
+            'visitConvertedGoalName!=' => 2,
+            'orderId==ORDER-2' => 1,
+            'orderId==' => 0,
+            'revenueOrder>100' => 1,
+            'revenueAbandonedCart>=45' => 1,
+            'revenueOrder>100;revenueAbandonedCart>=45' => 1,
+            'visitConvertedGoalId==0;orderId==ORDER-2' => 1,
+            'visitConvertedGoalId==2;orderId==ORDER-2' => 0,
+            'visitConvertedGoalId==2,orderId==MISSING' => 1,
+            'productName==Widget' => 1,
+            'productSku==SKU-2' => 1,
+            'productCategory==Tools' => 1,
+            'productCategory2==Sale' => 1,
+            'productPrice>=49' => 1,
+            'productName==Widget;productSku==SKU-2' => 1,
+            'productName==Widget;productSku==OTHER' => 0,
+            'productName!=Widget' => 2,
+            'productName==' => 0,
+            'productPrice==' => 2,
+            'productPrice!=' => 1,
+            'productViewName==Viewed Widget' => 1,
+            'productViewSku==VIEW-SKU' => 1,
+            'productViewCategory==Viewed Tools' => 1,
+            'productViewCategory2==Featured' => 1,
+            'productViewPrice>=40' => 1,
+            'siteSearchCategory==' => 3,
+            'siteSearchCategory!=' => 1,
+            'productViewPrice==' => 3,
+            'productViewPrice!=' => 1,
+            'productViewName==' => 0,
+            "orderId==x' OR 1=1 --" => 0,
+        ];
+
+        foreach ($segments as $segment => $expectedVisits) {
+            $result = $this->archiver()->archive(new ArchiveReportRequest(
+                siteId: 1,
+                period: 'day',
+                date: '2026-08-15',
+                segment: $segment,
+            ));
+
+            $this->assertSame(
+                $expectedVisits,
+                $result->visits,
+                "The conversion segment '{$segment}' has the wrong visit count.",
+            );
+        }
+    }
+
+    public function test_revenue_segments_reject_legacy_unsupported_operators(): void
+    {
+        $query = $this->connection->table('log_visit');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("The 'revenueOrder' segment does not support the != operator.");
+
+        $this->visitSegmentApplicator()->apply($query, 'revenueOrder!=10');
+    }
+
+    public function test_dynamic_dimensions_custom_variables_and_display_aliases_are_supported(): void
+    {
+        $countryMetadata = $this->createMock(CountryMetadataProvider::class);
+        $countryMetadata->method('codes')->willReturn(['nz', 'au']);
+        $countryMetadata->method('continentCode')->willReturn('oce');
+        $countryMetadata->method('countryName')->willReturnCallback(
+            static fn (string $country): string => match ($country) {
+                'nz' => 'New Zealand',
+                'au' => 'Australia',
+                default => $country,
+            },
+        );
+        $this->app->instance(CountryMetadataProvider::class, $countryMetadata);
+        $this->insertVisits();
+        $this->insertActionRows();
+        $this->insertConversionRows();
+        $this->connection->table('custom_dimensions')->insert([
+            ['idcustomdimension' => 1, 'idsite' => 1, 'index' => 1, 'scope' => 'visit', 'active' => 1],
+            ['idcustomdimension' => 2, 'idsite' => 1, 'index' => 2, 'scope' => 'action', 'active' => 1],
+            ['idcustomdimension' => 3, 'idsite' => 1, 'index' => 3, 'scope' => 'conversion', 'active' => 1],
+            ['idcustomdimension' => 4, 'idsite' => 1, 'index' => 4, 'scope' => 'action', 'active' => 1],
+            ['idcustomdimension' => 5, 'idsite' => 1, 'index' => 1, 'scope' => 'visit', 'active' => 0],
+        ]);
+        $this->connection->table('log_visit')->where('idvisit', 1)->update([
+            'config_browser_name' => 'FF',
+            'config_os' => 'WIN',
+            'custom_var_k1' => 'Plan',
+            'custom_var_v1' => 'Gold',
+            'custom_dimension_1' => 'visit-dimension',
+        ]);
+        $this->connection->table('log_visit')->where('idvisit', 2)->update([
+            'config_browser_name' => 'CH',
+            'config_os' => 'LIN',
+            'custom_var_k2' => 'Plan',
+            'custom_var_v2' => 'Silver',
+        ]);
+        $this->connection->table('log_link_visit_action')->where('idlink_va', 1)->update([
+            'custom_var_k1' => 'Category',
+            'custom_var_v1' => 'News',
+            'custom_dimension_2' => 'action-dimension',
+            'custom_dimension_4' => 'pair',
+            'bandwidth' => 1000,
+        ]);
+        $this->connection->table('log_link_visit_action')->where('idlink_va', 2)->update([
+            'custom_var_k2' => 'Audience',
+            'custom_var_v2' => 'Pro',
+            'custom_dimension_2' => 'other-action',
+            'custom_dimension_4' => 'other-pair',
+            'bandwidth' => 2000,
+        ]);
+        $this->connection->table('log_conversion')
+            ->where('idvisit', 2)
+            ->where('idgoal', 0)
+            ->update(['custom_dimension_3' => 'conversion-dimension']);
+        $countryQuery = $this->connection->table('log_visit')->where('idsite', 1);
+        $this->assertTrue($this->visitSegmentApplicator()->apply(
+            $countryQuery,
+            'countryName==New Zealand',
+            1,
+        ));
+        $this->assertContains('nz', $countryQuery->getBindings());
+        $segments = [
+            'dimension1==visit-dimension' => 1,
+            'dimension2==action-dimension' => 1,
+            'dimension3==conversion-dimension' => 1,
+            'dimension2==action-dimension;dimension4==pair' => 1,
+            'dimension2==action-dimension;dimension4==other-pair' => 0,
+            'customVariableName==Plan' => 2,
+            'customVariableName1==Plan' => 1,
+            'customVariableValue==Gold' => 1,
+            'customVariablePageName==Category' => 1,
+            'customVariablePageName==Category;customVariablePageValue==News' => 1,
+            'customVariablePageName==Category;customVariablePageValue==Pro' => 0,
+            'customVariablePageValue!=News' => 1,
+            'bandwidth>=2000' => 1,
+            'browserName==Firefox' => 1,
+            'operatingSystemName==Windows' => 1,
+            'countryName==New Zealand' => 1,
+        ];
+
+        foreach ($segments as $segment => $expectedVisits) {
+            $result = $this->archiver()->archive(new ArchiveReportRequest(
+                siteId: 1,
+                period: 'day',
+                date: '2026-08-15',
+                segment: $segment,
+            ));
+
+            $this->assertSame(
+                $expectedVisits,
+                $result->visits,
+                "The dynamic segment '{$segment}' has the wrong visit count.",
+            );
+        }
+
+        $query = $this->connection->table('log_visit');
+        $sql = $query->toSql();
+        $this->assertFalse($this->visitSegmentApplicator()->apply($query, 'dimension5==hidden', 1));
+        $this->assertSame($sql, $query->toSql());
+        $this->assertFalse($this->visitSegmentApplicator()->apply($query, 'dimension1==other-site', 2));
+        $this->assertSame($sql, $query->toSql());
     }
 
     public function test_extension_failure_leaves_an_error_marker_and_validation_rejects_bad_inputs(): void
@@ -362,7 +816,19 @@ class DatabaseReportArchiverTest extends TestCase
             sites: new DatabaseSiteRepository($this->connection),
             options: new DatabaseOptionRepository($this->connection),
             segmentValidator: new SegmentDefinitionValidator,
+            visitSegments: $this->visitSegmentApplicator(),
             events: $this->events,
+        );
+    }
+
+    private function visitSegmentApplicator(): BuiltInVisitSegmentApplicator
+    {
+        return new BuiltInVisitSegmentApplicator(
+            new SegmentExpressionParser,
+            new SegmentConditionQueryApplier(
+                $this->app->make(CountryMetadataProvider::class),
+            ),
+            new DynamicSegmentResolver,
         );
     }
 
@@ -374,6 +840,138 @@ class DatabaseReportArchiverTest extends TestCase
             $this->visit(1, '2026-08-14 11:59:59', 'outside-a', 'config-b', null, 5, 80, 0, 'nz'),
             $this->visit(1, '2026-08-15 12:00:00', 'outside-b', 'config-c', null, 2, 10, 0, 'nz'),
             $this->visit(2, '2026-08-15 00:00:00', 'other-site', 'config-d', null, 2, 10, 0, 'nz'),
+        ]);
+    }
+
+    private function insertActionRows(): void
+    {
+        $this->connection->table('log_action')->insert([
+            ['idaction' => 1, 'name' => 'example.test/one', 'type' => 1],
+            ['idaction' => 2, 'name' => 'Alpha', 'type' => 4],
+            ['idaction' => 3, 'name' => 'example.test/two', 'type' => 1],
+            ['idaction' => 4, 'name' => 'Beta', 'type' => 4],
+            ['idaction' => 5, 'name' => 'Video', 'type' => 10],
+            ['idaction' => 6, 'name' => 'play', 'type' => 11],
+            ['idaction' => 7, 'name' => 'Trailer', 'type' => 12],
+            ['idaction' => 8, 'name' => 'example.test/trailer', 'type' => 10],
+            ['idaction' => 9, 'name' => 'Alpha_100%', 'type' => 4],
+            ['idaction' => 10, 'name' => 'Viewed Widget', 'type' => 6],
+            ['idaction' => 11, 'name' => 'VIEW-SKU', 'type' => 5],
+            ['idaction' => 12, 'name' => 'Viewed Tools', 'type' => 7],
+            ['idaction' => 13, 'name' => 'Featured', 'type' => 7],
+            ['idaction' => 20, 'name' => 'Widget', 'type' => 6],
+            ['idaction' => 21, 'name' => 'SKU-2', 'type' => 5],
+            ['idaction' => 22, 'name' => 'Tools', 'type' => 7],
+            ['idaction' => 23, 'name' => 'Sale', 'type' => 7],
+            ['idaction' => 24, 'name' => 'Spare', 'type' => 6],
+            ['idaction' => 25, 'name' => 'OTHER', 'type' => 5],
+        ]);
+        $this->connection->table('log_link_visit_action')->insert([
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_url' => 1,
+                'idaction_name' => 2,
+                'idaction_event_category' => null,
+                'idaction_event_action' => null,
+                'idaction_product_name' => 10,
+                'idaction_product_sku' => 11,
+                'idaction_product_cat' => 12,
+                'idaction_product_cat2' => 13,
+                'search_cat' => null,
+                'search_count' => null,
+                'custom_float' => null,
+                'product_price' => 42.5,
+                'server_time' => '2026-08-15 08:00:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_url' => 3,
+                'idaction_name' => 4,
+                'idaction_event_category' => null,
+                'idaction_event_action' => null,
+                'idaction_product_name' => null,
+                'idaction_product_sku' => null,
+                'idaction_product_cat' => null,
+                'idaction_product_cat2' => null,
+                'search_cat' => 'docs',
+                'search_count' => 2,
+                'custom_float' => null,
+                'product_price' => null,
+                'server_time' => '2026-08-15 09:00:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_url' => 8,
+                'idaction_name' => 7,
+                'idaction_event_category' => 5,
+                'idaction_event_action' => 6,
+                'idaction_product_name' => null,
+                'idaction_product_sku' => null,
+                'idaction_product_cat' => null,
+                'idaction_product_cat2' => null,
+                'search_cat' => null,
+                'search_count' => null,
+                'custom_float' => 9.5,
+                'product_price' => null,
+                'server_time' => '2026-08-15 10:00:00',
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idaction_url' => 1,
+                'idaction_name' => 9,
+                'idaction_event_category' => null,
+                'idaction_event_action' => null,
+                'idaction_product_name' => null,
+                'idaction_product_sku' => null,
+                'idaction_product_cat' => null,
+                'idaction_product_cat2' => null,
+                'search_cat' => null,
+                'search_count' => null,
+                'custom_float' => null,
+                'product_price' => null,
+                'server_time' => '2026-08-15 11:00:00',
+            ],
+        ]);
+    }
+
+    private function insertConversionRows(): void
+    {
+        $this->connection->table('goal')->insert([
+            ['idsite' => 1, 'idgoal' => 1, 'name' => 'Newsletter'],
+            ['idsite' => 1, 'idgoal' => 2, 'name' => 'Upgrade'],
+            ['idsite' => 2, 'idgoal' => 1, 'name' => 'Other Site Goal'],
+        ]);
+        $this->connection->table('log_conversion')->insert([
+            ['idsite' => 1, 'idvisit' => 1, 'idgoal' => 1, 'idorder' => null, 'revenue' => 50],
+            ['idsite' => 1, 'idvisit' => 2, 'idgoal' => 0, 'idorder' => 'ORDER-2', 'revenue' => 125],
+            ['idsite' => 1, 'idvisit' => 2, 'idgoal' => -1, 'idorder' => null, 'revenue' => 45],
+            ['idsite' => 1, 'idvisit' => 2, 'idgoal' => 2, 'idorder' => null, 'revenue' => 10],
+        ]);
+        $this->connection->table('log_conversion_item')->insert([
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idorder' => 'ORDER-2',
+                'idaction_sku' => 21,
+                'idaction_name' => 20,
+                'idaction_category' => 22,
+                'idaction_category2' => 23,
+                'price' => 49.95,
+            ],
+            [
+                'idsite' => 1,
+                'idvisit' => 2,
+                'idorder' => 'ORDER-2',
+                'idaction_sku' => 25,
+                'idaction_name' => 24,
+                'idaction_category' => null,
+                'idaction_category2' => null,
+                'price' => 10,
+            ],
         ]);
     }
 
