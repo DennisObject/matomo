@@ -15,5 +15,8 @@ final readonly class RowEvolutionRequest
         public ?string $label,
         public ?string $segment,
         public ?string $column,
+        public ?string $language,
+        public bool $labelUseAbsoluteUrl,
+        public bool $hasUnsupportedVariants,
     ) {}
 }

@@ -22,7 +22,7 @@ final readonly class HttpSmsProviderGateway implements SmsProviderGateway
     public function credit(string $provider, #[\SensitiveParameter] array $credentials): int|string
     {
         if ($provider === 'Development') {
-            return 'unlimited';
+            return 'Balance: 42';
         }
 
         $result = $this->call($provider, 'CheckCredits', $credentials);

@@ -20,8 +20,8 @@ final readonly class ConfiguredAccessMetadataProvider implements AccessMetadataP
         $write = $this->translator->translate('UsersManager_PrivWrite', $language);
 
         return [
-            $this->role('view', 'UsersManager_PrivView', 'UsersManager_PrivViewDescription', $language),
-            $this->role('write', 'UsersManager_PrivWrite', 'UsersManager_PrivWriteDescription', $language),
+            $this->role('view', 'UsersManager_PrivView', 'UsersManager_PrivViewDescription', 'https://matomo.org/faq/general/faq_70/', $language),
+            $this->role('write', 'UsersManager_PrivWrite', 'UsersManager_PrivWriteDescription', 'https://matomo.org/faq/general/faq_26910', $language),
             [
                 'id' => 'admin',
                 'name' => $this->translator->translate('UsersManager_PrivAdmin', $language),
@@ -30,7 +30,7 @@ final readonly class ConfiguredAccessMetadataProvider implements AccessMetadataP
                     $language,
                     [$write],
                 ),
-                'helpUrl' => '',
+                'helpUrl' => 'https://matomo.org/faq/general/faq_69/',
             ],
         ];
     }
@@ -44,13 +44,13 @@ final readonly class ConfiguredAccessMetadataProvider implements AccessMetadataP
     }
 
     /** @return array{id: string, name: string, description: string, helpUrl: string} */
-    private function role(string $id, string $name, string $description, string $language): array
+    private function role(string $id, string $name, string $description, string $helpUrl, string $language): array
     {
         return [
             'id' => $id,
             'name' => $this->translator->translate($name, $language),
             'description' => $this->translator->translate($description, $language),
-            'helpUrl' => '',
+            'helpUrl' => $helpUrl,
         ];
     }
 }
