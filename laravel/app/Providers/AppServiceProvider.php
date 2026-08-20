@@ -70,6 +70,7 @@ use App\Matomo\Api\Methods\UserIdApiMethodHandler;
 use App\Matomo\Api\Methods\UserLanguageApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerAccessApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerAccessMutationApiMethodHandler;
+use App\Matomo\Api\Methods\UsersManagerCreateApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerIdentityApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerPreferenceApiMethodHandler;
 use App\Matomo\Api\Methods\UsersManagerReadApiMethodHandler;
@@ -280,6 +281,7 @@ use App\Matomo\Users\AccessMetadataProvider;
 use App\Matomo\Users\AnonymousAccessNotifier;
 use App\Matomo\Users\ConfiguredAccessMetadataProvider;
 use App\Matomo\Users\ConfiguredUserPreferenceDefaults;
+use App\Matomo\Users\DatabaseMutableUserRepository;
 use App\Matomo\Users\DatabaseMutableUserSiteAccessRepository;
 use App\Matomo\Users\DatabaseUserDirectoryRepository;
 use App\Matomo\Users\DatabaseUserIdentityRepository;
@@ -287,9 +289,12 @@ use App\Matomo\Users\DatabaseUserPreferenceRepository;
 use App\Matomo\Users\DatabaseUserRoleDirectoryRepository;
 use App\Matomo\Users\DatabaseUserSiteAccessRepository;
 use App\Matomo\Users\LaravelAnonymousAccessNotifier;
+use App\Matomo\Users\LaravelUserInvitationNotifier;
+use App\Matomo\Users\MutableUserRepository;
 use App\Matomo\Users\MutableUserSiteAccessRepository;
 use App\Matomo\Users\UserDirectoryRepository;
 use App\Matomo\Users\UserIdentityRepository;
+use App\Matomo\Users\UserInvitationNotifier;
 use App\Matomo\Users\UserPreferenceDefaults;
 use App\Matomo\Users\UserPreferenceRepository;
 use App\Matomo\Users\UserPresenter;
@@ -560,6 +565,20 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(UserPresenter::class);
+        $this->app->singleton(
+            MutableUserRepository::class,
+            fn (Application $application): MutableUserRepository => new DatabaseMutableUserRepository(
+                $application->make(ConnectionInterface::class),
+                $application->make(InstallationConfig::class)->salt(),
+            ),
+        );
+        $this->app->singleton(
+            UserInvitationNotifier::class,
+            fn (Application $application): UserInvitationNotifier => new LaravelUserInvitationNotifier(
+                $application->make(Mailer::class),
+                (string) $application->make(Repository::class)->get('app.url', 'http://localhost'),
+            ),
+        );
         $this->app->singleton(
             MutableUserSiteAccessRepository::class,
             fn (Application $application): MutableUserSiteAccessRepository => new DatabaseMutableUserSiteAccessRepository(
@@ -1455,6 +1474,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(UserLanguageApiMethodHandler::class),
                 $application->make(UsersManagerAccessApiMethodHandler::class),
                 $application->make(UsersManagerAccessMutationApiMethodHandler::class),
+                $application->make(UsersManagerCreateApiMethodHandler::class),
                 $application->make(UsersManagerIdentityApiMethodHandler::class),
                 $application->make(UsersManagerPreferenceApiMethodHandler::class),
                 $application->make(UsersManagerReadApiMethodHandler::class),

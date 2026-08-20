@@ -75,6 +75,8 @@ use App\Matomo\TrackingFailures\TrackingFailureRepository;
 use App\Matomo\Transitions\TransitionsPeriodPolicy;
 use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
 use App\Matomo\UserChanges\UserChangeReadRepository;
+use App\Matomo\Users\MutableUserRepository;
+use App\Matomo\Users\UserInvitationNotifier;
 use App\Matomo\Users\UserPreferenceDefaults;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Request;
@@ -425,6 +427,11 @@ abstract class TestCase extends BaseTestCase
                     return false;
                 }
             },
+        );
+        $this->app->instance(MutableUserRepository::class, $this->createStub(MutableUserRepository::class));
+        $this->app->instance(
+            UserInvitationNotifier::class,
+            $this->createStub(UserInvitationNotifier::class),
         );
         $this->app->instance(
             TwoFactorAuthenticationResetter::class,

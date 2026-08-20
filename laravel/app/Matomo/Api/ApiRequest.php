@@ -531,6 +531,7 @@ final readonly class ApiRequest
         public ?UsersManagerSiteAccessRequest $usersManagerSiteAccess,
         public ?UsersManagerRoleDirectoryRequest $usersManagerRoleDirectory,
         public ?UsersManagerAccessMutationRequest $usersManagerAccessMutation,
+        public ?UsersManagerCreateRequest $usersManagerCreate,
         public bool $forceCache,
         public ApiAuthentication $authentication,
     ) {}
@@ -607,6 +608,7 @@ final readonly class ApiRequest
             usersManagerSiteAccess: null,
             usersManagerRoleDirectory: null,
             usersManagerAccessMutation: null,
+            usersManagerCreate: null,
             forceCache: false,
             authentication: new ApiAuthentication(null, false, false, null),
         );
@@ -1212,6 +1214,7 @@ final readonly class ApiRequest
             usersManagerSiteAccess: self::usersManagerSiteAccess($request, $module, $method),
             usersManagerRoleDirectory: self::usersManagerRoleDirectory($request, $module, $method),
             usersManagerAccessMutation: self::usersManagerAccessMutation($request, $module, $method),
+            usersManagerCreate: self::usersManagerCreate($request, $module, $method),
             forceCache: self::booleanInput($request, 'forceCache', false),
             authentication: $authentication,
         );
@@ -2177,6 +2180,20 @@ final readonly class ApiRequest
         return (int) $value;
     }
 
+    private static function nullablePositiveIntegerInput(Request $request, string $parameter): ?int
+    {
+        $value = self::inputValue($request, $parameter);
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (! is_scalar($value) || (string) (int) $value !== (string) $value || (int) $value < 1) {
+            throw new InvalidApiParameter($parameter);
+        }
+
+        return (int) $value;
+    }
+
     private static function integerInput(
         Request $request,
         string $parameter,
@@ -2569,6 +2586,31 @@ final readonly class ApiRequest
             entries: self::stringList($entryValue, $entryKey),
             entriesWereArray: is_array($entryValue),
             siteIds: self::requiredStringList($request, 'idSites'),
+            passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
+        );
+    }
+
+    private static function usersManagerCreate(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?UsersManagerCreateRequest {
+        if ($module !== 'API' || ! in_array($method, [
+            'UsersManager.addUser',
+            'UsersManager.inviteUser',
+        ], true)) {
+            return null;
+        }
+
+        $add = $method === 'UsersManager.addUser';
+
+        return new UsersManagerCreateRequest(
+            login: self::requiredString($request, 'userLogin'),
+            password: $add ? self::requiredString($request, 'password') : null,
+            email: self::requiredString($request, 'email'),
+            passwordIsHashed: $add && self::booleanInput($request, '_isPasswordHashed', false),
+            initialSiteId: self::nullablePositiveIntegerInput($request, 'initialIdSite'),
+            expiryDays: $add ? null : self::nullablePositiveIntegerInput($request, 'expiryInDays'),
             passwordConfirmation: self::nullableStringInput($request, 'passwordConfirmation'),
         );
     }
