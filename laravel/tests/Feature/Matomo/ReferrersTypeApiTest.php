@@ -27,6 +27,7 @@ class ReferrersTypeApiTest extends TestCase
             ->assertJsonMissingPath('0.idsubdatatable')
             ->assertJsonPath('1.label', 'Search Engines')
             ->assertJsonPath('1.referrer_type', '2')
+            ->assertJsonPath('1.nb_visits_percent_of_total', '40%')
             ->assertJsonPath('1.idsubdatatable', 2);
     }
 
@@ -59,6 +60,21 @@ class ReferrersTypeApiTest extends TestCase
             ->assertJsonMissingPath('0.idsubdatatable');
     }
 
+    public function test_direct_entry_subtable_id_falls_back_to_the_overview(): void
+    {
+        $this->bindDependencies([
+            'Referrers_type' => [
+                $this->row('1', 3, 3),
+                $this->row('2', 2, 4),
+            ],
+        ]);
+
+        $this->get($this->url('getReferrerType').'&idSubtable=1')
+            ->assertOk()
+            ->assertJsonCount(2)
+            ->assertJsonPath('0.label', 'Direct Entry');
+    }
+
     public function test_expands_and_merges_referrer_subreports(): void
     {
         $this->bindDependencies([
@@ -75,6 +91,24 @@ class ReferrersTypeApiTest extends TestCase
             ->assertJsonCount(1)
             ->assertJsonPath('0.label', 'analytics')
             ->assertJsonPath('0.referer_type', 2);
+    }
+
+    public function test_get_all_recalculates_percentages_after_merging_types(): void
+    {
+        $this->bindDependencies([
+            'Referrers_type' => [
+                $this->row('2', 1, 2),
+                $this->row('3', 2, 4),
+            ],
+            'Referrers_searchEngineByKeyword' => [$this->row('analytics', 1, 2)],
+            'Referrers_urlByWebsite' => [$this->row('example.test', 2, 4)],
+        ]);
+
+        $this->get($this->url('getAll').'&format_metrics=0')
+            ->assertOk()
+            ->assertJsonCount(2)
+            ->assertJsonPath('0.nb_visits_percent_of_total', 0.3333)
+            ->assertJsonPath('1.nb_visits_percent_of_total', 0.6667);
     }
 
     public function test_rejects_multiple_sites_before_archive_reads(): void
