@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9206631dc0bf18de4e0d4664fd2f3cf4",
+    "content-hash": "0ac54aa9d0c2d0725b7dd106bfb32d06",
     "packages": [
         {
             "name": "brick/math",
@@ -2303,6 +2303,36 @@
                 "source": "https://github.com/matomo-org/component-network/tree/2.0.3"
             },
             "time": "2026-04-17T10:12:27+00:00"
+        },
+        {
+            "name": "matomo/searchengine-and-social-list",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/matomo-org/searchengine-and-social-list.git",
+                "reference": "3b3a82dc83cd146abe17aafe31254de1c25f7844"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/matomo-org/searchengine-and-social-list/zipball/3b3a82dc83cd146abe17aafe31254de1c25f7844",
+                "reference": "3b3a82dc83cd146abe17aafe31254de1c25f7844",
+                "shasum": ""
+            },
+            "replace": {
+                "piwik/searchengine-and-social-list": "*"
+            },
+            "default-branch": true,
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "CC0-1.0"
+            ],
+            "description": "Search engine and social network definitions used by Matomo (formerly Piwik)",
+            "support": {
+                "issues": "https://github.com/matomo-org/searchengine-and-social-list/issues",
+                "source": "https://github.com/matomo-org/searchengine-and-social-list/tree/master"
+            },
+            "time": "2026-07-15T21:31:22+00:00"
         },
         {
             "name": "maxmind-db/reader",
@@ -9386,7 +9416,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "matomo/searchengine-and-social-list": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

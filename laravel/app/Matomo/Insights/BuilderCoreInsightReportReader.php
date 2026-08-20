@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Matomo\Insights;
 
+use App\Matomo\Referrers\ReferrerDefinitionCatalog;
 use App\Matomo\Reporting\ActionsReportBuilder;
 use App\Matomo\Reporting\BlobArchiveRepository;
 use App\Matomo\Reporting\ReportingPeriod;
@@ -15,6 +16,7 @@ final readonly class BuilderCoreInsightReportReader implements CoreInsightReport
         private ActionsReportBuilder $actionsBuilder,
         private UserCountryReportBuilder $countryBuilder,
         private BlobArchiveRepository $blobs,
+        private ReferrerDefinitionCatalog $referrerDefinitions,
     ) {}
 
     public function actions(
@@ -73,6 +75,43 @@ final readonly class BuilderCoreInsightReportReader implements CoreInsightReport
     ): array {
         $archives = $this->blobs->rows([$siteId], [$period], $segmentHash, $recordName);
         $archiveRows = $archives[$siteId][$period->rangeKey()] ?? [];
+        $rows = $this->archiveColumns($archiveRows);
+
+        if ($recordName === 'Referrers_urlBySocialNetwork') {
+            $rows = $this->group($rows, static fn (string $label): string => $label === 'instagram'
+                ? 'Instagram'
+                : $label);
+        }
+
+        if ($rows !== [] || ! in_array($recordName, [
+            'Referrers_urlBySocialNetwork',
+            'Referrers_entryUrlByAIAssistant',
+        ], true)) {
+            return $rows;
+        }
+
+        $websiteArchives = $this->blobs->rows(
+            [$siteId],
+            [$period],
+            $segmentHash,
+            'Referrers_urlByWebsite',
+        );
+        $websiteRows = $this->archiveColumns(
+            $websiteArchives[$siteId][$period->rangeKey()] ?? [],
+        );
+        $name = $recordName === 'Referrers_urlBySocialNetwork'
+            ? $this->referrerDefinitions->socialName(...)
+            : $this->referrerDefinitions->aiAssistantName(...);
+
+        return $this->group($websiteRows, $name);
+    }
+
+    /**
+     * @param  list<array{columns: array<string, float|int|string|null>, metadata: array<string, float|int|string|null>}>  $archiveRows
+     * @return list<array<string, mixed>>
+     */
+    private function archiveColumns(array $archiveRows): array
+    {
         $rows = [];
 
         foreach ($archiveRows as $archiveRow) {
@@ -84,6 +123,49 @@ final readonly class BuilderCoreInsightReportReader implements CoreInsightReport
         }
 
         return $rows;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     * @param  callable(string): ?string  $name
+     * @return list<array<string, mixed>>
+     */
+    private function group(array $rows, callable $name): array
+    {
+        $grouped = [];
+
+        foreach ($rows as $row) {
+            $label = $row['label'] ?? null;
+
+            if (! is_string($label)) {
+                continue;
+            }
+
+            $group = $name($label);
+
+            if ($group === null || $group === '') {
+                continue;
+            }
+
+            if (! isset($grouped[$group])) {
+                $grouped[$group] = [...$row, 'label' => $group];
+
+                continue;
+            }
+
+            foreach ($row as $column => $value) {
+                if ($column === 'label' || (! is_int($value) && ! is_float($value))) {
+                    continue;
+                }
+
+                $existing = $grouped[$group][$column] ?? 0;
+                $grouped[$group][$column] = (is_int($existing) || is_float($existing))
+                    ? $existing + $value
+                    : $value;
+            }
+        }
+
+        return array_values($grouped);
     }
 
     /**
