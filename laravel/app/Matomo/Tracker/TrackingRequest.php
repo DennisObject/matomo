@@ -57,5 +57,6 @@ final readonly class TrackingRequest
         public array $performanceTimings = [],
         public ?IssuedTrackerCookie $visitorCookie = null,
         public ?CarbonImmutable $recordedAt = null,
+        public ?TrackerDeviceProfile $device = null,
     ) {}
 }

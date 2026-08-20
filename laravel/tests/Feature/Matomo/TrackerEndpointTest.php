@@ -906,6 +906,27 @@ final class TrackerEndpointTest extends TestCase
             ->assertHeaderMissing('P3P');
     }
 
+    public function test_parses_user_agent_overrides_and_device_plugins(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->userAgent === 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+                && $request->device !== null
+                && $request->device->browserName === 'CH'
+                && $request->device->operatingSystem === 'WIN'
+                && $request->device->pdf
+                && ! $request->device->java,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'ua' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'pdf' => '1',
+            'java' => '0',
+        ]))->assertOk();
+    }
+
     public function test_uses_a_forced_visitor_id_before_cookies_and_request_ids(): void
     {
         $this->bindSite();

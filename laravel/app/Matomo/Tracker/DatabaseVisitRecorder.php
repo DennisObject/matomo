@@ -351,7 +351,9 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'idvisitor' => $visitor,
             'visit_first_action_time' => $timestamp,
             'visit_last_action_time' => $timestamp,
-            'config_id' => substr(hash('sha256', $request->visitorId.$request->userAgent, true), 0, 8),
+            'config_id' => $request->device?->configId !== null && $request->device->configId !== ''
+                ? $request->device->configId
+                : substr(hash('sha256', $request->visitorId.$request->userAgent, true), 0, 8),
             'location_ip' => $ip,
             'visit_entry_idaction_url' => $urlId,
             'visit_entry_idaction_name' => $nameId,
@@ -371,6 +373,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'visitor_localtime' => $request->localTime,
             'config_resolution' => $request->resolution,
             'config_cookie' => $request->cookiesEnabled ? 1 : 0,
+            ...($request->device?->visitColumns() ?? []),
             ...$request->visitProperties,
         ], 'idvisit');
     }
