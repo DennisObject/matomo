@@ -13,6 +13,11 @@ use Illuminate\Http\Request;
 
 final readonly class ApiRequest
 {
+    private const string FLOAT_PATTERN = '/^[-+]?((([0-9]+(_[0-9]+)*)|'.
+        '(([0-9]+(_[0-9]+)*)?\.([0-9]+(_[0-9]+)*))|'.
+        '(([0-9]+(_[0-9]+)*)\.([0-9]+(_[0-9]+)*)?))'.
+        '([eE][+-]?([0-9]+(_[0-9]+)*))?)$/D';
+
     /** @var list<string> */
     private const array VISITS_SUMMARY_METHODS = [
         'VisitsSummary.get',
@@ -110,6 +115,19 @@ final readonly class ApiRequest
     private const string AI_AGENTS_METHOD = 'AIAgents.get';
 
     /** @var list<string> */
+    private const array EXAMPLE_API_METHODS = [
+        'ExampleAPI.getMatomoVersion',
+        'ExampleAPI.getAnswerToLife',
+        'ExampleAPI.getObject',
+        'ExampleAPI.getSum',
+        'ExampleAPI.getNull',
+        'ExampleAPI.getDescriptionArray',
+        'ExampleAPI.getCompetitionDatatable',
+        'ExampleAPI.getMoreInformationAnswerToLife',
+        'ExampleAPI.getMultiArray',
+    ];
+
+    /** @var list<string> */
     private const array DASHBOARD_METHODS = [
         'Dashboard.getDashboards',
         'Dashboard.createNewDashboardForUser',
@@ -174,6 +192,7 @@ final readonly class ApiRequest
         public ?string $locationProviderId,
         public ?AiProviderRequest $aiProvider,
         public ?DashboardRequest $dashboard,
+        public ?ExampleApiRequest $exampleApi,
         public ApiAuthentication $authentication,
     ) {}
 
@@ -218,6 +237,7 @@ final readonly class ApiRequest
             locationProviderId: null,
             aiProvider: null,
             dashboard: null,
+            exampleApi: null,
             authentication: new ApiAuthentication(null, false, false, null),
         );
     }
@@ -503,6 +523,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && $this->method === self::AI_AGENTS_METHOD;
     }
 
+    public function isExampleApiRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::EXAMPLE_API_METHODS, true);
+    }
+
     public function isAiProvidersRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::AI_PROVIDERS_METHODS, true);
@@ -577,7 +602,20 @@ final readonly class ApiRequest
             locationProviderId: self::locationProviderId($request, $module, $method),
             aiProvider: self::aiProvider($request, $module, $method),
             dashboard: self::dashboard($request, $module, $method),
+            exampleApi: self::exampleApi($request, $module, $method),
             authentication: $authentication,
+        );
+    }
+
+    private static function exampleApi(Request $request, string $module, string $method): ?ExampleApiRequest
+    {
+        if ($module !== 'API' || $method !== 'ExampleAPI.getSum') {
+            return null;
+        }
+
+        return new ExampleApiRequest(
+            a: self::floatInput($request, 'a', 0),
+            b: self::floatInput($request, 'b', 0),
         );
     }
 
@@ -1474,5 +1512,14 @@ final readonly class ApiRequest
             '0', 'false' => false,
             default => $default,
         };
+    }
+
+    private static function floatInput(Request $request, string $key, float $default): float
+    {
+        $value = self::safeNullableStringInput($request, $key);
+
+        return $value !== null && preg_match(self::FLOAT_PATTERN, $value) === 1
+            ? (float) str_replace('_', '', $value)
+            : $default;
     }
 }
