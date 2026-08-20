@@ -248,6 +248,42 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame(16_777_215, $action['time_on_load']);
     }
 
+    public function test_stores_site_search_actions_and_visit_totals(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $request = new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/search',
+            actionName: 'blue shoes',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            actionType: 8,
+            searchCategory: 'products',
+            searchCount: 12,
+        );
+
+        $recorder->record($request);
+        $recorder->record($request);
+
+        $visit = (array) $connection->table('log_visit')->first();
+        $this->assertSame(2, $visit['visit_total_actions']);
+        $this->assertSame(2, $visit['visit_total_searches']);
+        $this->assertNull($visit['visit_entry_idaction_url']);
+        $search = (array) $connection->table('log_action')->first();
+        $this->assertSame('blue shoes', $search['name']);
+        $this->assertSame(8, $search['type']);
+        $actions = $connection->table('log_link_visit_action')->get();
+        $this->assertCount(2, $actions);
+        foreach ($actions as $action) {
+            $this->assertNull($action->idaction_url);
+            $this->assertSame($search['idaction'], $action->idaction_name);
+            $this->assertSame('products', $action->search_cat);
+            $this->assertSame(12, $action->search_count);
+        }
+    }
+
     private function connection(): ConnectionInterface
     {
         config()->set('database.connections.tracker_test', ['driver' => 'sqlite', 'database' => ':memory:']);
@@ -270,6 +306,7 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedInteger('visit_exit_idaction_name')->nullable();
             $table->unsignedInteger('visit_total_actions');
             $table->unsignedInteger('visit_total_events');
+            $table->unsignedInteger('visit_total_searches');
             $table->unsignedInteger('visit_total_interactions');
             $table->unsignedInteger('visit_total_time');
             $table->unsignedBigInteger('last_idlink_va')->nullable();
@@ -315,6 +352,8 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->unsignedMediumInteger('time_dom_processing')->nullable();
             $table->unsignedMediumInteger('time_dom_completion')->nullable();
             $table->unsignedMediumInteger('time_on_load')->nullable();
+            $table->string('search_cat', 200)->nullable();
+            $table->unsignedInteger('search_count')->nullable();
             $table->string('custom_var_k2', 200)->nullable();
             $table->string('custom_var_v2', 200)->nullable();
             $table->string('custom_dimension_2', 250)->nullable();

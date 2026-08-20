@@ -83,12 +83,15 @@ final class TrackerRequestFactory
         $maximumUrlLength = $this->configuration->pageMaximumLength();
         $download = $this->optional($request->input('download'), $maximumUrlLength + 1);
         $outlink = $this->optional($request->input('link'), $maximumUrlLength + 1);
+        $search = (int) ($site['sitesearch'] ?? 1) === 1
+            ? $this->optional($request->input('search'), 255)
+            : null;
         if (($eventCategory === null) !== ($eventAction === null)) {
             throw new InvalidArgumentException('e_c and e_a must be provided together.');
         }
 
         $pageUrl = $request->input('url', '');
-        $actionType = $download !== null ? 3 : ($outlink !== null ? 2 : ($eventCategory !== null ? 10 : 1));
+        $actionType = $download !== null ? 3 : ($outlink !== null ? 2 : ($eventCategory !== null ? 10 : ($search !== null ? 8 : 1)));
         $url = $download ?? $outlink ?? $pageUrl;
         if (! is_string($url)
             || strlen($url) > $maximumUrlLength
@@ -113,7 +116,7 @@ final class TrackerRequestFactory
             $visitorId = bin2hex(random_bytes(8));
         }
 
-        $actionName = $request->input('action_name', '');
+        $actionName = $search ?? $request->input('action_name', '');
 
         $eventValue = $actionType === 10 ? $request->input('e_v') : null;
         if (is_string($eventValue)) {
@@ -125,6 +128,9 @@ final class TrackerRequestFactory
             && (! is_numeric($eventValue) || ! is_finite((float) $eventValue))) {
             throw new InvalidArgumentException('e_v must be numeric.');
         }
+
+        $searchCategory = $actionType === 8 ? $this->optional($request->input('search_cat'), 200) : null;
+        $searchCount = $actionType === 8 ? $this->searchCount($request->input('search_count')) : null;
 
         $referrer = $request->input('urlref', '');
         if (! is_string($referrer) || strlen($referrer) > 1_500
@@ -204,6 +210,8 @@ final class TrackerRequestFactory
             eventAction: $actionType === 10 ? $eventAction : null,
             eventName: $actionType === 10 ? $this->optional($request->input('e_n'), 255) : null,
             eventValue: $eventValue === null ? null : (float) $eventValue,
+            searchCategory: $searchCategory,
+            searchCount: $searchCount,
             userId: $userId,
             referrerUrl: $referrer,
             referrerType: $referrerType,
@@ -615,6 +623,20 @@ final class TrackerRequestFactory
         }
 
         return $timings;
+    }
+
+    private function searchCount(mixed $value): ?int
+    {
+        if (! is_scalar($value)
+            || ! is_numeric($value)
+            || ! is_finite((float) $value)
+            || (float) (int) $value !== (float) $value) {
+            return null;
+        }
+
+        $count = (int) $value;
+
+        return $count >= 0 && $count <= 4_294_967_295 ? $count : null;
     }
 
     /** @param list<string> $parameters */

@@ -18,6 +18,8 @@ final readonly class TrackingRequest
         public ?string $eventAction = null,
         public ?string $eventName = null,
         public ?float $eventValue = null,
+        public ?string $searchCategory = null,
+        public ?int $searchCount = null,
         public ?string $userId = null,
         public string $referrerUrl = '',
         public string $browserLanguage = '',

@@ -361,6 +361,48 @@ final class TrackerEndpointTest extends TestCase
         ]))->assertOk();
     }
 
+    public function test_records_site_search_parameters(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->actionType === 8
+                && $request->actionName === 'blue shoes'
+                && $request->searchCategory === 'products'
+                && $request->searchCount === 12,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'url' => 'https://example.test/search',
+            'search' => 'blue shoes',
+            'search_cat' => 'products',
+            'search_count' => '12',
+        ]))->assertOk();
+    }
+
+    public function test_ignores_invalid_search_counts_and_disabled_site_search(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->actionType === 8
+                && $request->searchCount === null,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+        $this->get($this->url(['search' => 'blue shoes', 'search_count' => '-2']))->assertOk();
+
+        $this->bindSite(['sitesearch' => 0]);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->actionType === 1
+                && $request->searchCategory === null
+                && $request->searchCount === null,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+        $this->get($this->url(['search' => 'ignored', 'search_count' => '12']))->assertOk();
+    }
+
     public function test_rejects_negative_page_performance_timings(): void
     {
         $this->bindSite();

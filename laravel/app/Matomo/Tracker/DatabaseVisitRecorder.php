@@ -33,13 +33,19 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
 
         $now = CarbonImmutable::now('UTC');
         $this->connection->transaction(function () use ($request, $visitor, $ip, $now): void {
-            [$urlName, $urlPrefix] = in_array($request->actionType, [1, 10], true)
-                ? $this->normalizedUrl($request->url)
-                : [$request->url, null];
-            $urlId = $this->action($urlName, $request->actionType, $urlPrefix);
-            $nameId = $request->actionType === 1 && $request->actionName !== ''
-                ? $this->action($request->actionName, 4, null)
-                : null;
+            if ($request->actionType === 8) {
+                $urlId = null;
+                $nameId = $this->action($request->actionName, 8, null);
+            } else {
+                [$urlName, $urlPrefix] = in_array($request->actionType, [1, 10], true)
+                    ? $this->normalizedUrl($request->url)
+                    : [$request->url, null];
+                $urlId = $this->action($urlName, $request->actionType, $urlPrefix);
+                $nameId = $request->actionType === 1 && $request->actionName !== ''
+                    ? $this->action($request->actionName, 4, null)
+                    : null;
+            }
+
             $visit = $this->recentVisit($request->siteId, $visitor, $now);
             $visitId = $visit === null
                 ? $this->createVisit($request, $visitor, $ip, $now, $urlId, $nameId)
@@ -47,6 +53,8 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             $position = $visit === null ? 1 : max(1, (int) $visit->visit_total_actions + 1);
             $totalEvents = ($visit === null ? 0 : (int) $visit->visit_total_events)
                 + ($request->actionType === 10 ? 1 : 0);
+            $totalSearches = ($visit === null ? 0 : (int) $visit->visit_total_searches)
+                + ($request->actionType === 8 ? 1 : 0);
             $previousUrlId = $visit === null ? 0 : (int) ($visit->visit_exit_idaction_url ?? 0);
             $previousNameId = $visit === null ? null : $this->nullableInteger($visit->visit_exit_idaction_name ?? null);
             $secondsSincePreviousAction = $visit === null
@@ -74,6 +82,11 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 $action['custom_float'] = $request->eventValue;
             }
 
+            if ($request->actionType === 8) {
+                $action['search_cat'] = $request->searchCategory;
+                $action['search_count'] = $request->searchCount;
+            }
+
             $linkId = (int) $this->connection->table('log_link_visit_action')->insertGetId(
                 [...$action, ...$request->actionProperties, ...$request->performanceTimings],
                 'idlink_va',
@@ -87,6 +100,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 $nameId,
                 $position,
                 $totalEvents,
+                $totalSearches,
                 $linkId,
                 $request->userId,
                 $request->visitProperties,
@@ -103,6 +117,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 'visit_last_action_time',
                 'visit_total_actions',
                 'visit_total_events',
+                'visit_total_searches',
                 'visit_exit_idaction_url',
                 'visit_exit_idaction_name',
             ])
@@ -126,7 +141,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         string $visitor,
         string $ip,
         CarbonImmutable $now,
-        int $urlId,
+        ?int $urlId,
         ?int $nameId,
     ): int {
         $timestamp = $now->format('Y-m-d H:i:s');
@@ -144,6 +159,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'visit_exit_idaction_name' => $nameId,
             'visit_total_actions' => 1,
             'visit_total_events' => $request->actionType === 10 ? 1 : 0,
+            'visit_total_searches' => $request->actionType === 8 ? 1 : 0,
             'visit_total_interactions' => 1,
             'visit_total_time' => 0,
             'user_id' => $request->userId,
@@ -164,10 +180,11 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         int $visitId,
         ?stdClass $visit,
         CarbonImmutable $now,
-        int $urlId,
+        ?int $urlId,
         ?int $nameId,
         int $position,
         int $totalEvents,
+        int $totalSearches,
         int $linkId,
         ?string $userId,
         array $visitProperties,
@@ -182,6 +199,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'visit_exit_idaction_name' => $nameId,
             'visit_total_actions' => $position,
             'visit_total_events' => $totalEvents,
+            'visit_total_searches' => $totalSearches,
             'visit_total_interactions' => $position,
             'visit_total_time' => max(0, $now->diffInSeconds($firstAction, true)),
             'last_idlink_va' => $linkId,
