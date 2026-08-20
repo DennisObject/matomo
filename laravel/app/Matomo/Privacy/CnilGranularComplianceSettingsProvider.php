@@ -31,9 +31,9 @@ final readonly class CnilGranularComplianceSettingsProvider implements GranularC
         private CompliancePolicyCatalog $catalog,
     ) {}
 
-    public function settings(?int $idSite): array
+    public function settings(?int $idSite, string $language): array
     {
-        $status = $this->status->status($idSite);
+        $status = $this->status->status($idSite, $language);
         $requirements = $status['complianceRequirements'];
         $settings = [];
         $allEnforced = true;
@@ -83,7 +83,7 @@ final readonly class CnilGranularComplianceSettingsProvider implements GranularC
             'section' => 'external',
         ];
 
-        $policy = $this->catalog->all()[0];
+        $policy = $this->catalog->all($language)[0];
 
         return [
             'policy' => $policy['id'],

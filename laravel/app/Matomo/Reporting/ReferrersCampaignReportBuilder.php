@@ -29,6 +29,7 @@ final readonly class ReferrersCampaignReportBuilder
         array $periods,
         string $segmentHash,
         bool $showMetadata,
+        bool $formatMetrics,
         bool $forceSiteIndex,
         bool $forceDateIndex,
     ): ApiTableReport {
@@ -56,6 +57,7 @@ final readonly class ReferrersCampaignReportBuilder
                     $idSubtable,
                     $expanded,
                     $showMetadata,
+                    $formatMetrics,
                 ), []);
             }
 
@@ -66,6 +68,7 @@ final readonly class ReferrersCampaignReportBuilder
                 $idSubtable,
                 $expanded,
                 $showMetadata,
+                $formatMetrics,
             ), $dimensions);
         }
 
@@ -80,6 +83,7 @@ final readonly class ReferrersCampaignReportBuilder
                     $idSubtable,
                     $expanded,
                     $showMetadata,
+                    $formatMetrics,
                 );
             } else {
                 $period = $periods[0] ?? null;
@@ -89,6 +93,7 @@ final readonly class ReferrersCampaignReportBuilder
                     $idSubtable,
                     $expanded,
                     $showMetadata,
+                    $formatMetrics,
                 );
             }
         }
@@ -108,6 +113,7 @@ final readonly class ReferrersCampaignReportBuilder
         ?int $idSubtable,
         bool $expanded,
         bool $showMetadata,
+        bool $formatMetrics,
     ): array {
         $rows = [];
 
@@ -118,6 +124,7 @@ final readonly class ReferrersCampaignReportBuilder
                 $idSubtable,
                 $expanded,
                 $showMetadata,
+                $formatMetrics,
             );
         }
 
@@ -134,6 +141,7 @@ final readonly class ReferrersCampaignReportBuilder
         ?int $idSubtable,
         bool $expanded,
         bool $showMetadata,
+        bool $formatMetrics,
     ): array {
         if ($method === 'Referrers.getKeywordsFromCampaignId') {
             $campaign = $this->parentLabel($records, $idSubtable);
@@ -145,6 +153,7 @@ final readonly class ReferrersCampaignReportBuilder
                 true,
                 false,
                 $showMetadata,
+                $formatMetrics,
             );
         }
 
@@ -155,6 +164,7 @@ final readonly class ReferrersCampaignReportBuilder
             false,
             $expanded,
             $showMetadata,
+            $formatMetrics,
         );
     }
 
@@ -170,6 +180,7 @@ final readonly class ReferrersCampaignReportBuilder
         bool $keywords,
         bool $expanded,
         bool $showMetadata,
+        bool $formatMetrics,
     ): array {
         $totals = $this->totals($archiveRows);
         $result = [];
@@ -185,7 +196,7 @@ final readonly class ReferrersCampaignReportBuilder
                     : 'referrerType==campaign;referrerName=='.urlencode($label);
             }
 
-            $this->processedMetrics($row, $totals);
+            $this->processedMetrics($row, $totals, $formatMetrics);
             $subtableId = $archiveRow['subtableId'];
 
             if ($showMetadata && $subtableId !== null) {
@@ -200,6 +211,7 @@ final readonly class ReferrersCampaignReportBuilder
                     true,
                     true,
                     $showMetadata,
+                    $formatMetrics,
                 );
             }
 
@@ -244,13 +256,17 @@ final readonly class ReferrersCampaignReportBuilder
      * @param  array<string, mixed>  $row
      * @param  array<string, float>  $totals
      */
-    private function processedMetrics(array &$row, array $totals): void
+    private function processedMetrics(array &$row, array $totals, bool $formatMetrics): void
     {
         foreach (['nb_visits', 'nb_actions'] as $metric) {
             $value = $row[$metric] ?? null;
 
             if (is_int($value) || is_float($value)) {
-                $row[$metric.'_percent_of_total'] = $this->percent($value, $totals[$metric] ?? 0.0);
+                $row[$metric.'_percent_of_total'] = $this->percent(
+                    $value,
+                    $totals[$metric] ?? 0.0,
+                    $formatMetrics,
+                );
             }
         }
 
@@ -260,12 +276,18 @@ final readonly class ReferrersCampaignReportBuilder
         $bounces = (float) ($row['bounce_count'] ?? 0);
         $row['nb_actions_per_visit'] = $visits === 0.0 ? 0 : round($actions / $visits, 1);
         $row['avg_time_on_site'] = $visits === 0.0 ? 0 : (int) round($length / $visits);
-        $row['bounce_rate'] = $this->percent($bounces, $visits);
+        $row['bounce_rate'] = $this->percent($bounces, $visits, $formatMetrics);
     }
 
-    private function percent(float|int $value, float $total): string
+    private function percent(float|int $value, float $total, bool $format): int|float|string
     {
-        $percent = $total === 0.0 ? 0 : round((float) $value / $total * 100, 1);
+        $quotient = $total === 0.0 ? 0 : round((float) $value / $total, 4);
+
+        if (! $format) {
+            return $quotient;
+        }
+
+        $percent = $quotient * 100;
 
         return rtrim(rtrim(number_format($percent, 1, '.', ''), '0'), '.').'%';
     }

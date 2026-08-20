@@ -13,10 +13,10 @@ final readonly class TrackingRequest
         public string $visitorId,
         public string $ipAddress,
         public string $userAgent,
-        public int $actionType,
-        public ?string $eventCategory,
-        public ?string $eventAction,
-        public ?string $eventName,
-        public ?float $eventValue,
+        public int $actionType = 1,
+        public ?string $eventCategory = null,
+        public ?string $eventAction = null,
+        public ?string $eventName = null,
+        public ?float $eventValue = null,
     ) {}
 }

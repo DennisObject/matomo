@@ -6,6 +6,7 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Authentication\ApiAuthentication;
+use App\Matomo\Sites\SiteRepository;
 use Tests\TestCase;
 
 class ExampleReportApiTest extends TestCase
@@ -37,6 +38,25 @@ class ExampleReportApiTest extends TestCase
                 'message',
                 "You can't access this resource as it requires 'view' access for the website id = 7.",
             );
+    }
+
+    public function test_returns_single_site_rss_report(): void
+    {
+        $authorizer = $this->createStub(ApiAccessAuthorizer::class);
+        $authorizer->method('hasViewAccessToSite')->willReturn(true);
+        $sites = $this->createStub(SiteRepository::class);
+        $sites->method('timezone')->willReturn('UTC');
+        $sites->method('details')->willReturn(['name' => 'Example site']);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(SiteRepository::class, $sites);
+
+        $response = $this->get($this->url(['format' => 'rss']));
+
+        $response->assertOk()->assertHeader('Content-Type', 'text/xml; charset=utf-8');
+        $content = $response->getContent();
+        $this->assertIsString($content);
+        $this->assertStringContainsString('<rss version="2.0">', $content);
+        $this->assertStringContainsString('Example site', $content);
     }
 
     /** @param array<string, string> $parameters */
