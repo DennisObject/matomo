@@ -1288,6 +1288,7 @@ class AppServiceProvider extends ServiceProvider
                 options: $application->make(OptionRepository::class),
                 policies: $application->make(CompliancePolicyStateRepository::class),
                 configuration: $application->make(InstallationConfig::class),
+                translator: $application->make(MatomoTranslator::class),
             ),
         );
 
