@@ -47,7 +47,7 @@ class SitesManagerGlobalSettingsApiTest extends TestCase
             'SitesManager_ExcludedIpsGlobal' => '1.2.3.4,1.2.3.*',
             'SitesManager_SearchKeywordParameters' => 'q,query',
             'SitesManager_SearchCategoryParameters' => 'category',
-            'SitesManager_ExcludedUserAgentsGlobal' => 'bot,spider',
+            'SitesManager_ExcludedUserAgentsGlobal' => 'bot,spider,bot',
             'SitesManager_ExcludedReferrersGlobal' => 'https://example.test,.internal.test',
             'SitesManager_KeepURLFragmentsGlobal' => '1',
         ], $writes);
@@ -93,7 +93,7 @@ class SitesManagerGlobalSettingsApiTest extends TestCase
 
         $this->assertSame([
             ['SitesManager_ExcludeTypeQueryParamsGlobal', 'custom'],
-            ['SitesManager_ExcludedQueryParameters', 'email,phone'],
+            ['SitesManager_ExcludedQueryParameters', 'email,phone,email'],
             ['SitesManager_ExcludeTypeQueryParamsGlobal', 'common_session_parameters'],
         ], $writes);
     }

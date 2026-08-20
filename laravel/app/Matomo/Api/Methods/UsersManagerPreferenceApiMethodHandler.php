@@ -8,6 +8,7 @@ use App\Matomo\Api\ApiRequest;
 use App\Matomo\Api\ApiResponseFactory;
 use App\Matomo\Authentication\ApiAccessAuthorizer;
 use App\Matomo\Options\MutableOptionRepository;
+use App\Matomo\Users\UserPreferenceDefaults;
 use App\Matomo\Users\UserPreferenceRepository;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -29,6 +30,7 @@ final readonly class UsersManagerPreferenceApiMethodHandler implements ApiMethod
         private ApiResponseFactory $responses,
         private UserPreferenceRepository $preferences,
         private MutableOptionRepository $options,
+        private UserPreferenceDefaults $defaults,
     ) {}
 
     public function supports(ApiRequest $request): bool
@@ -142,7 +144,7 @@ final readonly class UsersManagerPreferenceApiMethodHandler implements ApiMethod
                 $request->authentication,
                 $login,
             )[0] ?? false,
-            'defaultReportDate' => '',
+            'defaultReportDate' => $this->defaults->reportDate(),
             default => false,
         };
     }
