@@ -68,6 +68,7 @@ use App\Matomo\Api\Methods\TwoFactorAuthApiMethodHandler;
 use App\Matomo\Api\Methods\UserCountryApiMethodHandler;
 use App\Matomo\Api\Methods\UserIdApiMethodHandler;
 use App\Matomo\Api\Methods\UserLanguageApiMethodHandler;
+use App\Matomo\Api\Methods\UsersManagerAccessApiMethodHandler;
 use App\Matomo\Api\Methods\VisitFrequencyApiMethodHandler;
 use App\Matomo\Api\Methods\VisitorInterestApiMethodHandler;
 use App\Matomo\Api\Methods\VisitsSummaryApiMethodHandler;
@@ -269,6 +270,8 @@ use App\Matomo\TwoFactorAuth\DatabaseTwoFactorAuthenticationResetter;
 use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
 use App\Matomo\UserChanges\DatabaseUserChangeReadRepository;
 use App\Matomo\UserChanges\UserChangeReadRepository;
+use App\Matomo\Users\AccessMetadataProvider;
+use App\Matomo\Users\ConfiguredAccessMetadataProvider;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -512,6 +515,7 @@ class AppServiceProvider extends ServiceProvider
                 translator: $application->make(MatomoTranslator::class),
             ),
         );
+        $this->app->singleton(AccessMetadataProvider::class, ConfiguredAccessMetadataProvider::class);
         $this->app->alias(SiteRepository::class, MutableSiteRepository::class);
 
         $this->app->singleton(
@@ -1380,6 +1384,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(VisitTimeApiMethodHandler::class),
                 $application->make(VisitorInterestApiMethodHandler::class),
                 $application->make(UserLanguageApiMethodHandler::class),
+                $application->make(UsersManagerAccessApiMethodHandler::class),
                 $application->make(ResolutionApiMethodHandler::class),
                 $application->make(DevicePluginsApiMethodHandler::class),
                 $application->make(DevicesDetectionApiMethodHandler::class),
