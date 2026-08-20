@@ -2590,6 +2590,7 @@ final readonly class ApiRequest
             secondaryDimension: self::reportSecondaryDimension($request, $method),
             flat: self::booleanInput($request, 'flat', false),
             showDimensions: self::booleanInput($request, 'show_dimensions', false),
+            formatMetrics: self::booleanInput($request, 'format_metrics', true),
         );
     }
 
