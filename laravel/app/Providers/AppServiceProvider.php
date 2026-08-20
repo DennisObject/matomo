@@ -31,11 +31,13 @@ use App\Matomo\Api\Methods\GoalsApiMethodHandler;
 use App\Matomo\Api\Methods\GoalsReportApiMethodHandler;
 use App\Matomo\Api\Methods\JsTrackerInstallCheckApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
+use App\Matomo\Api\Methods\OverlayApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
 use App\Matomo\Api\Methods\ProfessionalServicesApiMethodHandler;
 use App\Matomo\Api\Methods\ResolutionApiMethodHandler;
 use App\Matomo\Api\Methods\SitesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\TourApiMethodHandler;
+use App\Matomo\Api\Methods\TransitionsApiMethodHandler;
 use App\Matomo\Api\Methods\TwoFactorAuthApiMethodHandler;
 use App\Matomo\Api\Methods\UserCountryApiMethodHandler;
 use App\Matomo\Api\Methods\UserIdApiMethodHandler;
@@ -743,6 +745,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(GoalsApiMethodHandler::class),
                 $application->make(GoalsReportApiMethodHandler::class),
                 $application->make(JsTrackerInstallCheckApiMethodHandler::class),
+                $application->make(OverlayApiMethodHandler::class),
                 $application->make(PagePerformanceApiMethodHandler::class),
                 $application->make(UserIdApiMethodHandler::class),
                 $application->make(ContentsApiMethodHandler::class),
@@ -753,6 +756,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(AiAgentsApiMethodHandler::class),
                 $application->make(AiProvidersApiMethodHandler::class),
                 $application->make(TourApiMethodHandler::class),
+                $application->make(TransitionsApiMethodHandler::class),
                 $application->make(TwoFactorAuthApiMethodHandler::class),
                 $application->make(UserCountryApiMethodHandler::class),
             ]),
