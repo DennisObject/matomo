@@ -22,6 +22,7 @@ use App\Matomo\Api\Methods\AiProvidersApiMethodHandler;
 use App\Matomo\Api\Methods\AnnotationsApiMethodHandler;
 use App\Matomo\Api\Methods\ApiMetadataMethodHandler;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
+use App\Matomo\Api\Methods\ApiOverviewMethodHandler;
 use App\Matomo\Api\Methods\BotTrackingApiMethodHandler;
 use App\Matomo\Api\Methods\BulkApiMethodHandler;
 use App\Matomo\Api\Methods\ContentsApiMethodHandler;
@@ -1783,6 +1784,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(ApiMetadataMethodHandler::class),
                 $application->make(BulkApiMethodHandler::class),
                 $application->make(ProcessedReportApiMethodHandler::class),
+                $application->make(ApiOverviewMethodHandler::class),
                 $application->make(CorePluginsAdminApiMethodHandler::class),
                 $application->make(CoreAdminHomeApiMethodHandler::class),
                 $application->make(SitesManagerApiMethodHandler::class),
