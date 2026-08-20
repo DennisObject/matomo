@@ -66,6 +66,18 @@ final class DatabaseMutableUserRepositoryTest extends TestCase
         );
     }
 
+    public function test_invitation_renewal_requires_the_exact_login(): void
+    {
+        $connection = $this->connection();
+        $users = new DatabaseMutableUserRepository($connection, 'salt');
+        $users->invite('alice', 'alice@example.test', 7, 7, 'admin');
+
+        $this->assertSame(
+            'not-pending',
+            $users->renewInvitation('alice@example.test', 30, false, 'admin', true)['result'],
+        );
+    }
+
     private function connection(): ConnectionInterface
     {
         $connection = $this->app->make(ConnectionInterface::class);
