@@ -2489,22 +2489,32 @@ final readonly class ApiRequest
             'UsersManager.getUsersAccessFromSite',
             'UsersManager.getUsersWithSiteAccess',
             'UsersManager.getSitesAccessFromUser',
+            'UsersManager.getSitesAccessForUser',
         ], true)) {
             return null;
         }
+
+        $limit = self::integerInput($request, 'limit', 0, 0);
 
         return new UsersManagerSiteAccessRequest(
             siteId: in_array($method, [
                 'UsersManager.getUsersAccessFromSite',
                 'UsersManager.getUsersWithSiteAccess',
             ], true) ? self::requiredInteger($request, 'idSite') : null,
-            userLogin: $method === 'UsersManager.getSitesAccessFromUser'
+            userLogin: in_array($method, [
+                'UsersManager.getSitesAccessFromUser',
+                'UsersManager.getSitesAccessForUser',
+            ], true)
                 ? self::requiredString($request, 'userLogin')
                 : null,
             access: in_array($method, [
                 'UsersManager.getUsersSitesFromAccess',
                 'UsersManager.getUsersWithSiteAccess',
             ], true) ? self::requiredString($request, 'access') : null,
+            limit: $limit > 0 ? $limit : null,
+            offset: self::integerInput($request, 'offset', 0, 0),
+            search: self::nullableStringInput($request, 'filter_search'),
+            accessFilter: self::nullableStringInput($request, 'filter_access'),
         );
     }
 

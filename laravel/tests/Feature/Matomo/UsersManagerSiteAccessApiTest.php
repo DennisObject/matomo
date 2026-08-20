@@ -92,4 +92,54 @@ final class UsersManagerSiteAccessApiTest extends TestCase
             '&access=owner&format=json&token_auth=root-token')
             ->assertBadRequest();
     }
+
+    public function test_admin_filters_paginated_access_for_non_superuser(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->expects($this->once())->method('hasSomeAdminAccess')->willReturn(true);
+        $authorizer->expects($this->once())->method('hasSuperUserAccess')->willReturn(false);
+        $authorizer->expects($this->once())->method('siteIdsWithRole')
+            ->with($this->anything(), SiteAccessRole::Admin)->willReturn([2, 5]);
+        $users = $this->createMock(UserDirectoryRepository::class);
+        $users->expects($this->once())->method('user')->with('alice')
+            ->willReturn(['login' => 'alice', 'superuser_access' => 0]);
+        $access = $this->createMock(UserSiteAccessRepository::class);
+        $access->expects($this->once())->method('filteredForUser')
+            ->with('alice', 10, 2, 'shop', 'some', [2, 5])
+            ->willReturn([
+                'rows' => [[
+                    'idsite' => 5,
+                    'site_name' => 'Shop',
+                    'access' => ['write', 'manage_tags'],
+                ]],
+                'total' => 3,
+                'hasSome' => true,
+            ]);
+        $metadata = $this->createStub(AccessMetadataProvider::class);
+        $metadata->method('capabilities')->willReturn([[
+            'id' => 'manage_tags',
+            'name' => 'Manage tags',
+            'description' => '',
+            'helpUrl' => '',
+            'includedInRoles' => [],
+            'category' => 'Plugin',
+        ]]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(UserDirectoryRepository::class, $users);
+        $this->app->instance(UserSiteAccessRepository::class, $access);
+        $this->app->instance(AccessMetadataProvider::class, $metadata);
+
+        $this->get('/index.php?module=API&method=UsersManager.getSitesAccessForUser'.
+            '&userLogin=alice&limit=10&offset=2&filter_search=shop&filter_access=some'.
+            '&format=json&token_auth=admin-token')
+            ->assertOk()
+            ->assertHeader('X-Matomo-Total-Results', '3')
+            ->assertHeader('X-Matomo-Has-Some', '1')
+            ->assertExactJson([[
+                'idsite' => 5,
+                'site_name' => 'Shop',
+                'role' => 'write',
+                'capabilities' => ['manage_tags'],
+            ]]);
+    }
 }

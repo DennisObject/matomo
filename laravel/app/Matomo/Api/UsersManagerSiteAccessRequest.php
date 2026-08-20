@@ -10,5 +10,9 @@ final readonly class UsersManagerSiteAccessRequest
         public ?int $siteId,
         public ?string $userLogin,
         public ?string $access,
+        public ?int $limit,
+        public int $offset,
+        public ?string $search,
+        public ?string $accessFilter,
     ) {}
 }
