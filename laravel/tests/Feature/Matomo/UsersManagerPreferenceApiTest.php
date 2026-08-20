@@ -71,6 +71,23 @@ final class UsersManagerPreferenceApiTest extends TestCase
             ->assertExactJson(['value' => 'light']);
     }
 
+    public function test_missing_report_date_uses_the_installation_default_day(): void
+    {
+        $authorizer = $this->createMock(ApiAccessAuthorizer::class);
+        $authorizer->method('authenticatedLogin')->willReturn('alice');
+        $preferences = $this->createMock(UserPreferenceRepository::class);
+        $preferences->method('canonicalLogin')->willReturn('alice');
+        $preferences->expects($this->once())->method('get')->with('alice', 'defaultReportDate')
+            ->willReturn(['found' => false, 'value' => null]);
+        $this->app->instance(ApiAccessAuthorizer::class, $authorizer);
+        $this->app->instance(UserPreferenceRepository::class, $preferences);
+
+        $this->get('/index.php?module=API&method=UsersManager.getUserPreference'.
+            '&preferenceName=defaultReportDate&format=json&token_auth=alice-token')
+            ->assertOk()
+            ->assertExactJson(['value' => 'yesterday']);
+    }
+
     public function test_superuser_reads_selected_preferences_for_all_users(): void
     {
         $authorizer = $this->createMock(ApiAccessAuthorizer::class);
