@@ -45,6 +45,7 @@ use App\Matomo\Api\Methods\JsTrackerInstallCheckApiMethodHandler;
 use App\Matomo\Api\Methods\LanguagesManagerApiMethodHandler;
 use App\Matomo\Api\Methods\LiveApiMethodHandler;
 use App\Matomo\Api\Methods\LoginApiMethodHandler;
+use App\Matomo\Api\Methods\MarketplaceApiMethodHandler;
 use App\Matomo\Api\Methods\MultiSitesApiMethodHandler;
 use App\Matomo\Api\Methods\OverlayApiMethodHandler;
 use App\Matomo\Api\Methods\PagePerformanceApiMethodHandler;
@@ -216,6 +217,8 @@ use App\Matomo\Login\DatabaseBruteForceSettings;
 use App\Matomo\Login\DatabaseBruteForceUnblocker;
 use App\Matomo\Login\DatabaseLoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptGuard;
+use App\Matomo\Marketplace\HttpMarketplaceService;
+use App\Matomo\Marketplace\MarketplaceService;
 use App\Matomo\Options\DatabaseOptionRepository;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
@@ -361,6 +364,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\ServiceProvider;
 use Psr\Log\LoggerInterface;
@@ -1646,6 +1650,24 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            MarketplaceService::class,
+            function (Application $application): MarketplaceService {
+                $endpoint = config('matomo.marketplace_endpoint');
+                $domains = config('matomo.allowed_email_domains');
+
+                return new HttpMarketplaceService(
+                    http: $application->make(Factory::class),
+                    connection: $application->make(ConnectionInterface::class),
+                    options: $application->make(MutableOptionRepository::class),
+                    hosts: $application->make(EgressHostResolver::class),
+                    endpoint: is_string($endpoint) ? $endpoint : '',
+                    allowedEmailDomains: is_array($domains)
+                        ? array_values(array_filter($domains, is_string(...))) : [],
+                );
+            },
+        );
+
+        $this->app->singleton(
             ApiMethodDispatcher::class,
             fn (Application $application): ApiMethodDispatcher => new ApiMethodDispatcher([
                 $application->make(CoreApiMethodHandler::class),
@@ -1722,6 +1744,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(PrivacyManagerGranularComplianceApiMethodHandler::class),
                 $application->make(PrivacyManagerRawAnonymisationApiMethodHandler::class),
                 $application->make(LoginApiMethodHandler::class),
+                $application->make(MarketplaceApiMethodHandler::class),
                 $application->make(LiveApiMethodHandler::class),
                 $application->make(AiAgentsApiMethodHandler::class),
                 $application->make(AiProvidersApiMethodHandler::class),

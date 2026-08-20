@@ -49,6 +49,7 @@ use App\Matomo\Localization\MutableLanguagePreferenceRepository;
 use App\Matomo\Login\BruteForceUnblocker;
 use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptStatus;
+use App\Matomo\Marketplace\MarketplaceService;
 use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Options\OptionRepository;
 use App\Matomo\Plugins\PluginState;
@@ -703,6 +704,18 @@ abstract class TestCase extends BaseTestCase
         };
         $this->app->instance(MutableOptionRepository::class, $options);
         $this->app->instance(OptionRepository::class, $options);
+        $this->app->instance(MarketplaceService::class, new class implements MarketplaceService
+        {
+            public function createAccount(string $email): void {}
+
+            public function deleteLicenseKey(): void {}
+
+            public function requestTrial(string $pluginName, string $login): void {}
+
+            public function startFreeTrial(string $pluginName): void {}
+
+            public function saveLicenseKey(#[\SensitiveParameter] string $licenseKey): void {}
+        });
         $this->app->instance(PluginState::class, new class implements PluginState
         {
             public function isActivated(string $pluginName): bool
