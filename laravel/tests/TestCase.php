@@ -10,6 +10,7 @@ use App\Matomo\AiProviders\AiProviderConnectionTester;
 use App\Matomo\AiProviders\AiProviderDefinition;
 use App\Matomo\AiProviders\AiProviderSettingsRepository;
 use App\Matomo\AiProviders\AiProviderStoredSettings;
+use App\Matomo\Annotations\AnnotationRepository;
 use App\Matomo\Api\GoalDefinition;
 use App\Matomo\Api\OptOutEmbedRequest;
 use App\Matomo\Archiving\ArchiveInvalidationManager;
@@ -83,6 +84,48 @@ abstract class TestCase extends BaseTestCase
             }
 
             public function setNextReminder(string $login, string $date): void {}
+        });
+        $this->app->instance(AnnotationRepository::class, new class implements AnnotationRepository
+        {
+            public function create(
+                int $siteId,
+                string $date,
+                string $note,
+                bool $starred,
+                string $login,
+            ): array {
+                return [
+                    'id' => 1,
+                    'idsite' => $siteId,
+                    'date' => $date,
+                    'note' => $note,
+                    'starred' => (int) $starred,
+                    'user' => $login,
+                ];
+            }
+
+            public function find(int $siteId, int $noteId): ?array
+            {
+                return null;
+            }
+
+            public function update(int $siteId, int $noteId, array $values): ?array
+            {
+                return null;
+            }
+
+            public function delete(int $siteId, int $noteId): void {}
+
+            public function deleteAll(int $siteId): void {}
+
+            public function forSite(
+                int $siteId,
+                ?string $startDate,
+                ?string $endDate,
+                ?int $limit = null,
+            ): array {
+                return [];
+            }
         });
         $this->app->instance(FeedbackMailer::class, new class implements FeedbackMailer
         {

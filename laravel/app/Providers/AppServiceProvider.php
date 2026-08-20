@@ -12,9 +12,12 @@ use App\Matomo\AiProviders\AiProviderSettingsRepository;
 use App\Matomo\AiProviders\BuiltInAiProviderCatalog;
 use App\Matomo\AiProviders\DatabaseAiProviderSettingsRepository;
 use App\Matomo\AiProviders\HttpAiProviderConnectionTester;
+use App\Matomo\Annotations\AnnotationRepository;
+use App\Matomo\Annotations\DatabaseAnnotationRepository;
 use App\Matomo\Api\Methods\ActionsApiMethodHandler;
 use App\Matomo\Api\Methods\AiAgentsApiMethodHandler;
 use App\Matomo\Api\Methods\AiProvidersApiMethodHandler;
+use App\Matomo\Api\Methods\AnnotationsApiMethodHandler;
 use App\Matomo\Api\Methods\ApiMethodDispatcher;
 use App\Matomo\Api\Methods\ContentsApiMethodHandler;
 use App\Matomo\Api\Methods\CoreAdminHomeApiMethodHandler;
@@ -246,6 +249,12 @@ class AppServiceProvider extends ServiceProvider
 
                 return new MatomoDatabase($databases->connection('matomo'));
             },
+        );
+        $this->app->singleton(
+            AnnotationRepository::class,
+            fn (Application $application): AnnotationRepository => new DatabaseAnnotationRepository(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
         );
 
         $this->app->singleton(AiProviderCatalog::class, BuiltInAiProviderCatalog::class);
@@ -1115,6 +1124,7 @@ class AppServiceProvider extends ServiceProvider
                 $application->make(DevicePluginsApiMethodHandler::class),
                 $application->make(DevicesDetectionApiMethodHandler::class),
                 $application->make(ActionsApiMethodHandler::class),
+                $application->make(AnnotationsApiMethodHandler::class),
                 $application->make(EventsApiMethodHandler::class),
                 $application->make(ExampleApiMethodHandler::class),
                 $application->make(ExamplePluginApiMethodHandler::class),

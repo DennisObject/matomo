@@ -78,6 +78,17 @@ final readonly class ApiRequest
     private const string USER_ID_METHOD = 'UserId.getUsers';
 
     /** @var list<string> */
+    private const array ANNOTATION_METHODS = [
+        'Annotations.add',
+        'Annotations.save',
+        'Annotations.delete',
+        'Annotations.deleteAll',
+        'Annotations.get',
+        'Annotations.getAll',
+        'Annotations.getAnnotationCountForDates',
+    ];
+
+    /** @var list<string> */
     private const array ACTIONS_METHODS = [
         'Actions.get',
         'Actions.getPageUrls',
@@ -317,6 +328,7 @@ final readonly class ApiRequest
         public array $siteTypesToExclude,
         public ?VisitsSummaryRequest $visitsSummary,
         public ?ActionsRequest $actions,
+        public ?AnnotationRequest $annotations,
         public ?TwoFactorAuthRequest $twoFactorAuth,
         public ?string $locationIp,
         public ?string $locationProviderId,
@@ -372,6 +384,7 @@ final readonly class ApiRequest
             siteTypesToExclude: [],
             visitsSummary: null,
             actions: null,
+            annotations: null,
             twoFactorAuth: null,
             locationIp: null,
             locationProviderId: null,
@@ -652,6 +665,11 @@ final readonly class ApiRequest
         return $this->module === 'API' && in_array($this->method, self::ACTIONS_METHODS, true);
     }
 
+    public function isAnnotationsRequest(): bool
+    {
+        return $this->module === 'API' && in_array($this->method, self::ANNOTATION_METHODS, true);
+    }
+
     public function isContentsRequest(): bool
     {
         return $this->module === 'API' && in_array($this->method, self::CONTENTS_METHODS, true);
@@ -812,6 +830,7 @@ final readonly class ApiRequest
             siteTypesToExclude: self::siteTypesToExclude($request, $module, $method),
             visitsSummary: self::visitsSummary($request, $module, $method),
             actions: self::actions($request, $module, $method),
+            annotations: self::annotations($request, $module, $method),
             twoFactorAuth: self::twoFactorAuth($request, $module, $method),
             locationIp: self::locationIp($request, $module, $method),
             locationProviderId: self::locationProviderId($request, $module, $method),
@@ -1920,6 +1939,85 @@ final readonly class ApiRequest
         return new ActionsRequest(
             actionValue: $parameter === null ? null : self::requiredString($request, $parameter),
             depth: $parsedDepth,
+        );
+    }
+
+    private static function annotations(
+        Request $request,
+        string $module,
+        string $method,
+    ): ?AnnotationRequest {
+        if ($module !== 'API' || ! in_array($method, self::ANNOTATION_METHODS, true)) {
+            return null;
+        }
+
+        [$siteIds, $allSites] = self::reportSiteIds($request);
+        $singleSite = ! in_array($method, [
+            'Annotations.getAll',
+            'Annotations.getAnnotationCountForDates',
+        ], true);
+
+        if ($singleSite && ($allSites || count($siteIds) !== 1)) {
+            throw new InvalidApiParameter('idSite', 'This API method requires one website ID.');
+        }
+
+        $requiresNoteId = in_array($method, [
+            'Annotations.save',
+            'Annotations.delete',
+            'Annotations.get',
+        ], true);
+        $noteId = $requiresNoteId ? self::requiredInteger($request, 'idNote') : null;
+
+        if ($noteId !== null && $noteId < 1) {
+            throw new InvalidApiParameter('idNote');
+        }
+
+        $requiresDate = in_array($method, [
+            'Annotations.add',
+            'Annotations.getAnnotationCountForDates',
+        ], true);
+        $date = $requiresDate
+            ? self::requiredString($request, 'date')
+            : self::nullableStringInput($request, 'date');
+        $note = $method === 'Annotations.add'
+            ? self::requiredString($request, 'note')
+            : self::nullableStringInput($request, 'note');
+        $starred = self::booleanFromArray($request->query->all(), 'starred')
+            ?? self::booleanFromArray($request->request->all(), 'starred');
+        $period = self::stringInput($request, 'period', 'day');
+
+        if (! in_array($period, ['day', 'week', 'month', 'year', 'range'], true)) {
+            throw new InvalidApiParameter('period', "The period '{$period}' is not supported.");
+        }
+
+        $lastNValue = self::inputValue($request, 'lastN');
+        $lastN = null;
+
+        if (! in_array($lastNValue, [null, '', false, 'false', '0'], true)) {
+            if (! is_scalar($lastNValue)
+                || (string) (int) $lastNValue !== (string) $lastNValue
+                || (int) $lastNValue < 1) {
+                throw new InvalidApiParameter('lastN');
+            }
+
+            $lastN = min((int) $lastNValue, match ($period) {
+                'day', 'range' => 1825,
+                'week' => 520,
+                'month' => 120,
+                'year' => 10,
+            });
+        }
+
+        return new AnnotationRequest(
+            siteIds: $siteIds,
+            allSites: $allSites,
+            noteId: $noteId,
+            date: $date,
+            note: $note,
+            starred: $starred,
+            period: $period,
+            lastN: $lastN,
+            includeText: self::booleanInput($request, 'getAnnotationText', false),
         );
     }
 
