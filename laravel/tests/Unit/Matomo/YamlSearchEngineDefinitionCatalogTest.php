@@ -27,5 +27,10 @@ class YamlSearchEngineDefinitionCatalogTest extends TestCase
             $catalog->logo('http://google.com'),
         );
         self::assertSame('URL unknown!', $catalog->url('Missing'));
+        self::assertSame(
+            ['name' => 'Google', 'keywords' => 'blue shoes'],
+            $catalog->search('https://www.google.com/search?q=blue+shoes'),
+        );
+        self::assertNull($catalog->search('https://news.example/story'));
     }
 }

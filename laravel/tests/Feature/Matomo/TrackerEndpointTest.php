@@ -281,6 +281,57 @@ final class TrackerEndpointTest extends TestCase
         ]))->assertOk();
     }
 
+    public function test_classifies_search_social_and_ai_referrers(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->exactly(4))->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => match ($request->actionName) {
+                'search' => $request->referrerType === 2
+                    && $request->referrerName === 'Google'
+                    && $request->referrerKeyword === 'blue shoes',
+                'social' => $request->referrerType === 7 && $request->referrerName === 'Facebook',
+                'ai' => $request->referrerType === 8 && str_contains(strtolower($request->referrerName), 'chatgpt'),
+                'ai-source' => $request->referrerType === 8,
+                default => false,
+            },
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'action_name' => 'search',
+            'urlref' => 'https://www.google.com/search?q=blue+shoes',
+        ]))->assertOk();
+        $this->get($this->url([
+            'action_name' => 'social',
+            'urlref' => 'https://www.facebook.com/post/1',
+        ]))->assertOk();
+        $this->get($this->url([
+            'action_name' => 'ai',
+            'urlref' => 'https://chatgpt.com/',
+            'utm_campaign' => 'should-not-win',
+        ]))->assertOk();
+        $this->get($this->url([
+            'action_name' => 'ai-source',
+            'utm_source' => 'chatgpt.com',
+        ]))->assertOk();
+    }
+
+    public function test_treats_excluded_referrers_as_direct_entry(): void
+    {
+        $this->bindSite(['excluded_referrers' => 'ads.example']);
+        $this->mutableOptions()->set('SitesManager_ExcludedReferrersGlobal', 'spam.example');
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->exactly(2))->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->referrerType === 1
+                && $request->referrerUrl === '',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['urlref' => 'https://ads.example/click']))->assertOk();
+        $this->get($this->url(['urlref' => 'https://spam.example/x']))->assertOk();
+    }
+
     public function test_attributes_configured_tracker_parameters_and_ignores_internal_referrers(): void
     {
         $this->bindSite(urls: ['https://example.test', 'https://alias.test']);
@@ -1142,6 +1193,9 @@ final class TrackerEndpointTest extends TestCase
         $sites = $this->createStub(SiteRepository::class);
         $sites->method('details')->willReturn($details);
         $sites->method('urls')->willReturn($urls);
+        $sites->method('excludedReferrers')->willReturn(
+            is_string($details['excluded_referrers'] ?? null) ? $details['excluded_referrers'] : null,
+        );
         $this->app->instance(SiteRepository::class, $sites);
     }
 

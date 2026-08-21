@@ -8,6 +8,9 @@ use App\Matomo\Config\InstallationConfig;
 use App\Matomo\CustomDimensions\CustomDimensionRepository;
 use App\Matomo\Geolocation\GeolocationProviderRegistry;
 use App\Matomo\Goals\GoalRepository;
+use App\Matomo\Options\OptionRepository;
+use App\Matomo\Referrers\ReferrerDefinitionCatalog;
+use App\Matomo\Referrers\SearchEngineDefinitionCatalog;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
@@ -20,9 +23,15 @@ final class TrackerRequestFactory
 {
     private const int REFERRER_TYPE_DIRECT = 1;
 
+    private const int REFERRER_TYPE_SEARCH = 2;
+
     private const int REFERRER_TYPE_WEBSITE = 3;
 
     private const int REFERRER_TYPE_CAMPAIGN = 6;
+
+    private const int REFERRER_TYPE_SOCIAL = 7;
+
+    private const int REFERRER_TYPE_AI = 8;
 
     private const string MASKED_CAMPAIGN_VALUE = '__discarded_by_policy__';
 
@@ -75,6 +84,9 @@ final class TrackerRequestFactory
         private readonly GoalRepository $goals,
         private readonly TrackerDeviceDetector $devices,
         private readonly GeolocationProviderRegistry $locations,
+        private readonly ReferrerDefinitionCatalog $referrers,
+        private readonly SearchEngineDefinitionCatalog $searchEngines,
+        private readonly OptionRepository $options,
     ) {}
 
     public function make(Request $request): ?TrackingRequest
@@ -868,6 +880,24 @@ final class TrackerRequestFactory
             return [self::REFERRER_TYPE_DIRECT, '', '', true];
         }
 
+        if ($referrer !== '' && $this->isExcludedReferrer($referrer, $siteId)) {
+            return [self::REFERRER_TYPE_DIRECT, '', '', true];
+        }
+
+        $aiName = $this->referrers->aiAssistantName($referrer);
+        if ($aiName === null) {
+            $utmSource = $this->queryValue($url, ['utm_source'], 70)
+                ?? $this->optional($request->input('utm_source'), 70);
+            if ($utmSource !== null) {
+                $aiName = $this->referrers->aiAssistantName($utmSource)
+                    ?? $this->referrers->aiAssistantName('https://'.$utmSource);
+            }
+        }
+
+        if ($aiName !== null) {
+            return [self::REFERRER_TYPE_AI, $this->clean($aiName, 70), '', false];
+        }
+
         $campaignNames = $this->configuration->campaignNameParameters();
         $campaignKeywords = $this->configuration->campaignKeywordParameters();
         $campaign = $this->queryValue($url, $campaignNames, 70);
@@ -895,7 +925,57 @@ final class TrackerRequestFactory
             return [self::REFERRER_TYPE_DIRECT, '', '', false];
         }
 
+        $search = $this->searchEngines->search($referrer);
+        if ($search !== null) {
+            return [
+                self::REFERRER_TYPE_SEARCH,
+                $this->clean($search['name'], 70),
+                $this->clean($search['keywords'], 255),
+                false,
+            ];
+        }
+
+        $socialName = $this->referrers->socialName($referrer);
+        if ($socialName !== null) {
+            return [self::REFERRER_TYPE_SOCIAL, $this->clean($socialName, 70), '', false];
+        }
+
         return [self::REFERRER_TYPE_WEBSITE, $this->clean(mb_strtolower($referrerHost), 70), '', false];
+    }
+
+    private function isExcludedReferrer(string $url, int $siteId): bool
+    {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        if ($host === '') {
+            return false;
+        }
+
+        $site = $this->site($siteId);
+        $excluded = [
+            ...$this->list($site['excluded_referrers'] ?? null),
+            ...$this->list($this->sites->excludedReferrers($siteId)),
+            ...$this->list($this->options->value('SitesManager_ExcludedReferrersGlobal')),
+        ];
+
+        foreach ($excluded as $referrer) {
+            $normalized = 'https://'.preg_replace('#^https?://#i', '', $referrer);
+            $excludedHost = strtolower((string) parse_url($normalized, PHP_URL_HOST));
+            $excludedPath = rtrim((string) parse_url($normalized, PHP_URL_PATH), '/');
+            if ($excludedHost === '') {
+                continue;
+            }
+
+            if ($host !== $excludedHost && ! str_ends_with($host, '.'.$excludedHost)) {
+                continue;
+            }
+
+            if ($excludedPath === '' || str_starts_with($path, $excludedPath)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function ignoresReferrer(string $url): bool
