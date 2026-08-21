@@ -1105,6 +1105,42 @@ final class TrackerEndpointTest extends TestCase
             ->assertSeeText('requires &token_auth');
     }
 
+    public function test_attributes_goal_conversions_from_campaign_cookies(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->referrerType === 3
+                && $request->referrerName === 'news.example'
+                && $request->conversionReferrerType === 6
+                && $request->conversionReferrerName === 'spring'
+                && $request->conversionReferrerKeyword === 'shoes',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'urlref' => 'https://news.example/story',
+            '_rcn' => 'Spring',
+            '_rck' => 'Shoes',
+        ]))->assertOk();
+    }
+
+    public function test_attributes_goal_conversions_from_the_referrer_cookie(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->referrerType === 1
+                && $request->conversionReferrerType === 2
+                && $request->conversionReferrerName === 'Google',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            '_ref' => 'https://www.google.com/search?q=blue+shoes',
+        ]))->assertOk();
+    }
+
     public function test_forces_a_new_visit_from_the_new_visit_parameter(): void
     {
         $this->bindSite(['timezone' => 'Europe/Paris']);

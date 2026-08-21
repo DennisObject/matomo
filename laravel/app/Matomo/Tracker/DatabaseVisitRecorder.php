@@ -155,6 +155,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                         'buster' => $goal['allowMultiple'] ? random_int(1, 4_294_967_295) : 0,
                         'url' => $request->url,
                         'revenue' => $goal['revenue'],
+                        ...$request->conversionReferrerColumns(),
                         ...$request->visitProperties,
                     ];
                 }
@@ -367,6 +368,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'buster' => $request->goalAllowsMultiple ? random_int(1, 4_294_967_295) : 0,
             'url' => $request->url,
             'revenue' => $request->goalRevenue,
+            ...$request->conversionReferrerColumns(),
             ...$request->visitProperties,
         ]);
     }
@@ -411,6 +413,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'revenue_shipping' => $request->ecommerceShipping,
             'revenue_discount' => $request->ecommerceDiscount,
             'items' => array_sum(array_column($request->ecommerceItems, 'quantity')),
+            ...$request->conversionReferrerColumns(),
             ...$request->visitProperties,
         ];
         if ($request->ecommerceCart) {
