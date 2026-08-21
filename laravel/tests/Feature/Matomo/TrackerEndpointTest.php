@@ -1290,6 +1290,26 @@ final class TrackerEndpointTest extends TestCase
         $this->get($this->url())->assertOk();
     }
 
+    public function test_silently_excludes_user_agents_matching_a_regex(): void
+    {
+        $this->bindSite(['excluded_user_agents' => '/EvilBot\/[0-9]+/']);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['ua' => 'Mozilla/5.0 EvilBot/12']))->assertOk();
+    }
+
+    public function test_records_user_agents_that_do_not_match_the_exclusion_regex(): void
+    {
+        $this->bindSite(['excluded_user_agents' => '/EvilBot\/[0-9]+/']);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['ua' => 'Mozilla/5.0 Chrome/120.0.0.0']))->assertOk();
+    }
+
     public function test_removes_tracking_and_campaign_parameters_from_stored_url(): void
     {
         $this->bindSite();
