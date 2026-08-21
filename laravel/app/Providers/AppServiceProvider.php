@@ -1663,6 +1663,7 @@ class AppServiceProvider extends ServiceProvider
                 return new UiSessionFingerprint(
                     sessionLifetime: $installation->sessionLifetime(),
                     idleTimeout: $installation->sessionIdleTimeout(),
+                    salt: $installation->salt(),
                 );
             },
         );

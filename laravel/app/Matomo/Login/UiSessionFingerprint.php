@@ -12,14 +12,24 @@ final readonly class UiSessionFingerprint
     public function __construct(
         private int $sessionLifetime = 1_209_600,
         private int $idleTimeout = 3_600,
+        #[\SensitiveParameter]
+        private string $salt = '',
     ) {}
 
-    public function initialize(Session $session, string $login, bool $remembered): void
-    {
+    public function initialize(
+        Session $session,
+        string $login,
+        bool $remembered,
+        #[\SensitiveParameter]
+        ?string $tokenAuth = null,
+    ): void {
         $now = CarbonImmutable::now('UTC')->getTimestamp();
 
         $session->put('matomo.login', $login);
         $session->put('user.name', $login);
+        $session->put('user.token_auth_temp', $tokenAuth ?? $this->randomToken());
+        $session->put('twofactorauth.verified', 0);
+        $session->forget('twofactorauth.verified_user');
         $session->put('session.info', [
             'ts' => $now,
             'remembered' => $remembered,
@@ -75,5 +85,10 @@ final readonly class UiSessionFingerprint
     private function duration(bool $remembered): int
     {
         return $remembered ? $this->sessionLifetime : $this->idleTimeout;
+    }
+
+    private function randomToken(): string
+    {
+        return md5(bin2hex(random_bytes(16)).microtime(true).uniqid('', true).$this->salt);
     }
 }
