@@ -11,6 +11,7 @@ use App\Matomo\Login\LogmeSettings;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\ReportingApiIpAllowlist;
+use App\Matomo\TwoFactorAuth\TwoFactorUser;
 use App\Matomo\Users\UserIdentityRepository;
 use Illuminate\Contracts\Cache\Repository;
 use Tests\TestCase;
@@ -202,6 +203,29 @@ final class LoginControllerTest extends TestCase
         $this->get('/index.php?module=Login&action=logme&login=admin&password=aabbccddeeff')
             ->assertForbidden()
             ->assertSee("A user with superuser access cannot be authenticated using the 'logme' mechanism.");
+    }
+
+    public function test_password_login_requires_two_factor_when_it_is_enabled(): void
+    {
+        $this->bindLogin('alice', true);
+        $this->app->instance(TwoFactorUser::class, new class implements TwoFactorUser
+        {
+            public function isEnabled(string $login): bool
+            {
+                return $login === 'alice';
+            }
+        });
+        $this->get('/index.php')->assertOk();
+
+        $this->post('/index.php?module=Login', [
+            'form_login' => 'alice',
+            'form_password' => 'secret',
+            'form_nonce' => session()->token(),
+        ])->assertRedirect('/index.php?module=TwoFactorAuth&action=loginTwoFactorAuth');
+
+        $this->get('/index.php?module=CoreHome')
+            ->assertRedirect('/index.php?module=TwoFactorAuth&action=loginTwoFactorAuth');
+        $this->assertSame(0, session('twofactorauth.verified'));
     }
 
     /** @param  list<string>  $ips */
