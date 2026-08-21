@@ -14,6 +14,7 @@ use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Settings\PolicySettingRepository;
 use App\Matomo\Sites\SiteRepository;
 use App\Matomo\Tracker\MatomoCookie;
+use App\Matomo\Tracker\ReferrerSpamList;
 use App\Matomo\Tracker\TrackingRequest;
 use App\Matomo\Tracker\TrackingRequestPolicy;
 use App\Matomo\Tracker\VisitRecorder;
@@ -1206,6 +1207,18 @@ final class TrackerEndpointTest extends TestCase
             'bots' => '1',
             'ua' => 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
         ]))->assertOk();
+    }
+
+    public function test_silently_excludes_known_referrer_spam(): void
+    {
+        $this->bindSite();
+        $this->mutableOptions()->set('referrer_spam_blacklist', serialize(['spam.example']));
+        $this->app->forgetInstance(ReferrerSpamList::class);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['urlref' => 'https://spam.example/click']))->assertOk();
     }
 
     public function test_silently_excludes_configured_ip_addresses(): void
