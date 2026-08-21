@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Matomo;
 
 use App\Http\Controllers\Controller;
 use App\Matomo\Login\PasswordLoginAuthenticator;
+use App\Matomo\Login\TrustedLoginRedirect;
 use App\Matomo\Login\UiSessionFingerprint;
 use App\Matomo\Security\ClientIpResolver;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +20,7 @@ final class LoginController extends Controller
         private readonly PasswordLoginAuthenticator $logins,
         private readonly ClientIpResolver $ips,
         private readonly UiSessionFingerprint $sessions,
+        private readonly TrustedLoginRedirect $redirects,
     ) {}
 
     public function __invoke(Request $request): View|Response|RedirectResponse
@@ -74,6 +76,6 @@ final class LoginController extends Controller
         $this->sessions->initialize($request->session(), $result->login, $remembered);
         $this->sessions->applyCookieLifetime($remembered);
 
-        return redirect('/index.php?module=CoreHome&action=index');
+        return redirect($this->redirects->destination($request));
     }
 }

@@ -53,6 +53,19 @@ final class LoginControllerTest extends TestCase
         $this->assertSame(0, session('twofactorauth.verified'));
     }
 
+    public function test_redirects_to_a_trusted_same_host_url_after_login(): void
+    {
+        $this->bindLogin('alice', true);
+        $this->get('/index.php')->assertOk();
+
+        $this->post('/index.php?module=Login', [
+            'form_login' => 'alice',
+            'form_password' => 'secret',
+            'form_nonce' => session()->token(),
+            'form_redirect' => 'http://localhost/index.php?module=SitesManager&action=index',
+        ])->assertRedirect('/index.php?module=SitesManager&action=index');
+    }
+
     public function test_rejects_an_incorrect_password(): void
     {
         $this->bindLogin('alice', false);
