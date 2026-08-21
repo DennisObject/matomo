@@ -49,6 +49,7 @@ use App\Matomo\Localization\MutableLanguagePreferenceRepository;
 use App\Matomo\Login\BruteForceUnblocker;
 use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptStatus;
+use App\Matomo\Login\TrustedLoginRedirect;
 use App\Matomo\Login\UiSessionFingerprint;
 use App\Matomo\Marketplace\MarketplaceService;
 use App\Matomo\Marketplace\PluginUpdateCounter;
@@ -450,6 +451,7 @@ abstract class TestCase extends BaseTestCase
 
         $this->app->instance(ClientIpResolver::class, new ClientIpResolver([], [], true));
         $this->app->instance(UiSessionFingerprint::class, new UiSessionFingerprint);
+        $this->app->instance(TrustedLoginRedirect::class, new TrustedLoginRedirect);
         $this->app->instance(LoginAttemptGuard::class, new class implements LoginAttemptGuard
         {
             public function status(string $ipAddress, string $login): LoginAttemptStatus

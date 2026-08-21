@@ -231,6 +231,7 @@ use App\Matomo\Login\DatabaseBruteForceSettings;
 use App\Matomo\Login\DatabaseBruteForceUnblocker;
 use App\Matomo\Login\DatabaseLoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptGuard;
+use App\Matomo\Login\TrustedLoginRedirect;
 use App\Matomo\Login\UiSessionFingerprint;
 use App\Matomo\Marketplace\HttpMarketplaceService;
 use App\Matomo\Marketplace\HttpPluginUpdateCounter;
@@ -1664,6 +1665,17 @@ class AppServiceProvider extends ServiceProvider
                     sessionLifetime: $installation->sessionLifetime(),
                     idleTimeout: $installation->sessionIdleTimeout(),
                     salt: $installation->salt(),
+                );
+            },
+        );
+        $this->app->singleton(
+            TrustedLoginRedirect::class,
+            function (Application $application): TrustedLoginRedirect {
+                $installation = $application->make(InstallationConfig::class);
+
+                return new TrustedLoginRedirect(
+                    trustedHosts: $installation->trustedHosts(),
+                    trustedHostCheckEnabled: $installation->trustedHostCheckEnabled(),
                 );
             },
         );
