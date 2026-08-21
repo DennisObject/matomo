@@ -359,6 +359,7 @@ use App\Matomo\Tour\TourDataRepository;
 use App\Matomo\Tour\TourSettings;
 use App\Matomo\Tracker\ConfiguredTrackingRequestPolicy;
 use App\Matomo\Tracker\DatabaseVisitRecorder;
+use App\Matomo\Tracker\ReferrerSpamList;
 use App\Matomo\Tracker\TrackingRequestPolicy;
 use App\Matomo\Tracker\VisitRecorder;
 use App\Matomo\TrackingFailures\DatabaseTrackingFailureRepository;
@@ -1564,6 +1565,13 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
         $this->app->singleton(TrackingRequestPolicy::class, ConfiguredTrackingRequestPolicy::class);
+        $this->app->singleton(
+            ReferrerSpamList::class,
+            fn (Application $application): ReferrerSpamList => new ReferrerSpamList(
+                $application->make(OptionRepository::class),
+                dirname(base_path()).'/vendor/matomo/referrer-spam-list/spammers.txt',
+            ),
+        );
         $this->app->singleton(
             VisitRecorder::class,
             fn (Application $application): VisitRecorder => new DatabaseVisitRecorder(

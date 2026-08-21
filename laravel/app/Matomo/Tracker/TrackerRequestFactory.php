@@ -87,6 +87,7 @@ final class TrackerRequestFactory
         private readonly ReferrerDefinitionCatalog $referrers,
         private readonly SearchEngineDefinitionCatalog $searchEngines,
         private readonly OptionRepository $options,
+        private readonly ReferrerSpamList $spam,
     ) {}
 
     public function make(Request $request): ?TrackingRequest
@@ -221,6 +222,10 @@ final class TrackerRequestFactory
             || ($referrer !== '' && (filter_var($referrer, FILTER_VALIDATE_URL) === false
             || ! in_array(strtolower((string) parse_url($referrer, PHP_URL_SCHEME)), ['http', 'https'], true)))) {
             throw new InvalidArgumentException('urlref must be a valid HTTP or HTTPS URL.');
+        }
+
+        if ($referrer !== '' && $this->spam->matches($referrer)) {
+            return null;
         }
 
         $now = CarbonImmutable::now('UTC');

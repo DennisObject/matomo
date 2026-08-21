@@ -1208,6 +1208,16 @@ final class TrackerEndpointTest extends TestCase
         ]))->assertOk();
     }
 
+    public function test_silently_excludes_known_referrer_spam(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['urlref' => 'https://0-0.fr/click']))->assertOk();
+    }
+
     public function test_silently_excludes_configured_ip_addresses(): void
     {
         $this->bindSite(['excluded_ips' => '127.0.0.*']);
