@@ -32,6 +32,10 @@ final class FrontController extends Controller
             return $this->container->make(CoreHomeController::class)->__invoke($request);
         }
 
+        if ($module === 'TwoFactorAuth') {
+            return $this->container->make(TwoFactorAuthController::class)->__invoke($request);
+        }
+
         return response('This UI module has not moved to Laravel yet.', 501)
             ->header('Content-Type', 'text/plain; charset=utf-8');
     }

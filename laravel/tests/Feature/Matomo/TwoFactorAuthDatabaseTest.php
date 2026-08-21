@@ -6,7 +6,11 @@ namespace Tests\Feature\Matomo;
 
 use App\Matomo\Api\Events\TwoFactorAuthenticationDisabled;
 use App\Matomo\Authentication\DatabasePasswordConfirmationVerifier;
+use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\TwoFactorAuth\DatabaseTwoFactorAuthenticationResetter;
+use App\Matomo\TwoFactorAuth\DatabaseTwoFactorCodeVerifier;
+use App\Matomo\TwoFactorAuth\DatabaseTwoFactorUser;
+use App\Matomo\TwoFactorAuth\TimeBasedOneTimePassword;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Schema\Blueprint;
@@ -55,6 +59,48 @@ class TwoFactorAuthDatabaseTest extends TestCase
 
         $this->assertSame('', $connection->table('user')->where('login', 'alice')->value('twofactor_secret'));
         $this->assertSame(0, $connection->table('twofactor_recovery_code')->where('login', 'alice')->count());
+    }
+
+    public function test_detects_enabled_two_factor_users(): void
+    {
+        $connection = $this->database();
+        $connection->table('user')->insert([
+            ['login' => 'alice', 'password' => 'unused', 'twofactor_secret' => 'JBSWY3DPEHPK3PXP'],
+            ['login' => 'bob', 'password' => 'unused', 'twofactor_secret' => ''],
+        ]);
+        $users = new DatabaseTwoFactorUser($connection);
+
+        $this->assertTrue($users->isEnabled('alice'));
+        $this->assertFalse($users->isEnabled('bob'));
+        $this->assertFalse($users->isEnabled('anonymous'));
+    }
+
+    public function test_accepts_a_totp_code_once_and_a_recovery_code_once(): void
+    {
+        $connection = $this->database();
+        $secret = 'JBSWY3DPEHPK3PXP';
+        $connection->table('user')->insert([
+            'login' => 'alice',
+            'password' => 'unused',
+            'twofactor_secret' => $secret,
+        ]);
+        $connection->table('twofactor_recovery_code')->insert([
+            'login' => 'alice',
+            'recovery_code' => 'ABCD1234',
+        ]);
+        $passwords = new TimeBasedOneTimePassword;
+        $verifier = new DatabaseTwoFactorCodeVerifier(
+            $connection,
+            $this->app->make(MutableOptionRepository::class),
+            $passwords,
+            'test-salt',
+        );
+        $code = $passwords->codeAt($secret, intdiv(time(), 30));
+
+        $this->assertTrue($verifier->verify('alice', $code));
+        $this->assertFalse($verifier->verify('alice', $code));
+        $this->assertTrue($verifier->verify('alice', 'abcd1234'));
+        $this->assertFalse($verifier->verify('alice', 'ABCD1234'));
     }
 
     public function test_anonymous_cannot_be_reset(): void

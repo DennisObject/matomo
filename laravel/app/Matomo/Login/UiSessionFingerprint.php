@@ -62,11 +62,39 @@ final readonly class UiSessionFingerprint
         return true;
     }
 
+    public function login(Session $session): ?string
+    {
+        $login = $session->get('matomo.login');
+
+        return is_string($login) && $login !== '' ? $login : null;
+    }
+
     public function remembered(Session $session): bool
     {
         $info = $session->get('session.info');
 
         return is_array($info) && ! empty($info['remembered']);
+    }
+
+    public function hasVerifiedTwoFactor(Session $session): bool
+    {
+        if ((int) $session->get('twofactorauth.verified') !== 1) {
+            return false;
+        }
+
+        $verifiedUser = $session->get('twofactorauth.verified_user');
+        $login = $session->get('user.name');
+        if (is_string($verifiedUser) && $verifiedUser !== '') {
+            return $verifiedUser === $login;
+        }
+
+        return true;
+    }
+
+    public function setTwoFactorVerified(Session $session, string $login): void
+    {
+        $session->put('twofactorauth.verified', 1);
+        $session->put('twofactorauth.verified_user', $login);
     }
 
     public function applyCookieLifetime(bool $remembered): void

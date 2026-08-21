@@ -102,6 +102,8 @@ use App\Matomo\Tour\TourSettings;
 use App\Matomo\TrackingFailures\TrackingFailureRepository;
 use App\Matomo\Transitions\TransitionsPeriodPolicy;
 use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
+use App\Matomo\TwoFactorAuth\TwoFactorCodeVerifier;
+use App\Matomo\TwoFactorAuth\TwoFactorUser;
 use App\Matomo\UserChanges\UserChangeReadRepository;
 use App\Matomo\Users\MutableUserRepository;
 use App\Matomo\Users\NewsletterSubscriber;
@@ -454,6 +456,20 @@ abstract class TestCase extends BaseTestCase
         $this->app->instance(UiSessionFingerprint::class, new UiSessionFingerprint);
         $this->app->instance(TrustedLoginRedirect::class, new TrustedLoginRedirect);
         $this->app->instance(LogmeSettings::class, new LogmeSettings);
+        $this->app->instance(TwoFactorUser::class, new class implements TwoFactorUser
+        {
+            public function isEnabled(string $login): bool
+            {
+                return false;
+            }
+        });
+        $this->app->instance(TwoFactorCodeVerifier::class, new class implements TwoFactorCodeVerifier
+        {
+            public function verify(string $login, string $code): bool
+            {
+                return false;
+            }
+        });
         $this->app->instance(LoginAttemptGuard::class, new class implements LoginAttemptGuard
         {
             public function status(string $ipAddress, string $login): LoginAttemptStatus

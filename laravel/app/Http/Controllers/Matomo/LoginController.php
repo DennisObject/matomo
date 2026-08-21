@@ -7,7 +7,7 @@ namespace App\Http\Controllers\Matomo;
 use App\Http\Controllers\Controller;
 use App\Matomo\Login\LogmeSettings;
 use App\Matomo\Login\PasswordLoginAuthenticator;
-use App\Matomo\Login\TrustedLoginRedirect;
+use App\Matomo\Login\UiAuthenticationGate;
 use App\Matomo\Login\UiSessionFingerprint;
 use App\Matomo\Security\ClientIpResolver;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +21,7 @@ final class LoginController extends Controller
         private readonly PasswordLoginAuthenticator $logins,
         private readonly ClientIpResolver $ips,
         private readonly UiSessionFingerprint $sessions,
-        private readonly TrustedLoginRedirect $redirects,
+        private readonly UiAuthenticationGate $gate,
         private readonly LogmeSettings $logme,
     ) {}
 
@@ -39,8 +39,8 @@ final class LoginController extends Controller
             return $this->logme($request);
         }
 
-        if ($request->session()->has('matomo.login')) {
-            return redirect('/index.php?module=CoreHome&action=index');
+        if ($this->sessions->login($request->session()) !== null) {
+            return redirect($this->gate->home($request));
         }
 
         if ($request->isMethod('post')) {
@@ -82,7 +82,7 @@ final class LoginController extends Controller
         $this->sessions->initialize($request->session(), $result->login, $remembered);
         $this->sessions->applyCookieLifetime($remembered);
 
-        return redirect($this->redirects->destination($request));
+        return redirect($this->gate->afterLogin($request, $result->login));
     }
 
     private function logme(Request $request): View|Response|RedirectResponse
@@ -107,6 +107,6 @@ final class LoginController extends Controller
         $request->session()->regenerate();
         $this->sessions->initialize($request->session(), $result->login, false);
 
-        return redirect($this->redirects->destination($request, 'url'));
+        return redirect($this->gate->afterLogin($request, $result->login, 'url'));
     }
 }

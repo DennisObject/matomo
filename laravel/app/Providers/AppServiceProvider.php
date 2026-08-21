@@ -372,7 +372,12 @@ use App\Matomo\Transitions\ConfiguredTransitionsSettings;
 use App\Matomo\Transitions\TransitionsPeriodPolicy;
 use App\Matomo\Transitions\TransitionsSettings;
 use App\Matomo\TwoFactorAuth\DatabaseTwoFactorAuthenticationResetter;
+use App\Matomo\TwoFactorAuth\DatabaseTwoFactorCodeVerifier;
+use App\Matomo\TwoFactorAuth\DatabaseTwoFactorUser;
+use App\Matomo\TwoFactorAuth\TimeBasedOneTimePassword;
 use App\Matomo\TwoFactorAuth\TwoFactorAuthenticationResetter;
+use App\Matomo\TwoFactorAuth\TwoFactorCodeVerifier;
+use App\Matomo\TwoFactorAuth\TwoFactorUser;
 use App\Matomo\UserChanges\DatabaseUserChangeReadRepository;
 use App\Matomo\UserChanges\UserChangeReadRepository;
 use App\Matomo\Users\AccessMetadataProvider;
@@ -1718,6 +1723,26 @@ class AppServiceProvider extends ServiceProvider
                 connection: $application->make(MatomoDatabase::class)->connection(),
                 events: $application->make(Dispatcher::class),
             ),
+        );
+        $this->app->singleton(TimeBasedOneTimePassword::class);
+        $this->app->singleton(
+            TwoFactorUser::class,
+            fn (Application $application): TwoFactorUser => new DatabaseTwoFactorUser(
+                $application->make(MatomoDatabase::class)->connection(),
+            ),
+        );
+        $this->app->singleton(
+            TwoFactorCodeVerifier::class,
+            function (Application $application): TwoFactorCodeVerifier {
+                $installation = $application->make(InstallationConfig::class);
+
+                return new DatabaseTwoFactorCodeVerifier(
+                    connection: $application->make(MatomoDatabase::class)->connection(),
+                    options: $application->make(MutableOptionRepository::class),
+                    passwords: $application->make(TimeBasedOneTimePassword::class),
+                    salt: $installation->salt(),
+                );
+            },
         );
 
         $this->app->singleton(
