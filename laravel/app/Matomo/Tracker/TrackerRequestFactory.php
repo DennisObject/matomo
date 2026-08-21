@@ -226,7 +226,9 @@ final class TrackerRequestFactory
             throw new InvalidArgumentException('urlref must be a valid HTTP or HTTPS URL.');
         }
 
-        if ($referrer !== '' && $this->spam->matches($referrer)) {
+        if ($referrer !== ''
+            && $this->configuration->trackerVisits()->enableSpamFilter
+            && $this->spam->matches($referrer)) {
             return null;
         }
 

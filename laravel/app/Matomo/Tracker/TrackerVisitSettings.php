@@ -15,6 +15,7 @@ final readonly class TrackerVisitSettings
         public bool $createNewVisitWhenCampaignChanges = true,
         public bool $createNewVisitWhenWebsiteReferrerChanges = false,
         public bool $trustVisitorCookies = false,
+        public bool $enableSpamFilter = true,
     ) {}
 
     public function lookBackSeconds(): int

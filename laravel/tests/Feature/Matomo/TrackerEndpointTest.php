@@ -1259,6 +1259,27 @@ final class TrackerEndpointTest extends TestCase
         $this->get($this->url(['urlref' => 'https://spam.example/click']))->assertOk();
     }
 
+    public function test_records_known_referrer_spam_when_the_spam_filter_is_disabled(): void
+    {
+        $this->bindSite();
+        $this->mutableOptions()->set('referrer_spam_blacklist', serialize(['spam.example']));
+        $this->app->forgetInstance(ReferrerSpamList::class);
+        $this->assertNotFalse(file_put_contents(
+            $this->configurationPath,
+            str_replace(
+                '[Tracker]',
+                "[Tracker]\nenable_spam_filter = 0",
+                (string) file_get_contents($this->configurationPath),
+            ),
+        ));
+        $this->app->forgetInstance(InstallationConfig::class);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['urlref' => 'https://spam.example/click']))->assertOk();
+    }
+
     public function test_silently_excludes_configured_ip_addresses(): void
     {
         $this->bindSite(['excluded_ips' => '127.0.0.*']);

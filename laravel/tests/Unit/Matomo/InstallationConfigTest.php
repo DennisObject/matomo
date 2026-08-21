@@ -121,6 +121,7 @@ class InstallationConfigTest extends TestCase
         $this->assertTrue($configuration->trackerVisits()->createNewVisitWhenCampaignChanges);
         $this->assertFalse($configuration->trackerVisits()->createNewVisitWhenWebsiteReferrerChanges);
         $this->assertFalse($configuration->trackerVisits()->trustVisitorCookies);
+        $this->assertTrue($configuration->trackerVisits()->enableSpamFilter);
         $this->assertSame('matomo_ignore', $configuration->ignoreVisitsCookieName());
         $this->assertSame('_pk_uid', $configuration->trackerCookies()->name());
         $this->assertSame(33_955_200, $configuration->trackerCookies()->expireSeconds());
@@ -170,6 +171,7 @@ class InstallationConfigTest extends TestCase
             create_new_visit_when_campaign_changes = 0
             create_new_visit_when_website_referrer_changes = 1
             trust_visitors_cookies = 1
+            enable_spam_filter = 0
             ignore_visits_cookie_name = "custom_ignore"
             cookie_name = "uid"
             cookie_expire = 86400
@@ -221,6 +223,7 @@ class InstallationConfigTest extends TestCase
         $this->assertFalse($configuration->trackerVisits()->createNewVisitWhenCampaignChanges);
         $this->assertTrue($configuration->trackerVisits()->createNewVisitWhenWebsiteReferrerChanges);
         $this->assertTrue($configuration->trackerVisits()->trustVisitorCookies);
+        $this->assertFalse($configuration->trackerVisits()->enableSpamFilter);
         $this->assertSame('custom_ignore', $configuration->ignoreVisitsCookieName());
         $this->assertTrue($configuration->thirdPartyCookiesEnabled(7));
         $this->assertFalse($configuration->thirdPartyCookiesEnabled(8));
