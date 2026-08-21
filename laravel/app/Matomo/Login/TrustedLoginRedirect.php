@@ -18,9 +18,9 @@ final readonly class TrustedLoginRedirect
         private bool $trustedHostCheckEnabled = true,
     ) {}
 
-    public function destination(Request $request): string
+    public function destination(Request $request, string $parameter = 'form_redirect'): string
     {
-        $redirect = (string) $request->input('form_redirect', '');
+        $redirect = (string) $request->input($parameter, '');
         if ($redirect === '') {
             return self::HOME;
         }

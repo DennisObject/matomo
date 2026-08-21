@@ -39,6 +39,7 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(3_600, $configuration->sessionIdleTimeout());
         $this->assertSame(['10.0.0.0/8'], $configuration->loginAllowlistIps());
         $this->assertTrue($configuration->loginAllowlistAppliesToReportingApi());
+        $this->assertFalse($configuration->loginAllowLogme());
         $this->assertSame(['HTTP_X_FORWARDED_FOR'], $configuration->proxyClientHeaders());
         $this->assertSame(['10.0.0.1'], $configuration->proxyIps());
         $this->assertTrue($configuration->proxyIpReadLastInList());

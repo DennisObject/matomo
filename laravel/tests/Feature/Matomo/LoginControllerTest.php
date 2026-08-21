@@ -7,6 +7,7 @@ namespace Tests\Feature\Matomo;
 use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptStatus;
+use App\Matomo\Login\LogmeSettings;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
 use App\Matomo\Security\ReportingApiIpAllowlist;
@@ -173,6 +174,36 @@ final class LoginControllerTest extends TestCase
             ->assertStatus(501);
     }
 
+    public function test_logme_is_disabled_by_default(): void
+    {
+        $this->get('/index.php?module=Login&action=logme&login=alice&password=hash')
+            ->assertForbidden()
+            ->assertSee('This functionality has been disabled in config');
+    }
+
+    public function test_logme_signs_in_with_a_password_hash(): void
+    {
+        $this->app->instance(LogmeSettings::class, new LogmeSettings(true));
+        $this->bindLogin('alice', true);
+
+        $this->get('/index.php?module=Login&action=logme&login=alice&password=aabbccddeeff&url='
+            .urlencode('http://localhost/index.php?module=SitesManager&action=index'))
+            ->assertRedirect('/index.php?module=SitesManager&action=index');
+        $this->get('/index.php?module=CoreHome')
+            ->assertOk()
+            ->assertSee('Signed in as alice');
+    }
+
+    public function test_logme_rejects_superusers(): void
+    {
+        $this->app->instance(LogmeSettings::class, new LogmeSettings(true));
+        $this->bindLogin('admin', true, superUser: true);
+
+        $this->get('/index.php?module=Login&action=logme&login=admin&password=aabbccddeeff')
+            ->assertForbidden()
+            ->assertSee("A user with superuser access cannot be authenticated using the 'logme' mechanism.");
+    }
+
     /** @param  list<string>  $ips */
     private function bindUiAllowlist(array $ips): void
     {
@@ -188,13 +219,16 @@ final class LoginControllerTest extends TestCase
         string $login,
         bool $passwordMatches,
         LoginAttemptStatus $status = LoginAttemptStatus::Allowed,
+        bool $superUser = false,
     ): void {
         $identities = $this->createStub(UserIdentityRepository::class);
         $identities->method('loginForEmail')->willReturn($login);
+        $identities->method('hasSuperUserAccess')->willReturn($superUser);
         $this->app->instance(UserIdentityRepository::class, $identities);
 
         $passwords = $this->createStub(PasswordConfirmationVerifier::class);
         $passwords->method('isCorrect')->willReturn($passwordMatches);
+        $passwords->method('isCorrectHash')->willReturn($passwordMatches);
         $this->app->instance(PasswordConfirmationVerifier::class, $passwords);
 
         $attempts = $this->createStub(LoginAttemptGuard::class);

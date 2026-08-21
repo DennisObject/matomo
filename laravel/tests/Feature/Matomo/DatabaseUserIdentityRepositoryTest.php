@@ -17,8 +17,12 @@ final class DatabaseUserIdentityRepositoryTest extends TestCase
         $connection->getSchemaBuilder()->create('user', static function (Blueprint $table): void {
             $table->string('login');
             $table->string('email');
+            $table->boolean('superuser_access')->default(false);
         });
-        $connection->table('user')->insert(['login' => 'Alice', 'email' => 'alice@example.test']);
+        $connection->table('user')->insert([
+            ['login' => 'Alice', 'email' => 'alice@example.test', 'superuser_access' => 0],
+            ['login' => 'Root', 'email' => 'root@example.test', 'superuser_access' => 1],
+        ]);
         $users = new DatabaseUserIdentityRepository($connection);
 
         $this->assertTrue($users->loginExists('Alice'));
@@ -28,5 +32,7 @@ final class DatabaseUserIdentityRepositoryTest extends TestCase
         $this->assertFalse($users->emailExists('ALICE@example.test'));
         $this->assertSame('Alice', $users->loginForEmail('alice@example.test'));
         $this->assertNull($users->loginForEmail('missing@example.test'));
+        $this->assertFalse($users->hasSuperUserAccess('Alice'));
+        $this->assertTrue($users->hasSuperUserAccess('Root'));
     }
 }

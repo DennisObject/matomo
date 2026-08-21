@@ -19,4 +19,16 @@ final readonly class DatabasePasswordConfirmationVerifier implements PasswordCon
 
         return is_string($storedHash) && password_verify(md5($password), $storedHash);
     }
+
+    public function isCorrectHash(
+        string $login,
+        #[\SensitiveParameter]
+        string $passwordHash,
+    ): bool {
+        $storedHash = $this->connection->table('user')->where('login', $login)->value('password');
+
+        return is_string($storedHash)
+            && $passwordHash !== ''
+            && password_verify($passwordHash, $storedHash);
+    }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Matomo;
 
 use App\Http\Controllers\Controller;
+use App\Matomo\Login\LogmeSettings;
 use App\Matomo\Login\PasswordLoginAuthenticator;
 use App\Matomo\Login\TrustedLoginRedirect;
 use App\Matomo\Login\UiSessionFingerprint;
@@ -21,6 +22,7 @@ final class LoginController extends Controller
         private readonly ClientIpResolver $ips,
         private readonly UiSessionFingerprint $sessions,
         private readonly TrustedLoginRedirect $redirects,
+        private readonly LogmeSettings $logme,
     ) {}
 
     public function __invoke(Request $request): View|Response|RedirectResponse
@@ -31,6 +33,10 @@ final class LoginController extends Controller
             $request->session()->regenerateToken();
 
             return redirect('/index.php?module=Login');
+        }
+
+        if ($action === 'logme') {
+            return $this->logme($request);
         }
 
         if ($request->session()->has('matomo.login')) {
@@ -77,5 +83,30 @@ final class LoginController extends Controller
         $this->sessions->applyCookieLifetime($remembered);
 
         return redirect($this->redirects->destination($request));
+    }
+
+    private function logme(Request $request): View|Response|RedirectResponse
+    {
+        if (! $this->logme->enabled) {
+            return response('This functionality has been disabled in config', 403)
+                ->header('Content-Type', 'text/plain; charset=utf-8');
+        }
+
+        $result = $this->logins->attempt(
+            (string) $request->input('login', ''),
+            (string) $request->input('password', ''),
+            $this->ips->resolve($request),
+            passwordIsHashed: true,
+            rejectSuperUser: true,
+        );
+
+        if (! $result->successful || $result->login === null) {
+            return $this->form($result->error, $result->status);
+        }
+
+        $request->session()->regenerate();
+        $this->sessions->initialize($request->session(), $result->login, false);
+
+        return redirect($this->redirects->destination($request, 'url'));
     }
 }
