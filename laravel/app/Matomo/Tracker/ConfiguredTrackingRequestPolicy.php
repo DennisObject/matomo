@@ -105,12 +105,27 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
         $agents = [...$agents, ...$this->list($site['excluded_user_agents'] ?? null)];
 
         foreach ($agents as $agent) {
-            if (stripos($userAgent, $agent) !== false) {
+            if ($this->matchesExcludedUserAgent($userAgent, $agent)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private function matchesExcludedUserAgent(string $userAgent, string $agent): bool
+    {
+        if ($agent !== '' && stripos($userAgent, $agent) !== false) {
+            return true;
+        }
+
+        try {
+            return $agent !== ''
+                && @preg_match($agent, '') !== false
+                && preg_match($agent, $userAgent) === 1;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function isPrefetch(Request $request): bool
