@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => response()->json([
-    'name' => 'Matomo Laravel runtime',
-    'status' => 'foundation',
-], 503))->name('foundation');
+Route::get('/', fn (): RedirectResponse => redirect('/index.php'))->name('home');

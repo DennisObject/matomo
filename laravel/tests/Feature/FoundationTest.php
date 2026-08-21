@@ -13,13 +13,9 @@ class FoundationTest extends TestCase
         $this->get('/up')->assertOk();
     }
 
-    public function test_foundation_does_not_replace_matomo(): void
+    public function test_root_redirects_to_the_matomo_front_controller(): void
     {
         $this->get('/')
-            ->assertServiceUnavailable()
-            ->assertExactJson([
-                'name' => 'Matomo Laravel runtime',
-                'status' => 'foundation',
-            ]);
+            ->assertRedirect('/index.php');
     }
 }
