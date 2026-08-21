@@ -431,6 +431,7 @@ final readonly class InstallationConfig
                     'create_new_visit_when_website_referrer_changes',
                 ),
                 trustVisitorCookies: self::boolean($tracker, 'trust_visitors_cookies'),
+                enableSpamFilter: self::boolean($tracker, 'enable_spam_filter', true),
             ),
             ignoreVisitsCookieName: self::string($tracker, 'ignore_visits_cookie_name', 'matomo_ignore'),
             liveAiChatbotsMaximumRows: self::positiveInteger(
