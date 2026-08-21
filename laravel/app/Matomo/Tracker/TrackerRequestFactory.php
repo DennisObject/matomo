@@ -142,7 +142,7 @@ final class TrackerRequestFactory
             return null;
         }
 
-        $visitorId = $this->visitorId($request, $siteId);
+        [$visitorId, $hasKnownVisitorId, $forcedVisitorId] = $this->visitorIdentity($request, $siteId);
 
         $actionName = $actionType === 8 ? $search : $request->input('action_name', '');
 
@@ -326,6 +326,12 @@ final class TrackerRequestFactory
             performanceTimings: $this->performanceTimings($request, $actionType),
             visitorCookie: $this->visitorCookie($request, $siteId, $visitorId),
             recordedAt: $this->recordedAt($request, $siteId),
+            forceNewVisit: in_array($request->input('new_visit'), [1, '1', true], true),
+            hasKnownVisitorId: $hasKnownVisitorId,
+            forcedVisitorId: $forcedVisitorId,
+            timezone: is_string($site['timezone'] ?? null) && $site['timezone'] !== ''
+                ? $site['timezone']
+                : 'UTC',
             device: $this->devices->detect(
                 $userAgent,
                 $this->clientHints($request),
@@ -505,12 +511,13 @@ final class TrackerRequestFactory
         return $this->storedIpsByContext[$key] ??= $this->policy->storedIpAddress($siteId, $ipAddress);
     }
 
-    private function visitorId(Request $request, int $siteId): string
+    /** @return array{0: string, 1: bool, 2: bool} */
+    private function visitorIdentity(Request $request, int $siteId): array
     {
         if ($this->configuration->userIdOverwritesVisitorId()) {
             $userId = $this->optional($request->input('uid'), 200);
             if ($userId !== null && $this->policy->collectsUserId($siteId)) {
-                return substr(sha1($userId), 0, 16);
+                return [substr(sha1($userId), 0, 16), true, false];
             }
         }
 
@@ -522,24 +529,24 @@ final class TrackerRequestFactory
                 );
             }
 
-            return strtolower($forcedVisitorId);
+            return [strtolower($forcedVisitorId), true, true];
         }
 
         if (! $this->policy->forcesCookielessTracking($siteId)) {
             if ($this->configuration->thirdPartyCookiesEnabled($siteId)) {
                 $cookieVisitorId = $this->thirdPartyVisitorId($request, $siteId);
                 if ($cookieVisitorId !== null) {
-                    return $cookieVisitorId;
+                    return [$cookieVisitorId, true, false];
                 }
             }
 
             $visitorId = $request->input('_id', '');
             if (is_string($visitorId) && preg_match('/^[a-f0-9]{16}$/iD', $visitorId) === 1) {
-                return strtolower($visitorId);
+                return [strtolower($visitorId), true, false];
             }
         }
 
-        return bin2hex(random_bytes(8));
+        return [bin2hex(random_bytes(8)), false, false];
     }
 
     private function thirdPartyVisitorId(Request $request, int $siteId): ?string

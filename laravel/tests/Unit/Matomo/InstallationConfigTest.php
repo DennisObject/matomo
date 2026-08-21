@@ -114,6 +114,13 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(86_400, $configuration->customTimestampAuthGraceSeconds());
         $this->assertTrue($configuration->userIdOverwritesVisitorId());
         $this->assertSame(1_800, $configuration->visitStandardLength());
+        $this->assertSame(0, $configuration->trackerVisits()->windowLookBackForVisitor);
+        $this->assertTrue($configuration->trackerVisits()->createNewVisitAfterMidnight);
+        $this->assertSame(10_000, $configuration->trackerVisits()->createNewVisitAfterXActions);
+        $this->assertFalse($configuration->trackerVisits()->alwaysNewVisitor);
+        $this->assertTrue($configuration->trackerVisits()->createNewVisitWhenCampaignChanges);
+        $this->assertFalse($configuration->trackerVisits()->createNewVisitWhenWebsiteReferrerChanges);
+        $this->assertFalse($configuration->trackerVisits()->trustVisitorCookies);
         $this->assertSame('matomo_ignore', $configuration->ignoreVisitsCookieName());
         $this->assertSame('_pk_uid', $configuration->trackerCookies()->name());
         $this->assertSame(33_955_200, $configuration->trackerCookies()->expireSeconds());
@@ -157,6 +164,12 @@ class InstallationConfigTest extends TestCase
             page_maximum_length = 2048
             record_statistics = 0
             visit_standard_length = 900
+            window_look_back_for_visitor = 86400
+            create_new_visit_after_midnight = 0
+            create_new_visit_after_x_actions = 50
+            create_new_visit_when_campaign_changes = 0
+            create_new_visit_when_website_referrer_changes = 1
+            trust_visitors_cookies = 1
             ignore_visits_cookie_name = "custom_ignore"
             cookie_name = "uid"
             cookie_expire = 86400
@@ -169,6 +182,9 @@ class InstallationConfigTest extends TestCase
             cookie_expire = 3600
             cookie_path = "/tracker"
             cookie_domain = "site.example.test"
+
+            [Debug]
+            tracker_always_new_visitor = 1
             INI,
         ));
 
@@ -198,6 +214,13 @@ class InstallationConfigTest extends TestCase
         $this->assertSame(2048, $configuration->pageMaximumLength());
         $this->assertFalse($configuration->trackingEnabled());
         $this->assertSame(900, $configuration->visitStandardLength());
+        $this->assertSame(86_400, $configuration->trackerVisits()->windowLookBackForVisitor);
+        $this->assertFalse($configuration->trackerVisits()->createNewVisitAfterMidnight);
+        $this->assertSame(50, $configuration->trackerVisits()->createNewVisitAfterXActions);
+        $this->assertTrue($configuration->trackerVisits()->alwaysNewVisitor);
+        $this->assertFalse($configuration->trackerVisits()->createNewVisitWhenCampaignChanges);
+        $this->assertTrue($configuration->trackerVisits()->createNewVisitWhenWebsiteReferrerChanges);
+        $this->assertTrue($configuration->trackerVisits()->trustVisitorCookies);
         $this->assertSame('custom_ignore', $configuration->ignoreVisitsCookieName());
         $this->assertTrue($configuration->thirdPartyCookiesEnabled(7));
         $this->assertFalse($configuration->thirdPartyCookiesEnabled(8));

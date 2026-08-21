@@ -1105,6 +1105,34 @@ final class TrackerEndpointTest extends TestCase
             ->assertSeeText('requires &token_auth');
     }
 
+    public function test_forces_a_new_visit_from_the_new_visit_parameter(): void
+    {
+        $this->bindSite(['timezone' => 'Europe/Paris']);
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->forceNewVisit
+                && $request->hasKnownVisitorId
+                && $request->timezone === 'Europe/Paris',
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['new_visit' => '1']))->assertOk();
+    }
+
+    public function test_marks_generated_visitor_ids_as_unknown(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->hasKnownVisitorId === false
+                && $request->forcedVisitorId === false
+                && preg_match('/^[a-f0-9]{16}$/D', $request->visitorId) === 1,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['_id' => '']))->assertOk();
+    }
+
     public function test_does_not_set_a_visitor_cookie_when_third_party_cookies_are_disabled(): void
     {
         $this->bindSite();

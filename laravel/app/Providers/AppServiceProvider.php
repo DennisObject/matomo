@@ -1568,7 +1568,7 @@ class AppServiceProvider extends ServiceProvider
             VisitRecorder::class,
             fn (Application $application): VisitRecorder => new DatabaseVisitRecorder(
                 connection: $application->make(MatomoDatabase::class)->connection(),
-                visitStandardLength: $application->make(InstallationConfig::class)->visitStandardLength(),
+                visits: $application->make(InstallationConfig::class)->trackerVisits(),
             ),
         );
 

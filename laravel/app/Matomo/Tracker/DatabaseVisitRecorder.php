@@ -20,7 +20,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
 
     public function __construct(
         private ConnectionInterface $connection,
-        private int $visitStandardLength = 1_800,
+        private TrackerVisitSettings $visits = new TrackerVisitSettings,
     ) {}
 
     public function record(TrackingRequest $request): void
@@ -33,20 +33,27 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
 
         $now = $request->recordedAt ?? CarbonImmutable::now('UTC');
         $this->connection->transaction(function () use ($request, $visitor, $ip, $now): void {
+            $lastKnown = $this->lastKnownVisit($request, $visitor, $now);
+            $continues = $this->continuesVisit($lastKnown, $request, $now);
+            $visitor = $continues && $lastKnown !== null
+                ? (string) $lastKnown->idvisitor
+                : $visitor;
+            $visit = $continues ? $lastKnown : null;
+
             if ($request->heartbeat) {
-                $this->recordHeartbeat($request->siteId, $visitor, $now);
+                $this->recordHeartbeat($visit, $now);
 
                 return;
             }
 
             if ($request->goalId !== null) {
-                $this->recordManualGoal($request, $visitor, $ip, $now);
+                $this->recordManualGoal($request, $visitor, $ip, $now, $visit, $lastKnown);
 
                 return;
             }
 
             if ($request->ecommerceOrderId !== null || $request->ecommerceCart) {
-                $this->recordEcommerce($request, $visitor, $ip, $now);
+                $this->recordEcommerce($request, $visitor, $ip, $now, $visit, $lastKnown);
 
                 return;
             }
@@ -64,9 +71,8 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                     : null;
             }
 
-            $visit = $this->recentVisit($request->siteId, $visitor, $now);
             $visitId = $visit === null
-                ? $this->createVisit($request, $visitor, $ip, $now, $urlId, $nameId)
+                ? $this->createVisit($request, $visitor, $ip, $now, $urlId, $nameId, true, $lastKnown)
                 : (int) $visit->idvisit;
             $position = $visit === null ? 1 : max(1, (int) $visit->visit_total_actions + 1);
             $totalEvents = ($visit === null ? 0 : (int) $visit->visit_total_events)
@@ -161,11 +167,59 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         });
     }
 
-    private function recentVisit(int $siteId, string $visitor, CarbonImmutable $now): ?stdClass
+    private function lastKnownVisit(TrackingRequest $request, string $visitor, CarbonImmutable $now): ?stdClass
     {
-        $visit = $this->connection->table('log_visit')
+        $lookAhead = $now->addSeconds($this->visits->visitStandardLength)->format('Y-m-d H:i:s');
+        $visit = null;
+
+        if ($request->hasKnownVisitorId) {
+            $visit = $this->findVisit(
+                $request->siteId,
+                $lookAhead,
+                visitor: $visitor,
+            );
+        }
+
+        if ($visit === null
+            && ! $request->forcedVisitorId
+            && ! ($request->hasKnownVisitorId && $this->visits->trustVisitorCookies)) {
+            $visit = $this->findVisit(
+                $request->siteId,
+                $lookAhead,
+                configId: $this->configId($request),
+                lookBack: $now->subSeconds($this->visits->lookBackSeconds())->format('Y-m-d H:i:s'),
+            );
+        }
+
+        if ($visit === null) {
+            return null;
+        }
+
+        $maxActions = $this->visits->createNewVisitAfterXActions;
+        if ($maxActions > 0 && (int) $visit->visit_total_actions >= $maxActions) {
+            return null;
+        }
+
+        return $visit;
+    }
+
+    private function findVisit(
+        int $siteId,
+        string $lookAhead,
+        ?string $visitor = null,
+        ?string $configId = null,
+        ?string $lookBack = null,
+    ): ?stdClass {
+        if ($visitor === null && ($configId === null || $configId === '')) {
+            return null;
+        }
+
+        $query = $this->connection->table('log_visit')
             ->select([
                 'idvisit',
+                'idvisitor',
+                'user_id',
+                'config_id',
                 'visit_first_action_time',
                 'visit_last_action_time',
                 'visit_total_actions',
@@ -175,14 +229,31 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 'visit_goal_buyer',
                 'visit_exit_idaction_url',
                 'visit_exit_idaction_name',
+                'visitor_returning',
+                'visitor_count_visits',
+                'visitor_seconds_since_first',
+                'visitor_seconds_since_last',
+                'visitor_seconds_since_order',
+                'referer_type',
+                'referer_name',
+                'referer_keyword',
             ])
             ->where('idsite', $siteId)
-            ->where('idvisitor', $visitor)
-            ->where(
-                'visit_last_action_time',
-                '>=',
-                $now->subSeconds($this->visitStandardLength)->format('Y-m-d H:i:s'),
-            )
+            ->where('visit_last_action_time', '<=', $lookAhead);
+
+        if ($visitor !== null) {
+            $query->where('idvisitor', $visitor);
+        }
+
+        if ($configId !== null && $configId !== '') {
+            $query->where('config_id', $configId);
+        }
+
+        if ($lookBack !== null) {
+            $query->where('visit_last_action_time', '>=', $lookBack);
+        }
+
+        $visit = $query
             ->orderByDesc('visit_last_action_time')
             ->orderByDesc('idvisit')
             ->lockForUpdate()
@@ -191,9 +262,69 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         return $visit instanceof stdClass ? $visit : null;
     }
 
-    private function recordHeartbeat(int $siteId, string $visitor, CarbonImmutable $now): void
+    private function continuesVisit(?stdClass $visit, TrackingRequest $request, CarbonImmutable $now): bool
     {
-        $visit = $this->recentVisit($siteId, $visitor, $now);
+        if ($visit === null || $request->forceNewVisit || $this->visits->alwaysNewVisitor) {
+            return false;
+        }
+
+        $lastAction = CarbonImmutable::parse((string) $visit->visit_last_action_time, 'UTC');
+        if ($lastAction->getTimestamp() <= $now->getTimestamp() - $this->visits->visitStandardLength) {
+            return false;
+        }
+
+        if ($this->visits->createNewVisitAfterMidnight
+            && $this->wasLastActionYesterday($lastAction, $now, $request->timezone)) {
+            return false;
+        }
+
+        $lastUserId = is_string($visit->user_id ?? null) ? $visit->user_id : null;
+        if ($lastUserId !== null && $lastUserId !== ''
+            && $request->userId !== null && $request->userId !== ''
+            && $lastUserId !== $request->userId) {
+            return false;
+        }
+
+        return ! $this->referrerForcesNewVisit($visit, $request);
+    }
+
+    private function wasLastActionYesterday(
+        CarbonImmutable $lastAction,
+        CarbonImmutable $now,
+        string $timezone,
+    ): bool {
+        try {
+            $zone = new \DateTimeZone($timezone);
+        } catch (\DateInvalidTimeZoneException) {
+            $zone = new \DateTimeZone('UTC');
+        }
+
+        return $lastAction->setTimezone($zone)->toDateString() !== $now->setTimezone($zone)->toDateString();
+    }
+
+    private function referrerForcesNewVisit(stdClass $visit, TrackingRequest $request): bool
+    {
+        if ($this->visits->createNewVisitWhenCampaignChanges
+            && $request->referrerType === 6
+            && (int) ($visit->referer_type ?? 1) !== 1
+            && $this->referrerChanged($visit, $request)) {
+            return true;
+        }
+
+        return $this->visits->createNewVisitWhenWebsiteReferrerChanges
+            && $request->referrerType === 3
+            && $this->referrerChanged($visit, $request);
+    }
+
+    private function referrerChanged(stdClass $visit, TrackingRequest $request): bool
+    {
+        return mb_strtolower((string) ($visit->referer_type ?? '')) !== mb_strtolower((string) $request->referrerType)
+            || mb_strtolower((string) ($visit->referer_name ?? '')) !== mb_strtolower($request->referrerName)
+            || mb_strtolower((string) ($visit->referer_keyword ?? '')) !== mb_strtolower($request->referrerKeyword);
+    }
+
+    private function recordHeartbeat(?stdClass $visit, CarbonImmutable $now): void
+    {
         if ($visit === null) {
             return;
         }
@@ -214,6 +345,8 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         string $visitor,
         string $ip,
         CarbonImmutable $now,
+        ?stdClass $visit,
+        ?stdClass $lastKnown,
     ): void {
         $visitId = $this->conversionVisit(
             $request,
@@ -221,6 +354,9 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             $ip,
             $now,
             ['visit_goal_converted' => 1],
+            false,
+            $visit,
+            $lastKnown,
         );
         $this->connection->table('log_conversion')->insertOrIgnore([
             'idvisit' => $visitId,
@@ -240,6 +376,8 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         string $visitor,
         string $ip,
         CarbonImmutable $now,
+        ?stdClass $visit,
+        ?stdClass $lastKnown,
     ): void {
         $visitId = $this->conversionVisit(
             $request,
@@ -250,6 +388,8 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
                 ? ['visit_goal_converted' => 1]
                 : ['visit_goal_converted' => 1, 'visit_goal_buyer' => 1],
             $request->ecommerceCart,
+            $visit,
+            $lastKnown,
         );
         $orderId = $request->ecommerceOrderId;
         if ($orderId === null && ! $request->ecommerceCart) {
@@ -303,10 +443,11 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         CarbonImmutable $now,
         array $conversionUpdates,
         bool $opensCart = false,
+        ?stdClass $visit = null,
+        ?stdClass $lastKnown = null,
     ): int {
-        $visit = $this->recentVisit($request->siteId, $visitor, $now);
         $visitId = $visit === null
-            ? $this->createVisit($request, $visitor, $ip, $now, null, null, false)
+            ? $this->createVisit($request, $visitor, $ip, $now, null, null, false, $lastKnown)
             : (int) $visit->idvisit;
         $firstAction = $visit === null
             ? $now
@@ -330,6 +471,10 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             $visitUpdates['user_id'] = $request->userId;
         }
 
+        if ($request->ecommerceOrderId !== null) {
+            $visitUpdates['visitor_seconds_since_order'] = 0;
+        }
+
         $this->connection->table('log_visit')->where('idvisit', $visitId)->update($visitUpdates);
 
         return $visitId;
@@ -343,6 +488,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         ?int $urlId,
         ?int $nameId,
         bool $recordsAction = true,
+        ?stdClass $lastKnown = null,
     ): int {
         $timestamp = $now->format('Y-m-d H:i:s');
 
@@ -351,9 +497,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'idvisitor' => $visitor,
             'visit_first_action_time' => $timestamp,
             'visit_last_action_time' => $timestamp,
-            'config_id' => $request->device?->configId !== null && $request->device->configId !== ''
-                ? $request->device->configId
-                : substr(hash('sha256', $request->visitorId.$request->userAgent, true), 0, 8),
+            'config_id' => $this->configId($request),
             'location_ip' => $ip,
             'visit_entry_idaction_url' => $urlId,
             'visit_entry_idaction_name' => $nameId,
@@ -373,6 +517,7 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
             'visitor_localtime' => $request->localTime,
             'config_resolution' => $request->resolution,
             'config_cookie' => $request->cookiesEnabled ? 1 : 0,
+            ...$this->lifecycleColumns($lastKnown, $request, $now),
             ...($request->device?->visitColumns() ?? []),
             ...($request->location?->visitColumns() ?? []),
             ...$request->visitProperties,
@@ -520,6 +665,56 @@ final readonly class DatabaseVisitRecorder implements VisitRecorder
         $key = $type."\0".$name;
 
         return $actionIds[$key] ??= $this->action($name, $type, 0);
+    }
+
+    /** @return array<string, int|null> */
+    private function lifecycleColumns(?stdClass $lastKnown, TrackingRequest $request, CarbonImmutable $now): array
+    {
+        if ($lastKnown === null) {
+            return [
+                'visitor_count_visits' => 1,
+                'visitor_returning' => $request->ecommerceOrderId !== null ? 2 : 0,
+                'visitor_seconds_since_first' => 0,
+                'visitor_seconds_since_last' => 0,
+                'visitor_seconds_since_order' => $request->ecommerceOrderId !== null ? 0 : null,
+            ];
+        }
+
+        $hasOrder = $request->ecommerceOrderId !== null
+            || $this->nullableInteger($lastKnown->visitor_seconds_since_order ?? null) !== null;
+
+        $previousCount = $this->nullableInteger($lastKnown->visitor_count_visits ?? null) ?? 0;
+        $previousFirst = CarbonImmutable::parse((string) $lastKnown->visit_first_action_time, 'UTC');
+        $secondsSinceLast = $now->getTimestamp() - $previousFirst->getTimestamp();
+        $previousSecondsSinceFirst = $this->nullableInteger($lastKnown->visitor_seconds_since_first ?? null);
+        $secondsSinceFirst = $previousSecondsSinceFirst === null
+            ? null
+            : $previousSecondsSinceFirst + $secondsSinceLast;
+        $previousSecondsSinceOrder = $this->nullableInteger($lastKnown->visitor_seconds_since_order ?? null);
+        $secondsSinceOrder = $request->ecommerceOrderId !== null
+            ? 0
+            : ($previousSecondsSinceOrder === null ? null : $previousSecondsSinceOrder + $secondsSinceLast);
+
+        return [
+            'visitor_count_visits' => $previousCount + 1,
+            'visitor_returning' => $hasOrder ? 2 : 1,
+            'visitor_seconds_since_first' => $secondsSinceFirst !== null && $secondsSinceFirst >= 0
+                ? $secondsSinceFirst
+                : null,
+            'visitor_seconds_since_last' => $secondsSinceLast >= 0 ? $secondsSinceLast : null,
+            'visitor_seconds_since_order' => $secondsSinceOrder !== null && $secondsSinceOrder >= 0
+                ? $secondsSinceOrder
+                : null,
+        ];
+    }
+
+    private function configId(TrackingRequest $request): string
+    {
+        if ($request->device?->configId !== null && $request->device->configId !== '') {
+            return $request->device->configId;
+        }
+
+        return substr(hash('sha256', $request->visitorId.$request->userAgent, true), 0, 8);
     }
 
     private function nullableInteger(mixed $value): ?int
