@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Matomo;
 
 use App\Http\Controllers\Controller;
 use App\Matomo\Login\PasswordLoginAuthenticator;
+use App\Matomo\Login\UiSessionFingerprint;
 use App\Matomo\Security\ClientIpResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ final class LoginController extends Controller
     public function __construct(
         private readonly PasswordLoginAuthenticator $logins,
         private readonly ClientIpResolver $ips,
+        private readonly UiSessionFingerprint $sessions,
     ) {}
 
     public function __invoke(Request $request): View|Response|RedirectResponse
@@ -67,8 +69,10 @@ final class LoginController extends Controller
             return $this->form($result->error, $result->status);
         }
 
+        $remembered = UiSessionFingerprint::wantsRememberMe($request->input('form_rememberme'));
         $request->session()->regenerate();
-        $request->session()->put('matomo.login', $result->login);
+        $this->sessions->initialize($request->session(), $result->login, $remembered);
+        $this->sessions->applyCookieLifetime($remembered);
 
         return redirect('/index.php?module=CoreHome&action=index');
     }

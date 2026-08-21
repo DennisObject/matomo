@@ -231,6 +231,7 @@ use App\Matomo\Login\DatabaseBruteForceSettings;
 use App\Matomo\Login\DatabaseBruteForceUnblocker;
 use App\Matomo\Login\DatabaseLoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptGuard;
+use App\Matomo\Login\UiSessionFingerprint;
 use App\Matomo\Marketplace\HttpMarketplaceService;
 use App\Matomo\Marketplace\HttpPluginUpdateCounter;
 use App\Matomo\Marketplace\MarketplaceService;
@@ -1653,6 +1654,17 @@ class AppServiceProvider extends ServiceProvider
                 connection: $application->make(MatomoDatabase::class)->connection(),
                 settings: $application->make(BruteForceSettings::class),
             ),
+        );
+        $this->app->singleton(
+            UiSessionFingerprint::class,
+            function (Application $application): UiSessionFingerprint {
+                $installation = $application->make(InstallationConfig::class);
+
+                return new UiSessionFingerprint(
+                    sessionLifetime: $installation->sessionLifetime(),
+                    idleTimeout: $installation->sessionIdleTimeout(),
+                );
+            },
         );
 
         $this->app->singleton(
