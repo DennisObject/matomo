@@ -270,6 +270,13 @@ final class TrackerRequestFactory
             : $this->clean($url, $maximumUrlLength);
         $storedActionName = is_string($actionName) ? $this->clean($actionName, 255) : '';
         $heartbeat = in_array($request->input('ping'), [1, '1', true], true);
+        [$conversionReferrerType, $conversionReferrerName, $conversionReferrerKeyword] = $this->conversionAttribution(
+            $request,
+            $siteId,
+            $referrerType,
+            $referrerName,
+            $referrerKeyword,
+        );
 
         return new TrackingRequest(
             siteId: $siteId,
@@ -316,6 +323,9 @@ final class TrackerRequestFactory
             referrerType: $referrerType,
             referrerName: $referrerName,
             referrerKeyword: $referrerKeyword,
+            conversionReferrerType: $conversionReferrerType,
+            conversionReferrerName: $conversionReferrerName,
+            conversionReferrerKeyword: $conversionReferrerKeyword,
             browserLanguage: $this->browserLanguage($request),
             localTime: sprintf('%02d:%02d:%02d', $hour, $minute, $second),
             resolution: $resolution,
@@ -948,6 +958,58 @@ final class TrackerRequestFactory
         }
 
         return [self::REFERRER_TYPE_WEBSITE, $this->clean(mb_strtolower($referrerHost), 70), '', false];
+    }
+
+    /** @return array{0: int, 1: string, 2: string} */
+    private function conversionAttribution(
+        Request $request,
+        int $siteId,
+        int $visitType,
+        string $visitName,
+        string $visitKeyword,
+    ): array {
+        $campaign = $this->optional($request->input('_rcn'), 70);
+        $keyword = $this->optional($request->input('_rck'), 255);
+        $cookieReferrer = $request->input('_ref', '');
+
+        if ($campaign === null && $visitType === self::REFERRER_TYPE_CAMPAIGN && $visitName !== '') {
+            return [$visitType, $visitName, $visitKeyword];
+        }
+
+        if ($campaign !== null) {
+            $name = mb_strtolower($campaign);
+            $campaignKeyword = mb_strtolower($this->clean($keyword ?? '', 255));
+            if ($this->campaignParametersMaskedBySite[$siteId]
+                ??= $this->policy->masksCampaignParameters($siteId)) {
+                $name = self::MASKED_CAMPAIGN_VALUE;
+                $campaignKeyword = self::MASKED_CAMPAIGN_VALUE;
+            }
+
+            return [self::REFERRER_TYPE_CAMPAIGN, $name, $campaignKeyword];
+        }
+
+        if (is_string($cookieReferrer)
+            && $cookieReferrer !== ''
+            && strlen($cookieReferrer) <= 1_500
+            && filter_var($cookieReferrer, FILTER_VALIDATE_URL) !== false
+            && in_array(strtolower((string) parse_url($cookieReferrer, PHP_URL_SCHEME)), ['http', 'https'], true)) {
+            [$type, $name, $keywordFromReferrer] = $this->referrerAttribution(
+                $request,
+                '',
+                $cookieReferrer,
+                $siteId,
+            );
+            if (in_array($type, [
+                self::REFERRER_TYPE_SEARCH,
+                self::REFERRER_TYPE_WEBSITE,
+                self::REFERRER_TYPE_SOCIAL,
+                self::REFERRER_TYPE_AI,
+            ], true)) {
+                return [$type, $name, $keywordFromReferrer];
+            }
+        }
+
+        return [$visitType, $visitName, $visitKeyword];
     }
 
     private function isExcludedReferrer(string $url, int $siteId): bool

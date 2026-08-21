@@ -49,6 +49,9 @@ final readonly class TrackingRequest
         public int $referrerType = 1,
         public string $referrerName = '',
         public string $referrerKeyword = '',
+        public ?int $conversionReferrerType = null,
+        public ?string $conversionReferrerName = null,
+        public ?string $conversionReferrerKeyword = null,
         /** @var array<string, string> */
         public array $visitProperties = [],
         /** @var array<string, string> */
@@ -64,4 +67,14 @@ final readonly class TrackingRequest
         public bool $forcedVisitorId = false,
         public string $timezone = 'UTC',
     ) {}
+
+    /** @return array<string, int|string> */
+    public function conversionReferrerColumns(): array
+    {
+        return [
+            'referer_type' => $this->conversionReferrerType ?? $this->referrerType,
+            'referer_name' => $this->conversionReferrerName ?? $this->referrerName,
+            'referer_keyword' => $this->conversionReferrerKeyword ?? $this->referrerKeyword,
+        ];
+    }
 }

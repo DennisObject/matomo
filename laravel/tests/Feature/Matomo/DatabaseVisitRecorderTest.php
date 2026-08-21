@@ -617,6 +617,35 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertNotNull($connection->table('log_conversion')->where('idgoal', 5)->value('idlink_va'));
     }
 
+    public function test_credits_goal_conversions_to_campaign_cookie_attribution(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $recorder->record(new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/thanks',
+            actionName: 'Thanks',
+            visitorId: '0123456789abcdef',
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            automaticGoals: [['id' => 5, 'revenue' => 3.0, 'allowMultiple' => false]],
+            referrerType: 3,
+            referrerName: 'news.example',
+            conversionReferrerType: 6,
+            conversionReferrerName: 'spring',
+            conversionReferrerKeyword: 'shoes',
+        ));
+
+        $conversion = $connection->table('log_conversion')->first();
+        $visit = $connection->table('log_visit')->first();
+        $this->assertInstanceOf(stdClass::class, $conversion);
+        $this->assertInstanceOf(stdClass::class, $visit);
+        $this->assertSame(3, $visit->referer_type);
+        $this->assertSame(6, $conversion->referer_type);
+        $this->assertSame('spring', $conversion->referer_name);
+        $this->assertSame('shoes', $conversion->referer_keyword);
+    }
+
     public function test_forces_a_new_visit_when_new_visit_is_requested(): void
     {
         $connection = $this->connection();
@@ -882,6 +911,9 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->double('revenue_tax')->nullable();
             $table->double('revenue_shipping')->nullable();
             $table->double('revenue_discount')->nullable();
+            $table->unsignedTinyInteger('referer_type')->nullable();
+            $table->string('referer_name', 70)->nullable();
+            $table->string('referer_keyword', 255)->nullable();
             $table->primary(['idvisit', 'idgoal', 'buster']);
             $table->unique(['idsite', 'idorder']);
         });
