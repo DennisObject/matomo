@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Matomo\Config;
 
 use App\Matomo\Tracker\TrackerCookieSettings;
+use App\Matomo\Tracker\TrackerVisitSettings;
 use RuntimeException;
 
 final readonly class InstallationConfig
@@ -103,7 +104,7 @@ final readonly class InstallationConfig
         private bool $trackingRequestsRequireAuthentication,
         private int $customTimestampAuthGraceSeconds,
         private bool $userIdOverwritesVisitorId,
-        private int $visitStandardLength,
+        private TrackerVisitSettings $trackerVisits,
         private string $ignoreVisitsCookieName,
         private int $liveAiChatbotsMaximumRows,
         private int $liveAiChatbotsTopPageUrlsMaximumRows,
@@ -141,6 +142,7 @@ final readonly class InstallationConfig
         $login = $configuration['Login'] ?? [];
         $proxy = $configuration['proxy'] ?? [];
         $tracker = $configuration['Tracker'] ?? [];
+        $debug = $configuration['Debug'] ?? [];
         $development = $configuration['Development'] ?? [];
         $aiProviders = $configuration['AIProviders'] ?? [];
         $segments = $configuration['Segments'] ?? [];
@@ -403,7 +405,33 @@ final readonly class InstallationConfig
                 'enable_userid_overwrites_visitorid',
                 true,
             ),
-            visitStandardLength: self::positiveInteger($tracker, 'visit_standard_length', 1_800),
+            trackerVisits: new TrackerVisitSettings(
+                visitStandardLength: self::positiveInteger($tracker, 'visit_standard_length', 1_800),
+                windowLookBackForVisitor: self::integer($tracker, 'window_look_back_for_visitor', 0),
+                createNewVisitAfterMidnight: self::boolean(
+                    $tracker,
+                    'create_new_visit_after_midnight',
+                    true,
+                ),
+                createNewVisitAfterXActions: self::integer(
+                    $tracker,
+                    'create_new_visit_after_x_actions',
+                    10_000,
+                ),
+                alwaysNewVisitor: is_array($debug)
+                    ? self::boolean($debug, 'tracker_always_new_visitor')
+                    : false,
+                createNewVisitWhenCampaignChanges: self::boolean(
+                    $tracker,
+                    'create_new_visit_when_campaign_changes',
+                    true,
+                ),
+                createNewVisitWhenWebsiteReferrerChanges: self::boolean(
+                    $tracker,
+                    'create_new_visit_when_website_referrer_changes',
+                ),
+                trustVisitorCookies: self::boolean($tracker, 'trust_visitors_cookies'),
+            ),
             ignoreVisitsCookieName: self::string($tracker, 'ignore_visits_cookie_name', 'matomo_ignore'),
             liveAiChatbotsMaximumRows: self::positiveInteger(
                 $general,
@@ -840,7 +868,12 @@ final readonly class InstallationConfig
 
     public function visitStandardLength(): int
     {
-        return $this->visitStandardLength;
+        return $this->trackerVisits->visitStandardLength;
+    }
+
+    public function trackerVisits(): TrackerVisitSettings
+    {
+        return $this->trackerVisits;
     }
 
     public function ignoreVisitsCookieName(): string

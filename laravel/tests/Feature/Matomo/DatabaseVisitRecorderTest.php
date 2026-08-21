@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Matomo;
 
 use App\Matomo\Tracker\DatabaseVisitRecorder;
+use App\Matomo\Tracker\TrackerDeviceProfile;
+use App\Matomo\Tracker\TrackerVisitSettings;
 use App\Matomo\Tracker\TrackingRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\ConnectionInterface;
@@ -24,7 +26,7 @@ final class DatabaseVisitRecorderTest extends TestCase
     public function test_creates_and_updates_a_complete_page_view_visit(): void
     {
         $connection = $this->connection();
-        $recorder = new DatabaseVisitRecorder($connection, 1_800);
+        $recorder = new DatabaseVisitRecorder($connection);
         $request = new TrackingRequest(
             1,
             'https://www.example.test/page',
@@ -52,6 +54,11 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertSame(10, $visit['visit_total_time']);
         $this->assertSame(2, $visit['last_idlink_va']);
         $this->assertSame('192.0.2.0', inet_ntop($visit['location_ip']));
+        $this->assertSame(0, $visit['visitor_returning']);
+        $this->assertSame(1, $visit['visitor_count_visits']);
+        $this->assertSame(0, $visit['visitor_seconds_since_first']);
+        $this->assertSame(0, $visit['visitor_seconds_since_last']);
+        $this->assertNull($visit['visitor_seconds_since_order']);
 
         $url = (array) $connection->table('log_action')->where('type', 1)->first();
         $this->assertSame('example.test/page', $url['name']);
@@ -73,7 +80,7 @@ final class DatabaseVisitRecorderTest extends TestCase
     public function test_starts_a_new_visit_after_the_configured_timeout(): void
     {
         $connection = $this->connection();
-        $recorder = new DatabaseVisitRecorder($connection, 1_800);
+        $recorder = new DatabaseVisitRecorder($connection);
         $request = new TrackingRequest(
             1,
             'https://example.test/',
@@ -90,6 +97,16 @@ final class DatabaseVisitRecorderTest extends TestCase
 
         $this->assertSame(2, $connection->table('log_visit')->count());
         $this->assertSame([1, 1], $connection->table('log_visit')->orderBy('idvisit')->pluck('visit_total_actions')->all());
+        $firstVisit = $connection->table('log_visit')->orderBy('idvisit')->first();
+        $secondVisit = $connection->table('log_visit')->orderByDesc('idvisit')->first();
+        $this->assertInstanceOf(stdClass::class, $firstVisit);
+        $this->assertInstanceOf(stdClass::class, $secondVisit);
+        $this->assertSame(0, $firstVisit->visitor_returning);
+        $this->assertSame(1, $firstVisit->visitor_count_visits);
+        $this->assertSame(1, $secondVisit->visitor_returning);
+        $this->assertSame(2, $secondVisit->visitor_count_visits);
+        $this->assertSame(1_801, $secondVisit->visitor_seconds_since_last);
+        $this->assertSame(1_801, $secondVisit->visitor_seconds_since_first);
     }
 
     public function test_records_event_dimensions_and_value(): void
@@ -600,6 +617,150 @@ final class DatabaseVisitRecorderTest extends TestCase
         $this->assertNotNull($connection->table('log_conversion')->where('idgoal', 5)->value('idlink_va'));
     }
 
+    public function test_forces_a_new_visit_when_new_visit_is_requested(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        CarbonImmutable::setTestNow('2026-08-20 12:00:00 UTC');
+        $recorder->record($this->pageView());
+        $recorder->record($this->pageView(forceNewVisit: true));
+
+        $this->assertSame(2, $connection->table('log_visit')->count());
+        $this->assertSame([0, 1], $connection->table('log_visit')->orderBy('idvisit')->pluck('visitor_returning')->all());
+    }
+
+    public function test_attaches_out_of_order_hits_within_the_lookahead_window(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $recorder->record($this->pageView(recordedAt: CarbonImmutable::parse('2026-08-20 12:10:00', 'UTC')));
+        $recorder->record($this->pageView(recordedAt: CarbonImmutable::parse('2026-08-20 12:00:00', 'UTC')));
+
+        $this->assertSame(1, $connection->table('log_visit')->count());
+        $this->assertSame(2, $connection->table('log_link_visit_action')->count());
+    }
+
+    public function test_starts_a_new_visit_when_the_custom_timestamp_is_outside_the_window(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $recorder->record($this->pageView(recordedAt: CarbonImmutable::parse('2026-08-20 12:00:00', 'UTC')));
+        $recorder->record($this->pageView(recordedAt: CarbonImmutable::parse('2026-08-20 11:29:59', 'UTC')));
+
+        $this->assertSame(2, $connection->table('log_visit')->count());
+    }
+
+    public function test_starts_a_new_visit_after_midnight_in_the_site_timezone(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $recorder->record($this->pageView(
+            recordedAt: CarbonImmutable::parse('2026-01-02 04:59:00', 'UTC'),
+            timezone: 'America/New_York',
+        ));
+        $recorder->record($this->pageView(
+            recordedAt: CarbonImmutable::parse('2026-01-02 05:01:00', 'UTC'),
+            timezone: 'America/New_York',
+        ));
+
+        $this->assertSame(2, $connection->table('log_visit')->count());
+    }
+
+    public function test_starts_a_new_visit_when_the_user_id_changes(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        CarbonImmutable::setTestNow('2026-08-20 12:00:00 UTC');
+        $recorder->record($this->pageView(userId: 'alice'));
+        $recorder->record($this->pageView(userId: 'bob'));
+
+        $this->assertSame(2, $connection->table('log_visit')->count());
+    }
+
+    public function test_starts_a_new_visit_when_campaign_attribution_changes(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        CarbonImmutable::setTestNow('2026-08-20 12:00:00 UTC');
+        $recorder->record($this->pageView(referrerType: 6, referrerName: 'spring'));
+        $recorder->record($this->pageView(referrerType: 6, referrerName: 'summer'));
+
+        $this->assertSame(2, $connection->table('log_visit')->count());
+    }
+
+    public function test_does_not_split_a_direct_visit_when_campaign_data_arrives_later(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        CarbonImmutable::setTestNow('2026-08-20 12:00:00 UTC');
+        $recorder->record($this->pageView());
+        $recorder->record($this->pageView(referrerType: 6, referrerName: 'spring'));
+
+        $this->assertSame(1, $connection->table('log_visit')->count());
+    }
+
+    public function test_matches_cookieless_visitors_by_config_id(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection);
+        $device = new TrackerDeviceProfile(configId: str_repeat("\x01", 8));
+        CarbonImmutable::setTestNow('2026-08-20 12:00:00 UTC');
+        $recorder->record($this->pageView(
+            visitorId: 'aaaaaaaaaaaaaaaa',
+            hasKnownVisitorId: false,
+            device: $device,
+        ));
+        $recorder->record($this->pageView(
+            visitorId: 'bbbbbbbbbbbbbbbb',
+            hasKnownVisitorId: false,
+            device: $device,
+        ));
+
+        $this->assertSame(1, $connection->table('log_visit')->count());
+        $this->assertSame(2, $connection->table('log_visit')->value('visit_total_actions'));
+        $this->assertSame('aaaaaaaaaaaaaaaa', bin2hex((string) $connection->table('log_visit')->value('idvisitor')));
+    }
+
+    public function test_starts_a_new_visit_after_the_configured_action_limit(): void
+    {
+        $connection = $this->connection();
+        $recorder = new DatabaseVisitRecorder($connection, new TrackerVisitSettings(createNewVisitAfterXActions: 1));
+        CarbonImmutable::setTestNow('2026-08-20 12:00:00 UTC');
+        $recorder->record($this->pageView());
+        $recorder->record($this->pageView());
+
+        $this->assertSame(2, $connection->table('log_visit')->count());
+    }
+
+    private function pageView(
+        string $visitorId = '0123456789abcdef',
+        bool $forceNewVisit = false,
+        bool $hasKnownVisitorId = true,
+        ?string $userId = null,
+        int $referrerType = 1,
+        string $referrerName = '',
+        ?CarbonImmutable $recordedAt = null,
+        string $timezone = 'UTC',
+        ?TrackerDeviceProfile $device = null,
+    ): TrackingRequest {
+        return new TrackingRequest(
+            siteId: 1,
+            url: 'https://example.test/page',
+            actionName: '',
+            visitorId: $visitorId,
+            ipAddress: '192.0.2.0',
+            userAgent: 'Test browser',
+            userId: $userId,
+            referrerType: $referrerType,
+            referrerName: $referrerName,
+            recordedAt: $recordedAt,
+            forceNewVisit: $forceNewVisit,
+            hasKnownVisitorId: $hasKnownVisitorId,
+            timezone: $timezone,
+            device: $device,
+        );
+    }
+
     private function connection(): ConnectionInterface
     {
         config()->set('database.connections.tracker_test', ['driver' => 'sqlite', 'database' => ':memory:']);
@@ -659,6 +820,11 @@ final class DatabaseVisitRecorderTest extends TestCase
             $table->string('custom_dimension_1', 250)->nullable();
             $table->boolean('visit_goal_converted')->default(false);
             $table->boolean('visit_goal_buyer')->default(false);
+            $table->unsignedTinyInteger('visitor_returning')->nullable();
+            $table->unsignedInteger('visitor_count_visits')->nullable();
+            $table->unsignedInteger('visitor_seconds_since_first')->nullable();
+            $table->unsignedInteger('visitor_seconds_since_last')->nullable();
+            $table->unsignedInteger('visitor_seconds_since_order')->nullable();
         });
         $schema->create('log_action', static function (Blueprint $table): void {
             $table->id('idaction');

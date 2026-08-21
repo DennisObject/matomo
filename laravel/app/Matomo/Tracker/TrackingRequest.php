@@ -59,5 +59,9 @@ final readonly class TrackingRequest
         public ?CarbonImmutable $recordedAt = null,
         public ?TrackerDeviceProfile $device = null,
         public ?TrackerLocation $location = null,
+        public bool $forceNewVisit = false,
+        public bool $hasKnownVisitorId = true,
+        public bool $forcedVisitorId = false,
+        public string $timezone = 'UTC',
     ) {}
 }
