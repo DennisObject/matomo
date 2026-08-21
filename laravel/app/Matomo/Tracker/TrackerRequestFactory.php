@@ -139,7 +139,8 @@ final class TrackerRequestFactory
 
         $ipAddress = $this->customIpAddress($request, $siteId) ?? $this->ips->resolve($request);
         $userAgent = $this->userAgent($request);
-        if ($this->excludesVisit($site, $ipAddress, $userAgent)) {
+        if ($this->excludesVisit($site, $ipAddress, $userAgent)
+            || $this->policy->isPrefetch($request)) {
             return null;
         }
 
@@ -153,7 +154,8 @@ final class TrackerRequestFactory
             $this->browserLanguage($request),
             $this->configuration->salt(),
         );
-        if ($device->isBot && ! in_array($request->input('bots'), [1, '1', true], true)) {
+        $allowBots = in_array($request->input('bots'), [1, '1', true], true);
+        if (! $allowBots && ($device->isBot || $this->policy->isKnownBotIp($request, $ipAddress))) {
             return null;
         }
 

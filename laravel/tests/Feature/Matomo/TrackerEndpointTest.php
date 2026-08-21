@@ -1183,6 +1183,44 @@ final class TrackerEndpointTest extends TestCase
         $this->get($this->url())->assertOk()->assertHeaderMissing('Set-Cookie');
     }
 
+    public function test_silently_excludes_prefetch_requests(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->withHeaders(['X-Purpose' => 'preview'])->get($this->url())->assertOk();
+        $this->withHeaders(['X-Purpose' => 'instant'])->get($this->url())->assertOk();
+        $this->withHeaders(['X-Moz' => 'prefetch'])->get($this->url())->assertOk();
+    }
+
+    public function test_silently_excludes_known_bot_ip_ranges_unless_bots_are_allowed(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '66.249.80.1'])->get($this->url())->assertOk();
+        $this->withServerVariables(['REMOTE_ADDR' => '66.249.80.1'])
+            ->get($this->url(['bots' => '1']))
+            ->assertOk();
+    }
+
+    public function test_records_chrome_data_saver_requests_from_google_ip_ranges(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->withServerVariables([
+            'REMOTE_ADDR' => '66.249.80.1',
+            'HTTP_VIA' => '1.1 Chrome-Compression-Proxy',
+        ])->get($this->url())->assertOk();
+    }
+
     public function test_silently_excludes_search_bots_unless_bots_are_allowed(): void
     {
         $this->bindSite();
