@@ -142,6 +142,20 @@ final class TrackerRequestFactory
             return null;
         }
 
+        $siteId = (int) $siteId;
+        $device = $this->devices->detect(
+            $userAgent,
+            $this->clientHints($request),
+            $request,
+            $siteId,
+            $ipAddress,
+            $this->browserLanguage($request),
+            $this->configuration->salt(),
+        );
+        if ($device->isBot && ! in_array($request->input('bots'), [1, '1', true], true)) {
+            return null;
+        }
+
         [$visitorId, $hasKnownVisitorId, $forcedVisitorId] = $this->visitorIdentity($request, $siteId);
 
         $actionName = $actionType === 8 ? $search : $request->input('action_name', '');
@@ -222,7 +236,6 @@ final class TrackerRequestFactory
             throw new InvalidArgumentException('res must be a screen resolution such as 1920x1080.');
         }
 
-        $siteId = (int) $siteId;
         [$referrerType, $referrerName, $referrerKeyword, $ignoreReferrer] = $this->referrerAttribution(
             $request,
             $url,
@@ -342,15 +355,7 @@ final class TrackerRequestFactory
             timezone: is_string($site['timezone'] ?? null) && $site['timezone'] !== ''
                 ? $site['timezone']
                 : 'UTC',
-            device: $this->devices->detect(
-                $userAgent,
-                $this->clientHints($request),
-                $request,
-                $siteId,
-                $ipAddress,
-                $this->browserLanguage($request),
-                $this->configuration->salt(),
-            ),
+            device: $device,
             location: $this->location($request, $siteId, $ipAddress),
         );
     }

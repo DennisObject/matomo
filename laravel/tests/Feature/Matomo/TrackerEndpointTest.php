@@ -1182,6 +1182,32 @@ final class TrackerEndpointTest extends TestCase
         $this->get($this->url())->assertOk()->assertHeaderMissing('Set-Cookie');
     }
 
+    public function test_silently_excludes_search_bots_unless_bots_are_allowed(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url(['ua' => 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)']))
+            ->assertOk();
+    }
+
+    public function test_records_search_bots_when_bots_is_enabled(): void
+    {
+        $this->bindSite();
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->once())->method('record')->with($this->callback(
+            static fn (TrackingRequest $request): bool => $request->device?->isBot === true,
+        ));
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url([
+            'bots' => '1',
+            'ua' => 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        ]))->assertOk();
+    }
+
     public function test_silently_excludes_configured_ip_addresses(): void
     {
         $this->bindSite(['excluded_ips' => '127.0.0.*']);
