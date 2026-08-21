@@ -13,11 +13,13 @@ use App\Matomo\Options\MutableOptionRepository;
 use App\Matomo\Privacy\CompliancePolicyStateRepository;
 use App\Matomo\Settings\PolicySettingRepository;
 use App\Matomo\Sites\SiteRepository;
+use App\Matomo\Tracker\Events\VisitExclusionChecking;
 use App\Matomo\Tracker\MatomoCookie;
 use App\Matomo\Tracker\ReferrerSpamList;
 use App\Matomo\Tracker\TrackingRequest;
 use App\Matomo\Tracker\TrackingRequestPolicy;
 use App\Matomo\Tracker\VisitRecorder;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 final class TrackerEndpointTest extends TestCase
@@ -82,6 +84,22 @@ final class TrackerEndpointTest extends TestCase
         $this->app->instance(VisitRecorder::class, $recorder);
 
         $this->get('/matomo.php')->assertOk();
+    }
+
+    public function test_silently_excludes_visits_marked_by_the_exclusion_event(): void
+    {
+        $this->bindSite();
+        Event::listen(
+            VisitExclusionChecking::class,
+            static function (VisitExclusionChecking $event): void {
+                $event->excluded = true;
+            },
+        );
+        $recorder = $this->createMock(VisitRecorder::class);
+        $recorder->expects($this->never())->method('record');
+        $this->app->instance(VisitRecorder::class, $recorder);
+
+        $this->get($this->url())->assertOk();
     }
 
     public function test_accepts_post_requests_on_both_tracker_entrypoints(): void

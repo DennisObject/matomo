@@ -14,7 +14,9 @@ use App\Matomo\Referrers\SearchEngineDefinitionCatalog;
 use App\Matomo\Security\ClientIpResolver;
 use App\Matomo\Sites\QueryParameterExclusionPolicy;
 use App\Matomo\Sites\SiteRepository;
+use App\Matomo\Tracker\Events\VisitExclusionChecking;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 use JsonException;
@@ -88,6 +90,7 @@ final class TrackerRequestFactory
         private readonly SearchEngineDefinitionCatalog $searchEngines,
         private readonly OptionRepository $options,
         private readonly ReferrerSpamList $spam,
+        private readonly Dispatcher $events,
     ) {}
 
     public function make(Request $request): ?TrackingRequest
@@ -139,7 +142,10 @@ final class TrackerRequestFactory
 
         $ipAddress = $this->customIpAddress($request, $siteId) ?? $this->ips->resolve($request);
         $userAgent = $this->userAgent($request);
-        if ($this->excludesVisit($site, $ipAddress, $userAgent)
+        $exclusion = new VisitExclusionChecking($request);
+        $this->events->dispatch($exclusion);
+        if ($exclusion->excluded
+            || $this->excludesVisit($site, $ipAddress, $userAgent)
             || $this->policy->isPrefetch($request)) {
             return null;
         }
