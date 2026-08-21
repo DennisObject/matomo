@@ -1008,6 +1008,11 @@ abstract class TestCase extends BaseTestCase
             {
                 return null;
             }
+
+            public function deniedUiClientIp(Request $request): ?string
+            {
+                return null;
+            }
         });
         $this->app->instance(SiteRepository::class, new class implements SiteRepository
         {
