@@ -46,6 +46,8 @@ final class LoginControllerTest extends TestCase
         $this->get('/index.php?module=CoreHome&action=index')
             ->assertOk()
             ->assertSee('Signed in as alice');
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{32}$/', (string) session('user.token_auth_temp'));
+        $this->assertSame(0, session('twofactorauth.verified'));
     }
 
     public function test_rejects_an_incorrect_password(): void
@@ -88,6 +90,7 @@ final class LoginControllerTest extends TestCase
 
         $this->get('/index.php?module=Login&action=logout')
             ->assertRedirect('/index.php?module=Login');
+        $this->assertNull(session('user.token_auth_temp'));
         $this->get('/index.php?module=CoreHome')
             ->assertRedirect('/index.php?module=Login');
     }
