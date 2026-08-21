@@ -11,4 +11,6 @@ interface UserIdentityRepository
     public function emailExists(string $email): bool;
 
     public function loginForEmail(string $email): ?string;
+
+    public function hasSuperUserAccess(string $login): bool;
 }

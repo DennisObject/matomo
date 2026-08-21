@@ -231,6 +231,7 @@ use App\Matomo\Login\DatabaseBruteForceSettings;
 use App\Matomo\Login\DatabaseBruteForceUnblocker;
 use App\Matomo\Login\DatabaseLoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptGuard;
+use App\Matomo\Login\LogmeSettings;
 use App\Matomo\Login\TrustedLoginRedirect;
 use App\Matomo\Login\UiSessionFingerprint;
 use App\Matomo\Marketplace\HttpMarketplaceService;
@@ -1678,6 +1679,12 @@ class AppServiceProvider extends ServiceProvider
                     trustedHostCheckEnabled: $installation->trustedHostCheckEnabled(),
                 );
             },
+        );
+        $this->app->singleton(
+            LogmeSettings::class,
+            fn (Application $application): LogmeSettings => new LogmeSettings(
+                enabled: $application->make(InstallationConfig::class)->loginAllowLogme(),
+            ),
         );
 
         $this->app->singleton(

@@ -20,6 +20,8 @@ final readonly class PasswordLoginAuthenticator
         #[\SensitiveParameter]
         string $password,
         string $ipAddress,
+        bool $passwordIsHashed = false,
+        bool $rejectSuperUser = false,
     ): PasswordLoginResult {
         $login = $this->normalizedLogin($loginOrEmail);
         $status = $this->attempts->status($ipAddress, $login);
@@ -32,11 +34,21 @@ final readonly class PasswordLoginAuthenticator
             return PasswordLoginResult::failed('Login not allowed because this user is blocked.', 403);
         }
 
-        if ($login === '' || strtolower($login) === 'anonymous'
-            || $password === '' || ! $this->passwords->isCorrect($login, $password)) {
+        $passwordMatches = $password !== '' && ($passwordIsHashed
+            ? $this->passwords->isCorrectHash($login, $password)
+            : $this->passwords->isCorrect($login, $password));
+
+        if ($login === '' || strtolower($login) === 'anonymous' || ! $passwordMatches) {
             $this->attempts->recordFailure($ipAddress, $login);
 
             return PasswordLoginResult::failed('The username and/or password you used are incorrect.', 403);
+        }
+
+        if ($rejectSuperUser && $this->identities->hasSuperUserAccess($login)) {
+            return PasswordLoginResult::failed(
+                "A user with superuser access cannot be authenticated using the 'logme' mechanism.",
+                403,
+            );
         }
 
         return PasswordLoginResult::success($login);

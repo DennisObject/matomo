@@ -25,6 +25,7 @@ final readonly class InstallationConfig
         /** @var list<string> */
         private array $loginAllowlistIps,
         private bool $loginAllowlistAppliesToReportingApi,
+        private bool $loginAllowLogme,
         /** @var list<string> */
         private array $proxyClientHeaders,
         /** @var list<string> */
@@ -208,6 +209,7 @@ final readonly class InstallationConfig
                 'login_allowlist_apply_to_reporting_api_requests',
                 true,
             ) || self::boolean($general, 'login_whitelist_apply_to_reporting_api_requests'),
+            loginAllowLogme: self::boolean($general, 'login_allow_logme'),
             proxyClientHeaders: self::stringList($general, 'proxy_client_headers'),
             proxyIps: self::stringList($general, 'proxy_ips'),
             proxyIpReadLastInList: self::boolean($general, 'proxy_ip_read_last_in_list', true),
@@ -537,6 +539,11 @@ final readonly class InstallationConfig
     public function loginAllowlistAppliesToReportingApi(): bool
     {
         return $this->loginAllowlistAppliesToReportingApi;
+    }
+
+    public function loginAllowLogme(): bool
+    {
+        return $this->loginAllowLogme;
     }
 
     /**

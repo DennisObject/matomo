@@ -26,4 +26,9 @@ final readonly class DatabaseUserIdentityRepository implements UserIdentityRepos
 
         return is_string($login) ? $login : null;
     }
+
+    public function hasSuperUserAccess(string $login): bool
+    {
+        return (int) $this->connection->table('user')->where('login', $login)->value('superuser_access') === 1;
+    }
 }
