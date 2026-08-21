@@ -11,4 +11,7 @@ interface SearchEngineDefinitionCatalog
     public function logo(string $url): string;
 
     public function backlink(string $url, string $keyword): ?string;
+
+    /** @return array{name: string, keywords: string}|null */
+    public function search(string $url): ?array;
 }
