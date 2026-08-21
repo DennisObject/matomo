@@ -92,6 +92,44 @@ final class LoginControllerTest extends TestCase
             ->assertRedirect('/index.php?module=Login');
     }
 
+    public function test_remember_me_keeps_the_session_past_the_idle_timeout(): void
+    {
+        $this->bindLogin('alice', true);
+        $this->get('/index.php')->assertOk();
+        $this->post('/index.php?module=Login', [
+            'form_login' => 'alice',
+            'form_password' => 'secret',
+            'form_nonce' => session()->token(),
+            'form_rememberme' => '1',
+        ])->assertRedirect('/index.php?module=CoreHome&action=index');
+
+        $this->assertTrue(session('session.info')['remembered']);
+        $this->assertSame('alice', session('user.name'));
+        $this->assertFalse((bool) config('session.expire_on_close'));
+
+        $this->travel(3_601)->seconds();
+        $this->get('/index.php?module=CoreHome&action=index')
+            ->assertOk()
+            ->assertSee('Signed in as alice');
+    }
+
+    public function test_idle_sessions_expire_when_remember_me_is_off(): void
+    {
+        $this->bindLogin('alice', true);
+        $this->get('/index.php')->assertOk();
+        $this->post('/index.php?module=Login', [
+            'form_login' => 'alice',
+            'form_password' => 'secret',
+            'form_nonce' => session()->token(),
+        ])->assertRedirect();
+
+        $this->assertFalse((bool) session('session.info')['remembered']);
+
+        $this->travel(3_601)->seconds();
+        $this->get('/index.php?module=CoreHome&action=index')
+            ->assertRedirect('/index.php?module=Login');
+    }
+
     private function bindLogin(
         string $login,
         bool $passwordMatches,
