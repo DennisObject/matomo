@@ -8,7 +8,10 @@ use App\Matomo\Authentication\PasswordConfirmationVerifier;
 use App\Matomo\Login\LoginAttemptGuard;
 use App\Matomo\Login\LoginAttemptStatus;
 use App\Matomo\Security\ClientIpResolver;
+use App\Matomo\Security\ConfiguredReportingApiIpAllowlist;
+use App\Matomo\Security\ReportingApiIpAllowlist;
 use App\Matomo\Users\UserIdentityRepository;
+use Illuminate\Contracts\Cache\Repository;
 use Tests\TestCase;
 
 final class LoginControllerTest extends TestCase
@@ -131,6 +134,41 @@ final class LoginControllerTest extends TestCase
         $this->travel(3_601)->seconds();
         $this->get('/index.php?module=CoreHome&action=index')
             ->assertRedirect('/index.php?module=Login');
+    }
+
+    public function test_rejects_ui_requests_from_an_ip_outside_the_allowlist(): void
+    {
+        $this->bindUiAllowlist(['10.0.0.1']);
+
+        $this->get('/index.php')
+            ->assertForbidden()
+            ->assertSee('You cannot use this Matomo as your IP 127.0.0.1 is not allowed.');
+    }
+
+    public function test_allows_ui_requests_from_an_allowlisted_ip(): void
+    {
+        $this->bindUiAllowlist(['127.0.0.1']);
+
+        $this->get('/index.php')->assertOk()->assertSee('Sign in');
+    }
+
+    public function test_skips_the_ui_allowlist_for_opt_out(): void
+    {
+        $this->bindUiAllowlist(['10.0.0.1']);
+
+        $this->get('/index.php?module=CoreAdminHome&action=optOut')
+            ->assertStatus(501);
+    }
+
+    /** @param  list<string>  $ips */
+    private function bindUiAllowlist(array $ips): void
+    {
+        $this->app->instance(ReportingApiIpAllowlist::class, new ConfiguredReportingApiIpAllowlist(
+            clientIps: new ClientIpResolver([], [], true),
+            cache: $this->app->make(Repository::class),
+            allowlistedIps: $ips,
+            appliesToReportingApi: false,
+        ));
     }
 
     private function bindLogin(

@@ -9,4 +9,6 @@ use Illuminate\Http\Request;
 interface ReportingApiIpAllowlist
 {
     public function deniedClientIp(Request $request): ?string;
+
+    public function deniedUiClientIp(Request $request): ?string;
 }

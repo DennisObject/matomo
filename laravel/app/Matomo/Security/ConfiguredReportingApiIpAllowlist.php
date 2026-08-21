@@ -23,7 +23,16 @@ final readonly class ConfiguredReportingApiIpAllowlist implements ReportingApiIp
 
     public function deniedClientIp(Request $request): ?string
     {
-        if (! $this->appliesToReportingApi || $this->allowlistedIps === []) {
+        if (! $this->appliesToReportingApi) {
+            return null;
+        }
+
+        return $this->deniedUiClientIp($request);
+    }
+
+    public function deniedUiClientIp(Request $request): ?string
+    {
+        if ($this->allowlistedIps === []) {
             return null;
         }
 
