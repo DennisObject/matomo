@@ -30,6 +30,39 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
 
     private const string ANONYMIZED_IP_ENRICHMENT_OPTION = 'PrivacyManager.useAnonymizedIpForVisitEnrichment';
 
+    /** @var list<string> */
+    private const array GOOGLE_BOT_IP_RANGES = [
+        '216.239.32.0/19',
+        '64.233.160.0/19',
+        '66.249.80.0/20',
+        '72.14.192.0/18',
+        '209.85.128.0/17',
+        '66.102.0.0/20',
+        '74.125.0.0/16',
+        '64.18.0.0/20',
+        '207.126.144.0/20',
+        '173.194.0.0/16',
+    ];
+
+    /** @var list<string> */
+    private const array BOT_IP_RANGES = [
+        ...self::GOOGLE_BOT_IP_RANGES,
+        '64.4.0.0/18',
+        '65.52.0.0/14',
+        '157.54.0.0/15',
+        '157.56.0.0/14',
+        '157.60.0.0/16',
+        '207.46.0.0/16',
+        '207.68.128.0/18',
+        '207.68.192.0/20',
+        '131.253.26.0/20',
+        '131.253.24.0/20',
+        '72.30.198.0/20',
+        '72.30.196.0/20',
+        '98.137.207.0/20',
+        '1.202.218.8',
+    ];
+
     public function __construct(
         private InstallationConfig $configuration,
         private OptionRepository $options,
@@ -78,6 +111,26 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
         }
 
         return false;
+    }
+
+    public function isPrefetch(Request $request): bool
+    {
+        $purpose = strtolower((string) $request->header('X-Purpose', ''));
+        if (in_array($purpose, ['preview', 'instant'], true)) {
+            return true;
+        }
+
+        return strtolower((string) $request->header('X-Moz', '')) === 'prefetch';
+    }
+
+    public function isKnownBotIp(Request $request, string $ipAddress): bool
+    {
+        $ip = IP::fromStringIP($ipAddress);
+        if ($this->isChromeDataSaver($request, $ip)) {
+            return false;
+        }
+
+        return $ip->isInRanges(self::BOT_IP_RANGES);
     }
 
     public function storedIpAddress(int $siteId, string $ipAddress): string
@@ -205,6 +258,15 @@ final readonly class ConfiguredTrackingRequestPolicy implements TrackingRequestP
     public function usesAnonymizedIpForEnrichment(int $siteId): bool
     {
         return $this->booleanOption(self::ANONYMIZED_IP_ENRICHMENT_OPTION, $siteId, false);
+    }
+
+    private function isChromeDataSaver(Request $request, IP $ip): bool
+    {
+        $via = strtolower((string) $request->header('Via', ''));
+
+        return $via !== ''
+            && str_contains($via, 'chrome-compression-proxy')
+            && $ip->isInRanges(self::GOOGLE_BOT_IP_RANGES);
     }
 
     private function siteId(Request $request): ?int

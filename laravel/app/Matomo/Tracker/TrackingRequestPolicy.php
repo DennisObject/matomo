@@ -15,6 +15,10 @@ interface TrackingRequestPolicy
     /** @param array<string, int|string|null> $site */
     public function excludesVisit(array $site, string $ipAddress, string $userAgent): bool;
 
+    public function isPrefetch(Request $request): bool;
+
+    public function isKnownBotIp(Request $request, string $ipAddress): bool;
+
     public function storedIpAddress(int $siteId, string $ipAddress): string;
 
     public function storedOrderId(int $siteId, string $orderId): string;
